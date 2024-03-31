@@ -12,17 +12,15 @@ from modules.ui import switch_values_symbol
 upscale_cache = {}
 
 
-def limitSizeByOneDemention(size: tuple, limit: int):
-    w, h = size
-    if h > w:
-        if h > limit:
-            w = limit / h * w
-            h = limit
-    else:
-        if w > limit:
-            h = limit / w * h
-            w = limit
-    return (int(w), int(h))
+def limit_size_by_one_dimention(w, h, limit):
+    if h > w and h > limit:
+        w = limit * w // h
+        h = limit
+    elif w > h and w > limit:
+        h = limit * h // w
+        w = limit
+
+    return int(w), int(h)
 
 
 class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
@@ -43,12 +41,11 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
             with FormRow():
                 with gr.Tabs(elem_id="extras_resize_mode"):
                     with gr.TabItem('Scale by', elem_id="extras_scale_by_tab") as tab_scale_by:
-                        upscaling_resize = gr.Slider(minimum=1.0, maximum=8.0, step=0.05, label="Resize", value=4, elem_id="extras_upscaling_resize")
-                        if shared.opts.show_limit_target_resolution_in_extras_upscale:
-                            limit_target_resolution = gr.Slider(minimum=0, maximum=10000, step=8, label="Limit target resolution", value=8000, elem_id="extras_upscale_limit_target_resolution",
-                                    tooltip="0 = no limit. Limit maximal target resolution by the biggest demension. Useful for batches where can be big images.")
-                        else:
-                            limit_target_resolution = gr.Number(0, visible=False)
+                        with gr.Row():
+                            with gr.Column(scale=3):
+                                upscaling_resize = gr.Slider(minimum=1.0, maximum=8.0, step=0.05, label="Resize", value=4, elem_id="extras_upscaling_resize")
+                            with gr.Column(scale=1):
+                                max_side_length = gr.Number(label="Max side length", value=0, elem_id="extras_upscale_max_side_length", tooltip="If any of two sides of the image ends up larger than specified, will downscale it to fit. 0 = no limit.")
 
                     with gr.TabItem('Scale to', elem_id="extras_scale_to_tab") as tab_scale_to:
                         with FormRow():
@@ -79,7 +76,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
             "upscale_enabled": upscale_enabled,
             "upscale_mode": selected_tab,
             "upscale_by": upscaling_resize,
-            "limit_target_resolution": limit_target_resolution,
+            "max_side_length": max_side_length,
             "upscale_to_width": upscaling_resize_w,
             "upscale_to_height": upscaling_resize_h,
             "upscale_crop": upscaling_crop,
@@ -88,18 +85,18 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
             "upscaler_2_visibility": extras_upscaler_2_visibility,
         }
 
-    def upscale(self, image, info, upscaler, upscale_mode, upscale_by, limit_target_resolution, upscale_to_width, upscale_to_height, upscale_crop):
+    def upscale(self, image, info, upscaler, upscale_mode, upscale_by, max_side_length, upscale_to_width, upscale_to_height, upscale_crop):
         if upscale_mode == 1:
             upscale_by = max(upscale_to_width/image.width, upscale_to_height/image.height)
             info["Postprocess upscale to"] = f"{upscale_to_width}x{upscale_to_height}"
         else:
             info["Postprocess upscale by"] = upscale_by
-            if limit_target_resolution != 0 and max(*image.size)*upscale_by > limit_target_resolution:
+            if max_side_length != 0 and max(*image.size)*upscale_by > max_side_length:
                 upscale_mode = 1
                 upscale_crop = False
-                upscale_to_width, upscale_to_height = limitSizeByOneDemention((image.width*upscale_by, image.height*upscale_by), limit_target_resolution)
+                upscale_to_width, upscale_to_height = limit_size_by_one_dimention(image.width*upscale_by, image.height*upscale_by, max_side_length)
                 upscale_by = max(upscale_to_width/image.width, upscale_to_height/image.height)
-                info["Limit target resolution"] = limit_target_resolution
+                info["Max side length"] = max_side_length
 
         cache_key = (hash(np.array(image.getdata()).tobytes()), upscaler.name, upscale_mode, upscale_by,  upscale_to_width, upscale_to_height, upscale_crop)
         cached_image = upscale_cache.pop(cache_key, None)
@@ -121,21 +118,21 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
 
         return image
 
-    def process_firstpass(self, pp: scripts_postprocessing.PostprocessedImage, **args):
-        if args['upscale_mode'] == 1:
-            pp.shared.target_width = args['upscale_to_width']
-            pp.shared.target_height = args['upscale_to_height']
+    def process_firstpass(self, pp: scripts_postprocessing.PostprocessedImage, upscale_enabled=True, upscale_mode=1, upscale_by=2.0, max_side_length=0, upscale_to_width=None, upscale_to_height=None, upscale_crop=False, upscaler_1_name=None, upscaler_2_name=None, upscaler_2_visibility=0.0):
+        if upscale_mode == 1:
+            pp.shared.target_width = upscale_to_width
+            pp.shared.target_height = upscale_to_height
         else:
-            pp.shared.target_width = int(pp.image.width * args['upscale_by'])
-            pp.shared.target_height = int(pp.image.height * args['upscale_by'])
-            if args['limit_target_resolution'] != 0:
-                pp.shared.target_width, pp.shared.target_height = limitSizeByOneDemention((pp.shared.target_width, pp.shared.target_height), args['limit_target_resolution'])
+            pp.shared.target_width = int(pp.image.width * upscale_by)
+            pp.shared.target_height = int(pp.image.height * upscale_by)
 
-    def process(self, pp: scripts_postprocessing.PostprocessedImage, **args):
-        if not args['upscale_enabled']:
+            pp.shared.target_width, pp.shared.target_height = limit_size_by_one_dimention(pp.shared.target_width, pp.shared.target_height, max_side_length)
+
+    def process(self, pp: scripts_postprocessing.PostprocessedImage, upscale_enabled=True, upscale_mode=1, upscale_by=2.0, max_side_length=0, upscale_to_width=None, upscale_to_height=None, upscale_crop=False, upscaler_1_name=None, upscaler_2_name=None, upscaler_2_visibility=0.0):
+        if not upscale_enabled:
             return
 
-        upscaler_1_name = args['upscaler_1_name']
+        upscaler_1_name = upscaler_1_name
         if upscaler_1_name == "None":
             upscaler_1_name = None
 
@@ -145,21 +142,19 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
         if not upscaler1:
             return
 
-        upscaler_2_name = args['upscaler_2_name']
+        upscaler_2_name = upscaler_2_name
         if upscaler_2_name == "None":
             upscaler_2_name = None
 
         upscaler2 = next(iter([x for x in shared.sd_upscalers if x.name == upscaler_2_name and x.name != "None"]), None)
         assert upscaler2 or (upscaler_2_name is None), f'could not find upscaler named {upscaler_2_name}'
 
-        upscaled_image = self.upscale(pp.image, pp.info, upscaler1, args['upscale_mode'], args['upscale_by'], args['limit_target_resolution'], args['upscale_to_width'],
-                    args['upscale_to_height'], args['upscale_crop'])
+        upscaled_image = self.upscale(pp.image, pp.info, upscaler1, upscale_mode, upscale_by, max_side_length, upscale_to_width, upscale_to_height, upscale_crop)
         pp.info["Postprocess upscaler"] = upscaler1.name
 
-        if upscaler2 and args['upscaler_2_visibility'] > 0:
-            second_upscale = self.upscale(pp.image, pp.info, upscaler2, args['upscale_mode'], args['upscale_by'], args['upscale_to_width'],
-                    args['upscale_to_height'], args['upscale_crop'])
-            upscaled_image = Image.blend(upscaled_image, second_upscale, args['upscaler_2_visibility'])
+        if upscaler2 and upscaler_2_visibility > 0:
+            second_upscale = self.upscale(pp.image, pp.info, upscaler2, upscale_mode, upscale_by, upscale_to_width, upscale_to_height, upscale_crop)
+            upscaled_image = Image.blend(upscaled_image, second_upscale, upscaler_2_visibility)
 
             pp.info["Postprocess upscaler 2"] = upscaler2.name
 
