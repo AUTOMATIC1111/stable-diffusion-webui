@@ -50,7 +50,7 @@ class FaceRestorerCodeFormer(face_restoration_utils.CommonFaceRestoration):
 
         def restore_face(cropped_face_t):
             assert self.net is not None
-            return self.net(cropped_face_t, w=w, adain=True)[0]
+            return self.net(cropped_face_t, weight=w, adain=True)[0]
 
         return self.restore_with_helper(np_image, restore_face)
 
