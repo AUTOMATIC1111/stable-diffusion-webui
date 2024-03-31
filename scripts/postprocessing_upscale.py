@@ -42,10 +42,10 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
                 with gr.Tabs(elem_id="extras_resize_mode"):
                     with gr.TabItem('Scale by', elem_id="extras_scale_by_tab") as tab_scale_by:
                         with gr.Row():
-                            with gr.Column(scale=3):
+                            with gr.Column(scale=4):
                                 upscaling_resize = gr.Slider(minimum=1.0, maximum=8.0, step=0.05, label="Resize", value=4, elem_id="extras_upscaling_resize")
-                            with gr.Column(scale=1):
-                                max_side_length = gr.Number(label="Max side length", value=0, elem_id="extras_upscale_max_side_length", tooltip="If any of two sides of the image ends up larger than specified, will downscale it to fit. 0 = no limit.")
+                            with gr.Column(scale=1, min_width=160):
+                                max_side_length = gr.Number(label="Max side length", value=0, elem_id="extras_upscale_max_side_length", tooltip="If any of two sides of the image ends up larger than specified, will downscale it to fit. 0 = no limit.", min_width=160)
 
                     with gr.TabItem('Scale to', elem_id="extras_scale_to_tab") as tab_scale_to:
                         with FormRow():
