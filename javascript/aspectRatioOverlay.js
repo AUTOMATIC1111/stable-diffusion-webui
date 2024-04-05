@@ -50,17 +50,17 @@ function dimensionChange(e, is_width, is_height) {
         var scaledx = targetElement.naturalWidth * viewportscale;
         var scaledy = targetElement.naturalHeight * viewportscale;
 
-        var cleintRectTop = (viewportOffset.top + window.scrollY);
-        var cleintRectLeft = (viewportOffset.left + window.scrollX);
-        var cleintRectCentreY = cleintRectTop + (targetElement.clientHeight / 2);
-        var cleintRectCentreX = cleintRectLeft + (targetElement.clientWidth / 2);
+        var clientRectTop = (viewportOffset.top + window.scrollY);
+        var clientRectLeft = (viewportOffset.left + window.scrollX);
+        var clientRectCentreY = clientRectTop + (targetElement.clientHeight / 2);
+        var clientRectCentreX = clientRectLeft + (targetElement.clientWidth / 2);
 
         var arscale = Math.min(scaledx / currentWidth, scaledy / currentHeight);
         var arscaledx = currentWidth * arscale;
         var arscaledy = currentHeight * arscale;
 
-        var arRectTop = cleintRectCentreY - (arscaledy / 2);
-        var arRectLeft = cleintRectCentreX - (arscaledx / 2);
+        var arRectTop = clientRectCentreY - (arscaledy / 2);
+        var arRectLeft = clientRectCentreX - (arscaledx / 2);
         var arRectWidth = arscaledx;
         var arRectHeight = arscaledy;
 

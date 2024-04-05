@@ -784,8 +784,15 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
     If it is loaded, returns that (moving it to GPU if necessary, and moving the currently loadded model to CPU if necessary).
     If not, returns the model that can be used to load weights from checkpoint_info's file.
     If no such model exists, returns None.
-    Additionaly deletes loaded models that are over the limit set in settings (sd_checkpoints_limit).
+    Additionally deletes loaded models that are over the limit set in settings (sd_checkpoints_limit).
     """
+
+    if sd_model is not None and sd_model.sd_checkpoint_info.filename == checkpoint_info.filename:
+        return sd_model
+
+    if shared.opts.sd_checkpoints_keep_in_cpu:
+        send_model_to_cpu(sd_model)
+        timer.record("send model to cpu")
 
     already_loaded = None
     for i in reversed(range(len(model_data.loaded_sd_models))):
@@ -796,13 +803,9 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
 
         if len(model_data.loaded_sd_models) > shared.opts.sd_checkpoints_limit > 0:
             print(f"Unloading model {len(model_data.loaded_sd_models)} over the limit of {shared.opts.sd_checkpoints_limit}: {loaded_model.sd_checkpoint_info.title}")
-            model_data.loaded_sd_models.pop()
+            del model_data.loaded_sd_models[i]
             send_model_to_trash(loaded_model)
             timer.record("send model to trash")
-
-        if shared.opts.sd_checkpoints_keep_in_cpu:
-            send_model_to_cpu(sd_model)
-            timer.record("send model to cpu")
 
     if already_loaded is not None:
         send_model_to_device(already_loaded)

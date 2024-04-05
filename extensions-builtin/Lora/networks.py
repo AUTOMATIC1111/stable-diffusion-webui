@@ -355,7 +355,7 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
     """
     Applies the currently selected set of networks to the weights of torch layer self.
     If weights already have this particular set of networks applied, does nothing.
-    If not, restores orginal weights from backup and alters weights according to networks.
+    If not, restores original weights from backup and alters weights according to networks.
     """
 
     network_layer_name = getattr(self, 'network_layer_name', None)
@@ -429,9 +429,12 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
             if isinstance(self, torch.nn.MultiheadAttention) and module_q and module_k and module_v and module_out:
                 try:
                     with torch.no_grad():
-                        updown_q, _ = module_q.calc_updown(self.in_proj_weight)
-                        updown_k, _ = module_k.calc_updown(self.in_proj_weight)
-                        updown_v, _ = module_v.calc_updown(self.in_proj_weight)
+                        # Send "real" orig_weight into MHA's lora module
+                        qw, kw, vw = self.in_proj_weight.chunk(3, 0)
+                        updown_q, _ = module_q.calc_updown(qw)
+                        updown_k, _ = module_k.calc_updown(kw)
+                        updown_v, _ = module_v.calc_updown(vw)
+                        del qw, kw, vw
                         updown_qkv = torch.vstack([updown_q, updown_k, updown_v])
                         updown_out, ex_bias = module_out.calc_updown(self.out_proj.weight)
 

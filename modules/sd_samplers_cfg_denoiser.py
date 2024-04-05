@@ -152,7 +152,7 @@ class CFGDenoiser(torch.nn.Module):
         if state.interrupted or state.skipped:
             raise sd_samplers_common.InterruptedException
 
-        if sd_samplers_common.apply_refiner(self):
+        if sd_samplers_common.apply_refiner(self, sigma):
             cond = self.sampler.sampler_extra_args['cond']
             uncond = self.sampler.sampler_extra_args['uncond']
 

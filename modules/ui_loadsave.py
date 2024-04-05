@@ -104,6 +104,8 @@ class UiLoadsave:
             apply_field(x, 'value', check_dropdown, getattr(x, 'init_field', None))
 
         if type(x) == InputAccordion:
+            if hasattr(x, 'custom_script_source'):
+                x.accordion.custom_script_source = x.custom_script_source
             if x.accordion.visible:
                 apply_field(x.accordion, 'visible')
             apply_field(x, 'value')

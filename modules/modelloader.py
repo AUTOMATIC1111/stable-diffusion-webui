@@ -110,7 +110,7 @@ def load_upscalers():
             except Exception:
                 pass
 
-    datas = []
+    data = []
     commandline_options = vars(shared.cmd_opts)
 
     # some of upscaler classes will not go away after reloading their modules, and we'll end
@@ -129,10 +129,10 @@ def load_upscalers():
         scaler = cls(commandline_model_path)
         scaler.user_path = commandline_model_path
         scaler.model_download_path = commandline_model_path or scaler.model_path
-        datas += scaler.scalers
+        data += scaler.scalers
 
     shared.sd_upscalers = sorted(
-        datas,
+        data,
         # Special case for UpscalerNone keeps it at the beginning of the list.
         key=lambda x: x.name.lower() if not isinstance(x.scaler, (UpscalerNone, UpscalerLanczos, UpscalerNearest)) else ""
     )

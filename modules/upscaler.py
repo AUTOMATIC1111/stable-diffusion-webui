@@ -20,7 +20,7 @@ class Upscaler:
     filter = None
     model = None
     user_path = None
-    scalers: []
+    scalers: list
     tile = True
 
     def __init__(self, create_dirs=False):
@@ -58,6 +58,9 @@ class Upscaler:
 
         for _ in range(3):
             if img.width >= dest_w and img.height >= dest_h:
+                break
+
+            if shared.state.interrupted:
                 break
 
             shape = (img.width, img.height)

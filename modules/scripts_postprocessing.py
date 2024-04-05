@@ -143,6 +143,7 @@ class ScriptPostprocessingRunner:
             self.initialize_scripts(modules.scripts.postprocessing_scripts_data)
 
         scripts_order = shared.opts.postprocessing_operation_order
+        scripts_filter_out = set(shared.opts.postprocessing_disable_in_extras)
 
         def script_score(name):
             for i, possible_match in enumerate(scripts_order):
@@ -151,9 +152,10 @@ class ScriptPostprocessingRunner:
 
             return len(self.scripts)
 
-        script_scores = {script.name: (script_score(script.name), script.order, script.name, original_index) for original_index, script in enumerate(self.scripts)}
+        filtered_scripts = [script for script in self.scripts if script.name not in scripts_filter_out]
+        script_scores = {script.name: (script_score(script.name), script.order, script.name, original_index) for original_index, script in enumerate(filtered_scripts)}
 
-        return sorted(self.scripts, key=lambda x: script_scores[x.name])
+        return sorted(filtered_scripts, key=lambda x: script_scores[x.name])
 
     def setup_ui(self):
         inputs = []
