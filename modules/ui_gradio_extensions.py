@@ -16,7 +16,14 @@ def javascript_html():
     script_js = os.path.join(script_path, "script.js")
     head += f'<script type="text/javascript" src="{webpath(script_js)}"></script>\n'
 
-    for script in scripts.list_scripts("javascript", ".js"):
+    # We want the utils.js script to be imported first since it can be used by multiple other
+    # scripts. This resolves dependency issues caused by html <script> ordering.
+    js_scripts = scripts.list_scripts("javascript", ".js")
+    js_utils_script = [x for x in js_scripts if x.filename == "utils.js"][0]
+    head += f'<script type="text/javascript" src="{webpath(js_utils_script.path)}"></script>\n'
+
+    # Now add all remaining .js scripts excluding the utils.js file.
+    for script in [x for x in js_scripts if x.filename != "utils.js"]:
         head += f'<script type="text/javascript" src="{webpath(script.path)}"></script>\n'
 
     for script in scripts.list_scripts("javascript", ".mjs"):

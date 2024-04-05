@@ -29,60 +29,6 @@ class InvalidCompressedJsonDataError extends Error {
     }
 }
 
-const getComputedPropertyDims = (elem, prop) => {
-    /** Returns the top/left/bottom/right float dimensions of an element for the specified property. */
-    const style = window.getComputedStyle(elem, null);
-    return {
-        top: parseFloat(style.getPropertyValue(`${prop}-top`)),
-        left: parseFloat(style.getPropertyValue(`${prop}-left`)),
-        bottom: parseFloat(style.getPropertyValue(`${prop}-bottom`)),
-        right: parseFloat(style.getPropertyValue(`${prop}-right`)),
-    };
-};
-
-const getComputedMarginDims = elem => {
-    /** Returns the width/height of the computed margin of an element. */
-    const dims = getComputedPropertyDims(elem, "margin");
-    return {
-        width: dims.left + dims.right,
-        height: dims.top + dims.bottom,
-    };
-};
-
-const getComputedPaddingDims = elem => {
-    /** Returns the width/height of the computed padding of an element. */
-    const dims = getComputedPropertyDims(elem, "padding");
-    return {
-        width: dims.left + dims.right,
-        height: dims.top + dims.bottom,
-    };
-};
-
-const getComputedBorderDims = elem => {
-    /** Returns the width/height of the computed border of an element. */
-    // computed border will always start with the pixel width so thankfully
-    // the parseFloat() conversion will just give us the width and ignore the rest.
-    // Otherwise we'd have to use border-<pos>-width instead.
-    const dims = getComputedPropertyDims(elem, "border");
-    return {
-        width: dims.left + dims.right,
-        height: dims.top + dims.bottom,
-    };
-};
-
-const getComputedDims = elem => {
-    /** Returns the full width and height of an element including its margin, padding, and border. */
-    const width = elem.scrollWidth;
-    const height = elem.scrollHeight;
-    const margin = getComputedMarginDims(elem);
-    const padding = getComputedPaddingDims(elem);
-    const border = getComputedBorderDims(elem);
-    return {
-        width: width + margin.width + padding.width + border.width,
-        height: height + margin.height + padding.height + border.height,
-    };
-};
-
 async function decompress(base64string) {
     /** Decompresses a base64 encoded ZLIB compressed string. */
     try {
@@ -100,26 +46,6 @@ async function decompress(base64string) {
         throw new InvalidCompressedJsonDataError(error);
     }
 }
-
-const htmlStringToElement = function(str) {
-    /** Converts an HTML string into an Element type. */
-    let parser = new DOMParser();
-    let tmp = parser.parseFromString(str, "text/html");
-    return tmp.body.firstElementChild;
-};
-
-const calcColsPerRow = function(parent, child) {
-    /** Calculates the number of columns of children that can fit in a parent's visible width. */
-    const parent_inner_width = parent.offsetWidth - getComputedPaddingDims(parent).width;
-    return parseInt(parent_inner_width / getComputedDims(child).width);
-
-};
-
-const calcRowsPerCol = function(parent, child) {
-    /** Calculates the number of rows of children that can fit in a parent's visible height. */
-    const parent_inner_height = parent.offsetHeight - getComputedPaddingDims(parent).height;
-    return parseInt(parent_inner_height / getComputedDims(child).height);
-};
 
 class ExtraNetworksClusterize {
     /** Base class for a clusterize list. Cannot be used directly. */
