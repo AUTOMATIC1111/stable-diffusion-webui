@@ -1,5 +1,5 @@
 import collections
-import os.path
+import os
 import sys
 import threading
 
@@ -7,8 +7,6 @@ import torch
 import re
 import safetensors.torch
 from omegaconf import OmegaConf, ListConfig
-from os import mkdir
-from os import getenv
 from urllib import request
 import ldm.modules.midas as midas
 
@@ -152,8 +150,7 @@ def list_models():
     if shared.cmd_opts.no_download_sd_model or cmd_ckpt != shared.sd_model_file or os.path.exists(cmd_ckpt):
         model_url = None
     else:
-        hugging_host = getenv('HF_ENDPOINT', 'https://huggingface.co')
-        model_url = f"{hugging_host}/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
+        model_url = f"{shared.hf_endpoint}/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
 
     model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.cmd_opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
 
@@ -510,7 +507,7 @@ def enable_midas_autodownload():
         path = midas.api.ISL_PATHS[model_type]
         if not os.path.exists(path):
             if not os.path.exists(midas_path):
-                mkdir(midas_path)
+                os.mkdir(midas_path)
 
             print(f"Downloading midas model weights for {model_type} to {path}")
             request.urlretrieve(midas_urls[model_type], path)
