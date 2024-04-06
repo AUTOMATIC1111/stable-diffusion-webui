@@ -2,13 +2,18 @@ import os
 import importlib.util
 
 from modules import errors
-
+import sys
 
 def load_module(path):
     module_spec = importlib.util.spec_from_file_location(os.path.basename(path), path)
     module = importlib.util.module_from_spec(module_spec)
     module_spec.loader.exec_module(module)
-
+    if os.path.isfile(path):
+        sp = os.path.splitext(path)
+        module_name = sp[0]
+    else:
+        module_name = os.path.basename(path)
+    sys.modules[module_name] = module
     return module
 
 
