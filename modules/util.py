@@ -148,6 +148,11 @@ class MassFileLister:
         """Clear the cache of all directories."""
         self.cached_dirs.clear()
 
+    def update_file_entry(self, path):
+        """Update the cache for a specific directory."""
+        dirname, filename = os.path.split(path)
+        if cached_dir := self.cached_dirs.get(dirname):
+            cached_dir.update_entry(filename)
 
 def topological_sort(dependencies):
     """Accepts a dictionary mapping name to its dependencies, returns a list of names ordered according to dependencies.
