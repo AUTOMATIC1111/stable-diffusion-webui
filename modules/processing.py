@@ -704,7 +704,9 @@ def program_version():
 
 
 def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0, use_main_prompt=False, index=None, all_negative_prompts=None, all_hr_prompts=None, all_hr_negative_prompts=None):
-    if index is None:
+    if use_main_prompt:
+        index = 0
+    elif index is None:
         index = position_in_batch + iteration * p.batch_size
 
     if all_negative_prompts is None:
