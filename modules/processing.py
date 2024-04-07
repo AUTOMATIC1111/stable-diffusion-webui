@@ -703,7 +703,7 @@ def program_version():
     return res
 
 
-def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0, use_main_prompt=False, index=None, all_negative_prompts=None, all_hr_prompts=None, all_hr_negative_prompts=None):
+def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0, use_main_prompt=False, index=None, all_negative_prompts=None):
     if use_main_prompt:
         index = 0
     elif index is None:
@@ -716,6 +716,9 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
     enable_hr = getattr(p, 'enable_hr', False)
     token_merging_ratio = p.get_token_merging_ratio()
     token_merging_ratio_hr = p.get_token_merging_ratio(for_hr=True)
+
+    prompt_text = p.main_prompt if use_main_prompt else all_prompts[index]
+    negative_prompt = p.main_negative_prompt if use_main_prompt else all_negative_prompts[index]
 
     uses_ensd = opts.eta_noise_seed_delta != 0
     if uses_ensd:
@@ -749,8 +752,6 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "RNG": opts.randn_source if opts.randn_source != "GPU" else None,
         "NGMS": None if p.s_min_uncond == 0 else p.s_min_uncond,
         "Tiling": "True" if p.tiling else None,
-        "Hires prompt": None,  # This is set later, insert here to keep order
-        "Hires negative prompt": None,  # This is set later, insert here to keep order
         **p.extra_generation_params,
         "Version": program_version() if opts.add_version_to_infotext else None,
         "User": p.user if opts.add_user_name_to_info else None,
@@ -766,15 +767,9 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
             errors.report(f'Error creating infotext for key "{key}"', exc_info=True)
             generation_params[key] = None
 
-    if all_hr_prompts := all_hr_prompts or getattr(p, 'all_hr_prompts', None):
-        generation_params['Hires prompt'] = all_hr_prompts[index] if all_hr_prompts[index] != all_prompts[index] else None
-    if all_hr_negative_prompts := all_hr_negative_prompts or getattr(p, 'all_hr_negative_prompts', None):
-        generation_params['Hires negative prompt'] = all_hr_negative_prompts[index] if all_hr_negative_prompts[index] != all_negative_prompts[index] else None
-
     generation_params_text = ", ".join([k if k == v else f'{k}: {infotext_utils.quote(v)}' for k, v in generation_params.items() if v is not None])
 
-    prompt_text = p.main_prompt if use_main_prompt else all_prompts[index]
-    negative_prompt_text = f"\nNegative prompt: {p.main_negative_prompt if use_main_prompt else all_negative_prompts[index]}" if all_negative_prompts[index] else ""
+    negative_prompt_text = f"\nNegative prompt: {negative_prompt}" if negative_prompt else ""
 
     return f"{prompt_text}{negative_prompt_text}\n{generation_params_text}".strip()
 
@@ -1215,6 +1210,17 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
             if self.hr_sampler_name is not None and self.hr_sampler_name != self.sampler_name:
                 self.extra_generation_params["Hires sampler"] = self.hr_sampler_name
+
+            def get_hr_prompt(p, index, prompt_text, **kwargs):
+                hr_prompt = p.all_hr_prompts[index]
+                return hr_prompt if hr_prompt != prompt_text else None
+
+            def get_hr_negative_prompt(p, index, negative_prompt, **kwargs):
+                hr_negative_prompt = p.all_hr_negative_prompts[index]
+                return hr_negative_prompt if hr_negative_prompt != negative_prompt else None
+
+            self.extra_generation_params["Hires prompt"] = get_hr_prompt
+            self.extra_generation_params["Hires negative prompt"] = get_hr_negative_prompt
 
             self.extra_generation_params["Hires schedule type"] = None  # to be set in sd_samplers_kdiffusion.py
 
