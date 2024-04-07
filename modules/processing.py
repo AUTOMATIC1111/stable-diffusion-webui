@@ -756,6 +756,16 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "User": p.user if opts.add_user_name_to_info else None,
     }
 
+    for key, value in generation_params.items():
+        try:
+            if isinstance(value, list):
+                generation_params[key] = value[index]
+            elif callable(value):
+                generation_params[key] = value(**locals())
+        except Exception:
+            errors.report(f'Error creating infotext for key "{key}"', exc_info=True)
+            generation_params[key] = None
+
     if all_hr_prompts := all_hr_prompts or getattr(p, 'all_hr_prompts', None):
         generation_params['Hires prompt'] = all_hr_prompts[index] if all_hr_prompts[index] != all_prompts[index] else None
     if all_hr_negative_prompts := all_hr_negative_prompts or getattr(p, 'all_hr_negative_prompts', None):
