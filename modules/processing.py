@@ -608,7 +608,7 @@ class Processed:
             "version": self.version,
         }
 
-        return json.dumps(obj)
+        return json.dumps(obj, default=lambda o: None)
 
     def infotext(self, p: StableDiffusionProcessing, index):
         return create_infotext(p, self.all_prompts, self.all_seeds, self.all_subseeds, comments=[], position_in_batch=index % self.batch_size, iteration=index // self.batch_size)
