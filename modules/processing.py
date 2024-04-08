@@ -704,6 +704,50 @@ def program_version():
 
 
 def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0, use_main_prompt=False, index=None, all_negative_prompts=None):
+    """
+    this function is used to generate the infotext that is stored in the generated images, it's contains the parameters that are required to generate the imagee
+    Args:
+        p: StableDiffusionProcessing
+        all_prompts: list[str]
+        all_seeds: list[int]
+        all_subseeds: list[int]
+        comments: list[str]
+        iteration: int
+        position_in_batch: int
+        use_main_prompt: bool
+        index: int
+        all_negative_prompts: list[str]
+
+    Returns: str
+
+    Extra generation params
+    p.extra_generation_params dictionary allows for additional parameters to be added to the infotext
+    this can be use by the base webui or extensions.
+    To add a new entry, add a new key value pair, the dictionary key will be used as the key of the parameter in the infotext
+    the value generation_params can be defined as:
+        - str | None
+        - List[str|None]
+        - callable func(**kwargs) -> str | None
+
+    When defined as a string, it will be used as without extra processing; this is this most common use case.
+
+    Defining as a list allows for parameter that changes across images in the job, for example, the 'Seed' parameter.
+    The list should have the same length as the total number of images in the entire job.
+
+    Defining as a callable function allows parameter cannot be generated earlier or when extra logic is required.
+    For example 'Hires prompt', due to reasons the hr_prompt might be changed by process in the pipeline or extensions
+    and may vary across different images, defining as a static string or list would not work.
+
+    The function takes locals() as **kwargs, as such will have access to variables like 'p' and 'index'.
+    the base signature of the function should be:
+        func(**kwargs) -> str | None
+    optionally it can have additional arguments that will be used in the function:
+        func(p, index, **kwargs) -> str | None
+    note: for better future compatibility even though this function will have access to all variables in the locals(),
+        it is recommended to only use the arguments present in the function signature of create_infotext.
+    For actual implementation examples, see StableDiffusionProcessingTxt2Img.init > get_hr_prompt.
+    """
+
     if use_main_prompt:
         index = 0
     elif index is None:
