@@ -136,6 +136,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
 
     args = scripts.scripts_postproc.create_args_for_run({
         "Upscale": {
+            "upscale_enabled": True,
             "upscale_mode": resize_mode,
             "upscale_by": upscaling_resize,
             "max_side_length": max_side_length,
