@@ -17,10 +17,32 @@ class Clusterize {
     content_elem = null;
     scroll_id = null;
     content_id = null;
-    #options = {};
+    default_sort_mode_str = "";
+    default_sort_dir_str = "ascending";
+    default_filter_str = "";
+    sort_mode_str = this.default_sort_mode_str;
+    sort_dir_str = this.default_sort_dir_str;
+    filter_str = this.default_filter_str;
+    options = {
+        rows_in_block: 50,
+        cols_in_block: 1,
+        blocks_in_cluster: 5,
+        tag: null,
+        show_no_data_row: true,
+        no_data_class: "clusterize-no-data",
+        no_data_text: "No data",
+        keep_parity: true,
+        callbacks: {
+            initData: this.initDataDefault,
+            fetchData: this.fetchDataDefault,
+            sortData: this.sortDataDefault,
+            filterData: this.filterDataDefault,
+        },
+    };
     #is_mac = null;
     #ie = null;
-    #n_rows = null;
+    #max_items = null;
+    #max_rows = null;
     #cache = {};
     #scroll_top = 0;
     #last_cluster = false;
@@ -30,59 +52,46 @@ class Clusterize {
     #element_observer = null;
     #element_observer_timer = null;
     #pointer_events_set = false;
-    #sort_mode = "";
-    #sort_dir = "";
 
     constructor(args) {
-        const defaults = {
-            rows_in_block: 50,
-            blocks_in_cluster: 4,
-            tag: null,
-            show_no_data_row: true,
-            no_data_class: 'clusterize-no-data',
-            no_data_text: 'No data',
-            keep_parity: true,
-            callbacks: {}
-        };
+        for (const option of Object.keys(this.options)) {
+            if (keyExists(args, option)) {
+                this.options[option] = args[option];
+            }
+        }
 
-        const options = [
-            'rows_in_block',
-            'blocks_in_cluster',
-            'show_no_data_row',
-            'no_data_class',
-            'no_data_text',
-            'keep_parity',
-            'tag',
-            'callbacks',
-        ];
+        if (!isNullOrUndefined(this.options.callbacks.initData)) {
+            this.options.callbacks.initData = this.initDataDefault;
+        }
+        if (!isNullOrUndefined(this.options.callbacks.fetchData)) {
+            this.options.callbacks.fetchData = this.fetchDataDefault;
+        }
+        if (!isNullOrUndefined(this.options.callbacks.sortData)) {
+            this.options.callbacks.sortData = this.sortDataDefault;
+        }
+        if (!isNullOrUndefined(this.options.callbacks.filterData)) {
+            this.options.callbacks.filterData = this.filterDataDefault;
+        }
 
         // detect ie9 and lower
         // https://gist.github.com/padolsey/527683#comment-786682
         this.#ie = (function () {
             for (var v = 3,
-                el = document.createElement('b'),
+                el = document.createElement("b"),
                 all = el.all || [];
-                el.innerHTML = '<!--[if gt IE ' + (++v) + ']><i><![endif]-->',
+                el.innerHTML = `<!--[if gt IE ${++v}]><i><![endif]-->`,
                 all[0];
             ) { }
             return v > 4 ? v : document.documentMode;
         }())
-        this.#is_mac = navigator.platform.toLowerCase().indexOf('mac') + 1;
-
-        for (let i = 0, option; option = options[i]; i++) {
-            this.#options[option] = !isNullOrUndefined(args[option]) ? args[option] : defaults[option];
-        }
+        this.#is_mac = navigator.platform.toLowerCase().indexOf("mac") + 1;
 
         this.scroll_elem = args["scrollId"] ? document.getElementById(args["scrollId"]) : args["scrollElem"];
-        if (!isElement(this.scroll_elem)) {
-            throw new Error("Error! Could not find scroll element");
-        }
+        isElementThrowError(this.scroll_elem);
         this.scroll_id = this.scroll_elem.id;
 
         this.content_elem = args["contentId"] ? document.getElementById(args["contentId"]) : args["contentElem"];
-        if (!isElement(this.content_elem)) {
-            throw new Error("Error! Could not find content element");
-        }
+        isElementThrowError(this.content_elem);
         this.content_id = this.content_elem.id;
 
         if (!this.content_elem.hasAttribute("tabindex")) {
@@ -91,20 +100,7 @@ class Clusterize {
 
         this.#scroll_top = this.scroll_elem.scrollTop;
 
-        if (!isNumber(args.n_rows)) {
-            throw new Error("Invalid argument. n_rows expected number, got:", typeof args.n_rows);
-        }
-        this.#n_rows = args.n_rows;
-
-        if (!this.#options.callbacks.fetchData) {
-            this.#options.callbacks.fetchData = this.#fetchDataDefault;
-        }
-        if (!this.#options.callbacks.sortData) {
-            this.#options.callbacks.sortData = this.#sortDataDefault;
-        }
-        if (!this.#options.callbacks.filterData) {
-            this.#options.callbacks.filterData = this.#filterDataDefault;
-        }
+        this.#max_items = args.max_items;
     }
 
     // ==== PUBLIC FUNCTIONS ====
@@ -117,23 +113,27 @@ class Clusterize {
         this.#setupResizeObservers();
     }
 
+    clear() {
+        this.#html(this.#generateEmptyRow().join(""));
+    }
+
     destroy() {
         this.#teardownEvent("scroll", this.scroll_elem, this.#onScroll);
         this.#teardownElementObservers();
         this.#teardownResizeObservers();
-        this.#html(this.#generateEmptyRow().join(""));
+        this.clear();
     }
 
-    refresh(force) {
+    async refresh(force) {
         if (this.#getRowsHeight() || force) {
-            this.update()
+            await this.update()
         }
     }
 
     async update() {
         this.#scroll_top = this.scroll_elem.scrollTop;
         // fixes #39
-        if (this.#n_rows * this.#options.item_height < this.#scroll_top) {
+        if (this.#max_rows * this.options.item_height < this.#scroll_top) {
             this.scroll_elem.scrollTop = 0;
             this.#last_cluster = 0;
         }
@@ -143,119 +143,166 @@ class Clusterize {
     }
 
     getRowsAmount() {
-        return this.#n_rows;
+        return this.#max_rows;
     }
 
     getScrollProgress() {
-        return this.#options.scroll_top / (this.#n_rows * this.#options.item_height) * 100 || 0;
+        return this.options.scroll_top / (this.#max_rows * this.options.item_height) * 100 || 0;
     }
 
-    async filterData(filter) {
+    async setMaxItems(max_items) {
+        if (max_items === this.#max_items) {
+            // No change. do nothing.
+            return;
+        }
+
+        // If the number of items changed, we need to update the cluster.
+        this.#max_items = max_items;
+        await this.refresh(true);
+
+        // Apply sort to the updated data.
+        await this.sortData(this.sort_mode_str, this.sort_dir_str);
+    }
+
+    async filterData(filter_str) {
+        if (this.filter_str === filter_str) {
+            return;
+        }
+
+        this.filter_str = isNullOrUndefined(filter_str) ? this.default_filter_str : filter_str;
+
         // Filter is applied to entire dataset.
-        const n_rows = await this.#options.callbacks.filterData(filter);
-        // If the number of rows changed after filter, we need to update the cluster.
-        if (n_rows !== this.#n_rows) {
-            this.#n_rows = n_rows;
+        const max_items = await this.options.callbacks.filterData(this.filter_str);
+        // If the number of items changed after filter, we need to update the cluster.
+        if (max_items !== this.#max_items) {
+            this.#max_items = max_items;
             this.refresh(true);
         }
         // Apply sort to the new filtered data.
-        await this.sortData(this.#sort_mode, this.#sort_dir);
+        await this.sortData(this.sort_mode_str, this.sort_dir_str);
     }
 
-    async sortData(mode, dir) {
+    async sortData(sort_mode_str, sort_dir_str) {
+        if (this.sort_mode_str === sort_mode_str && this.sort_dir_str === sort_dir_str) {
+            return;
+        }
+
+        this.sort_mode_str = isNullOrUndefined(sort_mode_str) ? this.default_sort_mode_str : sort_mode_str;
+        this.sort_dir_str = isNullOrUndefined(sort_dir_str) ? this.default_sort_dir_str : sort_dir_str;
+
         // Sort is applied to the filtered data.
-
-        // update instance sort settings to the passed values.
-        this.#sort_mode = mode;
-        this.#sort_dir = dir;
-
-        await this.#options.callbacks.sortData(this.#sort_mode, this.#sort_dir === "descending");
+        await this.options.callbacks.sortData(this.sort_mode_str, this.sort_dir_str === "descending");
         await this.#insertToDOM();
     }
 
     // ==== PRIVATE FUNCTIONS ====
+    initDataDefault() {
+        return Promise.resolve({});
+    }
 
-    #fetchDataDefault() {
+    fetchDataDefault() {
         return Promise.resolve([]);
     }
 
-    #sortDataDefault() {
-        return Promise.resolve([]);
+    sortDataDefault() {
+        return Promise.resolve();
     }
 
-    #filterDataDefault() {
-        return Promise.resolve([]);
+    filterDataDefault() {
+        return Promise.resolve(0);
     }
 
     #exploreEnvironment(rows, cache) {
-        this.#options.content_tag = this.content_elem.tagName.toLowerCase();
+        this.options.content_tag = this.content_elem.tagName.toLowerCase();
         if (!rows.length) {
             return;
         }
-        if (this.#ie && this.#ie <= 9 && !this.#options.tag) {
-            this.#options.tag = rows[0].match(/<([^>\s/]*)/)[1].toLowerCase();
+        if (this.#ie && this.#ie <= 9 && !this.options.tag) {
+            this.options.tag = rows[0].match(/<([^>\s/]*)/)[1].toLowerCase();
         }
         if (this.content_elem.children.length <= 1) {
             cache.data = this.#html(rows[0] + rows[0] + rows[0]);
         }
-        if (!this.#options.tag) {
-            this.#options.tag = this.content_elem.children[0].tagName.toLowerCase();
+        if (!this.options.tag) {
+            this.options.tag = this.content_elem.children[0].tagName.toLowerCase();
         }
         this.#getRowsHeight();
     }
 
     #getRowsHeight() {
-        const prev_item_height = this.#options.item_height;
-        const prev_rows_in_block = this.#options.rows_in_block;
+        const prev_item_height = this.options.item_height;
+        const prev_item_width = this.options.item_width;
+        const prev_rows_in_block = this.options.rows_in_block;
+        const prev_cols_in_block = this.options.cols_in_block;
 
-        this.#options.cluster_height = 0;
-        if (!this.#n_rows) {
+        this.options.cluster_height = 0;
+        this.options.cluster_width = 0;
+        if (!this.#max_items) {
             return;
         }
 
-        const nodes = this.content_elem.children;
+        const nodes = this.content_elem.querySelectorAll(":not(.clusterize-row)");
         if (!nodes.length) {
             return;
         }
+
         const node = nodes[Math.floor(nodes.length / 2)];
-        this.#options.item_height = node.offsetHeight;
+        const node_dims = getComputedDims(node);
+        this.options.item_height = node_dims.height;
+        this.options.item_width = node_dims.width;
         // consider table's browser spacing
-        if (this.#options.tag === "tr" && getStyle("borderCollapse", this.content_elem) !== "collapse") {
-            this.#options.item_height += parseInt(getStyle("borderSpacing", this.content_elem), 10) || 0;
+        if (this.options.tag === "tr" && getStyle("borderCollapse", this.content_elem) !== "collapse") {
+            const spacing = parseInt(getStyle("borderSpacing", this.content_elem), 10) || 0;
+            this.options.item_height += spacing;
+            this.options.item_width += spacing;
         }
         // consider margins and margins collapsing
-        if (this.#options.tag !== "tr") {
+        if (this.options.tag !== "tr") {
             const margin_top = parseInt(getStyle("marginTop", node), 10) || 0;
+            const margin_right = parseInt(getStyle("marginRight", node), 10) || 0;
             const margin_bottom = parseInt(getStyle("marginBottom", node), 10) || 0;
-            this.#options.item_height += Math.max(margin_top, margin_bottom);
+            const margin_left = parseInt(getStyle("marginLeft", node), 10) || 0;
+            this.options.item_height += Math.max(margin_top, margin_bottom);
+            this.options.item_width += Math.max(margin_left, margin_right);
         }
 
         // Update rows in block to match the number of elements that can fit in the scroll element view.
-        this.#options.rows_in_block = parseInt(this.scroll_elem.clientHeight / this.#options.item_height);
+        this.options.rows_in_block = calcRowsPerCol(this.scroll_elem, node);
+        this.options.cols_in_block = calcColsPerRow(this.content_elem, node);
 
-        this.#options.block_height = this.#options.item_height * this.#options.rows_in_block;
-        this.#options.rows_in_cluster = this.#options.blocks_in_cluster * this.#options.rows_in_block;
-        this.#options.cluster_height = this.#options.blocks_in_cluster * this.#options.block_height;
-        return prev_item_height !== this.#options.item_height || prev_rows_in_block !== this.#options.rows_in_block;
+        this.options.block_height = this.options.item_height * this.options.rows_in_block;
+        this.options.block_width = this.options.item_width * this.options.cols_in_block;
+        this.options.rows_in_cluster = this.options.blocks_in_cluster * this.options.rows_in_block;
+        this.options.cluster_height = this.options.blocks_in_cluster * this.options.block_height;
+        this.options.cluster_width = this.options.block_width;
+
+        this.#max_rows = parseInt(this.#max_items / this.options.cols_in_block, 10);
+
+        return (
+            prev_item_height !== this.options.item_height ||
+            prev_item_width !== this.options.item_width ||
+            prev_rows_in_block !== this.options.rows_in_block ||
+            prev_cols_in_block !== this.options.cols_in_block
+        );
     }
 
     #getClusterNum() {
-        this.#options.scroll_top = this.scroll_elem.scrollTop;
-        const cluster_divider = this.#options.cluster_height - this.#options.block_height;
-        const current_cluster = Math.floor(this.#options.scroll_top / cluster_divider);
-        const max_cluster = Math.floor((this.#n_rows * this.#options.item_height) / cluster_divider);
+        this.options.scroll_top = this.scroll_elem.scrollTop;
+        const cluster_divider = this.options.cluster_height - this.options.block_height;
+        const current_cluster = Math.floor(this.options.scroll_top / cluster_divider);
+        const max_cluster = Math.floor((this.#max_rows * this.options.item_height) / cluster_divider);
         return Math.min(current_cluster, max_cluster);
     }
 
     #generateEmptyRow() {
-        if (!this.#options.tag || !this.#options.show_no_data_row) {
+        if (!this.options.tag || !this.options.show_no_data_row) {
             return [];
         }
 
-        const empty_row = document.createElement(this.#options.tag);
-        const no_data_content = document.createTextNode(this.#options.no_data_text);
-        empty_row.className = this.#options.no_data_class;
-        if (this.#options.tag === "tr") {
+        const empty_row = document.createElement(this.options.tag);
+        const no_data_content = document.createTextNode(this.options.no_data_text);
+        empty_row.className = this.options.no_data_class;
+        if (this.options.tag === "tr") {
             const td = document.createElement("td");
             // fixes #53
             td.colSpan = 100;
@@ -268,13 +315,15 @@ class Clusterize {
     }
 
     async #generate() {
-        const items_start = Math.max((this.#options.rows_in_cluster - this.#options.rows_in_block) * this.#getClusterNum(), 0);
-        const items_end = items_start + this.#options.rows_in_cluster;
-        const top_offset = Math.max(items_start * this.#options.item_height, 0);
-        const bottom_offset = Math.max((this.#n_rows - items_end) * this.#options.item_height, 0);
-        const rows_above = top_offset < 1 ? items_start + 1 : items_start;
+        const rows_start = Math.max(0, (this.options.rows_in_cluster - this.options.rows_in_block) * this.#getClusterNum());
+        const rows_end = rows_start + this.options.rows_in_cluster;
+        const top_offset = Math.max(0, rows_start * this.options.item_height);
+        const bottom_offset = Math.max(0, (this.#max_rows - rows_end) * this.options.item_height);
+        const rows_above = top_offset < 1 ? rows_start + 1 : rows_start;
 
-        const this_cluster_rows = await this.#options.callbacks.fetchData(items_start, items_end);
+        const idx_start = Math.max(0, rows_start * this.options.cols_in_block);
+        const idx_end = rows_end * this.options.cols_in_block;
+        const this_cluster_rows = await this.options.callbacks.fetchData(idx_start, idx_end);
         return {
             top_offset: top_offset,
             bottom_offset: bottom_offset,
@@ -284,13 +333,18 @@ class Clusterize {
     }
 
     async #insertToDOM() {
-        if (!this.#options.cluster_height) {
-            const rows = await this.#options.callbacks.fetchData(0, 1);
+        if (!this.options.cluster_height || !this.options.cluster_width) {
+            const rows = await this.options.callbacks.fetchData(0, 1);
             this.#exploreEnvironment(rows, this.#cache);
         }
 
         const data = await this.#generate();
-        const this_cluster_rows = data.rows.join("");
+        let this_cluster_rows = [];
+        for (let i = 0; i < data.rows.length; i += this.options.cols_in_block) {
+            const new_row = data.rows.slice(i, i + this.options.cols_in_block).join("");
+            this_cluster_rows.push(`<div class="clusterize-row">${new_row}</div>`);
+        }
+        this_cluster_rows = this_cluster_rows.join("");
         const this_cluster_content_changed = this.#checkChanges("data", this_cluster_rows, this.#cache);
         const top_offset_changed = this.#checkChanges("top", data.top_offset, this.#cache);
         const only_bottom_offset_changed = this.#checkChanges("bottom", data.bottom_offset, this.#cache);
@@ -298,16 +352,16 @@ class Clusterize {
 
         if (this_cluster_content_changed || top_offset_changed) {
             if (data.top_offset) {
-                this.#options.keep_parity && layout.push(this.#renderExtraTag("keep-parity"));
+                this.options.keep_parity && layout.push(this.#renderExtraTag("keep-parity"));
                 layout.push(this.#renderExtraTag("top-space", data.top_offset));
             }
             layout.push(this_cluster_rows);
             data.bottom_offset && layout.push(this.#renderExtraTag("bottom-space", data.bottom_offset));
-            this.#options.callbacks.clusterWillChange && this.#options.callbacks.clusterWillChange();
+            this.options.callbacks.clusterWillChange && this.options.callbacks.clusterWillChange();
             this.#html(layout.join(""));
-            this.#options.content_tag === "ol" && this.content_elem.setAttribute("start", data.rows_above);
+            this.options.content_tag === "ol" && this.content_elem.setAttribute("start", data.rows_above);
             this.content_elem.style["counter-increment"] = `clusterize-counter ${data.rows_above - 1}`;
-            this.#options.callbacks.clusterChanged && this.#options.callbacks.clusterChanged();
+            this.options.callbacks.clusterChanged && this.options.callbacks.clusterChanged();
         } else if (only_bottom_offset_changed) {
             this.content_elem.lastChild.style.height = `${data.bottom_offset}px`;
         }
@@ -315,7 +369,7 @@ class Clusterize {
 
     #html(data) {
         const content_elem = this.content_elem;
-        if (this.#ie && this.#ie <= 9 && this.#options.tag === "tr") {
+        if (this.#ie && this.#ie <= 9 && this.options.tag === "tr") {
             const div = document.createElement("div");
             let last;
             div.innerHTML = `<table><tbody>${data}</tbody></table>`;
@@ -332,7 +386,7 @@ class Clusterize {
     }
 
     #renderExtraTag(class_name, height) {
-        const tag = document.createElement(this.#options.tag);
+        const tag = document.createElement(this.options.tag);
         const clusterize_prefix = "clusterize-";
         tag.className = [
             `${clusterize_prefix}extra-row`,
@@ -374,8 +428,8 @@ class Clusterize {
         if (this.#last_cluster !== (this.#last_cluster = this.#getClusterNum())) {
             await this.#insertToDOM();
         }
-        if (this.#options.callbacks.scrollingProgress) {
-            this.#options.callbacks.scrollingProgress(this.getScrollingProgress());
+        if (this.options.callbacks.scrollingProgress) {
+            this.options.callbacks.scrollingProgress(this.getScrollProgress());
         }
     }
 
