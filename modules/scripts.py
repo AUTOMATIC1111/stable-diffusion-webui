@@ -739,12 +739,17 @@ class ScriptRunner:
         def onload_script_visibility(params):
             title = params.get('Script', None)
             if title:
-                title_index = self.titles.index(title)
-                visibility = title_index == self.script_load_ctr
-                self.script_load_ctr = (self.script_load_ctr + 1) % len(self.titles)
-                return gr.update(visible=visibility)
-            else:
-                return gr.update(visible=False)
+                try:
+                    title_index = self.titles.index(title)
+                    visibility = title_index == self.script_load_ctr
+                    self.script_load_ctr = (self.script_load_ctr + 1) % len(self.titles)
+                    return gr.update(visible=visibility)
+                except ValueError:
+                    params['Script'] = None
+                    massage = f'Cannot find Script: "{title}"'
+                    print(massage)
+                    gr.Warning(massage)
+            return gr.update(visible=False)
 
         self.infotext_fields.append((dropdown, lambda x: gr.update(value=x.get('Script', 'None'))))
         self.infotext_fields.extend([(script.group, onload_script_visibility) for script in self.selectable_scripts])
