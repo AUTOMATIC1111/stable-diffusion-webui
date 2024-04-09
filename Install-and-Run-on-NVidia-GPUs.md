@@ -245,6 +245,7 @@ sudo pacman -S pyenv
 pyenv install 3.10.6
 pyenv local 3.10.6
 
+pyenv shell 3.10.6
 python -m venv venv
 ```
 
