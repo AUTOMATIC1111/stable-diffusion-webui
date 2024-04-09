@@ -8,7 +8,7 @@ import sys
 
 import gradio as gr
 from modules.paths import data_path
-from modules import shared, ui_tempdir, script_callbacks, processing, infotext_versions, images, prompt_parser
+from modules import shared, ui_tempdir, script_callbacks, processing, infotext_versions, images, prompt_parser, errors
 from PIL import Image
 
 sys.modules['modules.generation_parameters_copypaste'] = sys.modules[__name__]  # alias for old name
@@ -488,7 +488,11 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
 
         for output, key in paste_fields:
             if callable(key):
-                v = key(params)
+                try:
+                    v = key(params)
+                except Exception:
+                    errors.report(f"Error executing {key}", exc_info=True)
+                    v = None
             else:
                 v = params.get(key, None)
 
