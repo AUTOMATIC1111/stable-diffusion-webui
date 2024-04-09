@@ -18,6 +18,7 @@ class ExtraNetworksClusterize extends Clusterize {
     sort_fn = this.default_sort_fn; 
     tabname = "";
     extra_networks_tabname = "";
+    enabled = false;
 
     // Override base class defaults
     default_sort_mode_str = "divId";
@@ -27,17 +28,54 @@ class ExtraNetworksClusterize extends Clusterize {
     sort_dir_str = this.default_sort_dir_str;
     filter_str = this.default_filter_str;
 
-    constructor(...args) {
-        super(...args);
-
-        // finish initialization
-        this.tabname = getValueThrowError(...args, "tabname");
-        this.extra_networks_tabname = getValueThrowError(...args, "extra_networks_tabname");
+    constructor(args) {
+        super(args);
+        this.tabname = getValueThrowError(args, "tabname");
+        this.extra_networks_tabname = getValueThrowError(args, "extra_networks_tabname");
     }
 
-    sortByDivId() {
+    sortByDivId(data) {
         /** Sort data_obj keys (div_id) as numbers. */
-        this.data_obj_keys_sorted = Object.keys(this.data_obj).sort(INT_COLLATOR.compare);
+        return Object.keys(data).sort(INT_COLLATOR.compare);
+    }
+
+    async reinitData() {
+        await this.initData();
+        // can't use super class' sort since it relies on setup being run first.
+        // but we do need to make sure to sort the new data before continuing.
+        await this.options.callbacks.sortData.call(this);
+        await this.setMaxItems(Object.keys(this.data_obj).length);
+    }
+
+    async setup() {
+        if (this.setup_has_run) {
+            return;
+        }
+
+        await this.reinitData();
+
+        if (this.enabled) {
+            await super.setup();
+        }
+    }
+
+    async load(force_init_data) {
+        if (!this.enabled) {
+            return;
+        }
+
+        if (!this.setup_has_run) {
+            await this.setup();
+        } else if (force_init_data) {
+            await this.reinitData();
+        } else {
+            await this.refresh(true);
+        }
+    }
+
+    enable(state) {
+        // if no state is passed, we enable by default.
+        this.enabled = state !== false;
     }
 
     clear() {
@@ -46,31 +84,54 @@ class ExtraNetworksClusterize extends Clusterize {
         super.clear();
     }
 
-    async initDataDefault() {
-        /**Fetches the initial data.
-         * 
-         * This data should be minimal and only contain div IDs and other necessary
-         * information such as sort keys and terms for filtering.
-         */
-        throw new NotImplementedError();
-    }
+    setSortMode(sort_mode_str) {
+        if (this.sort_mode_str === sort_mode_str) {
+            return;
+        }
 
-    async fetchDataDefault(idx_start, idx_end) {
-        throw new NotImplementedError();
-    }
-
-    async sortDataDefault(sort_mode_str, sort_dir_str) {
         this.sort_mode_str = sort_mode_str;
-        this.sort_dir_str = sort_dir_str;
-        this.sort_reverse = sort_dir_str === "descending";
+        this.sortData();
+    }
 
+    setSortDir(sort_dir_str) {
+        const reverse = (sort_dir_str === "descending");
+        if (this.sort_reverse === reverse) {
+            return;
+        }
+
+        this.sort_dir_str = sort_dir_str;
+        this.sort_reverse = reverse;
+        this.sortData();
+    }
+
+    setFilterStr(filter_str) {
+        if (isString(filter_str) && this.filter_str !== filter_str.toLowerCase()) {
+            this.filter_str = filter_str.toLowerCase();
+        } else if (isNullOrUndefined(this.filter_str)) {
+            this.filter_str = this.default_filter_str;
+        } else {
+            return;
+        }
+
+        this.filterData();
+    }
+
+    async initDataDefaultCallback() {
+        throw new NotImplementedError();
+    }
+
+    async fetchDataDefaultCallback() {
+        throw new NotImplementedError();
+    }
+
+    async sortDataDefaultCallback() {
         this.data_obj_keys_sorted = this.sort_fn(this.data_obj);
         if (this.sort_reverse) {
             this.data_obj_keys_sorted = this.data_obj_keys_sorted.reverse();
         }
     }
 
-    async filterDataDefault(filter_str) {
+    async filterDataDefaultCallback() {
         throw new NotImplementedError();
     }
 }
@@ -79,8 +140,10 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
     selected_div_id = null;
 
     constructor(args) {
-        args.no_data_text = "Directory is empty.";
-        super(args);
+        super({
+            ...args,
+            no_data_text: "Directory is empty.",
+        });
 
     }
 
@@ -147,6 +210,42 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         this.selected_div_id = "selected" in elem.dataset ? div_id : null;
     }
 
+    getMaxRowWidth() {
+        /** Calculates the width of the widest row in the list. */
+        if (!this.enabled) {
+            // Inactive list is not displayed on screen. Can't calculate size.
+            return false;
+        }
+        if (this.content_elem.children.length === 0) {
+            // If there is no data then just skip.
+            return false;
+        }
+
+        let max_width = 0;
+        for (let i = 0; i < this.content_elem.children.length; i += this.n_cols) {
+            let row_width = 0;
+            for (let j = 0; j < this.n_cols; j++) {
+                const child = this.content_elem.children[i + j];
+                const child_style = window.getComputedStyle(child, null);
+                const prev_style = child.style.cssText;
+                const n_cols = child_style.getPropertyValue("grid-template-columns").split(" ").length;
+                child.style.gridTemplateColumns = `repeat(${n_cols}, max-content)`;
+                row_width += child.scrollWidth;
+                // Restore previous style.
+                child.style.cssText = prev_style;
+            }
+            max_width = Math.max(max_width, row_width);
+        }
+        if (max_width <= 0) {
+            return;
+        }
+
+        // Adds the scroll element's border and the scrollbar's width to the result.
+        // If scrollbar isn't visible, then only the element border is added.
+        max_width += this.scroll_elem.offsetWidth - this.scroll_elem.clientWidth;
+        return max_width;
+    }
+
     async onRowExpandClick(div_id, elem) {
         /** Expands or collapses a row to show/hide children. */
         if (!keyExistsLogError(this.data_obj, div_id)){
@@ -165,7 +264,7 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         await this.setMaxItems(Object.values(this.data_obj).filter(v => v.visible).length);
     }
 
-    async initDataDefault() {
+    async initData() {
         /*Expects an object like the following:
             {
                 parent: null or div_id,
@@ -174,11 +273,18 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
                 expanded: bool,
             }
         */
-        console.log("BLAH:", this.options.callbacks.initData);
-        this.data_obj = await this.options.callbacks.initData(this.constructor.name);
+        this.data_obj = await this.options.callbacks.initData.call(
+            this,
+            this.tabname,
+            this.extra_networks_tabname,
+            this.constructor.name,
+        );
     }
 
-    async fetchDataDefault(idx_start, idx_end) {
+    async fetchData(idx_start, idx_end) {
+        if (!this.enabled) {
+            return [];
+        }
         const n_items = idx_end - idx_start;
         const div_ids = [];
         for (const div_id of this.data_obj_keys_sorted.slice(idx_start)) {
@@ -190,7 +296,8 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
             }
         }
 
-        const data = await this.options.callbacks.fetchData(
+        const data = await this.options.callbacks.fetchData.call(
+            this,
             this.constructor.name,
             this.extra_networks_tabname,
             div_ids,
@@ -202,8 +309,8 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         const text_size = style.getPropertyValue("--button-large-text-size");
 
         const res = [];
-        for (const [div_id, item] of Object.entries(data)) {
-            const parsed_html = htmlStringToElement(item);
+        for (const [div_id, html_str] of Object.entries(data)) {
+            const parsed_html = htmlStringToElement(html_str);
             const depth = Number(parsed_html.dataset.depth);
             parsed_html.style.paddingLeft = `calc(${depth} * ${text_size})`;
             parsed_html.style.boxShadow = this.getBoxShadow(depth);
@@ -216,14 +323,10 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
             res.push(parsed_html.outerHTML);
         }
 
-        return rows;
+        return res;
     }
 
-    async sortDataDefault(sort_mode, sort_dir) {
-        throw new NotImplementedError();
-    }
-
-    async filterDataDefault(filter_str) {
+    async filterDataDefaultCallback() {
         // just return the number of visible objects in our data.
         return Object.values(this.data_obj).filter(v => v.visible).length;
     }
@@ -231,8 +334,10 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
 
 class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
     constructor(args) {
-        args.no_data_text = "No files matching filter.";
-        super(args);
+        super({
+            ...args,
+            no_data_text: "No files matching filter.",
+        });
     }
 
     sortByName(data) {
@@ -259,18 +364,25 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
         });
     }
 
-    async initDataDefault() {
+    async initData() {
         /*Expects an object like the following:
             {
                 search_keys: array of strings,
                 sort_<mode>: string, (for various sort modes)
             }
         */
-        console.log("HERE:", this.options.callbacks);
-        this.data_obj = await this.options.callbacks.initData(this.constructor.name);
+        this.data_obj = await this.options.callbacks.initData.call(
+            this,
+            this.tabname,
+            this.extra_networks_tabname,
+            this.constructor.name,
+        );
     }
 
-    async fetchDataDefault(idx_start, idx_end) {
+    async fetchData(idx_start, idx_end) {
+        if (!this.enabled) {
+            return;
+        }
         const n_items = idx_end - idx_start;
         const div_ids = [];
         for (const div_id of this.data_obj_keys_sorted.slice(idx_start)) {
@@ -282,7 +394,8 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
             }
         }
         
-        const data = await this.options.callbacks.fetchData(
+        const data = await this.options.callbacks.fetchData.call(
+            this,
             this.constructor.name,
             this.extra_networks_tabname,
             div_ids,
@@ -291,35 +404,29 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
         return Object.values(data);
     }
 
-    async sortDataDefault(sort_mode_str, sort_dir_str) {
-        switch (sort_mode_str) {
+    async sortData() {
+        switch (this.sort_mode_str) {
             case "name":
                 this.sort_fn = this.sortByName;
                 break;
             case "path":
                 this.sort_fn = this.sortByPath;
                 break;
-            case "created":
+            case "date_created":
                 this.sort_fn = this.sortByDateCreated;
                 break;
-            case "modified":
+            case "date_modified":
                 this.sort_fn = this.sortByDateModified;
                 break;
             default:
                 this.sort_fn = this.default_sort_fn;
                 break;
         }
-        await super.sortDataDefault(sort_mode_str, sort_dir_str)
+        await super.sortData()
     }
 
-    async filterDataDefault(filter_str) {
+    async filterDataDefaultCallback() {
         /** Filters data by a string and returns number of items after filter. */
-        if (isString(filter_str)) {
-            this.filter_str = filter_str.toLowerCase();
-        } else if (isNullOrUndefined(this.filter_str)) {
-            this.filter_str = this.default_filter_str;
-        }
-
         let n_visible = 0;
         for (const [div_id, v] of Object.entries(this.data_obj)) {
             let visible = v.search_terms.indexOf(this.filter_str) != -1;

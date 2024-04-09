@@ -56,13 +56,14 @@ class CardListItem(ListItem):
     Attributes:
         visible [bool]: Whether the item should be shown in the list.
         sort_keys [dict]: Nested dict where keys are sort modes and values are sort keys.
+        search_terms [str]: String containing multiple search terms joined with spaces.
     """
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
         self.visible: bool = False
         self.sort_keys = {}
-        self.search_terms = []
+        self.search_terms = ""
 
 
 class TreeListItem(ListItem):
@@ -92,6 +93,7 @@ class DirectoryTreeNode:
         self.root_dir = root_dir
         self.parent = parent
 
+        self.depth = 0
         self.is_dir = False
         self.item = None
         self.relpath = os.path.relpath(self.abspath, self.root_dir)
@@ -99,6 +101,7 @@ class DirectoryTreeNode:
 
         # If a parent is passed, then we add this instance to the parent's children.
         if self.parent is not None:
+            self.depth = self.parent.depth + 1
             self.parent.add_child(self)
 
     def add_child(self, child: "DirectoryTreeNode") -> None:
@@ -258,15 +261,12 @@ def init_tree_data(tabname: str = "", extra_networks_tabname: str = "") -> JSONR
 
 def fetch_tree_data(
     extra_networks_tabname: str = "",
-    div_ids: Optional[list[str]] = None,
+    div_ids: str = "",
 ) -> JSONResponse:
     page = get_page_by_name(extra_networks_tabname)
 
-    if div_ids is None:
-        return JSONResponse({})
-
     res = {}
-    for div_id in div_ids:
+    for div_id in div_ids.split(","):
         if div_id in page.tree:
             res[div_id] = page.tree[div_id].html
 
@@ -275,15 +275,12 @@ def fetch_tree_data(
 
 def fetch_cards_data(
     extra_networks_tabname: str = "",
-    div_ids: Optional[list[str]] = None,
+    div_ids: str = "",
 ) -> JSONResponse:
     page = get_page_by_name(extra_networks_tabname)
 
-    if div_ids is None:
-        return JSONResponse({})
-
     res = {}
-    for div_id in div_ids:
+    for div_id in div_ids.split(","):
         if div_id in page.cards:
             res[div_id] = page.cards[div_id].html
 
@@ -336,12 +333,10 @@ def add_pages_to_demo(app):
     app.add_api_route("/sd_extra_networks/cover-images", fetch_cover_images, methods=["GET"])
     app.add_api_route("/sd_extra_networks/metadata", get_metadata, methods=["GET"])
     app.add_api_route("/sd_extra_networks/get-single-card", get_single_card, methods=["GET"])
-    #app.add_api_route("/sd_extra_networks/init-tree-data", init_tree_data, methods=["GET"])
-    #app.add_api_route("/sd_extra_networks/init-cards-data", init_cards_data, methods=["GET"])
-    #app.add_api_route("/sd_extra_networks/fetch-tree-data", fetch_tree_data, methods=["GET"])
-    #app.add_api_route("/sd_extra_networks/fetch-cards-data", fetch_cards_data, methods=["GET"])
-    
-
+    app.add_api_route("/sd_extra_networks/init-tree-data", init_tree_data, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/init-cards-data", init_cards_data, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/fetch-tree-data", fetch_tree_data, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/fetch-cards-data", fetch_cards_data, methods=["GET"])
 
 def quote_js(s):
     s = s.replace('\\', '\\\\')
@@ -521,7 +516,7 @@ class ExtraNetworksPage:
             style += f"width: {shared.opts.extra_networks_card_width}px;"
 
         background_image = None
-        preview = html.escape(item.get("preview", ""))
+        preview = html.escape(item.get("preview", "") or "")
         if preview:
             background_image = f'<img src="{preview}" class="preview" loading="lazy">'
 
@@ -558,7 +553,7 @@ class ExtraNetworksPage:
 
         description = ""
         if shared.opts.extra_networks_card_show_desc:
-            description = item.get("description", "")
+            description = item.get("description", "") or ""
 
         if not shared.opts.extra_networks_card_description_is_html:
             description = html.escape(description)
@@ -571,7 +566,7 @@ class ExtraNetworksPage:
             "data-prompt": item.get("prompt", "").strip(),
             "data-neg-prompt": item.get("negative_prompt", "").strip(),
             "data-allow-neg": self.allow_negative_prompt,
-            **{f"data-sort-{sort_mode}": sort_key for sort_mode, sort_key in sort_keys},
+            **{f"data-sort-{sort_mode}": sort_key for sort_mode, sort_key in sort_keys.items()},
         }
 
         data_attributes_str = ""
@@ -606,7 +601,7 @@ class ExtraNetworksPage:
             search_terms = item.get("search_terms", [])
             self.cards[div_id] = CardListItem(div_id, card_html)
             self.cards[div_id].sort_keys = sort_keys
-            self.cards[div_id].search_terms = search_terms
+            self.cards[div_id].search_terms = " ".join(search_terms)
 
         # Sort cards for all sort modes
         sort_modes = ["name", "path", "date_created", "date_modified"]
@@ -621,6 +616,7 @@ class ExtraNetworksPage:
             res[div_id] = {
                 **{f"sort_{mode}": key for mode, key in card_item.sort_keys.items()},
                 "search_terms": card_item.search_terms,
+                "visible": True,
             }
         return res
 
@@ -707,21 +703,21 @@ class ExtraNetworksPage:
             self.tree[div_id].visible = True
             # Set all direct children to active
             for child_node in self.tree[div_id].node.children:
-                self.tree[child_node.id].visible = True
+                self.tree[path_to_div_id[child_node.abspath]].visible = True
 
         for div_id, tree_item in self.tree.items():
             # Expand root nodes and make them visible.
             expanded = tree_item.node.parent is None
             visible = tree_item.node.parent is None
-            parent = None
+            parent_id = None
             if tree_item.node.parent is not None:
-                parent = path_to_div_id[tree_item.node.parent.abspath]
+                parent_id = path_to_div_id[tree_item.node.parent.abspath]
                 # Direct children of root nodes should be visible by default.
-                if tree_item.node.parent.node is None:
+                if self.tree[parent_id].node.parent is None:
                     visible = True
 
             res[div_id] = {
-                "parent": parent,
+                "parent": parent_id,
                 "children": [path_to_div_id[child.abspath] for child in tree_item.node.children],
                 "visible": visible,
                 "expanded": expanded,
@@ -952,23 +948,28 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
     for tab in unrelated_tabs:
         tab.select(
             fn=None,
-            _js=f"fujnction(){{extraNetworksUnrelatedTabSelected('{tabname}');}}",
+            _js=f"function(){{extraNetworksUnrelatedTabSelected('{tabname}');}}",
             inputs=[],
             outputs=[],
             show_progress=False,
         )
 
     for page, tab in zip(ui.stored_extra_pages, related_tabs):
-        jscode = (
-            "function(){extraNetworksTabSelected("
-            f"'{tabname}', "
-            f"'{tabname}_{page.extra_networks_tabname}_prompts', "
-            f"{str(page.allow_prompt).lower()}, "
-            f"{str(page.allow_negative_prompt).lower()}, "
-            f"'{tabname}_{page.extra_networks_tabname}'"
-            ");}"
+        tab.select(
+            fn=None,
+            _js=(
+                "function(){extraNetworksTabSelected("
+                f"'{tabname}', "
+                f"'{tabname}_{page.extra_networks_tabname}_prompts', "
+                f"{str(page.allow_prompt).lower()}, "
+                f"{str(page.allow_negative_prompt).lower()}, "
+                f"'{tabname}_{page.extra_networks_tabname}'"
+                ");}"
+            ),
+            inputs=[],
+            outputs=[],
+            show_progress=False,
         )
-        tab.select(fn=None, _js=jscode, inputs=[], outputs=[], show_progress=False)
 
         def refresh():
             for pg in ui.stored_extra_pages:
@@ -986,7 +987,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
             _js='setupAllResizeHandles'
         ).then(
             fn=lambda: None,
-            _js=f"function(){{ extraNetworksRefreshTab('{tabname}_{page.extra_networks_tabname}'); }}",
+            _js=f"function(){{extraNetworksRefreshTab('{tabname}_{page.extra_networks_tabname}');}}",
         )
 
     def create_html():

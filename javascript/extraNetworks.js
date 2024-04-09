@@ -22,7 +22,7 @@ const initialUiOptionsLoaded = {state: false};
 
 // 
 
-const popup = contents => {
+function popup(contents) {
     if (!globalPopup) {
         globalPopup = document.createElement('div');
         globalPopup.classList.add('global-popup');
@@ -44,45 +44,52 @@ const popup = contents => {
     globalPopupInner.appendChild(contents);
 
     globalPopup.style.display = "flex";
-};
+}
 
-const popupId = id => {
+function popupId(id) {
     if (!storedPopupIds[id]) {
         storedPopupIds[id] = gradioApp().getElementById(id);
     }
 
     popup(storedPopupIds[id]);
-};
+}
 
-const closePopup = () => {
+function closePopup() {
     if (!globalPopup) return;
     globalPopup.style.display = "none";
-};
+}
 
 
 // ==== GENERAL EXTRA NETWORKS FUNCTIONS ====
 
-const extraNetworksClusterizersLoadTab = async (
-    {
-        tabname_full = "",
-        selected = false,
-        fetch_data = false,
+function extraNetworksClusterizersEnable(tabname_full) {
+    for (const [_tabname_full, tab_clusterizers] of Object.entries(clusterizers)) {
+        for (const v of Object.values(tab_clusterizers)) {
+            v.enable(_tabname_full === tabname_full);
+        }
     }
-) => {
+}
+
+async function extraNetworksClusterizersLoadTab({
+    tabname_full,
+    selected = false,
+    fetch_data = false,
+}) {
     if (!keyExistsLogError(clusterizers, tabname_full)) {
         return;
     }
 
-    for (const v of Object.values(clusterizers[tabname_full])) {
-        if (fetch_data) {
-            await v.initDataDefault();
-        } else {
-            await v.refresh(true);
-        }
+    if (selected) {
+        extraNetworksClusterizersEnable(tabname_full);
     }
-};
 
-const extraNetworksRegisterPromptForTab = (tabname, id) => {
+    for (const v of Object.values(clusterizers[tabname_full])) {
+        await v.load(fetch_data);
+        await v.refresh(true);
+    }
+}
+
+function extraNetworksRegisterPromptForTab(tabname, id) {
     var textarea = gradioApp().querySelector(`#${id} > label > textarea`);
 
     if (!activePromptTextarea[tabname]) {
@@ -92,9 +99,9 @@ const extraNetworksRegisterPromptForTab = (tabname, id) => {
     textarea.addEventListener("focus", function() {
         activePromptTextarea[tabname] = textarea;
     });
-};
+}
 
-const extraNetworksMovePromptToTab = (tabname, id, showPrompt, showNegativePrompt) => {
+function extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePrompt) {
     if (!gradioApp().querySelector('.toprow-compact-tools')) return; // only applicable for compact prompt layout
 
     var promptContainer = gradioApp().getElementById(`${tabname}_prompt_container`);
@@ -117,16 +124,16 @@ const extraNetworksMovePromptToTab = (tabname, id, showPrompt, showNegativePromp
     if (elem) {
         elem.classList.toggle('extra-page-prompts-active', showNegativePrompt || showPrompt);
     }
-};
+}
 
-const extraNetworksShowControlsForPage = (tabname, tabname_full) => {
+function extraNetworksShowControlsForPage(tabname, tabname_full) {
     gradioApp().querySelectorAll(`#${tabname}_extra_tabs .extra-network-controls-div > div`).forEach((elem) => {
         let show = `${tabname_full}_controls` === elem.id;
         elem.classList.toggle("hidden", !show);
     });
-};
+}
 
-const extraNetworksRemoveFromPrompt = (textarea, text, is_neg) => {
+function extraNetworksRemoveFromPrompt(textarea, text, is_neg) {
     let match = text.match(is_neg ? re_extranet_neg : re_extranet);
     let replaced = false;
     let res;
@@ -167,17 +174,17 @@ const extraNetworksRemoveFromPrompt = (textarea, text, is_neg) => {
     }
 
     return false;
-};
+}
 
-const extraNetworksUpdatePrompt = (textarea, text, is_neg) => {
+function extraNetworksUpdatePrompt(textarea, text, is_neg) {
     if (!extraNetworksRemoveFromPrompt(textarea, text, is_neg)) {
         textarea.value = textarea.value + opts.extra_networks_add_text_separator + text;
     }
 
     updateInput(textarea);
-};
+}
 
-const extraNetworksSaveCardPreview = (event, tabname, filename) => {
+function extraNetworksSaveCardPreview(event, tabname, filename) {
     const textarea = gradioApp().querySelector(`#${tabname}_preview_filename > label > textarea`);
     const button = gradioApp().getElementById(`${tabname}_save_preview`);
 
@@ -188,9 +195,9 @@ const extraNetworksSaveCardPreview = (event, tabname, filename) => {
 
     event.stopPropagation();
     event.preventDefault();
-};
+}
 
-const extraNetworksFlattenMetadata = obj => {
+function extraNetworksFlattenMetadata(obj) {
     const result = {};
 
     // Convert any stringified JSON objects to actual objects
@@ -239,9 +246,9 @@ const extraNetworksFlattenMetadata = obj => {
     }
 
     return result;
-};
+}
 
-const extraNetworksShowMetadata = text => {
+function extraNetworksShowMetadata(text) {
     try {
         let parsed = JSON.parse(text);
         if (parsed && typeof parsed === 'object') {
@@ -260,9 +267,9 @@ const extraNetworksShowMetadata = text => {
 
     popup(elem);
     return;
-};
+}
 
-const extraNetworksRefreshSingleCard = (tabname, extra_networks_tabname, name) => {
+function extraNetworksRefreshSingleCard(tabname, extra_networks_tabname, name) {
     requestGet(
         "./sd_extra_networks/get-single-card",
         {tabname: tabname, extra_networks_tabname: extra_networks_tabname, name: name},
@@ -279,9 +286,9 @@ const extraNetworksRefreshSingleCard = (tabname, extra_networks_tabname, name) =
             }
         },
     );
-};
+}
 
-const extraNetworksRefreshTab = async tabname_full => {
+async function extraNetworksRefreshTab(tabname_full) {
     /** called from python when user clicks the extra networks refresh tab button */
     // Reapply controls since they don't change on refresh.
     const controls = gradioApp().getElementById(`${tabname_full}_controls`);
@@ -305,9 +312,9 @@ const extraNetworksRefreshTab = async tabname_full => {
             fetch_data: true,
         });
     }
-};
+}
 
-const extraNetworksAutoSetTreeWidth = pane => {
+function extraNetworksAutoSetTreeWidth(pane) {
     if (!isElementLogError(pane)) {
         return;
     }
@@ -343,14 +350,14 @@ const extraNetworksAutoSetTreeWidth = pane => {
 
     // Mimicks resizeHandle.js::setLeftColGridTemplate().
     row.style.gridTemplateColumns = `${max_width}px ${pad}px 1fr`;
-};
+}
 
-const extraNetworksApplyFilter = tabname_full => {
+function extraNetworksApplyFilter(tabname_full) {
     if (!keyExistsLogError(clusterizers, tabname_full)) {
         return;
     }
 
-    const pane = gradioApp.getElementById(`${tabname_full}_pane`);
+    const pane = gradioApp().getElementById(`${tabname_full}_pane`);
     if (!isElementLogError(pane)) {
         return;
     }
@@ -361,7 +368,7 @@ const extraNetworksApplyFilter = tabname_full => {
     }
 
     // We only want to filter/sort the cards list.
-    clusterizers[tabname_full].cards_list.filterData(txt_search.value.toLowerCase());
+    clusterizers[tabname_full].cards_list.setFilterStr(txt_search.value.toLowerCase());
 
     // If the search input has changed since selecting a button to populate it
     // then we want to disable the button that previously populated the search input.
@@ -375,70 +382,72 @@ const extraNetworksApplyFilter = tabname_full => {
     if (isElement(btn) && btn.textContent.trim() !== txt_search.value) {
         delete btn.dataset.selected;
     }
-};
+}
 
 // ==== EVENT HANDLING ====
 
-const extraNetworksInitCardsData = async () => {
-    return await requestGetPromise(
+async function extraNetworksInitCardsData(tabname, extra_networks_tabname) {
+    const res = await requestGetPromise(
         "./sd_extra_networks/init-cards-data",
         {
             tabname: tabname,
             extra_networks_tabname: extra_networks_tabname,
         },
     );
-};
+    return JSON.parse(res);
+}
 
-const extraNetworksInitTreeData = async () => {
-    return await requestGetPromise(
+async function extraNetworksInitTreeData(tabname, extra_networks_tabname) {
+    const res = await requestGetPromise(
         "./sd_extra_networks/init-tree-data",
         {
             tabname: tabname,
             extra_networks_tabname: extra_networks_tabname,
         },
     );
-};
+    return JSON.parse(res);
+}
 
-const extraNetworksOnInitData = async class_name => {
+async function extraNetworksOnInitData(tabname, extra_networks_tabname, class_name) {
     if (class_name === "ExtraNetworksClusterizeTreeList") {
-        return await extraNetworksInitCardsData();
+        return await extraNetworksInitTreeData(tabname, extra_networks_tabname);
     } else if (class_name === "ExtraNetworksClusterizeCardsList") {
-        return await extraNetworksInitTreeData();
+        return await extraNetworksInitCardsData(tabname, extra_networks_tabname);
     }
-};
+}
 
-const extraNetworksFetchCardsData = async (extra_networks_tabname, div_ids) => {
-    return await requestGetPromise(
+async function extraNetworksFetchCardsData(extra_networks_tabname, div_ids) {
+    const res = await requestGetPromise(
         "./sd_extra_networks/fetch-cards-data",
         {
             extra_networks_tabname: extra_networks_tabname,
             div_ids: div_ids,
         },
     );
-};
+    return JSON.parse(res);
+}
 
-const extraNetworksFetchTreeData = async (extra_networks_tabname, div_ids) => {
-    return await requestGetPromise(
+async function extraNetworksFetchTreeData(extra_networks_tabname, div_ids) {
+    const res = await requestGetPromise(
         "./sd_extra_networks/fetch-tree-data",
         {
             extra_networks_tabname: extra_networks_tabname,
             div_ids: div_ids,
         },
     );
-};
+    return JSON.parse(res);
+}
 
-const extraNetworksOnFetchData = async (class_name, extra_networks_tabname, div_ids) => {
+async function extraNetworksOnFetchData(class_name, extra_networks_tabname, div_ids) {
     if (class_name === "ExtraNetworksClusterizeTreeList") {
-        return await extraNetworksFetchCardsData(extra_networks_tabname, div_ids);
-    } else if (class_name === "ExtraNetworksClusterizeCardsList") {
         return await extraNetworksFetchTreeData(extra_networks_tabname, div_ids);
+    } else if (class_name === "ExtraNetworksClusterizeCardsList") {
+        return await extraNetworksFetchCardsData(extra_networks_tabname, div_ids);
     }
-};
+}
 
-const extraNetworksFetchMetadata = (extra_networks_tabname, card_name) => {
-    const _showError = () => {
-        extraNetworksShowMetadata("there was an error getting metadata");
-    };
+function extraNetworksFetchMetadata(extra_networks_tabname, card_name) {
+    const _showError = () => { extraNetworksShowMetadata("there was an error getting metadata"); };
 
     requestGet(
         "./sd_extra_networks/metadata",
@@ -452,40 +461,51 @@ const extraNetworksFetchMetadata = (extra_networks_tabname, card_name) => {
         },
         _showError,
     );
-};
+}
 
-const extraNetworksUnrelatedTabSelected = tabname => {
+function extraNetworksUnrelatedTabSelected(tabname) {
     /** called from python when user selects an unrelated tab (generate) */
     extraNetworksMovePromptToTab(tabname, '', false, false);
     extraNetworksShowControlsForPage(tabname, null);
-};
+}
 
-const extraNetworksTabSelected = async (tabname, id, showPrompt, showNegativePrompt, tabname_full) => {
+async function extraNetworksTabSelected(
+    tabname,
+    id,
+    showPrompt,
+    showNegativePrompt,
+    tabname_full,
+) {
     /** called from python when user selects an extra networks tab */
     extraNetworksMovePromptToTab(tabname, id, showPrompt, showNegativePrompt);
     extraNetworksShowControlsForPage(tabname, tabname_full);
 
     await waitForKeyInObject({k: tabname_full, obj: clusterizers});
-    await extraNetworksClusterizersLoadTab(tabname_full);
-};
+    await extraNetworksClusterizersLoadTab({
+        tabname_full: tabname_full,
+        selected: true,
+        fetch_data: false,
+    });
+}
 
-const extraNetworksBtnDirsViewItemOnClick = (event, tabname_full) => {
+function extraNetworksBtnDirsViewItemOnClick(event, tabname_full) {
     /** Handles `onclick` events for buttons in the directory view. */
     const txt_search = gradioApp().querySelector(`#${tabname_full}_controls .extra-network-control--search-text`);
+    
     const _deselect_all_buttons = () => {
         gradioApp().querySelectorAll(".extra-network-dirs-view-button").forEach((elem) => {
             delete elem.dataset.selected;
         });
     };
 
-    const _select_button = elem => {
+    const _select_button = (elem) => {
         _deselect_all_buttons();
         // Update search input with select button's path.
         elem.dataset.selected = "";
         txt_search.value = elem.textContent.trim();
     };
 
-    const _deselect_button = elem => {
+    const _deselect_button = (elem) => {
         delete elem.dataset.selected;
         txt_search.value = "";
     };
@@ -498,9 +518,9 @@ const extraNetworksBtnDirsViewItemOnClick = (event, tabname_full) => {
 
     updateInput(txt_search);
     extraNetworksApplyFilter(tabname_full);
-};
+}
 
-const extraNetworksControlSearchClearOnClick = (event, tabname_full) => {
+function extraNetworksControlSearchClearOnClick(event, tabname_full) {
     /** Dispatches custom event when the `clear` button in a search input is clicked. */
     let clear_btn = event.target.closest(".extra-network-control--search-clear");
     let txt_search = clear_btn.previousElementSibling;
@@ -511,9 +531,9 @@ const extraNetworksControlSearchClearOnClick = (event, tabname_full) => {
             {bubbles: true, detail: {tabname_full: tabname_full}},
         )
     );
-};
+}
 
-const extraNetworksControlSortModeOnClick = (event, tabname_full) => {
+function extraNetworksControlSortModeOnClick(event, tabname_full) {
     /** Handles `onclick` events for Sort Mode buttons. */
     event.currentTarget.parentElement.querySelectorAll('.extra-network-control--sort-mode').forEach(elem => {
         delete elem.dataset.selected;
@@ -526,11 +546,10 @@ const extraNetworksControlSortModeOnClick = (event, tabname_full) => {
     }
 
     const sort_mode_str = event.currentTarget.dataset.sortMode.toLowerCase();
-    clusterizers[tabname_full].cards_list.sort_mode_str = sort_mode_str;
-    extraNetworksApplyFilter(tabname_full);
-};
+    clusterizers[tabname_full].cards_list.setSortMode(sort_mode_str);
+}
 
-const extraNetworksControlSortDirOnClick = (event, tabname_full) => {
+function extraNetworksControlSortDirOnClick(event, tabname_full) {
     /** Handles `onclick` events for the Sort Direction button.
      *
      * Modifies the data attributes of the Sort Direction button to cycle between
@@ -550,11 +569,10 @@ const extraNetworksControlSortDirOnClick = (event, tabname_full) => {
         return;
     }
 
-    clusterizers[tabname_full].cards_list.sort_dir_str = sort_dir_str;
-    extraNetworksApplyFilter(tabname_full);
-};
+    clusterizers[tabname_full].cards_list.setSortDir(sort_dir_str);
+}
 
-const extraNetworksControlTreeViewOnClick = (event, tabname_full) => {
+function extraNetworksControlTreeViewOnClick(event, tabname_full) {
     /** Handles `onclick` events for the Tree View button.
      *
      * Toggles the tree view in the extra networks pane.
@@ -572,10 +590,10 @@ const extraNetworksControlTreeViewOnClick = (event, tabname_full) => {
         return;
     }
     clusterizers[tabname_full].tree_list.scroll_elem.parentElement.classList.toggle("hidden", !show);
-    //clusterizers[tabname_full].tree_list.enable(show);
-};
+    clusterizers[tabname_full].tree_list.enable(show);
+}
 
-const extraNetworksControlDirsViewOnClick = (event, tabname_full) => {
+function extraNetworksControlDirsViewOnClick(event, tabname_full) {
     /** Handles `onclick` events for the Dirs View button.
      *
      * Toggles the directory view in the extra networks pane.
@@ -589,9 +607,9 @@ const extraNetworksControlDirsViewOnClick = (event, tabname_full) => {
 
     const pane = gradioApp().getElementById(`${tabname_full}_pane`);
     pane.querySelector(".extra-network-content--dirs-view").classList.toggle("hidden", !show);
-};
+}
 
-const extraNetworksControlRefreshOnClick = (event, tabname_full) => {
+function extraNetworksControlRefreshOnClick(event, tabname_full) {
     /** Handles `onclick` events for the Refresh Page button.
      *
      * In order to actually call the python functions in `ui_extra_networks.py`
@@ -612,9 +630,9 @@ const extraNetworksControlRefreshOnClick = (event, tabname_full) => {
 
     // Fire an event for this button click.
     gradioApp().getElementById(`${tabname_full}_extra_refresh_internal`).dispatchEvent(new Event("click"));
-};
+}
 
-const extraNetworksCardOnClick = (event, tabname) => {
+function extraNetworksCardOnClick(event, tabname) {
     const elem = event.currentTarget;
     const prompt_elem = gradioApp().querySelector(`#${tabname}_prompt > label > textarea`);
     const neg_prompt_elem = gradioApp().querySelector(`#${tabname}_neg_prompt > label > textarea`);
@@ -626,17 +644,17 @@ const extraNetworksCardOnClick = (event, tabname) => {
     } else {
         extraNetworksUpdatePrompt(prompt_elem, elem.dataset.prompt);
     }
-};
+}
 
-const extraNetworksTreeFileOnClick = (event, btn, tabname_full) => {
+function extraNetworksTreeFileOnClick(event, btn, tabname_full) {
     return;
-};
+}
 
-const extraNetworksTreeDirectoryOnClick = (event, btn, tabname_full) => {
+function extraNetworksTreeDirectoryOnClick(event, btn, tabname_full) {
     return;
-};
+}
 
-const extraNetworksTreeOnClick = (event, tabname_full) => {
+function extraNetworksTreeOnClick(event, tabname_full) {
     const btn = event.target.closest(".tree-list-item");
     if (!isElementLogError(btn)) {
         return;
@@ -649,14 +667,14 @@ const extraNetworksTreeOnClick = (event, tabname_full) => {
     }
 
     event.stopPropagation();
-};
+}
 
-const extraNetworksBtnShowMetadataOnClick = (event, extra_networks_tabname, card_name) => {
+function extraNetworksBtnShowMetadataOnClick(event, extra_networks_tabname, card_name) {
     extraNetworksFetchMetadata(extra_networks_tabname, card_name);
     event.stopPropagation();
-};
+}
 
-const extraNetworksBtnEditMetadataOnClick = (event, tabname_full, card_name) => {
+function extraNetworksBtnEditMetadataOnClick(event, tabname_full, card_name) {
     const id = `${tabname_full}_edit_user_metadata`;
     let editor = extraPageUserMetadataEditors[id];
     if (isNullOrUndefined(editor)) {
@@ -673,16 +691,16 @@ const extraNetworksBtnEditMetadataOnClick = (event, tabname_full, card_name) => 
     editor.button.click();
 
     popup(editor.page);
-};
+}
 
-const extraNetworksBtnCopyPathOnClick = (event, path) => {
+function extraNetworksBtnCopyPathOnClick(event, path) {
     copyToClipboard(path);
     event.stopPropagation();
-};
+}
 
 // ==== MAIN SETUP ====
 
-const extraNetworksSetupEventDelegators = () => {
+function extraNetworksSetupEventDelegators() {
     /** Sets up event delegators for all extraNetworks tabs.
      *
      *  These event handlers are not tied to any specific elements on the page.
@@ -724,20 +742,15 @@ const extraNetworksSetupEventDelegators = () => {
             closePopup();
         }
     });
-};
+}
 
-const extraNetworksSetupTabContent = async (tabname, pane, controls_div) => {
+async function extraNetworksSetupTabContent(tabname, pane, controls_div) {
     const tabname_full = pane.id;
     const extra_networks_tabname = tabname_full.replace(`${tabname}_`, "");
 
     const controls = await waitForElement(`#${tabname_full}_pane .extra-network-controls`);
-    const tree_scroll_elem = await waitForElement(`#${tabname_full}_tree_list_scroll_area`);
-    const tree_content_elem = await waitForElement(`#${tabname_full}_tree_list_content_area`);
-    const cards_scroll_elem = await waitForElement(`#${tabname_full}_cards_list_scroll_area`);
-    const cards_content_elem = await waitForElement(`#${tabname_full}_cards_list_content_area`);
     await waitForElement(`#${tabname_full}_pane .extra-network-content--dirs-view`);
 
-    console.log("BEFORE:", tree_scroll_elem, cards_scroll_elem);
     controls.id = `${tabname_full}_controls`;
     controls_div.insertBefore(controls, null);
 
@@ -745,8 +758,8 @@ const extraNetworksSetupTabContent = async (tabname, pane, controls_div) => {
         tree_list: new ExtraNetworksClusterizeTreeList({
             tabname: tabname,
             extra_networks_tabname: extra_networks_tabname,
-            scrollElem: tree_scroll_elem,
-            contentElem: tree_content_elem,
+            scrollId: `${tabname_full}_tree_list_scroll_area`,
+            contentId: `${tabname_full}_tree_list_content_area`,
             tag: "div",
             callbacks: {
                 initData: extraNetworksOnInitData,
@@ -756,8 +769,8 @@ const extraNetworksSetupTabContent = async (tabname, pane, controls_div) => {
         cards_list: new ExtraNetworksClusterizeCardsList({
             tabname: tabname,
             extra_networks_tabname: extra_networks_tabname,
-            scrollElem: cards_scroll_elem,
-            contentElem: cards_content_elem,
+            scrollId: `${tabname_full}_cards_list_scroll_area`,
+            contentId: `${tabname_full}_cards_list_content_area`,
             tag: "div",
             callbacks: {
                 initData: extraNetworksOnInitData,
@@ -766,18 +779,15 @@ const extraNetworksSetupTabContent = async (tabname, pane, controls_div) => {
         }),
     };
 
+    await clusterizers[tabname_full].tree_list.setup();
+    await clusterizers[tabname_full].cards_list.setup();
+
     if (pane.style.display !== "none") {
         extraNetworksShowControlsForPage(tabname, tabname_full);
     }
+}
 
-    await extraNetworksClusterizersLoadTab({
-        tabname_full: tabname_full,
-        selected: false,
-        fetch_data: true,
-    });
-};
-
-const extraNetworksSetupTab = async (tabname) => {
+async function extraNetworksSetupTab(tabname) {
     let controls_div;
 
     const this_tab = await waitForElement(`#${tabname}_extra_tabs`);
@@ -793,15 +803,15 @@ const extraNetworksSetupTab = async (tabname) => {
     }
     extraNetworksRegisterPromptForTab(tabname, `${tabname}_prompt`);
     extraNetworksRegisterPromptForTab(tabname, `${tabname}_neg_prompt`);
-};
+}
 
-const extraNetworksSetup = async () => {
+async function extraNetworksSetup() {
     await waitForBool(initialUiOptionsLoaded);
 
     extraNetworksSetupTab('txt2img');
     extraNetworksSetupTab('img2img');
     extraNetworksSetupEventDelegators();
-};
+}
 
 onUiLoaded(extraNetworksSetup);
 onOptionsChanged(() => initialUiOptionsLoaded.state = true);

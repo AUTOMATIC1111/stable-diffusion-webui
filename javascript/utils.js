@@ -1,156 +1,161 @@
-/** Helper functions for checking types and simplifying logging/error handling. */
+/** Collators used for sorting. */
+const INT_COLLATOR = new Intl.Collator([], {numeric: true});
+const STR_COLLATOR = new Intl.Collator("en", {numeric: true, sensitivity: "base"});
 
-const isNumber = x => typeof x === "number" && isFinite(x);
-const isNumberLogError = x => {
+/** Helper functions for checking types and simplifying logging/error handling. */
+function isNumber(x) { return typeof x === "number" && isFinite(x); }
+function isNumberLogError(x) {
     if (isNumber(x)) {
         return true;
     }
     console.error(`expected number, got: ${typeof x}`);
     return false;
-};
-const isNumberThrowError = x => {
+}
+function isNumberThrowError(x) {
     if (isNumber(x)) {
         return;
     }
     throw new Error(`expected number, got: ${typeof x}`);
-};
+}
 
-const isString = x => typeof x === "string" || x instanceof String;
-const isStringLogError = x => {
+function isString(x) { return typeof x === "string" || x instanceof String; }
+function isStringLogError(x) {
     if (isString(x)) {
         return true;
     }
     console.error(`expected string, got: ${typeof x}`);
     return false;
-};
-const isStringThrowError = x => {
+}
+function isStringThrowError(x) {
     if (isString(x)) {
         return;
     }
     throw new Error(`expected string, got: ${typeof x}`);
-};
+}
 
-const isNull = x => x === null;
-const isUndefined = x => typeof x === "undefined" || x === undefined;
+function isNull(x) { return x === null; }
+function isUndefined(x) { return typeof x === "undefined" || x === undefined; }
 // checks both null and undefined for simplicity sake.
-const isNullOrUndefined = x => isNull(x) || isUndefined(x);
-const isNullOrUndefinedLogError = x => {
+function isNullOrUndefined(x) { return isNull(x) || isUndefined(x); }
+function isNullOrUndefinedLogError(x) {
     if (isNullOrUndefined(x)) {
         console.error("Variable is null/undefined.");
         return true;
     }
     return false;
-};
-const isNullOrUndefinedThrowError = x => {
+}
+function isNullOrUndefinedThrowError(x) {
     if (!isNullOrUndefined(x)) {
         return;
     }
     throw new Error("Variable is null/undefined.");
-};
+}
 
-const isElement = x => x instanceof Element;
-const isElementLogError = x => {
+function isElement(x) { return x instanceof Element; }
+function isElementLogError(x) {
     if (isElement(x)) {
         return true;
     }
     console.error(`expected element type, got: ${typeof x}`);
     return false;
-};
-const isElementThrowError = x => {
+}
+function isElementThrowError(x) {
     if (isElement(x)) {
         return;
     }
     throw new Error(`expected element type, got: ${typeof x}`);
-};
+}
 
-const isFunction = x => typeof x === "function";
-const isFunctionLogError = x => {
+function isFunction(x) { return typeof x === "function"; }
+function isFunctionLogError(x) {
     if (isFunction(x)) {
         return true;
     }
     console.error(`expected function type, got: ${typeof x}`);
     return false;
-};
-const isFunctionThrowError = x => {
+}
+function isFunctionThrowError(x) {
     if (isFunction(x)) {
         return;
     }
     throw new Error(`expected function type, got: ${typeof x}`);
-};
+}
 
-const isObject = x => typeof x === "object" && !Array.isArray(x);
-const isObjectLogError = x => {
+function isObject(x) { return typeof x === "object" && !Array.isArray(x); }
+function isObjectLogError(x) {
     if (isObject(x)) {
         return true;
     }
     console.error(`expected object type, got: ${typeof x}`);
     return false;
-};
-const isObjectThrowError = x => {
+}
+function isObjectThrowError(x) {
     if (isObject(x)) {
         return;
     }
     throw new Error(`expected object type, got: ${typeof x}`);
-};
+}
 
-const keyExists = (obj, k) => isObject(obj) && isString(k) && k in obj;
-const keyExistsLogError = (obj, k) => {
+function keyExists(obj, k) {
+    return isObject(obj) && isString(k) && k in obj;
+}
+function keyExistsLogError(obj, k) {
     if (keyExists(obj, k)) {
         return true;
     }
     console.error(`key does not exist in object: ${k}`);
     return false;
-};
-const keyExistsThrowError = (obj, k) => {
+}
+function keyExistsThrowError(obj, k) {
     if (keyExists(obj, k)) {
         return;
     }
     throw new Error(`key does not exist in object: ${k}`)
-};
+}
 
-const getValue = (obj, k) => {
+function getValue(obj, k) {
     /** Returns value of object for given key if it exists, otherwise returns null. */
     if (keyExists(obj, k)) {
         return obj[k];
     }
     return null;
-};
-const getValueLogError = (obj, k) => {
+}
+function getValueLogError(obj, k) {
     if (keyExistsLogError(obj, k)) {
         return obj[k];
     }
     return null;
-};
-const getValueThrowError = (obj, k) => {
+}
+function getValueThrowError(obj, k) {
     keyExistsThrowError(obj, k);
     return obj[k];
-};
+}
 
-const getElementByIdLogError = selector => {
+function getElementByIdLogError(selector) {
     const elem = gradioApp().getElementById(selector);
     isElementLogError(elem);
     return elem;
-};
-const getElementByIdThrowError = selector => {
+}
+function getElementByIdThrowError(selector) {
     const elem = gradioApp().getElementById(selector);
     isElementThrowError(elem);
     return elem;
-};
+}
 
-const querySelectorLogError = selector => {
+function querySelectorLogError(selector) {
     const elem = gradioApp().querySelector(selector);
     isElementLogError(elem);
     return elem;
-};
-const querySelectorThrowError = selector => {
+}
+function querySelectorThrowError(selector) {
     const elem = gradioApp().querySelector(selector);
     isElementThrowError(elem);
     return elem;
-};
+}
 
 /** Functions for getting dimensions of elements. */
 
-const getComputedPropertyDims = (elem, prop) => {
+function getComputedPropertyDims(elem, prop) {
     /** Returns the top/left/bottom/right float dimensions of an element for the specified property. */
     const style = window.getComputedStyle(elem, null);
     return {
@@ -159,27 +164,27 @@ const getComputedPropertyDims = (elem, prop) => {
         bottom: parseFloat(style.getPropertyValue(`${prop}-bottom`)),
         right: parseFloat(style.getPropertyValue(`${prop}-right`)),
     };
-};
+}
 
-const getComputedMarginDims = elem => {
+function getComputedMarginDims(elem) {
     /** Returns the width/height of the computed margin of an element. */
     const dims = getComputedPropertyDims(elem, "margin");
     return {
         width: dims.left + dims.right,
         height: dims.top + dims.bottom,
     };
-};
+}
 
-const getComputedPaddingDims = elem => {
+function getComputedPaddingDims(elem) {
     /** Returns the width/height of the computed padding of an element. */
     const dims = getComputedPropertyDims(elem, "padding");
     return {
         width: dims.left + dims.right,
         height: dims.top + dims.bottom,
     };
-};
+}
 
-const getComputedBorderDims = elem => {
+function getComputedBorderDims(elem) {
     /** Returns the width/height of the computed border of an element. */
     // computed border will always start with the pixel width so thankfully
     // the parseFloat() conversion will just give us the width and ignore the rest.
@@ -189,9 +194,9 @@ const getComputedBorderDims = elem => {
         width: dims.left + dims.right,
         height: dims.top + dims.bottom,
     };
-};
+}
 
-const getComputedDims = elem => {
+function getComputedDims(elem) {
     /** Returns the full width and height of an element including its margin, padding, and border. */
     const width = elem.scrollWidth;
     const height = elem.scrollHeight;
@@ -202,24 +207,24 @@ const getComputedDims = elem => {
         width: width + margin.width + padding.width + border.width,
         height: height + margin.height + padding.height + border.height,
     };
-};
+}
 
-const calcColsPerRow = function (parent, child) {
+function calcColsPerRow(parent, child) {
     /** Calculates the number of columns of children that can fit in a parent's visible width. */
     const parent_inner_width = parent.offsetWidth - getComputedPaddingDims(parent).width;
     return parseInt(parent_inner_width / getComputedDims(child).width, 10);
 
-};
+}
 
-const calcRowsPerCol = function (parent, child) {
+function calcRowsPerCol(parent, child) {
     /** Calculates the number of rows of children that can fit in a parent's visible height. */
     const parent_inner_height = parent.offsetHeight - getComputedPaddingDims(parent).height;
     return parseInt(parent_inner_height / getComputedDims(child).height, 10);
-};
+}
 
 /** Functions for asynchronous operations. */
 
-const debounce = (handler, timeout_ms) => {
+function debounce(handler, timeout_ms) {
     /** Debounces a function call.
      *
      *  NOTE: This will NOT work if called from within a class.
@@ -244,9 +249,9 @@ const debounce = (handler, timeout_ms) => {
         clearTimeout(timer);
         timer = setTimeout(() => handler(...args), timeout_ms);
     };
-};
+}
 
-const waitForElement = selector => {
+function waitForElement(selector) {
     /** Promise that waits for an element to exist in DOM. */
     return new Promise(resolve => {
         if (document.querySelector(selector)) {
@@ -265,9 +270,9 @@ const waitForElement = selector => {
             subtree: true
         });
     });
-};
+}
 
-const waitForBool = o => {
+function waitForBool(o) {
     /** Promise that waits for a boolean to be true.
      *
      *  `o` must be an Object of the form:
@@ -283,9 +288,9 @@ const waitForBool = o => {
             setTimeout(_waitForBool, 100);
         })();
     });
-};
+}
 
-const waitForKeyInObject = o => {
+function waitForKeyInObject(o) {
     /** Promise that waits for a key to exist in an object.
      *
      *  `o` must be an Object of the form:
@@ -304,9 +309,9 @@ const waitForKeyInObject = o => {
             setTimeout(_waitForKeyInObject, 100);
         })();
     });
-};
+}
 
-const waitForValueInObject = o => {
+function waitForValueInObject(o) {
     /** Promise that waits for a key value pair in an Object.
      *
      *  `o` must be an Object of the form:
@@ -329,11 +334,11 @@ const waitForValueInObject = o => {
             })();
         });
     });
-};
+}
 
 /** Requests */
 
-const requestGet = (url, data, handler, errorHandler) => {
+function requestGet(url, data, handler, errorHandler) {
     var xhr = new XMLHttpRequest();
     var args = Object.keys(data).map(function (k) {
         return encodeURIComponent(k) + '=' + encodeURIComponent(data[k]);
@@ -357,9 +362,9 @@ const requestGet = (url, data, handler, errorHandler) => {
     };
     var js = JSON.stringify(data);
     xhr.send(js);
-};
+}
 
-const requestGetPromise = (url, data) => {
+function requestGetPromise(url, data) {
     return new Promise((resolve, reject) => {
         let xhr = new XMLHttpRequest();
         let args = Object.keys(data).map(k => {
@@ -367,39 +372,40 @@ const requestGetPromise = (url, data) => {
         }).join("&");
         xhr.open("GET", url + "?" + args, true);
 
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    try {
-                        resolve(xhr.responseText);
-                    } catch (error) {
-                        reject(error);
-                    }
-                } else {
-                    reject({ status: this.status, statusText: xhr.statusText });
-                }
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                resolve(xhr.responseText);
+            } else {
+                reject({status: xhr.status, response: xhr.responseText});
             }
         };
-        xhr.send(JSON.stringify(data));
+
+        xhr.onerror = () => {
+            reject({status: xhr.status, response: xhr.responseText});
+        };
+        const payload = JSON.stringify(data);
+        xhr.send(payload);
     });
-};
+}
 
 /** Misc helper functions. */
 
-const clamp = (x, min, max) => Math.max(min, Math.min(x, max));
+function clamp(x, min, max) {
+    return Math.max(min, Math.min(x, max));
+}
 
-const getStyle = (prop, elem) => {
+function getStyle(prop, elem) {
     return window.getComputedStyle ? window.getComputedStyle(elem)[prop] : elem.currentStyle[prop];
-};
+}
 
-const htmlStringToElement = function (str) {
+function htmlStringToElement(s) {
     /** Converts an HTML string into an Element type. */
     let parser = new DOMParser();
-    let tmp = parser.parseFromString(str, "text/html");
+    let tmp = parser.parseFromString(s, "text/html");
     return tmp.body.firstElementChild;
-};
+}
 
-const toggleCss = (key, css, enable) => {
+function toggleCss(key, css, enable) {
     var style = document.getElementById(key);
     if (enable && !style) {
         style = document.createElement('style');
@@ -414,10 +420,10 @@ const toggleCss = (key, css, enable) => {
         style.innerHTML == '';
         style.appendChild(document.createTextNode(css));
     }
-};
+}
 
-const copyToClipboard = s => {
+function copyToClipboard(s) {
     /** Copies the passed string to the clipboard. */
     isStringThrowError(s);
     navigator.clipboard.writeText(s);
-};
+}

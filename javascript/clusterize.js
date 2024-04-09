@@ -17,12 +17,6 @@ class Clusterize {
     content_elem = null;
     scroll_id = null;
     content_id = null;
-    default_sort_mode_str = "";
-    default_sort_dir_str = "ascending";
-    default_filter_str = "";
-    sort_mode_str = this.default_sort_mode_str;
-    sort_dir_str = this.default_sort_dir_str;
-    filter_str = this.default_filter_str;
     options = {
         rows_in_block: 50,
         cols_in_block: 1,
@@ -32,13 +26,9 @@ class Clusterize {
         no_data_class: "clusterize-no-data",
         no_data_text: "No data",
         keep_parity: true,
-        callbacks: {
-            initData: this.initDataDefault,
-            fetchData: this.fetchDataDefault,
-            sortData: this.sortDataDefault,
-            filterData: this.filterDataDefault,
-        },
+        callbacks: {},
     };
+    setup_has_run = false;
     #is_mac = null;
     #ie = null;
     #max_items = null;
@@ -60,17 +50,17 @@ class Clusterize {
             }
         }
 
-        if (!isNullOrUndefined(this.options.callbacks.initData)) {
-            this.options.callbacks.initData = this.initDataDefault;
+        if (isNullOrUndefined(this.options.callbacks.initData)) {
+            this.options.callbacks.initData = this.initDataDefaultCallback;
         }
-        if (!isNullOrUndefined(this.options.callbacks.fetchData)) {
-            this.options.callbacks.fetchData = this.fetchDataDefault;
+        if (isNullOrUndefined(this.options.callbacks.fetchData)) {
+            this.options.callbacks.fetchData = this.fetchDataDefaultCallback;
         }
-        if (!isNullOrUndefined(this.options.callbacks.sortData)) {
-            this.options.callbacks.sortData = this.sortDataDefault;
+        if (isNullOrUndefined(this.options.callbacks.sortData)) {
+            this.options.callbacks.sortData = this.sortDataDefaultCallback;
         }
-        if (!isNullOrUndefined(this.options.callbacks.filterData)) {
-            this.options.callbacks.filterData = this.filterDataDefault;
+        if (isNullOrUndefined(this.options.callbacks.filterData)) {
+            this.options.callbacks.filterData = this.filterDataDefaultCallback;
         }
 
         // detect ie9 and lower
@@ -105,15 +95,25 @@ class Clusterize {
 
     // ==== PUBLIC FUNCTIONS ====
     async setup() {
+        if (this.setup_has_run) {
+            return;
+        }
+
         await this.#insertToDOM();
         this.scroll_elem.scrollTop = this.#scroll_top;
 
         this.#setupEvent("scroll", this.scroll_elem, this.#onScroll);
         this.#setupElementObservers();
         this.#setupResizeObservers();
+
+        this.setup_has_run = true;
     }
 
     clear() {
+        if (!this.setup_has_run) {
+            return;
+        }
+
         this.#html(this.#generateEmptyRow().join(""));
     }
 
@@ -122,15 +122,25 @@ class Clusterize {
         this.#teardownElementObservers();
         this.#teardownResizeObservers();
         this.clear();
+
+        this.setup_has_run = false;
     }
 
     async refresh(force) {
+        if (!this.setup_has_run) {
+            return;
+        }
+
         if (this.#getRowsHeight() || force) {
             await this.update()
         }
     }
 
     async update() {
+        if (!this.setup_has_run) {
+            return;
+        }
+
         this.#scroll_top = this.scroll_elem.scrollTop;
         // fixes #39
         if (this.#max_rows * this.options.item_height < this.#scroll_top) {
@@ -151,6 +161,11 @@ class Clusterize {
     }
 
     async setMaxItems(max_items) {
+        if (!this.setup_has_run) {
+            this.#max_items = max_items;
+            return;
+        }
+
         if (max_items === this.#max_items) {
             // No change. do nothing.
             return;
@@ -161,60 +176,57 @@ class Clusterize {
         await this.refresh(true);
 
         // Apply sort to the updated data.
-        await this.sortData(this.sort_mode_str, this.sort_dir_str);
-    }
-
-    async filterData(filter_str) {
-        if (this.filter_str === filter_str) {
-            return;
-        }
-
-        this.filter_str = isNullOrUndefined(filter_str) ? this.default_filter_str : filter_str;
-
-        // Filter is applied to entire dataset.
-        const max_items = await this.options.callbacks.filterData(this.filter_str);
-        // If the number of items changed after filter, we need to update the cluster.
-        if (max_items !== this.#max_items) {
-            this.#max_items = max_items;
-            this.refresh(true);
-        }
-        // Apply sort to the new filtered data.
-        await this.sortData(this.sort_mode_str, this.sort_dir_str);
-    }
-
-    async sortData(sort_mode_str, sort_dir_str) {
-        if (this.sort_mode_str === sort_mode_str && this.sort_dir_str === sort_dir_str) {
-            return;
-        }
-
-        this.sort_mode_str = isNullOrUndefined(sort_mode_str) ? this.default_sort_mode_str : sort_mode_str;
-        this.sort_dir_str = isNullOrUndefined(sort_dir_str) ? this.default_sort_dir_str : sort_dir_str;
-
-        // Sort is applied to the filtered data.
-        await this.options.callbacks.sortData(this.sort_mode_str, this.sort_dir_str === "descending");
-        await this.#insertToDOM();
+        await this.sortData();
     }
 
     // ==== PRIVATE FUNCTIONS ====
-    initDataDefault() {
+    initDataDefaultCallback() {
         return Promise.resolve({});
     }
 
-    fetchDataDefault() {
+    async initData() {
+        return await this.options.callbacks.initData.call(this);
+    }
+
+    fetchDataDefaultCallback() {
         return Promise.resolve([]);
     }
 
-    sortDataDefault() {
+    async fetchData(idx_start, idx_end) {
+        return await this.options.callbacks.fetchData.call(this, idx_start, idx_end);
+    }
+
+    sortDataDefaultCallback() {
         return Promise.resolve();
     }
 
-    filterDataDefault() {
+    async sortData() {
+        if (!this.setup_has_run) {
+            return;
+        }
+
+        // Sort is applied to the filtered data.
+        await this.options.callbacks.sortData.call(this);
+        await this.#insertToDOM();
+    }
+
+    filterDataDefaultCallback() {
         return Promise.resolve(0);
+    }
+
+    async filterData() {
+        if (!this.setup_has_run) {
+            return;
+        }
+
+        // Filter is applied to entire dataset.
+        const max_items = await this.options.callbacks.filterData.call(this);
+        await this.setMaxItems(max_items);
     }
 
     #exploreEnvironment(rows, cache) {
         this.options.content_tag = this.content_elem.tagName.toLowerCase();
-        if (!rows.length) {
+        if (isNullOrUndefined(rows) || !rows.length) {
             return;
         }
         if (this.#ie && this.#ie <= 9 && !this.options.tag) {
@@ -241,7 +253,11 @@ class Clusterize {
             return;
         }
 
-        const nodes = this.content_elem.querySelectorAll(":not(.clusterize-row)");
+        const rows = this.content_elem.children;
+        if (!rows.length) {
+            return;
+        }
+        const nodes = rows[0].children;
         if (!nodes.length) {
             return;
         }
@@ -269,6 +285,7 @@ class Clusterize {
         // Update rows in block to match the number of elements that can fit in the scroll element view.
         this.options.rows_in_block = calcRowsPerCol(this.scroll_elem, node);
         this.options.cols_in_block = calcColsPerRow(this.content_elem, node);
+        console.log("HERE:", this.scroll_elem, this.content_elem, node, this.options.rows_in_block, this.options.cols_in_block);
 
         this.options.block_height = this.options.item_height * this.options.rows_in_block;
         this.options.block_width = this.options.item_width * this.options.cols_in_block;
@@ -323,18 +340,19 @@ class Clusterize {
 
         const idx_start = Math.max(0, rows_start * this.options.cols_in_block);
         const idx_end = rows_end * this.options.cols_in_block;
-        const this_cluster_rows = await this.options.callbacks.fetchData(idx_start, idx_end);
+        const this_cluster_rows = await this.fetchData(idx_start, idx_end);
         return {
             top_offset: top_offset,
             bottom_offset: bottom_offset,
             rows_above: rows_above,
-            rows: this_cluster_rows,
+            rows: Array.isArray(this_cluster_rows) ? this_cluster_rows : [],
         };
     }
 
     async #insertToDOM() {
         if (!this.options.cluster_height || !this.options.cluster_width) {
-            const rows = await this.options.callbacks.fetchData(0, 1);
+            console.log("HERE");
+            const rows = await this.fetchData(0, 1);
             this.#exploreEnvironment(rows, this.#cache);
         }
 
