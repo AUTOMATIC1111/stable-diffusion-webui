@@ -19,7 +19,9 @@ restricted_opts = {
     "outdir_grids",
     "outdir_txt2img_grids",
     "outdir_save",
-    "outdir_init_images"
+    "outdir_init_images",
+    "temp_dir",
+    "clean_temp_dir_at_start",
 }
 
 categories.register_category("saving", "Saving images")
