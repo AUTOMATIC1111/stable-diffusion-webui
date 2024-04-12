@@ -1192,6 +1192,7 @@ body.resizing .resize-handle {
 .clusterize-content {
     flex: 1;
     outline: 0;
+    gap: var(--spacing-sm);
     counter-reset: clusterize-counter;
     padding: var(--spacing-md);
 }

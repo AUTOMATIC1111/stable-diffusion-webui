@@ -154,10 +154,17 @@ function querySelectorThrowError(selector) {
 }
 
 /** Functions for getting dimensions of elements. */
+function getStyle(elem) {
+    return window.getComputedStyle ? window.getComputedStyle(elem) : elem.currentStyle;
+}
+
+function getComputedProperty(elem, prop) {
+    return getStyle(elem)[prop];
+}
 
 function getComputedPropertyDims(elem, prop) {
     /** Returns the top/left/bottom/right float dimensions of an element for the specified property. */
-    const style = window.getComputedStyle(elem, null);
+    const style = getStyle(elem);
     return {
         top: parseFloat(style.getPropertyValue(`${prop}-top`)),
         left: parseFloat(style.getPropertyValue(`${prop}-left`)),
@@ -207,19 +214,6 @@ function getComputedDims(elem) {
         width: width + margin.width + padding.width + border.width,
         height: height + margin.height + padding.height + border.height,
     };
-}
-
-function calcColsPerRow(parent, child) {
-    /** Calculates the number of columns of children that can fit in a parent's visible width. */
-    const parent_inner_width = parent.offsetWidth - getComputedPaddingDims(parent).width;
-    return parseInt(parent_inner_width / getComputedDims(child).width, 10);
-
-}
-
-function calcRowsPerCol(parent, child) {
-    /** Calculates the number of rows of children that can fit in a parent's visible height. */
-    const parent_inner_height = parent.offsetHeight - getComputedPaddingDims(parent).height;
-    return parseInt(parent_inner_height / getComputedDims(child).height, 10);
 }
 
 /** Functions for asynchronous operations. */
@@ -392,10 +386,6 @@ function requestGetPromise(url, data) {
 
 function clamp(x, min, max) {
     return Math.max(min, Math.min(x, max));
-}
-
-function getStyle(prop, elem) {
-    return window.getComputedStyle ? window.getComputedStyle(elem)[prop] : elem.currentStyle[prop];
 }
 
 function htmlStringToElement(s) {

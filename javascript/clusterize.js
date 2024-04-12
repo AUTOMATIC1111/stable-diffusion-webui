@@ -8,9 +8,11 @@
     in an array and load from that; this caused a large memory overhead in the client.
 */
 
+// Many operations can be lenghty. Try to limit their frequency by debouncing.
 const SCROLL_DEBOUNCE_TIME_MS = 50;
-const RESIZE_OBSERVER_DEBOUNCE_TIME_MS = 100;
+const RESIZE_OBSERVER_DEBOUNCE_TIME_MS = 50; // should be less than refresh debounce time
 const ELEMENT_OBSERVER_DEBOUNCE_TIME_MS = 100;
+const REFRESH_DEBOUNCE_TIME_MS = 50;
 
 class Clusterize {
     scroll_elem = null;
@@ -22,6 +24,7 @@ class Clusterize {
         cols_in_block: 1,
         blocks_in_cluster: 5,
         tag: null,
+        id_attr: "data-div-id",
         show_no_data_row: true,
         no_data_class: "clusterize-no-data",
         no_data_text: "No data",
@@ -29,6 +32,7 @@ class Clusterize {
         callbacks: {},
     };
     setup_has_run = false;
+    enabled = false;
     #is_mac = null;
     #ie = null;
     #max_items = null;
@@ -37,6 +41,7 @@ class Clusterize {
     #scroll_top = 0;
     #last_cluster = false;
     #scroll_debounce = 0;
+    #refresh_debounce_timer = null;
     #resize_observer = null;
     #resize_observer_timer = null;
     #element_observer = null;
@@ -94,10 +99,17 @@ class Clusterize {
     }
 
     // ==== PUBLIC FUNCTIONS ====
+    enable(state) {
+        // if no state is passed, we enable by default.
+        this.enabled = state !== false;
+    }
+
     async setup() {
-        if (this.setup_has_run) {
+        if (this.setup_has_run || !this.enabled) {
             return;
         }
+
+        this.#fixElementReferences();
 
         await this.#insertToDOM();
         this.scroll_elem.scrollTop = this.#scroll_top;
@@ -110,7 +122,7 @@ class Clusterize {
     }
 
     clear() {
-        if (!this.setup_has_run) {
+        if (!this.setup_has_run || !this.enabled) {
             return;
         }
 
@@ -127,17 +139,27 @@ class Clusterize {
     }
 
     async refresh(force) {
-        if (!this.setup_has_run) {
+        // Refresh can be a longer operation so we want to debounce it to
+        // avoid refreshing too often.
+        if (!this.setup_has_run || !this.enabled) {
             return;
         }
 
-        if (this.#getRowsHeight() || force) {
-            await this.update()
-        }
+        clearTimeout(this.#refresh_debounce_timer);
+        this.#refresh_debounce_timer = setTimeout(
+            async () => {
+                this.#fixElementReferences();
+        
+                if (this.#recalculateDims() || force) {
+                    await this.update()
+                }
+            },
+            REFRESH_DEBOUNCE_TIME_MS,
+        )
     }
 
     async update() {
-        if (!this.setup_has_run) {
+        if (!this.setup_has_run || !this.enabled) {
             return;
         }
 
@@ -161,7 +183,7 @@ class Clusterize {
     }
 
     async setMaxItems(max_items) {
-        if (!this.setup_has_run) {
+        if (!this.setup_has_run || !this.enabled) {
             this.#max_items = max_items;
             return;
         }
@@ -173,7 +195,7 @@ class Clusterize {
 
         // If the number of items changed, we need to update the cluster.
         this.#max_items = max_items;
-        await this.refresh(true);
+        await this.refresh();
 
         // Apply sort to the updated data.
         await this.sortData();
@@ -185,6 +207,9 @@ class Clusterize {
     }
 
     async initData() {
+        if (!this.enabled) {
+            return;
+        }
         return await this.options.callbacks.initData.call(this);
     }
 
@@ -193,6 +218,9 @@ class Clusterize {
     }
 
     async fetchData(idx_start, idx_end) {
+        if (!this.enabled) {
+            return;
+        }
         return await this.options.callbacks.fetchData.call(this, idx_start, idx_end);
     }
 
@@ -201,12 +229,15 @@ class Clusterize {
     }
 
     async sortData() {
-        if (!this.setup_has_run) {
+        if (!this.setup_has_run || !this.enabled) {
             return;
         }
 
+        this.#fixElementReferences();
+
         // Sort is applied to the filtered data.
         await this.options.callbacks.sortData.call(this);
+        this.#recalculateDims();
         await this.#insertToDOM();
     }
 
@@ -215,7 +246,7 @@ class Clusterize {
     }
 
     async filterData() {
-        if (!this.setup_has_run) {
+        if (!this.setup_has_run || !this.enabled) {
             return;
         }
 
@@ -238,54 +269,60 @@ class Clusterize {
         if (!this.options.tag) {
             this.options.tag = this.content_elem.children[0].tagName.toLowerCase();
         }
-        this.#getRowsHeight();
+        this.#recalculateDims();
     }
 
-    #getRowsHeight() {
+    #recalculateDims() {
         const prev_item_height = this.options.item_height;
         const prev_item_width = this.options.item_width;
         const prev_rows_in_block = this.options.rows_in_block;
         const prev_cols_in_block = this.options.cols_in_block;
+        const prev_options = JSON.stringify(this.options);
 
         this.options.cluster_height = 0;
         this.options.cluster_width = 0;
+
         if (!this.#max_items) {
             return;
         }
 
-        const rows = this.content_elem.children;
-        if (!rows.length) {
-            return;
-        }
-        const nodes = rows[0].children;
-        if (!nodes.length) {
+        // Get the first element that isn't one of our placeholder rows.
+        const node = this.content_elem.querySelector(
+            `${this.options.tag}:not(clusterize-extra-row):not(clusterize-no-data)`
+        );
+        if (!isElement(node)) {
             return;
         }
 
-        const node = nodes[Math.floor(nodes.length / 2)];
         const node_dims = getComputedDims(node);
         this.options.item_height = node_dims.height;
         this.options.item_width = node_dims.width;
+        
         // consider table's browser spacing
-        if (this.options.tag === "tr" && getStyle("borderCollapse", this.content_elem) !== "collapse") {
-            const spacing = parseInt(getStyle("borderSpacing", this.content_elem), 10) || 0;
+        if (this.options.tag === "tr" && getComputedProperty(this.content_elem, "borderCollapse") !== "collapse") {
+            const spacing = parseInt(getComputedProperty(this.content_elem, "borderSpacing"), 10) || 0;
             this.options.item_height += spacing;
             this.options.item_width += spacing;
         }
-        // consider margins and margins collapsing
-        if (this.options.tag !== "tr") {
-            const margin_top = parseInt(getStyle("marginTop", node), 10) || 0;
-            const margin_right = parseInt(getStyle("marginRight", node), 10) || 0;
-            const margin_bottom = parseInt(getStyle("marginBottom", node), 10) || 0;
-            const margin_left = parseInt(getStyle("marginLeft", node), 10) || 0;
-            this.options.item_height += Math.max(margin_top, margin_bottom);
-            this.options.item_width += Math.max(margin_left, margin_right);
+
+        // Update rows in block to match the number of elements that can fit in the view.
+        const content_padding = getComputedPaddingDims(this.content_elem);
+        let content_gap = parseFloat(getComputedProperty(this.content_elem, "gap"));
+        if (isNumber(content_gap)) {
+            this.options.item_width += content_gap;
+            this.options.item_height += content_gap;
         }
 
-        // Update rows in block to match the number of elements that can fit in the scroll element view.
-        this.options.rows_in_block = calcRowsPerCol(this.scroll_elem, node);
-        this.options.cols_in_block = calcColsPerRow(this.content_elem, node);
-        console.log("HERE:", this.scroll_elem, this.content_elem, node, this.options.rows_in_block, this.options.cols_in_block);
+        const inner_width = this.scroll_elem.clientWidth - content_padding.width;
+        const inner_height = this.scroll_elem.clientHeight - content_padding.height;
+        // Since we don't allow horizontal scrolling, we want to round down for columns.
+        const cols_in_block = Math.floor(inner_width / this.options.item_width);
+        // Round up for rows so that we don't cut rows off from the view.
+        const rows_in_block = Math.ceil(inner_height / this.options.item_height);
+
+        // Always need at least 1 row/col in block
+        this.options.cols_in_block = Math.max(1, cols_in_block);
+        this.options.rows_in_block = Math.max(1, rows_in_block);
 
         this.options.block_height = this.options.item_height * this.options.rows_in_block;
         this.options.block_width = this.options.item_width * this.options.cols_in_block;
@@ -293,8 +330,9 @@ class Clusterize {
         this.options.cluster_height = this.options.blocks_in_cluster * this.options.block_height;
         this.options.cluster_width = this.options.block_width;
 
-        this.#max_rows = parseInt(this.#max_items / this.options.cols_in_block, 10);
+        this.#max_rows = Math.ceil(this.#max_items / this.options.cols_in_block, 10);
 
+        return prev_options === JSON.stringify(this.options);
         return (
             prev_item_height !== this.options.item_height ||
             prev_item_width !== this.options.item_width ||
@@ -339,19 +377,29 @@ class Clusterize {
         const rows_above = top_offset < 1 ? rows_start + 1 : rows_start;
 
         const idx_start = Math.max(0, rows_start * this.options.cols_in_block);
-        const idx_end = rows_end * this.options.cols_in_block;
+        const idx_end = Math.min(this.#max_items, rows_end * this.options.cols_in_block);
+
         const this_cluster_rows = await this.fetchData(idx_start, idx_end);
+
+        if (this_cluster_rows.length < this.options.rows_in_block) {
+            return {
+                top_offset: 0,
+                bottom_offset: 0,
+                rows_above: 0,
+                rows: this_cluster_rows.length ? this_cluster_rows : this.#generateEmptyRow(),
+            };
+        }
+
         return {
             top_offset: top_offset,
             bottom_offset: bottom_offset,
             rows_above: rows_above,
-            rows: Array.isArray(this_cluster_rows) ? this_cluster_rows : [],
+            rows: this_cluster_rows,
         };
     }
 
     async #insertToDOM() {
         if (!this.options.cluster_height || !this.options.cluster_width) {
-            console.log("HERE");
             const rows = await this.fetchData(0, 1);
             this.#exploreEnvironment(rows, this.#cache);
         }
@@ -360,7 +408,7 @@ class Clusterize {
         let this_cluster_rows = [];
         for (let i = 0; i < data.rows.length; i += this.options.cols_in_block) {
             const new_row = data.rows.slice(i, i + this.options.cols_in_block).join("");
-            this_cluster_rows.push(`<div class="clusterize-row">${new_row}</div>`);
+            this_cluster_rows.push(new_row);
         }
         this_cluster_rows = this_cluster_rows.join("");
         const this_cluster_content_changed = this.#checkChanges("data", this_cluster_rows, this.#cache);
@@ -373,6 +421,7 @@ class Clusterize {
                 this.options.keep_parity && layout.push(this.#renderExtraTag("keep-parity"));
                 layout.push(this.#renderExtraTag("top-space", data.top_offset));
             }
+            
             layout.push(this_cluster_rows);
             data.bottom_offset && layout.push(this.#renderExtraTag("bottom-space", data.bottom_offset));
             this.options.callbacks.clusterWillChange && this.options.callbacks.clusterWillChange();
@@ -381,7 +430,7 @@ class Clusterize {
             this.content_elem.style["counter-increment"] = `clusterize-counter ${data.rows_above - 1}`;
             this.options.callbacks.clusterChanged && this.options.callbacks.clusterChanged();
         } else if (only_bottom_offset_changed) {
-            this.content_elem.lastChild.style.height = `${data.bottom_offset}px`;
+            this.content_elem.lastElementChild.style.height = `${data.bottom_offset}px`;
         }
     }
 
@@ -391,10 +440,10 @@ class Clusterize {
             const div = document.createElement("div");
             let last;
             div.innerHTML = `<table><tbody>${data}</tbody></table>`;
-            while ((last = content_elem.lastChild)) {
+            while ((last = content_elem.lastElementChild)) {
                 content_elem.removeChild(last);
             }
-            const rows_nodes = this.#getChildNodes(div.firstChild.firstChild);
+            const rows_nodes = this.#getChildNodes(div.firstElementChild.firstElementChild);
             while (rows_nodes.length) {
                 content_elem.appendChild(rows_nodes.shift());
             }
@@ -452,7 +501,7 @@ class Clusterize {
     }
 
     async #onResize() {
-        await this.refresh();
+        await this.refresh(true);
     }
 
     #fixElementReferences() {
@@ -460,12 +509,12 @@ class Clusterize {
             return;
         }
 
-        // If association for elements is broken, replace them with instance version.
-        if (!this.scroll_elem.isConnected || !this.content_elem.isConnected) {
-            document.getElementByid(this.scroll_id).replaceWith(this.scroll_elem);
-            // refresh since sizes may have changed.
-            this.refresh(true);
+        if (!isNullOrUndefined(this.content_elem.offsetParent)) {
+            return;
         }
+
+        // If association for elements is broken, replace them with instance version.
+        document.getElementById(this.scroll_id).replaceWith(this.scroll_elem);
     }
 
     #setupElementObservers() {

@@ -10,15 +10,56 @@ class NotImplementedError extends Error {
     }
 }
 
+const LRU_MAX_ITEMS = 250;
+class LRU {
+    constructor(max = LRU_MAX_ITEMS) {
+        this.max = max;
+        this.cache = new Map();
+    }
+
+    clear() {
+        this.cache.clear();
+    }
+
+    get(key) {
+        key = String(key);
+        let item = this.cache.get(key);
+        if (!isNullOrUndefined(item)) {
+            this.cache.delete(key);
+            this.cache.set(key, item);
+        }
+        return item;
+    }
+
+    set(key, val) {
+        key = String(key);
+        if (this.cache.has(key)) {
+            this.cache.delete(key);
+        } else if (this.cache.size === this.max) {
+            this.cache.delete(this.first());
+        }
+        this.cache.set(key, val);
+    }
+
+    has(key) {
+        key = String(key);
+        return this.cache.has(key);
+    }
+
+    first() {
+        return this.cache.keys().next().value;
+    }
+}
+
 class ExtraNetworksClusterize extends Clusterize {
     data_obj = {};
     data_obj_keys_sorted = [];
+    lru = null;
     sort_reverse = false;
     default_sort_fn = this.sortByDivId;
     sort_fn = this.default_sort_fn; 
     tabname = "";
     extra_networks_tabname = "";
-    enabled = false;
 
     // Override base class defaults
     default_sort_mode_str = "divId";
@@ -32,6 +73,7 @@ class ExtraNetworksClusterize extends Clusterize {
         super(args);
         this.tabname = getValueThrowError(args, "tabname");
         this.extra_networks_tabname = getValueThrowError(args, "extra_networks_tabname");
+        this.lru = new LRU();
     }
 
     sortByDivId(data) {
@@ -43,12 +85,12 @@ class ExtraNetworksClusterize extends Clusterize {
         await this.initData();
         // can't use super class' sort since it relies on setup being run first.
         // but we do need to make sure to sort the new data before continuing.
-        await this.options.callbacks.sortData.call(this);
         await this.setMaxItems(Object.keys(this.data_obj).length);
+        await this.options.callbacks.sortData.call(this);
     }
 
     async setup() {
-        if (this.setup_has_run) {
+        if (this.setup_has_run || !this.enabled) {
             return;
         }
 
@@ -69,18 +111,14 @@ class ExtraNetworksClusterize extends Clusterize {
         } else if (force_init_data) {
             await this.reinitData();
         } else {
-            await this.refresh(true);
+            await this.refresh();
         }
-    }
-
-    enable(state) {
-        // if no state is passed, we enable by default.
-        this.enabled = state !== false;
     }
 
     clear() {
         this.data_obj = {};
         this.data_obj_keys_sorted = [];
+        this.lru.clear();
         super.clear();
     }
 
@@ -108,7 +146,7 @@ class ExtraNetworksClusterize extends Clusterize {
         if (isString(filter_str) && this.filter_str !== filter_str.toLowerCase()) {
             this.filter_str = filter_str.toLowerCase();
         } else if (isNullOrUndefined(this.filter_str)) {
-            this.filter_str = this.default_filter_str;
+            this.filter_str = this.default_filter_str.toLowerCase();
         } else {
             return;
         }
@@ -118,6 +156,44 @@ class ExtraNetworksClusterize extends Clusterize {
 
     async initDataDefaultCallback() {
         throw new NotImplementedError();
+    }
+
+    idxRangeToDivIds(idx_start, idx_end) {
+        const n_items = idx_end - idx_start;
+        const div_ids = [];
+        for (const div_id of this.data_obj_keys_sorted.slice(idx_start)) {
+            if (this.data_obj[div_id].visible) {
+                div_ids.push(div_id);
+            }
+            if (div_ids.length >= n_items) {
+                break;
+            }
+        }
+        return div_ids;
+    }
+
+    async fetchDivIds(div_ids) {
+        const lru_keys = Array.from(this.lru.cache.keys());
+        const cached_div_ids = div_ids.filter(x => lru_keys.includes(x));
+        const missing_div_ids = div_ids.filter(x => !lru_keys.includes(x));
+
+        const data = {};
+        // Fetch any div IDs not in the LRU Cache using our callback.
+        if (missing_div_ids.length !== 0) {
+            Object.assign(
+                data,
+                await this.options.callbacks.fetchData.call(this, missing_div_ids),
+            );
+        }
+
+        // Now load any cached IDs from the LRU Cache
+        for (const div_id of cached_div_ids) {
+            if (this.data_obj[div_id].visible) {
+                data[div_id] = this.lru.get(div_id);
+            }
+        }
+
+        return data;
     }
 
     async fetchDataDefaultCallback() {
@@ -171,18 +247,13 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
 
     #setVisibility(div_id, visible) {
         /** Recursively sets the visibility of a div_id and its children. */
-        for (const child_id of this.data_obj[div_id].children) {
-            this.data_obj[child_id].visible = visible;
-            if (visible) {
-                if (this.data_obj[div_id].expanded) {
-                    this.#setVisibility(child_id, visible);
-                }
-            } else {
-                if (this.selected_div_id === child_id) {
-                    this.selected_div_id = null;
-                }
-                this.#setVisibility(child_id, visible);
-            }
+        if (!visible && this.selected_div_id === div_id) {
+            this.selected_div_id = null;
+        }
+        const this_obj = this.data_obj[div_id];
+        this_obj.visible = visible;
+        for (const child_id of this_obj.children) {
+            this.#setVisibility(child_id, visible && this_obj.expanded);
         }
     }
 
@@ -214,17 +285,17 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         /** Calculates the width of the widest row in the list. */
         if (!this.enabled) {
             // Inactive list is not displayed on screen. Can't calculate size.
-            return false;
+            return;
         }
         if (this.content_elem.children.length === 0) {
             // If there is no data then just skip.
-            return false;
+            return;
         }
 
         let max_width = 0;
-        for (let i = 0; i < this.content_elem.children.length; i += this.n_cols) {
+        for (let i = 0; i < this.content_elem.children.length; i += this.options.cols_in_block) {
             let row_width = 0;
-            for (let j = 0; j < this.n_cols; j++) {
+            for (let j = 0; j < this.options.cols_in_block; j++) {
                 const child = this.content_elem.children[i + j];
                 const child_style = window.getComputedStyle(child, null);
                 const prev_style = child.style.cssText;
@@ -257,11 +328,11 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
 
         const visible = this.data_obj[div_id].expanded;
         for (const child_id of this.data_obj[div_id].children) {
-            this.#setVisibility(child_id, visible)
+            this.#setVisibility(child_id, visible);
         }
-        this.#setVisibility()
 
-        await this.setMaxItems(Object.values(this.data_obj).filter(v => v.visible).length);
+        const new_len = Object.values(this.data_obj).filter(v => v.visible).length;
+        await this.setMaxItems(new_len);
     }
 
     async initData() {
@@ -273,35 +344,18 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
                 expanded: bool,
             }
         */
-        this.data_obj = await this.options.callbacks.initData.call(
-            this,
-            this.tabname,
-            this.extra_networks_tabname,
-            this.constructor.name,
-        );
+        this.data_obj = await this.options.callbacks.initData.call(this);
     }
 
     async fetchData(idx_start, idx_end) {
         if (!this.enabled) {
             return [];
         }
-        const n_items = idx_end - idx_start;
-        const div_ids = [];
-        for (const div_id of this.data_obj_keys_sorted.slice(idx_start)) {
-            if (this.data_obj[div_id].visible) {
-                div_ids.push(div_id);
-            }
-            if (div_ids.length >= n_items) {
-                break;
-            }
-        }
 
-        const data = await this.options.callbacks.fetchData.call(
-            this,
-            this.constructor.name,
-            this.extra_networks_tabname,
-            div_ids,
-        );
+        const data = await this.fetchDivIds(this.idxRangeToDivIds(idx_start, idx_end));
+        const data_ids_sorted = Object.keys(data).sort((a, b) => {
+            return this.data_obj_keys_sorted.indexOf(a) - this.data_obj_keys_sorted.indexOf(b);
+        });
 
         // we have to calculate the box shadows here since the element is on the page
         // at this point and we can get its computed styles.
@@ -309,11 +363,14 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         const text_size = style.getPropertyValue("--button-large-text-size");
 
         const res = [];
-        for (const [div_id, html_str] of Object.entries(data)) {
-            const parsed_html = htmlStringToElement(html_str);
+        for (const div_id of data_ids_sorted) {
+            const html_str = data[div_id];
+            const parsed_html = isElement(html_str) ? html_str : htmlStringToElement(html_str);
             const depth = Number(parsed_html.dataset.depth);
             parsed_html.style.paddingLeft = `calc(${depth} * ${text_size})`;
             parsed_html.style.boxShadow = this.getBoxShadow(depth);
+            // Roots come expanded by default. Need to delete if it exists.
+            delete parsed_html.dataset.expanded;
             if (this.data_obj[div_id].expanded) {
                 parsed_html.dataset.expanded = "";
             }
@@ -321,8 +378,9 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
                 parsed_html.dataset.selected = "";
             }
             res.push(parsed_html.outerHTML);
+            this.lru.set(String(div_id), parsed_html);
         }
-
+        
         return res;
     }
 
@@ -371,37 +429,26 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
                 sort_<mode>: string, (for various sort modes)
             }
         */
-        this.data_obj = await this.options.callbacks.initData.call(
-            this,
-            this.tabname,
-            this.extra_networks_tabname,
-            this.constructor.name,
-        );
+        this.data_obj = await this.options.callbacks.initData.call(this);
     }
 
     async fetchData(idx_start, idx_end) {
         if (!this.enabled) {
-            return;
+            return [];
         }
-        const n_items = idx_end - idx_start;
-        const div_ids = [];
-        for (const div_id of this.data_obj_keys_sorted.slice(idx_start)) {
-            if (this.data_obj[div_id].visible) {
-                div_ids.push(div_id);
-            }
-            if (div_ids.length >= n_items) {
-                break;
-            }
-        }
-        
-        const data = await this.options.callbacks.fetchData.call(
-            this,
-            this.constructor.name,
-            this.extra_networks_tabname,
-            div_ids,
-        );
 
-        return Object.values(data);
+        const data = await this.fetchDivIds(this.idxRangeToDivIds(idx_start, idx_end));
+        const data_ids_sorted = Object.keys(data).sort((a, b) => {
+            return this.data_obj_keys_sorted.indexOf(a) - this.data_obj_keys_sorted.indexOf(b);
+        });
+
+        const res = [];
+        for (const div_id of data_ids_sorted) {
+            res.push(data[div_id]);
+            this.lru.set(div_id, data[div_id]);
+        }
+
+        return res;
     }
 
     async sortData() {
@@ -429,7 +476,7 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
         /** Filters data by a string and returns number of items after filter. */
         let n_visible = 0;
         for (const [div_id, v] of Object.entries(this.data_obj)) {
-            let visible = v.search_terms.indexOf(this.filter_str) != -1;
+            let visible = v.search_terms.toLowerCase().indexOf(this.filter_str) != -1;
             if (v.search_only && this.filter_str.length < 4) {
                 visible = false;
             }

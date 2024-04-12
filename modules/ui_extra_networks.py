@@ -89,8 +89,8 @@ class DirectoryTreeNode:
         abspath: str,
         parent: Optional["DirectoryTreeNode"] = None,
     ) -> None:
-        self.abspath = abspath
         self.root_dir = root_dir
+        self.abspath = abspath
         self.parent = parent
 
         self.depth = 0
@@ -118,9 +118,12 @@ class DirectoryTreeNode:
         if self.is_dir:
             for x in os.listdir(self.abspath):
                 child_path = os.path.join(self.abspath, x)
-                DirectoryTreeNode(self.root_dir, child_path, self).build(items)
+                # Add all directories but only add files if they are in the items dict.
+                if os.path.isdir(child_path) or child_path in items:
+                    DirectoryTreeNode(self.root_dir, child_path, self).build(items)
         else:
             self.item = items.get(self.abspath, None)
+            
 
     def flatten(self, res: dict, dirs_only: bool = False) -> None:
         """Flattens the keys/values of the tree nodes into a dictionary.
@@ -135,7 +138,7 @@ class DirectoryTreeNode:
         """
         if self.abspath in res:
             raise KeyError(f"duplicate key: {self.abspath}")
-        
+
         if not dirs_only or (dirs_only and self.is_dir):
             res[self.abspath] = self
 
@@ -147,58 +150,6 @@ class DirectoryTreeNode:
         fn(self)
         for child in self.children:
             child.apply(fn)
-
-
-def get_tree(paths: Union[str, list[str]], items: dict[str, ExtraNetworksItem]) -> dict:
-    """Recursively builds a directory tree.
-
-    Args:
-        paths: Path or list of paths to directories. These paths are treated as roots from which
-            the tree will be built.
-        items: A dictionary associating filepaths to an ExtraNetworksItem instance.
-
-    Returns:
-        The result directory tree.
-    """
-    if isinstance(paths, (str,)):
-        paths = [paths]
-
-    def _get_tree(_paths: list[str], _root: str):
-        _res = {}
-        for path in _paths:
-            relpath = os.path.relpath(path, _root)
-            if os.path.isdir(path):
-                dir_items = os.listdir(path)
-                # Ignore empty directories.
-                if not dir_items:
-                    continue
-                dir_tree = _get_tree([os.path.join(path, x) for x in dir_items], _root)
-                # We only want to store non-empty folders in the tree.
-                if dir_tree:
-                    _res[relpath] = dir_tree
-            else:
-                if path not in items:
-                    continue
-                # Add the ExtraNetworksItem to the result.
-                _res[relpath] = items[path]
-        return _res
-
-    res = {}
-    # Handle each root directory separately.
-    # Each root WILL have a key/value at the root of the result dict though
-    # the value can be an empty dict if the directory is empty. We want these
-    # placeholders for empty dirs so we can inform the user later.
-    for path in paths:
-        root = os.path.dirname(path)
-        relpath = os.path.relpath(path, root)
-        # Wrap the path in a list since that is what the `_get_tree` expects.
-        res[relpath] = _get_tree([path], root)
-        if res[relpath]:
-            # We need to pull the inner path out one for these root dirs.
-            res[relpath] = res[relpath][relpath]
-
-    return res
-
 
 def register_page(page):
     """registers extra networks page for the UI
@@ -254,9 +205,7 @@ def fetch_cover_images(extra_networks_tabname: str = "", item: str = "", index: 
 
 def init_tree_data(tabname: str = "", extra_networks_tabname: str = "") -> JSONResponse:
     page = get_page_by_name(extra_networks_tabname)
-
     data = page.generate_tree_view_data(tabname)
-
     return JSONResponse(data, status_code=200)
 
 def fetch_tree_data(
@@ -305,7 +254,8 @@ def get_metadata(extra_networks_tabname: str = "", item: str = "") -> JSONRespon
         return JSONResponse({})
 
     # those are cover images, and they are too big to display in UI as text
-    metadata = {i: metadata[i] for i in metadata if i != 'ssmd_cover_images'}
+    # FIXME: WHY WAS THIS HERE?
+    #metadata = {i: metadata[i] for i in metadata if i != 'ssmd_cover_images'}
 
     return JSONResponse({"metadata": json.dumps(metadata, indent=4, ensure_ascii=False)})
 
@@ -376,7 +326,10 @@ class ExtraNetworksPage:
         self.keys_by_modified = []
 
     def refresh(self):
-        pass
+        self.items = {}
+        self.cards = {}
+        self.tree = {}
+        self.tree_roots = {}
 
     def read_user_metadata(self, item, use_cache=True):
         filename = item.get("filename", None)
@@ -515,14 +468,14 @@ class ExtraNetworksPage:
         if shared.opts.extra_networks_card_width:
             style += f"width: {shared.opts.extra_networks_card_width}px;"
 
-        background_image = None
+        background_image = ""
         preview = html.escape(item.get("preview", "") or "")
         if preview:
             background_image = f'<img src="{preview}" class="preview" loading="lazy">'
 
         onclick = item.get("onclick", None)
         if onclick is None:
-            onclick = html.escape(f"extraNetworksCardOnClick(event, '{tabname}');")
+            onclick = html.escape(f"extraNetworksCardOnClick(event, '{tabname}_{self.extra_networks_tabname}');")
 
         button_row = self.get_button_row(tabname, item)
 
@@ -582,7 +535,6 @@ class ExtraNetworksPage:
             style=style,
             onclick=onclick,
             data_attributes=data_attributes_str,
-            sort_keys=sort_keys,
             background_image=background_image,
             button_row=button_row,
             search_terms=search_terms_html,
@@ -647,8 +599,11 @@ class ExtraNetworksPage:
             if node.parent is not None:
                 parent_id = path_to_div_id.get(node.parent.abspath, None)
 
-            if node.item is None:  # directory
-                dir_is_empty = show_files and any(x.item is not None for x in node.children)
+            if node.is_dir:  # directory
+                if show_files:
+                    dir_is_empty = node.children == []
+                else:
+                    dir_is_empty = not any(x.item.is_dir for x in node.children)
                 self.tree[div_id].html = self.build_tree_html_dict_row(
                     tabname=tabname,
                     label=os.path.basename(node.abspath),
@@ -660,7 +615,7 @@ class ExtraNetworksPage:
                         "data-parent-id": parent_id,
                         "data-tree-entry-type": "dir",
                         "data-depth": node.depth,
-                        "data-path": node.abspath,
+                        "data-path": node.relpath,
                         "data-expanded": node.parent is None,  # Expand root directories
                     },
                 )
@@ -671,7 +626,7 @@ class ExtraNetworksPage:
 
                 onclick = node.item.get("onclick", None)
                 if onclick is None:
-                    onclick = html.escape(f"extraNetworksCardOnClick(event, '{tabname}');")
+                    onclick = html.escape(f"extraNetworksCardOnClick(event, '{tabname}_{self.extra_networks_tabname}');")
 
                 item_name = node.item.get("name", "").strip()
                 self.tree[div_id].html = self.build_tree_html_dict_row(
@@ -746,6 +701,7 @@ class ExtraNetworksPage:
                 "path": html.escape(node.relpath),
             }) for node in dir_nodes
         ])
+
         return dirs_html
 
     def create_html(self, tabname, *, empty=False):
@@ -781,6 +737,8 @@ class ExtraNetworksPage:
         # a common path.
         for path in self.allowed_directories_for_previews():
             abspath = os.path.abspath(path)
+            if not os.path.exists(abspath):
+                continue
             self.tree_roots[abspath] = DirectoryTreeNode(os.path.dirname(abspath), abspath, None)
             self.tree_roots[abspath].build(tree_items)
 
@@ -959,11 +917,9 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
             fn=None,
             _js=(
                 "function(){extraNetworksTabSelected("
-                f"'{tabname}', "
-                f"'{tabname}_{page.extra_networks_tabname}_prompts', "
+                f"'{tabname}_{page.extra_networks_tabname}', "
                 f"{str(page.allow_prompt).lower()}, "
-                f"{str(page.allow_negative_prompt).lower()}, "
-                f"'{tabname}_{page.extra_networks_tabname}'"
+                f"{str(page.allow_negative_prompt).lower()}"
                 ");}"
             ),
             inputs=[],
