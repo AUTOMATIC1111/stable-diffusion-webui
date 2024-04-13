@@ -113,13 +113,18 @@ then
     exit 1
 fi
 
-if [[ -d .git ]]
-then
-    printf "\n%s\n" "${delimiter}"
-    printf "Repo already cloned, using it as install directory"
-    printf "\n%s\n" "${delimiter}"
+if [[ -d stable-diffusion-webui ]]; then
+    message="Folder 'stable-diffusion-webui' exists, using it as install directory"
+    install_dir="${install_dir}/stable-diffusion-webui"
+    clone_dir="${clone_dir}/stable-diffusion-webui"
+elif [[ -d .git ]]; then
+    message="Repo already cloned, using it as install directory"
     install_dir="${PWD}/../"
     clone_dir="${PWD##*/}"
+fi
+
+if [[ -n "$message" ]]; then
+    printf "\n%s\n%s\n%s\n" "${delimiter}" "$message" "${delimiter}"
 fi
 
 # Check prerequisites
