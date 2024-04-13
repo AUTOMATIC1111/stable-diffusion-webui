@@ -1,6 +1,6 @@
 /* temporary fix to load default gradio font in frontend instead of backend */
 
-@import url('webui-assets/css/sourcesanspro.css');
+@import url('/webui-assets/css/sourcesanspro.css');
 
 
 /* temporary fix to hide gradio crop tool until it's fixed https://github.com/gradio-app/gradio/issues/3810 */
@@ -526,6 +526,10 @@ table.popup-table .link{
 
 .settings-comment .info{
     opacity: 0.75;
+}
+
+.settings-comment .info ol{
+    margin: 0.4em 0 0.8em 1em;
 }
 
 #sysinfo_download a.sysinfo_big_link{
@@ -1205,11 +1209,23 @@ body.resizing .resize-handle {
     overflow: hidden;
 }
 
-.extra-network-pane .extra-network-pane-content {
+.extra-network-pane .extra-network-pane-content-dirs {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.extra-network-pane .extra-network-pane-content-tree {
     display: flex;
     flex: 1;
     overflow: hidden;
 }
+
+.extra-network-dirs-hidden .extra-network-dirs{ display: none; }
+.extra-network-dirs-hidden .extra-network-tree{ display: none; }
+.extra-network-dirs-hidden .resize-handle { display: none; }
+.extra-network-dirs-hidden .resize-handle-row { display: flex !important; }
 
 .extra-network-pane .extra-network-tree {
     flex: 1;
@@ -1260,7 +1276,7 @@ body.resizing .resize-handle {
 
 .extra-network-control {
     position: relative;
-    display: grid;
+    display: flex;
     width: 100%;
     padding: 0 !important;
     margin-top: 0 !important;
@@ -1275,6 +1291,12 @@ body.resizing .resize-handle {
     grid-template-columns: minmax(0, auto) repeat(4, min-content);
     grid-gap: 0.1rem;
     align-items: start;
+}
+
+.extra-network-control small{
+    color: var(--input-placeholder-color);
+    line-height: 2.2rem;
+    margin: 0 0.5rem 0 0.75rem;
 }
 
 .extra-network-tree .tree-list--tree {}
@@ -1424,6 +1446,12 @@ body.resizing .resize-handle {
     line-height: 1rem;
 }
 
+
+.extra-network-control .extra-network-control--search .extra-network-control--search-text::placeholder {
+    color: var(--input-placeholder-color);
+}
+
+
 /* <input> clear button (x on right side) styling */
 .extra-network-control .extra-network-control--search .extra-network-control--search-text::-webkit-search-cancel-button {
     -webkit-appearance: none;
@@ -1456,19 +1484,19 @@ body.resizing .resize-handle {
     background-color: var(--input-placeholder-color);
 }
 
-.extra-network-control .extra-network-control--sort[data-sortmode="path"] .extra-network-control--sort-icon {
+.extra-network-control .extra-network-control--sort[data-sortkey="default"] .extra-network-control--sort-icon {
     mask-image: url('data:image/svg+xml,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path fill-rule="evenodd" clip-rule="evenodd" d="M1 5C1 3.34315 2.34315 2 4 2H8.43845C9.81505 2 11.015 2.93689 11.3489 4.27239L11.7808 6H13.5H20C21.6569 6 23 7.34315 23 9V11C23 11.5523 22.5523 12 22 12C21.4477 12 21 11.5523 21 11V9C21 8.44772 20.5523 8 20 8H13.5H11.7808H4C3.44772 8 3 8.44772 3 9V10V19C3 19.5523 3.44772 20 4 20H9C9.55228 20 10 20.4477 10 21C10 21.5523 9.55228 22 9 22H4C2.34315 22 1 20.6569 1 19V10V9V5ZM3 6.17071C3.31278 6.06015 3.64936 6 4 6H9.71922L9.40859 4.75746C9.2973 4.3123 8.89732 4 8.43845 4H4C3.44772 4 3 4.44772 3 5V6.17071ZM20.1716 18.7574C20.6951 17.967 21 17.0191 21 16C21 13.2386 18.7614 11 16 11C13.2386 11 11 13.2386 11 16C11 18.7614 13.2386 21 16 21C17.0191 21 17.967 20.6951 18.7574 20.1716L21.2929 22.7071C21.6834 23.0976 22.3166 23.0976 22.7071 22.7071C23.0976 22.3166 23.0976 21.6834 22.7071 21.2929L20.1716 18.7574ZM13 16C13 14.3431 14.3431 13 16 13C17.6569 13 19 14.3431 19 16C19 17.6569 17.6569 19 16 19C14.3431 19 13 17.6569 13 16Z" fill="%23000000"></path></g></svg>');
 }
 
-.extra-network-control .extra-network-control--sort[data-sortmode="name"] .extra-network-control--sort-icon {
+.extra-network-control .extra-network-control--sort[data-sortkey="name"] .extra-network-control--sort-icon {
     mask-image: url('data:image/svg+xml,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path fill-rule="evenodd" clip-rule="evenodd" d="M17.1841 6.69223C17.063 6.42309 16.7953 6.25 16.5002 6.25C16.2051 6.25 15.9374 6.42309 15.8162 6.69223L11.3162 16.6922C11.1463 17.07 11.3147 17.514 11.6924 17.6839C12.0701 17.8539 12.5141 17.6855 12.6841 17.3078L14.1215 14.1136H18.8789L20.3162 17.3078C20.4862 17.6855 20.9302 17.8539 21.308 17.6839C21.6857 17.514 21.8541 17.07 21.6841 16.6922L17.1841 6.69223ZM16.5002 8.82764L14.7965 12.6136H18.2039L16.5002 8.82764Z" fill="%231C274C"></path><path opacity="0.5" fill-rule="evenodd" clip-rule="evenodd" d="M2.25 7C2.25 6.58579 2.58579 6.25 3 6.25H13C13.4142 6.25 13.75 6.58579 13.75 7C13.75 7.41421 13.4142 7.75 13 7.75H3C2.58579 7.75 2.25 7.41421 2.25 7Z" fill="%231C274C"></path><path opacity="0.5" d="M2.25 12C2.25 11.5858 2.58579 11.25 3 11.25H10C10.4142 11.25 10.75 11.5858 10.75 12C10.75 12.4142 10.4142 12.75 10 12.75H3C2.58579 12.75 2.25 12.4142 2.25 12Z" fill="%231C274C"></path><path opacity="0.5" d="M2.25 17C2.25 16.5858 2.58579 16.25 3 16.25H8C8.41421 16.25 8.75 16.5858 8.75 17C8.75 17.4142 8.41421 17.75 8 17.75H3C2.58579 17.75 2.25 17.4142 2.25 17Z" fill="%231C274C"></path></g></svg>');
 }
 
-.extra-network-control .extra-network-control--sort[data-sortmode="date_created"] .extra-network-control--sort-icon {
+.extra-network-control .extra-network-control--sort[data-sortkey="date_created"] .extra-network-control--sort-icon {
     mask-image: url('data:image/svg+xml,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M17 11C14.2386 11 12 13.2386 12 16C12 18.7614 14.2386 21 17 21C19.7614 21 22 18.7614 22 16C22 13.2386 19.7614 11 17 11ZM17 11V9M2 9V15.8C2 16.9201 2 17.4802 2.21799 17.908C2.40973 18.2843 2.71569 18.5903 3.09202 18.782C3.51984 19 4.0799 19 5.2 19H13M2 9V8.2C2 7.0799 2 6.51984 2.21799 6.09202C2.40973 5.71569 2.71569 5.40973 3.09202 5.21799C3.51984 5 4.0799 5 5.2 5H13.8C14.9201 5 15.4802 5 15.908 5.21799C16.2843 5.40973 16.5903 5.71569 16.782 6.09202C17 6.51984 17 7.0799 17 8.2V9M2 9H17M5 3V5M14 3V5M15 16H17M17 16H19M17 16V14M17 16V18" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>');
 }
 
-.extra-network-control .extra-network-control--sort[data-sortmode="date_modified"] .extra-network-control--sort-icon {
+.extra-network-control .extra-network-control--sort[data-sortkey="date_modified"] .extra-network-control--sort-icon {
     mask-image: url('data:image/svg+xml,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M10 21H6.2C5.0799 21 4.51984 21 4.09202 20.782C3.71569 20.5903 3.40973 20.2843 3.21799 19.908C3 19.4802 3 18.9201 3 17.8V8.2C3 7.0799 3 6.51984 3.21799 6.09202C3.40973 5.71569 3.71569 5.40973 4.09202 5.21799C4.51984 5 5.0799 5 6.2 5H17.8C18.9201 5 19.4802 5 19.908 5.21799C20.2843 5.40973 20.5903 5.71569 20.782 6.09202C21 6.51984 21 7.0799 21 8.2V10M7 3V5M17 3V5M3 9H21M13.5 13.0001L7 13M10 17.0001L7 17M14 21L16.025 20.595C16.2015 20.5597 16.2898 20.542 16.3721 20.5097C16.4452 20.4811 16.5147 20.4439 16.579 20.399C16.6516 20.3484 16.7152 20.2848 16.8426 20.1574L21 16C21.5523 15.4477 21.5523 14.5523 21 14C20.4477 13.4477 19.5523 13.4477 19 14L14.8426 18.1574C14.7152 18.2848 14.6516 18.3484 14.601 18.421C14.5561 18.4853 14.5189 18.5548 14.4903 18.6279C14.458 18.7102 14.4403 18.7985 14.405 18.975L14 21Z" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>');
 }
 
@@ -1518,11 +1546,16 @@ body.resizing .resize-handle {
 }
 
 .extra-network-control .extra-network-control--enabled {
-    background-color: rgba(0, 0, 0, 0.15);
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 0.25rem;
 }
 
 .dark .extra-network-control .extra-network-control--enabled {
     background-color: rgba(255, 255, 255, 0.15);
+}
+
+.extra-network-control .extra-network-control--enabled .extra-network-control--icon{
+    background-color: var(--button-secondary-text-color);
 }
 
 /* ==== REFRESH ICON ACTIONS ==== */
@@ -1615,9 +1648,10 @@ body.resizing .resize-handle {
     display: inline-flex;
     visibility: hidden;
     color: var(--button-secondary-text-color);
-
+    width: 0;
 }
 
 .extra-network-tree .tree-list-content:hover .button-row {
     visibility: visible;
+    width: auto;
 }

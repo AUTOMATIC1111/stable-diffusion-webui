@@ -58,8 +58,9 @@ def apply_and_restart(disable_list, update_list, disable_all):
 
 def save_config_state(name):
     current_config_state = config_states.get_config()
-    if not name:
-        name = "Config"
+
+    name = os.path.basename(name or "Config")
+
     current_config_state["name"] = name
     timestamp = datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
     filename = os.path.join(config_states_dir, f"{timestamp}_{name}.json")
@@ -380,7 +381,7 @@ def install_extension_from_url(dirname, url, branch_name=None):
         except OSError as err:
             if err.errno == errno.EXDEV:
                 # Cross device link, typical in docker or when tmp/ and extensions/ are on different file systems
-                # Since we can't use a rename, do the slower but more versitile shutil.move()
+                # Since we can't use a rename, do the slower but more versatile shutil.move()
                 shutil.move(tmpdir, target_dir)
             else:
                 # Something else, not enough free space, permissions, etc.  rethrow it so that it gets handled.

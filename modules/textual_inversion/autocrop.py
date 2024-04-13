@@ -65,7 +65,7 @@ def crop_image(im, settings):
         rect[3] -= 1
         d.rectangle(rect, outline=GREEN)
         results.append(im_debug)
-        if settings.destop_view_image:
+        if settings.desktop_view_image:
             im_debug.show()
 
     return results
@@ -341,5 +341,5 @@ class Settings:
         self.entropy_points_weight = entropy_points_weight
         self.face_points_weight = face_points_weight
         self.annotate_image = annotate_image
-        self.destop_view_image = False
+        self.desktop_view_image = False
         self.dnn_model_path = dnn_model_path

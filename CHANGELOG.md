@@ -1,4 +1,126 @@
-## 1.8.0-RC
+## 1.9.0
+
+### Features:
+* Make refiner switchover based on model timesteps instead of sampling steps ([#14978](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14978))
+* add an option to have old-style directory view instead of tree view; stylistic changes for extra network sorting/search controls
+* add UI for reordering callbacks, support for specifying callback order in extension metadata ([#15205](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15205))
+* Sgm uniform scheduler for SDXL-Lightning models ([#15325](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15325))
+* Scheduler selection in main UI ([#15333](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15333), [#15361](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15361), [#15394](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15394))
+
+### Minor:
+* "open images directory" button now opens the actual dir ([#14947](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14947))
+* Support inference with LyCORIS BOFT networks ([#14871](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14871), [#14973](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14973))
+* make extra network card description plaintext by default, with an option to re-enable HTML as it was
+* resize handle for extra networks ([#15041](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15041))
+* cmd args: `--unix-filenames-sanitization` and `--filenames-max-length` ([#15031](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15031))
+* show extra networks parameters in HTML table rather than raw JSON ([#15131](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15131))
+* Add DoRA (weight-decompose) support for LoRA/LoHa/LoKr ([#15160](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15160), [#15283](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15283))
+* Add '--no-prompt-history' cmd args for disable last generation prompt history ([#15189](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15189))
+* update preview on Replace Preview ([#15201](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15201))
+* only fetch updates for extensions' active git branches ([#15233](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15233))
+* put upscale postprocessing UI into an accordion ([#15223](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15223))
+* Support dragdrop for URLs to read infotext ([#15262](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15262))
+* use diskcache library for caching ([#15287](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15287), [#15299](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15299))
+* Allow PNG-RGBA for Extras Tab ([#15334](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15334))
+* Support cover images embedded in safetensors metadata ([#15319](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15319))
+* faster interrupt when using NN upscale ([#15380](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15380))
+* Extras upscaler: an input field to limit maximul side length for the output image ([#15293](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15293), [#15415](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15415), [#15417](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15417), [#15425](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15425))
+* add an option to hide postprocessing options in Extras tab
+
+### Extensions and API:
+* ResizeHandleRow - allow overriden column scale parametr ([#15004](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15004))
+* call script_callbacks.ui_settings_callback earlier; fix extra-options-section built-in extension killing the ui if using a setting that doesn't exist
+* make it possible to use zoom.js outside webui context ([#15286](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15286), [#15288](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15288))
+* allow variants for extension name in metadata.ini ([#15290](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15290))
+* make reloading UI scripts optional when doing Reload UI, and off by default
+* put request: gr.Request at start of img2img function similar to txt2img
+* open_folder as util ([#15442](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15442))
+* make it possible to import extensions' script files as `import scripts.<filename>` ([#15423](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15423))
+
+### Performance:
+* performance optimization for extra networks HTML pages
+* optimization for extra networks filtering
+* optimization for extra networks sorting
+
+### Bug Fixes:
+* prevent escape button causing an interrupt when no generation has been made yet
+* [bug] avoid doble upscaling in inpaint ([#14966](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14966))
+* possible fix for reload button not appearing in some cases for extra networks.
+* fix: the `split_threshold` parameter does not work when running Split oversized images ([#15006](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15006))
+* Fix resize-handle visability for vertical layout (mobile) ([#15010](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15010))
+* register_tmp_file also for mtime ([#15012](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15012))
+* Protect alphas_cumprod during refiner switchover ([#14979](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14979))
+* Fix EXIF orientation in API image loading ([#15062](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15062))
+* Only override emphasis if actually used in prompt ([#15141](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15141))
+* Fix emphasis infotext missing from `params.txt` ([#15142](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15142))
+* fix extract_style_text_from_prompt #15132 ([#15135](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15135))
+* Fix Soft Inpaint for AnimateDiff ([#15148](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15148))
+* edit-attention: deselect surrounding whitespace ([#15178](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15178))
+* chore: fix font not loaded ([#15183](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15183))
+* use natural sort in extra networks when ordering by path
+* Fix built-in lora system bugs caused by torch.nn.MultiheadAttention ([#15190](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15190))
+* Avoid error from None in get_learned_conditioning ([#15191](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15191))
+* Add entry to MassFileLister after writing metadata ([#15199](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15199))
+* fix issue with Styles when Hires prompt is used ([#15269](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15269), [#15276](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15276))
+* Strip comments from hires fix prompt ([#15263](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15263))
+* Make imageviewer event listeners browser consistent ([#15261](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15261))
+* Fix AttributeError in OFT when trying to get MultiheadAttention weight ([#15260](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15260))
+* Add missing .mean() back ([#15239](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15239))
+* fix "Restore progress" button ([#15221](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15221))
+* fix ui-config for InputAccordion [custom_script_source] ([#15231](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15231))
+* handle 0 wheel deltaY ([#15268](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15268))
+* prevent alt menu for firefox ([#15267](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15267))
+* fix: fix syntax errors ([#15179](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15179))
+* restore outputs path ([#15307](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15307))
+* Escape btn_copy_path filename ([#15316](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15316))
+* Fix extra networks buttons when filename contains an apostrophe ([#15331](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15331))
+* escape brackets in lora random prompt generator ([#15343](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15343))
+* fix: Python version check for PyTorch installation compatibility ([#15390](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15390))
+* fix typo in call_queue.py ([#15386](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15386))
+* fix: when find already_loaded model, remove loaded by array index ([#15382](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15382))
+* minor bug fix of sd model memory management ([#15350](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15350))
+* Fix CodeFormer weight ([#15414](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15414))
+* Fix: Remove script callbacks in ordered_callbacks_map ([#15428](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15428))
+* fix limited file write (thanks, Sylwia)
+* Fix extra-single-image API not doing upscale failed ([#15465](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15465))
+* error handling paste_field callables ([#15470](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15470))
+
+
+### Hardware:
+* Add training support and change lspci for Ascend NPU ([#14981](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14981))
+* Update to ROCm5.7 and PyTorch ([#14820](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14820))
+* Better workaround for Navi1, removing --pre for Navi3 ([#15224](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15224))
+* Ascend NPU wiki page ([#15228](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15228))
+
+### Other:
+* Update comment for Pad prompt/negative prompt v0 to add a warning about truncation, make it override the v1 implementation
+* support resizable columns for touch (tablets) ([#15002](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15002))
+* Fix #14591 using translated content to do categories mapping ([#14995](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14995))
+* Use `absolute` path for normalized filepath ([#15035](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15035))
+* resizeHandle handle double tap ([#15065](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15065))
+* --dat-models-path cmd flag ([#15039](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15039))
+* Add a direct link to the binary release ([#15059](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15059))
+* upscaler_utils: Reduce logging ([#15084](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15084))
+* Fix various typos with crate-ci/typos ([#15116](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15116))
+* fix_jpeg_live_preview ([#15102](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15102))
+* [alternative fix] can't load webui if selected wrong extra option in ui ([#15121](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15121))
+* Error handling for unsupported transparency ([#14958](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14958))
+* Add model description to searched terms ([#15198](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15198))
+* bump action version ([#15272](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15272))
+* PEP 604 annotations ([#15259](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15259))
+* Automatically Set the Scale by value when user selects an Upscale Model ([#15244](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15244))
+* move postprocessing-for-training into builtin extensions ([#15222](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15222))
+* type hinting in shared.py ([#15211](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15211))
+* update ruff to 0.3.3
+* Update pytorch lightning utilities ([#15310](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15310))
+* Add Size as an XYZ Grid option ([#15354](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15354))
+* Use HF_ENDPOINT variable for HuggingFace domain with default ([#15443](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15443))
+* re-add update_file_entry ([#15446](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15446))
+* create_infotext allow index and callable, re-work Hires prompt infotext ([#15460](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15460))
+* update restricted_opts to include more options for --hide-ui-dir-config ([#15492](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15492))
+
+
+## 1.8.0
 
 ### Features:
 * Update torch to version 2.1.2
@@ -14,7 +136,7 @@
 * Add support for DAT upscaler models ([#14690](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14690), [#15039](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15039))
 * Extra Networks Tree View ([#14588](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14588), [#14900](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14900))
 * NPU Support ([#14801](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14801))
-* Propmpt comments support
+* Prompt comments support
 
 ### Minor:
 * Allow pasting in WIDTHxHEIGHT strings into the width/height fields ([#14296](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14296))
@@ -59,9 +181,9 @@
 * modules/api/api.py: add api endpoint to refresh embeddings list ([#14715](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14715))
 * set_named_arg ([#14773](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14773))
 * add before_token_counter callback and use it for prompt comments
-* ResizeHandleRow - allow overriden column scale parameter ([#15004](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15004))
+* ResizeHandleRow - allow overridden column scale parameter ([#15004](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15004))
 
-### Performance
+### Performance:
 * Massive performance improvement for extra networks directories with a huge number of files in them in an attempt to tackle #14507 ([#14528](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14528))
 * Reduce unnecessary re-indexing extra networks directory ([#14512](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14512))
 * Avoid unnecessary `isfile`/`exists` calls ([#14527](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14527))
@@ -101,7 +223,7 @@
 * Gracefully handle mtime read exception from cache ([#14933](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14933))
 * Only trigger interrupt on `Esc` when interrupt button visible ([#14932](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14932))
 * Disable prompt token counters option actually disables token counting rather than just hiding results.
-* avoid doble upscaling in inpaint ([#14966](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14966))
+* avoid double upscaling in inpaint ([#14966](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14966))
 * Fix #14591 using translated content to do categories mapping ([#14995](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14995))
 * fix: the `split_threshold` parameter does not work when running Split oversized images ([#15006](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15006))
 * Fix resize-handle for mobile ([#15010](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15010), [#15065](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15065))
@@ -171,7 +293,7 @@
 * infotext updates: add option to disregard certain infotext fields, add option to not include VAE in infotext, add explanation to infotext settings page, move some options to infotext settings page
 * add FP32 fallback support on sd_vae_approx ([#14046](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14046))
 * support XYZ scripts / split hires path from unet ([#14126](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14126))
-* allow use of mutiple styles csv files ([#14125](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14125))
+* allow use of multiple styles csv files ([#14125](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14125))
 * make extra network card description plaintext by default, with an option (Treat card description as HTML) to re-enable HTML as it was (originally by [#13241](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/13241))
 
 ### Extensions and API:
@@ -308,7 +430,7 @@
  * new samplers: Restart, DPM++ 2M SDE Exponential, DPM++ 2M SDE Heun, DPM++ 2M SDE Heun Karras, DPM++ 2M SDE Heun Exponential, DPM++ 3M SDE, DPM++ 3M SDE Karras, DPM++ 3M SDE Exponential ([#12300](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12300), [#12519](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12519), [#12542](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12542))
  * rework DDIM, PLMS, UniPC to use CFG denoiser same as in k-diffusion samplers:
    * makes all of them work with img2img
-   * makes prompt composition posssible (AND)
+   * makes prompt composition possible (AND)
    * makes them available for SDXL
  * always show extra networks tabs in the UI ([#11808](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/11808))
  * use less RAM when creating models ([#11958](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/11958), [#12599](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12599))
@@ -484,7 +606,7 @@
  * user metadata system for custom networks
  * extended Lora metadata editor: set activation text, default weight, view tags, training info
  * Lora extension rework to include other types of networks (all that were previously handled by LyCORIS extension)
- * show github stars for extenstions
+ * show github stars for extensions
  * img2img batch mode can read extra stuff from png info
  * img2img batch works with subdirectories
  * hotkeys to move prompt elements: alt+left/right
@@ -703,7 +825,7 @@
  * do not wait for Stable Diffusion model to load at startup
  * add filename patterns: `[denoising]`
  * directory hiding for extra networks: dirs starting with `.` will hide their cards on extra network tabs unless specifically searched for
- * LoRA: for the `<...>` text in prompt, use name of LoRA that is in the metdata of the file, if present, instead of filename (both can be used to activate LoRA)
+ * LoRA: for the `<...>` text in prompt, use name of LoRA that is in the metadata of the file, if present, instead of filename (both can be used to activate LoRA)
  * LoRA: read infotext params from kohya-ss's extension parameters if they are present and if his extension is not active
  * LoRA: fix some LoRAs not working (ones that have 3x3 convolution layer)
  * LoRA: add an option to use old method of applying LoRAs (producing same results as with kohya-ss)
@@ -733,7 +855,7 @@
  * fix gamepad navigation
  * make the lightbox fullscreen image function properly
  * fix squished thumbnails in extras tab
- * keep "search" filter for extra networks when user refreshes the tab (previously it showed everthing after you refreshed)
+ * keep "search" filter for extra networks when user refreshes the tab (previously it showed everything after you refreshed)
  * fix webui showing the same image if you configure the generation to always save results into same file
  * fix bug with upscalers not working properly
  * fix MPS on PyTorch 2.0.1, Intel Macs
@@ -751,7 +873,7 @@
  * switch to PyTorch 2.0.0 (except for AMD GPUs)
  * visual improvements to custom code scripts
  * add filename patterns: `[clip_skip]`, `[hasprompt<>]`, `[batch_number]`, `[generation_number]`
- * add support for saving init images in img2img, and record their hashes in infotext for reproducability
+ * add support for saving init images in img2img, and record their hashes in infotext for reproducibility
  * automatically select current word when adjusting weight with ctrl+up/down
  * add dropdowns for X/Y/Z plot
  * add setting: Stable Diffusion/Random number generator source: makes it possible to make images generated from a given manual seed consistent across different GPUs
