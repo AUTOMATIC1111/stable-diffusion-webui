@@ -1,7 +1,24 @@
+// Prevent eslint errors on functions defined in other files.
+/*global
+    Clusterize,
+    getValueThrowError,
+    INT_COLLATOR,
+    STR_COLLATOR,
+    LRUCache,
+    isString,
+    isNullOrUndefined,
+    isNullOrUndefinedLogError,
+    isElement,
+    isElementLogError,
+    keyExistsLogError,
+    htmlStringToElement,
+*/
+/*eslint no-undef: "error"*/
+
 class NotImplementedError extends Error {
     constructor(...params) {
         super(...params);
-        
+
         if (Error.captureStackTrace) {
             Error.captureStackTrace(this, NotImplementedError);
         }
@@ -16,7 +33,7 @@ class ExtraNetworksClusterize extends Clusterize {
     lru = null;
     sort_reverse = false;
     default_sort_fn = this.sortByDivId;
-    sort_fn = this.default_sort_fn; 
+    sort_fn = this.default_sort_fn;
     tabname = "";
     extra_networks_tabname = "";
 
@@ -298,7 +315,7 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
 
     async onRowExpandClick(div_id, elem) {
         /** Expands or collapses a row to show/hide children. */
-        if (!keyExistsLogError(this.data_obj, div_id)){
+        if (!keyExistsLogError(this.data_obj, div_id)) {
             return;
         }
 
@@ -359,7 +376,7 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
             res.push(parsed_html.outerHTML);
             this.lru.set(String(div_id), parsed_html);
         }
-        
+
         return res;
     }
 
@@ -428,7 +445,7 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
 
         // replace the element in DOM with our new element
         old_card.replaceWith(parsed_html);
-    
+
         // update the internal cache with the new html
         this.lru.set(String(div_id), new_html);
     }
@@ -454,23 +471,23 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
 
     async sortData() {
         switch (this.sort_mode_str) {
-            case "name":
-                this.sort_fn = this.sortByName;
-                break;
-            case "path":
-                this.sort_fn = this.sortByPath;
-                break;
-            case "date_created":
-                this.sort_fn = this.sortByDateCreated;
-                break;
-            case "date_modified":
-                this.sort_fn = this.sortByDateModified;
-                break;
-            default:
-                this.sort_fn = this.default_sort_fn;
-                break;
+        case "name":
+            this.sort_fn = this.sortByName;
+            break;
+        case "path":
+            this.sort_fn = this.sortByPath;
+            break;
+        case "date_created":
+            this.sort_fn = this.sortByDateCreated;
+            break;
+        case "date_modified":
+            this.sort_fn = this.sortByDateModified;
+            break;
+        default:
+            this.sort_fn = this.default_sort_fn;
+            break;
         }
-        await super.sortData()
+        await super.sortData();
     }
 
     async filterDataDefaultCallback() {

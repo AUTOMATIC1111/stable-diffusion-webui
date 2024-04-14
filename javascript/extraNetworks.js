@@ -2,6 +2,17 @@
 /*global
     ExtraNetworksClusterizeTreeList,
     ExtraNetworksClusterizeCardsList,
+    waitForElement,
+    isElement,
+    isElementThrowError,
+    requestGetPromise,
+    isElementLogError,
+    isNumber,
+    waitForKeyInObject,
+    isNullOrUndefined,
+    debounce,
+    waitForBool,
+    copyToClipboard,
 */
 /*eslint no-undef: "error"*/
 
@@ -173,7 +184,7 @@ class ExtraNetworksTab {
         this.cards_list.setFilterStr(this.filter_str);
     }
 
-    movePrompt(show_prompt=true, show_neg_prompt=true) {
+    movePrompt(show_prompt = true, show_neg_prompt = true) {
         // This function only applies when compact prompt mode is enabled.
         if (!this.compact_prompt_en) {
             return;
@@ -239,7 +250,7 @@ class ExtraNetworksTab {
     }
 
     async load(show_prompt, show_neg_prompt) {
-        this.movePrompt(show_prompt=show_prompt, show_neg_prompt=show_neg_prompt);
+        this.movePrompt(show_prompt, show_neg_prompt);
         this.showControls();
         this.tree_list.enable(true);
         this.cards_list.enable(true);
@@ -256,11 +267,11 @@ class ExtraNetworksTab {
     applyFilter() {
         // We only want to filter/sort the cards list.
         this.setFilterStr(this.txt_search_elem.value.toLowerCase());
-        
+
         // If the search input has changed since selecting a button to populate it
         // then we want to disable the button that previously populated the search input.
 
-        // tree view buttons        
+        // tree view buttons
         let btn = this.container_elem.querySelector(".tree-list-item[data-selected='']");
         if (isElement(btn) && btn.dataset.path !== this.txt_search_elem.value && "selected" in btn.dataset) {
             this.tree_list.onRowSelected(btn.dataset.divId, btn, false);
@@ -278,13 +289,14 @@ class ExtraNetworksTab {
         // immediately clicks a tab, then we will try to load the card data before
         // the server has even generated it.
         // We use status 503 to indicate that the page isnt ready yet.
-        while (true) {
+        let ready = false;
+        while (!ready) {
             try {
                 await requestGetPromise(
                     "./sd_extra_networks/page-is-ready",
                     {extra_networks_tabname: this.extra_networks_tabname},
                 );
-                break;
+                ready = true;
             } catch (error) {
                 if (error.status === 503) {
                     await new Promise(resolve => setTimeout(resolve, 250));
@@ -364,7 +376,7 @@ class ExtraNetworksTab {
         if (!isElementLogError(left_col)) {
             return;
         }
-    
+
         // If the left column is hidden then we don't want to do anything.
         if (left_col.classList.contains("hidden")) {
             return;
@@ -385,7 +397,7 @@ class ExtraNetworksTab {
     }
 }
 
-// 
+//
 
 function popup(contents) {
     if (!globalPopup) {
@@ -576,7 +588,9 @@ async function extraNetworksRefreshTab(tabname_full) {
 // ==== EVENT HANDLING ====
 
 function extraNetworksFetchMetadata(extra_networks_tabname, card_name) {
-    const _showError = () => { extraNetworksShowMetadata("there was an error getting metadata"); };
+    const _showError = () => {
+        extraNetworksShowMetadata("there was an error getting metadata");
+    };
 
     requestGet(
         "./sd_extra_networks/metadata",
@@ -604,7 +618,7 @@ async function extraNetworksTabSelected(tabname_full, show_prompt, show_neg_prom
     await waitForKeyInObject({obj: extra_networks_tabs, k: tabname_full});
     for (const [k, v] of Object.entries(extra_networks_tabs)) {
         if (k === tabname_full) {
-            await v.load(show_prompt=show_prompt, show_neg_prompt=show_neg_prompt);
+            await v.load(show_prompt, show_neg_prompt);
         } else {
             v.unload();
         }
@@ -749,7 +763,7 @@ function extraNetworksControlRefreshOnClick(event, tabname_full) {
      */
     // We want to reset all tabs lists on refresh click so that the viewing area
     // shows that it is loading new data.
-    for (tab of Object.values(extra_networks_tabs)) {
+    for (const tab of Object.values(extra_networks_tabs)) {
         tab.tree_list.destroy();
         tab.cards_list.destroy();
     }
@@ -802,7 +816,7 @@ function extraNetworksTreeDirectoryOnClick(event, btn, tabname_full) {
                     delete elem.dataset.selected;
                 }
             });
-            
+
         }
         tab.updateSearch("selected" in btn.dataset ? btn.dataset.path : "");
     }
@@ -908,7 +922,7 @@ async function extraNetworksSetupTab(tabname) {
     controls_div.classList.add("extra-network-controls-div");
     tab_nav.appendChild(controls_div);
     tab_nav.insertBefore(controls_div, null);
-    
+
     const panes = this_tab.querySelectorAll(`:scope > .tabitem[id^="${tabname}_"]`);
     for (const pane of panes) {
         const tabname_full = pane.id;

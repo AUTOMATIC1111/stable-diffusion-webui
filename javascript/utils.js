@@ -3,7 +3,9 @@ const INT_COLLATOR = new Intl.Collator([], {numeric: true});
 const STR_COLLATOR = new Intl.Collator("en", {numeric: true, sensitivity: "base"});
 
 /** Helper functions for checking types and simplifying logging/error handling. */
-function isNumber(x) { return typeof x === "number" && isFinite(x); }
+function isNumber(x) {
+    return typeof x === "number" && isFinite(x);
+}
 function isNumberLogError(x) {
     if (isNumber(x)) {
         return true;
@@ -18,7 +20,9 @@ function isNumberThrowError(x) {
     throw new Error(`expected number, got: ${typeof x}`);
 }
 
-function isString(x) { return typeof x === "string" || x instanceof String; }
+function isString(x) {
+    return typeof x === "string" || x instanceof String;
+}
 function isStringLogError(x) {
     if (isString(x)) {
         return true;
@@ -33,10 +37,16 @@ function isStringThrowError(x) {
     throw new Error(`expected string, got: ${typeof x}`);
 }
 
-function isNull(x) { return x === null; }
-function isUndefined(x) { return typeof x === "undefined" || x === undefined; }
+function isNull(x) {
+    return x === null;
+}
+function isUndefined(x) {
+    return typeof x === "undefined" || x === undefined;
+}
 // checks both null and undefined for simplicity sake.
-function isNullOrUndefined(x) { return isNull(x) || isUndefined(x); }
+function isNullOrUndefined(x) {
+    return isNull(x) || isUndefined(x);
+}
 function isNullOrUndefinedLogError(x) {
     if (isNullOrUndefined(x)) {
         console.error("Variable is null/undefined.");
@@ -51,7 +61,9 @@ function isNullOrUndefinedThrowError(x) {
     throw new Error("Variable is null/undefined.");
 }
 
-function isElement(x) { return x instanceof Element; }
+function isElement(x) {
+    return x instanceof Element;
+}
 function isElementLogError(x) {
     if (isElement(x)) {
         return true;
@@ -66,7 +78,9 @@ function isElementThrowError(x) {
     throw new Error(`expected element type, got: ${typeof x}`);
 }
 
-function isFunction(x) { return typeof x === "function"; }
+function isFunction(x) {
+    return typeof x === "function";
+}
 function isFunctionLogError(x) {
     if (isFunction(x)) {
         return true;
@@ -81,7 +95,9 @@ function isFunctionThrowError(x) {
     throw new Error(`expected function type, got: ${typeof x}`);
 }
 
-function isObject(x) { return typeof x === "object" && !Array.isArray(x); }
+function isObject(x) {
+    return typeof x === "object" && !Array.isArray(x);
+}
 function isObjectLogError(x) {
     if (isObject(x)) {
         return true;
@@ -110,7 +126,7 @@ function keyExistsThrowError(obj, k) {
     if (keyExists(obj, k)) {
         return;
     }
-    throw new Error(`key does not exist in object: ${k}`)
+    throw new Error(`key does not exist in object: ${k}`);
 }
 
 function getValue(obj, k) {
@@ -318,7 +334,7 @@ function waitForValueInObject(o) {
      *  Resolves when obj[k] == v
      */
     return new Promise(resolve => {
-        waitForKeyInObject({ k: o.k, obj: o.obj }).then(() => {
+        waitForKeyInObject({k: o.k, obj: o.obj}).then(() => {
             (function _waitForValueInObject() {
 
                 if (o.k in o.obj && o.obj[o.k] == o.v) {
@@ -334,12 +350,12 @@ function waitForValueInObject(o) {
 
 function requestGet(url, data, handler, errorHandler) {
     var xhr = new XMLHttpRequest();
-    var args = Object.keys(data).map(function (k) {
+    var args = Object.keys(data).map(function(k) {
         return encodeURIComponent(k) + '=' + encodeURIComponent(data[k]);
     }).join('&');
     xhr.open("GET", url + "?" + args, true);
 
-    xhr.onreadystatechange = function () {
+    xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
             if (xhr.status === 200) {
                 try {

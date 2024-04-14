@@ -4,12 +4,10 @@ import urllib.parse
 from base64 import b64decode
 from io import BytesIO
 from pathlib import Path
-from typing import Optional, Union, Any, Callable
+from typing import Optional, Callable
 from dataclasses import dataclass
-import zlib
-import base64
 import re
-from starlette.responses import Response, FileResponse, JSONResponse, PlainTextResponse
+from starlette.responses import Response, FileResponse, JSONResponse
 
 from modules import shared, ui_extra_networks_user_metadata, errors, extra_networks, util
 from modules.images import read_info_from_image, save_image_with_geninfo
@@ -121,7 +119,7 @@ class DirectoryTreeNode:
                     DirectoryTreeNode(self.root_dir, child_path, self).build(items)
         else:
             self.item = items.get(self.abspath, None)
-            
+
 
     def flatten(self, res: dict, dirs_only: bool = False) -> None:
         """Flattens the keys/values of the tree nodes into a dictionary.
@@ -248,7 +246,7 @@ def page_is_ready(extra_networks_tabname: str = "") -> JSONResponse:
     page = get_page_by_name(extra_networks_tabname)
 
     try:
-        items_list = [x for x in page.list_items()]
+        items_list = list(page.list_items())
         if len(page.items) == len(items_list):
             return JSONResponse({}, status_code=200)
 
@@ -706,10 +704,10 @@ class ExtraNetworksPage:
             tree.update(subtree)
 
         # Sort the tree nodes by relative paths
-        dir_nodes = list(sorted(
+        dir_nodes = sorted(
             tree.values(),
             key=lambda x: shared.natural_sort_key(x.relpath),
-        ))
+        )
         dirs_html = "".join([
             self.btn_dirs_view_item_tpl.format(**{
                 "extra_class": "search-all" if node.relpath == "" else "",

@@ -1,7 +1,14 @@
+// Prevent eslint errors on functions defined in other files.
+/*global
+    isNumberThrowError,
+    isNullOrUndefined,
+*/
+/*eslint no-undef: "error"*/
+
 const LRU_CACHE_MAX_ITEMS_DEFAULT = 250;
 class LRUCache {
     /** Least Recently Used cache implementation.
-     * 
+     *
      *  Source: https://stackoverflow.com/a/46432113
     */
     constructor(max = LRU_CACHE_MAX_ITEMS_DEFAULT) {
