@@ -71,7 +71,6 @@ class TreeListItem(ListItem):
     Attributes:
         visible [bool]: Whether the item should be shown in the list.
         expanded [bool]: Whether the item children should be shown.
-        selected [bool]: Whether the item is selected by user.
     """
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -79,7 +78,6 @@ class TreeListItem(ListItem):
         self.node: Optional[DirectoryTreeNode] = None
         self.visible: bool = False
         self.expanded: bool = False
-        self.selected: bool = False
 
 
 class DirectoryTreeNode:
@@ -241,7 +239,22 @@ def init_cards_data(tabname: str = "", extra_networks_tabname: str = "") -> JSON
 
     data = page.generate_cards_view_data(tabname)
 
+    if data is None:
+        return JSONResponse({}, status_code=503)
+
     return JSONResponse(data, status_code=200)
+
+def page_is_ready(extra_networks_tabname: str = "") -> JSONResponse:
+    page = get_page_by_name(extra_networks_tabname)
+
+    try:
+        items_list = [x for x in page.list_items()]
+        if len(page.items) == len(items_list):
+            return JSONResponse({}, status_code=200)
+
+        return JSONResponse({"error": "page not ready"}, status_code=503)
+    except Exception as exc:
+        return JSONResponse({"error": str(exc)}, status_code=500)
 
 def get_metadata(extra_networks_tabname: str = "", item: str = "") -> JSONResponse:
     try:
@@ -287,6 +300,7 @@ def add_pages_to_demo(app):
     app.add_api_route("/sd_extra_networks/init-cards-data", init_cards_data, methods=["GET"])
     app.add_api_route("/sd_extra_networks/fetch-tree-data", fetch_tree_data, methods=["GET"])
     app.add_api_route("/sd_extra_networks/fetch-cards-data", fetch_cards_data, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/page-is-ready", page_is_ready, methods=["GET"])
 
 def quote_js(s):
     s = s.replace('\\', '\\\\')
@@ -593,8 +607,8 @@ class ExtraNetworksPage:
 
         show_files = shared.opts.extra_networks_tree_view_show_files is True
         for div_id, node in div_id_to_node.items():
-            self.tree[div_id] = TreeListItem(div_id, "")
-            self.tree[div_id].node = node
+            tree_item = TreeListItem(div_id, "")
+            tree_item.node = node
             parent_id = None
             if node.parent is not None:
                 parent_id = path_to_div_id.get(node.parent.abspath, None)
@@ -603,8 +617,8 @@ class ExtraNetworksPage:
                 if show_files:
                     dir_is_empty = node.children == []
                 else:
-                    dir_is_empty = not any(x.item.is_dir for x in node.children)
-                self.tree[div_id].html = self.build_tree_html_dict_row(
+                    dir_is_empty = all(not x.is_dir for x in node.children)
+                tree_item.html = self.build_tree_html_dict_row(
                     tabname=tabname,
                     label=os.path.basename(node.abspath),
                     btn_type="dir",
@@ -619,6 +633,7 @@ class ExtraNetworksPage:
                         "data-expanded": node.parent is None,  # Expand root directories
                     },
                 )
+                self.tree[div_id] = tree_item
             else:  # file
                 if not show_files:
                     # Don't add file if files are disabled in the options.
@@ -629,7 +644,7 @@ class ExtraNetworksPage:
                     onclick = html.escape(f"extraNetworksCardOnClick(event, '{tabname}_{self.extra_networks_tabname}');")
 
                 item_name = node.item.get("name", "").strip()
-                self.tree[div_id].html = self.build_tree_html_dict_row(
+                tree_item.html = self.build_tree_html_dict_row(
                     tabname=tabname,
                     label=html.escape(item_name),
                     btn_type="file",
@@ -648,6 +663,7 @@ class ExtraNetworksPage:
                     item=node.item,
                     onclick_extra=onclick,
                 )
+                self.tree[div_id] = tree_item
 
         res = {}
 
@@ -740,7 +756,7 @@ class ExtraNetworksPage:
             if not os.path.exists(abspath):
                 continue
             self.tree_roots[abspath] = DirectoryTreeNode(os.path.dirname(abspath), abspath, None)
-            self.tree_roots[abspath].build(tree_items)
+            self.tree_roots[abspath].build(tree_items if shared.opts.extra_networks_tree_view_show_files else {})
 
         # Generate the html for displaying directory buttons
         dirs_html = self.create_dirs_view_html(tabname)

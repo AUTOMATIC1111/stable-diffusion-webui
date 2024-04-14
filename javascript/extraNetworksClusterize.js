@@ -10,47 +10,6 @@ class NotImplementedError extends Error {
     }
 }
 
-const LRU_MAX_ITEMS = 250;
-class LRU {
-    constructor(max = LRU_MAX_ITEMS) {
-        this.max = max;
-        this.cache = new Map();
-    }
-
-    clear() {
-        this.cache.clear();
-    }
-
-    get(key) {
-        key = String(key);
-        let item = this.cache.get(key);
-        if (!isNullOrUndefined(item)) {
-            this.cache.delete(key);
-            this.cache.set(key, item);
-        }
-        return item;
-    }
-
-    set(key, val) {
-        key = String(key);
-        if (this.cache.has(key)) {
-            this.cache.delete(key);
-        } else if (this.cache.size === this.max) {
-            this.cache.delete(this.first());
-        }
-        this.cache.set(key, val);
-    }
-
-    has(key) {
-        key = String(key);
-        return this.cache.has(key);
-    }
-
-    first() {
-        return this.cache.keys().next().value;
-    }
-}
-
 class ExtraNetworksClusterize extends Clusterize {
     data_obj = {};
     data_obj_keys_sorted = [];
@@ -73,7 +32,6 @@ class ExtraNetworksClusterize extends Clusterize {
         super(args);
         this.tabname = getValueThrowError(args, "tabname");
         this.extra_networks_tabname = getValueThrowError(args, "extra_networks_tabname");
-        this.lru = new LRU();
     }
 
     sortByDivId(data) {
@@ -86,7 +44,7 @@ class ExtraNetworksClusterize extends Clusterize {
         // can't use super class' sort since it relies on setup being run first.
         // but we do need to make sure to sort the new data before continuing.
         await this.setMaxItems(Object.keys(this.data_obj).length);
-        await this.options.callbacks.sortData.call(this);
+        await this.options.callbacks.sortData();
     }
 
     async setup() {
@@ -94,11 +52,34 @@ class ExtraNetworksClusterize extends Clusterize {
             return;
         }
 
+        if (this.lru instanceof LRUCache) {
+            this.lru.clear();
+        } else {
+            this.lru = new LRUCache();
+        }
+
         await this.reinitData();
 
         if (this.enabled) {
             await super.setup();
         }
+    }
+
+    destroy() {
+        if (this.lru instanceof LRUCache) {
+            this.lru.destroy();
+            this.lru = null;
+        }
+        this.data_obj = {};
+        this.data_obj_keys_sorted = [];
+        super.destroy();
+    }
+
+    clear() {
+        this.data_obj = {};
+        this.data_obj_keys_sorted = [];
+        this.lru.clear();
+        super.clear();
     }
 
     async load(force_init_data) {
@@ -113,13 +94,6 @@ class ExtraNetworksClusterize extends Clusterize {
         } else {
             await this.refresh();
         }
-    }
-
-    clear() {
-        this.data_obj = {};
-        this.data_obj_keys_sorted = [];
-        this.lru.clear();
-        super.clear();
     }
 
     setSortMode(sort_mode_str) {
@@ -173,6 +147,9 @@ class ExtraNetworksClusterize extends Clusterize {
     }
 
     async fetchDivIds(div_ids) {
+        if (isNullOrUndefinedLogError(this.lru)) {
+            return [];
+        }
         const lru_keys = Array.from(this.lru.cache.keys());
         const cached_div_ids = div_ids.filter(x => lru_keys.includes(x));
         const missing_div_ids = div_ids.filter(x => !lru_keys.includes(x));
@@ -182,7 +159,7 @@ class ExtraNetworksClusterize extends Clusterize {
         if (missing_div_ids.length !== 0) {
             Object.assign(
                 data,
-                await this.options.callbacks.fetchData.call(this, missing_div_ids),
+                await this.options.callbacks.fetchData(missing_div_ids),
             );
         }
 
@@ -270,15 +247,17 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         override = override === true;
 
         if (!isNullOrUndefined(this.selected_div_id) && div_id !== this.selected_div_id) {
+            const prev_elem = this.content_elem.querySelector(`[data-div-id="${this.selected_div_id}"]`);
             // deselect current selection if exists on page
-            const prev_elem = this.content_elem.querySelector(`div[data-div-id="${this.selected_div_id}"]`);
             if (isElement(prev_elem)) {
                 delete prev_elem.dataset.selected;
+                this.data_obj[prev_elem.dataset.divId].selected = false;
             }
         }
 
         elem.toggleAttribute("data-selected");
         this.selected_div_id = "selected" in elem.dataset ? div_id : null;
+        this.data_obj[elem.dataset.divId].selected = "selected" in elem.dataset;
     }
 
     getMaxRowWidth() {
@@ -344,7 +323,7 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
                 expanded: bool,
             }
         */
-        this.data_obj = await this.options.callbacks.initData.call(this);
+        this.data_obj = await this.options.callbacks.initData();
     }
 
     async fetchData(idx_start, idx_end) {
@@ -429,7 +408,29 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
                 sort_<mode>: string, (for various sort modes)
             }
         */
-        this.data_obj = await this.options.callbacks.initData.call(this);
+        this.data_obj = await this.options.callbacks.initData();
+    }
+
+    updateCard(name, new_html) {
+        const parsed_html = htmlStringToElement(new_html);
+
+        const old_card = this.content_elem.querySelector(`.card[data-name="${name}"]`);
+        if (!isElementLogError(old_card)) {
+            return;
+        }
+
+        const div_id = old_card.dataset.divId;
+
+        // replace new html's data attributes with the current ones
+        for (const [k, v] of Object.entries(old_card.dataset)) {
+            parsed_html.dataset[k] = v;
+        }
+
+        // replace the element in DOM with our new element
+        old_card.replaceWith(parsed_html);
+    
+        // update the internal cache with the new html
+        this.lru.set(String(div_id), new_html);
     }
 
     async fetchData(idx_start, idx_end) {

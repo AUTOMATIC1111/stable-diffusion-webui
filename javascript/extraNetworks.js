@@ -16,7 +16,10 @@ var globalPopupInner = null;
 const storedPopupIds = {};
 const extraPageUserMetadataEditors = {};
 const extra_networks_tabs = {};
-// A flag used by the `waitForBool` promise to determine when we first load Ui Options.
+/** Boolean flags used along with utils.js::waitForBool(). */
+// Set true when extraNetworksSetup completes.
+const extra_networks_setup_complete = {state: false};
+// Set true when we first load the UI options.
 const initialUiOptionsLoaded = {state: false};
 
 class ExtraNetworksTab {
@@ -32,6 +35,9 @@ class ExtraNetworksTab {
     txt_prompt_elem;
     txt_neg_prompt_elem;
     active_prompt_elem;
+    sort_mode_str = "";
+    sort_dir_str = "";
+    filter_str = "";
     show_prompt = true;
     show_neg_prompt = true;
     compact_prompt_en = false;
@@ -70,6 +76,15 @@ class ExtraNetworksTab {
         await this.setupTreeList();
         await this.setupCardsList();
 
+        const sort_mode_elem = this.controls_elem.querySelector(".extra-network-control--sort-mode[data-selected='']");
+        isElementThrowError(sort_mode_elem);
+        const sort_dir_elem = this.controls_elem.querySelector(".extra-network-control--sort-dir");
+        isElementThrowError(sort_dir_elem);
+
+        this.setSortMode(sort_mode_elem.dataset.sortMode);
+        this.setSortDir(sort_dir_elem.dataset.sortDir);
+        this.setFilterStr(this.txt_search_elem.value.toLowerCase());
+
         this.registerPrompt();
 
         if (this.container_elem.style.display === "none") {
@@ -77,6 +92,24 @@ class ExtraNetworksTab {
         } else {
             this.showControls();
         }
+    }
+
+    destroy() {
+        this.unload();
+        this.tree_list.destroy();
+        this.cards_list.destroy();
+        this.tree_list = null;
+        this.cards_list = null;
+        this.container_elem = null;
+        this.controls_elem = null;
+        this.txt_search_elem = null;
+        this.prompt_container_elem = null;
+        this.prompts_elem = null;
+        this.prompt_row_elem = null;
+        this.neg_prompt_row_elem = null;
+        this.txt_prompt_elem = null;
+        this.txt_neg_prompt_elem = null;
+        this.active_prompt_elem = null;
     }
 
     async registerPrompt() {
@@ -100,8 +133,8 @@ class ExtraNetworksTab {
             contentId: `${this.tabname_full}_tree_list_content_area`,
             tag: "button",
             callbacks: {
-                initData: this.onInitTreeData,
-                fetchData: this.onFetchTreeData,
+                initData: this.onInitTreeData.bind(this),
+                fetchData: this.onFetchTreeData.bind(this),
             },
         });
         await this.tree_list.setup();
@@ -118,11 +151,26 @@ class ExtraNetworksTab {
             contentId: `${this.tabname_full}_cards_list_content_area`,
             tag: "div",
             callbacks: {
-                initData: this.onInitCardsData,
-                fetchData: this.onFetchCardsData,
+                initData: this.onInitCardsData.bind(this),
+                fetchData: this.onFetchCardsData.bind(this),
             },
         });
         await this.cards_list.setup();
+    }
+
+    setSortMode(sort_mode_str) {
+        this.sort_mode_str = sort_mode_str;
+        this.cards_list.setSortMode(this.sort_mode_str);
+    }
+
+    setSortDir(sort_dir_str) {
+        this.sort_dir_str = sort_dir_str;
+        this.cards_list.setSortDir(this.sort_dir_str);
+    }
+
+    setFilterStr(filter_str) {
+        this.filter_str = filter_str;
+        this.cards_list.setFilterStr(this.filter_str);
     }
 
     movePrompt(show_prompt=true, show_neg_prompt=true) {
@@ -142,8 +190,8 @@ class ExtraNetworksTab {
         this.prompts_elem.classList.toggle("extra-page-prompts-active", show_neg_prompt || show_prompt);
     }
 
-    async refreshSingleCard(name) {
-        await requestGetPromise(
+    refreshSingleCard(name) {
+        requestGet(
             "./sd_extra_networks/get-single-card",
             {
                 tabname: this.tabname,
@@ -152,13 +200,7 @@ class ExtraNetworksTab {
             },
             (data) => {
                 if (data && data.html) {
-                    const card = this.cards_list.content_elem.querySelector(`.card[data-name="${name}"]`);
-                    const new_div = document.createElement("div");
-                    new_div.innerHTML = data.html;
-                    const new_card = new_div.firstElementChild;
-                    new_card.style.display = "";
-                    card.parentElement.insertBefore(new_card, card);
-                    card.parentElement.removeChild(card);
+                    this.cards_list.updateCard(name, data.html);
                 }
             },
         );
@@ -176,6 +218,8 @@ class ExtraNetworksTab {
         const btn_dirs_view = this.controls_elem.querySelector(".extra-network-control--dirs-view");
         const btn_tree_view = this.controls_elem.querySelector(".extra-network-control--tree-view");
         const div_dirs = this.container_elem.querySelector(".extra-network-content--dirs-view");
+        // We actually want to select the tree view's column in the resize-handle-row.
+        // This is what we actually show/hide, not the inner elements.
         const div_tree = this.container_elem.querySelector(
             `.extra-network-content.resize-handle-col:has(> #${this.tabname_full}_tree_list_scroll_area)`
         );
@@ -188,6 +232,10 @@ class ExtraNetworksTab {
         this.tree_list.enable();
         this.cards_list.enable();
         await Promise.all([this.tree_list.load(true), this.cards_list.load(true)]);
+        // apply the previous sort/filter options
+        this.setSortMode(this.sort_mode_str);
+        this.setSortDir(this.sort_dir_str);
+        this.setFilterStr(this.filter_str);
     }
 
     async load(show_prompt, show_neg_prompt) {
@@ -207,7 +255,7 @@ class ExtraNetworksTab {
 
     applyFilter() {
         // We only want to filter/sort the cards list.
-        this.cards_list.setFilterStr(this.txt_search_elem.value.toLowerCase());
+        this.setFilterStr(this.txt_search_elem.value.toLowerCase());
         
         // If the search input has changed since selecting a button to populate it
         // then we want to disable the button that previously populated the search input.
@@ -224,48 +272,80 @@ class ExtraNetworksTab {
         }
     }
 
+    async waitForServerPageReady() {
+        // We need to wait for the page to be ready before we can fetch data.
+        // After starting the server, on the first load of the page, if the user
+        // immediately clicks a tab, then we will try to load the card data before
+        // the server has even generated it.
+        // We use status 503 to indicate that the page isnt ready yet.
+        while (true) {
+            try {
+                await requestGetPromise(
+                    "./sd_extra_networks/page-is-ready",
+                    {extra_networks_tabname: this.extra_networks_tabname},
+                );
+                break;
+            } catch (error) {
+                if (error.status === 503) {
+                    await new Promise(resolve => setTimeout(resolve, 250));
+                } else {
+                    // We do not want to continue waiting if we get an unhandled error.
+                    throw new Error("Error checking page readiness:", error);
+                }
+            }
+        }
+    }
+
     async onInitCardsData() {
-        const res = await requestGetPromise(
-            "./sd_extra_networks/init-cards-data",
-            {
-                tabname: this.tabname,
-                extra_networks_tabname: this.extra_networks_tabname,
-            },
+        await this.waitForServerPageReady();
+
+        return JSON.parse(
+            await requestGetPromise(
+                "./sd_extra_networks/init-cards-data",
+                {
+                    tabname: this.tabname,
+                    extra_networks_tabname: this.extra_networks_tabname,
+                },
+            )
         );
-        return JSON.parse(res);
     }
 
     async onInitTreeData() {
-        const res = await requestGetPromise(
-            "./sd_extra_networks/init-tree-data",
-            {
-                tabname: this.tabname,
-                extra_networks_tabname: this.extra_networks_tabname,
-            },
+        await this.waitForServerPageReady();
+
+        return JSON.parse(
+            await requestGetPromise(
+                "./sd_extra_networks/init-tree-data",
+                {
+                    tabname: this.tabname,
+                    extra_networks_tabname: this.extra_networks_tabname,
+                },
+            )
         );
-        return JSON.parse(res);
     }
 
     async onFetchCardsData(div_ids) {
-        const res = await requestGetPromise(
-            "./sd_extra_networks/fetch-cards-data",
-            {
-                extra_networks_tabname: this.extra_networks_tabname,
-                div_ids: div_ids,
-            },
+        return JSON.parse(
+            await requestGetPromise(
+                "./sd_extra_networks/fetch-cards-data",
+                {
+                    extra_networks_tabname: this.extra_networks_tabname,
+                    div_ids: div_ids,
+                },
+            )
         );
-        return JSON.parse(res);
     }
 
     async onFetchTreeData(div_ids) {
-        const res = await requestGetPromise(
-            "./sd_extra_networks/fetch-tree-data",
-            {
-                extra_networks_tabname: this.extra_networks_tabname,
-                div_ids: div_ids,
-            },
+        return JSON.parse(
+            await requestGetPromise(
+                "./sd_extra_networks/fetch-tree-data",
+                {
+                    extra_networks_tabname: this.extra_networks_tabname,
+                    div_ids: div_ids,
+                },
+            )
         );
-        return JSON.parse(res);
     }
 
     updateSearch(text) {
@@ -484,27 +564,13 @@ function extraNetworksShowMetadata(text) {
 }
 
 function extraNetworksRefreshSingleCard(tabname, extra_networks_tabname, name) {
-    requestGet(
-        "./sd_extra_networks/get-single-card",
-        {tabname: tabname, extra_networks_tabname: extra_networks_tabname, name: name},
-        (data) => {
-            if (data && data.html) {
-                const card = gradioApp().querySelector(`${tabname}_${extra_networks_tabname}_cards > .card[data-name="${name}"]`);
-                const new_div = document.createElement("div");
-                new_div.innerHTML = data.html;
-                const new_card = new_div.firstElementChild;
-
-                new_card.style.display = "";
-                card.parentElement.insertBefore(new_card, card);
-                card.parentElement.removeChild(card);
-            }
-        },
-    );
+    const tab = extra_networks_tabs[`${tabname}_${extra_networks_tabname}`];
+    tab.refreshSingleCard(name);
 }
 
 async function extraNetworksRefreshTab(tabname_full) {
     /** called from python when user clicks the extra networks refresh tab button */
-    extra_networks_tabs[tabname_full].refresh();
+    await extra_networks_tabs[tabname_full].refresh();
 }
 
 // ==== EVENT HANDLING ====
@@ -535,9 +601,10 @@ function extraNetworksUnrelatedTabSelected() {
 
 async function extraNetworksTabSelected(tabname_full, show_prompt, show_neg_prompt) {
     /** called from python when user selects an extra networks tab */
+    await waitForKeyInObject({obj: extra_networks_tabs, k: tabname_full});
     for (const [k, v] of Object.entries(extra_networks_tabs)) {
         if (k === tabname_full) {
-            v.load(show_prompt=show_prompt, show_neg_prompt=show_neg_prompt);
+            await v.load(show_prompt=show_prompt, show_neg_prompt=show_neg_prompt);
         } else {
             v.unload();
         }
@@ -563,6 +630,14 @@ function extraNetworksBtnDirsViewItemOnClick(event, tabname_full) {
         // update search input with selected button's path.
         elem.dataset.selected = "";
         txt_search_elem.value = elem.textContent.trim();
+
+        // Select the corresponding tree view button.
+        if ("selected" in elem.dataset) {
+            const tree_row = tab.container_elem.querySelector(`.tree-list-item[data-path="${elem.textContent.trim()}"]`);
+            if (isElement(tree_row)) {
+                tab.tree_list.onRowSelected(tree_row.dataset.divId, tree_row);
+            }
+        }
     };
 
     const _deselect_button = (elem) => {
@@ -603,7 +678,7 @@ function extraNetworksControlSortModeOnClick(event, tabname_full) {
 
     const sort_mode_str = event.currentTarget.dataset.sortMode.toLowerCase();
 
-    tab.cards_list.setSortMode(sort_mode_str);
+    tab.setSortMode(sort_mode_str);
 }
 
 function extraNetworksControlSortDirOnClick(event, tabname_full) {
@@ -624,7 +699,7 @@ function extraNetworksControlSortDirOnClick(event, tabname_full) {
     event.currentTarget.dataset.sortDir = sort_dir_str;
     event.currentTarget.setAttribute("title", `Sort ${sort_dir_str}`);
 
-    tab.cards_list.setSortDir(sort_dir_str);
+    tab.setSortDir(sort_dir_str);
 }
 
 function extraNetworksControlTreeViewOnClick(event, tabname_full) {
@@ -672,9 +747,6 @@ function extraNetworksControlRefreshOnClick(event, tabname_full) {
      * event handler that refreshes the page. So what this function here does
      * is it manually raises a `click` event on that button.
      */
-    // reset states
-    initialUiOptionsLoaded.state = false;
-
     // We want to reset all tabs lists on refresh click so that the viewing area
     // shows that it is loading new data.
     for (tab of Object.values(extra_networks_tabs)) {
@@ -721,6 +793,17 @@ function extraNetworksTreeDirectoryOnClick(event, btn, tabname_full) {
     } else {
         // user clicked anywhere else on the row
         tab.tree_list.onRowSelected(div_id, btn);
+        // Select the corresponding dirs view button.
+        if ("selected" in btn.dataset) {
+            tab.container_elem.querySelectorAll(".extra-network-dirs-view-button").forEach(elem => {
+                if (elem.textContent.trim() === btn.dataset.path) {
+                    elem.dataset.selected = "";
+                } else {
+                    delete elem.dataset.selected;
+                }
+            });
+            
+        }
         tab.updateSearch("selected" in btn.dataset ? btn.dataset.path : "");
     }
 }
@@ -839,13 +922,17 @@ async function extraNetworksSetupTab(tabname) {
 }
 
 async function extraNetworksSetup() {
+    extra_networks_setup_complete.state = false;
     await waitForBool(initialUiOptionsLoaded);
 
     await Promise.all([
         extraNetworksSetupTab('txt2img'),
         extraNetworksSetupTab('img2img'),
     ]);
+
     extraNetworksSetupEventDelegators();
+
+    extra_networks_setup_complete.state = true;
 }
 
 onUiLoaded(extraNetworksSetup);

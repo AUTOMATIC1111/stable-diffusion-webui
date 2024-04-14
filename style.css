@@ -1192,7 +1192,8 @@ body.resizing .resize-handle {
 .clusterize-content {
     flex: 1;
     outline: 0;
-    gap: var(--spacing-sm);
+    /* need to manually set the gap to 0 to fix item dimension calcs. */
+    gap: 0;
     counter-reset: clusterize-counter;
     padding: var(--spacing-md);
 }

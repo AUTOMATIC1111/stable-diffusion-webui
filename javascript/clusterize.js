@@ -47,6 +47,7 @@ class Clusterize {
     #element_observer = null;
     #element_observer_timer = null;
     #pointer_events_set = false;
+    #on_scroll_bound;
 
     constructor(args) {
         for (const option of Object.keys(this.options)) {
@@ -56,16 +57,16 @@ class Clusterize {
         }
 
         if (isNullOrUndefined(this.options.callbacks.initData)) {
-            this.options.callbacks.initData = this.initDataDefaultCallback;
+            this.options.callbacks.initData = this.initDataDefaultCallback.bind(this);
         }
         if (isNullOrUndefined(this.options.callbacks.fetchData)) {
-            this.options.callbacks.fetchData = this.fetchDataDefaultCallback;
+            this.options.callbacks.fetchData = this.fetchDataDefaultCallback.bind(this);
         }
         if (isNullOrUndefined(this.options.callbacks.sortData)) {
-            this.options.callbacks.sortData = this.sortDataDefaultCallback;
+            this.options.callbacks.sortData = this.sortDataDefaultCallback.bind(this);
         }
         if (isNullOrUndefined(this.options.callbacks.filterData)) {
-            this.options.callbacks.filterData = this.filterDataDefaultCallback;
+            this.options.callbacks.filterData = this.filterDataDefaultCallback.bind(this);
         }
 
         // detect ie9 and lower
@@ -96,6 +97,8 @@ class Clusterize {
         this.#scroll_top = this.scroll_elem.scrollTop;
 
         this.#max_items = args.max_items;
+
+        this.#on_scroll_bound = this.#onScroll.bind(this);
     }
 
     // ==== PUBLIC FUNCTIONS ====
@@ -114,7 +117,7 @@ class Clusterize {
         await this.#insertToDOM();
         this.scroll_elem.scrollTop = this.#scroll_top;
 
-        this.#setupEvent("scroll", this.scroll_elem, this.#onScroll);
+        this.#setupEvent("scroll", this.scroll_elem, this.#on_scroll_bound);
         this.#setupElementObservers();
         this.#setupResizeObservers();
 
@@ -129,12 +132,13 @@ class Clusterize {
         this.#html(this.#generateEmptyRow().join(""));
     }
 
-    destroy() {
-        this.#teardownEvent("scroll", this.scroll_elem, this.#onScroll);
+    destroy() {        
+        this.#teardownEvent("scroll", this.scroll_elem, this.#on_scroll_bound);
         this.#teardownElementObservers();
         this.#teardownResizeObservers();
-        this.clear();
 
+        this.#html(this.#generateEmptyRow().join(""));
+        
         this.setup_has_run = false;
     }
 
@@ -210,7 +214,7 @@ class Clusterize {
         if (!this.enabled) {
             return;
         }
-        return await this.options.callbacks.initData.call(this);
+        return await this.options.callbacks.initData();
     }
 
     fetchDataDefaultCallback() {
@@ -221,7 +225,7 @@ class Clusterize {
         if (!this.enabled) {
             return;
         }
-        return await this.options.callbacks.fetchData.call(this, idx_start, idx_end);
+        return await this.options.callbacks.fetchData(idx_start, idx_end);
     }
 
     sortDataDefaultCallback() {
@@ -236,7 +240,7 @@ class Clusterize {
         this.#fixElementReferences();
 
         // Sort is applied to the filtered data.
-        await this.options.callbacks.sortData.call(this);
+        await this.options.callbacks.sortData();
         this.#recalculateDims();
         await this.#insertToDOM();
     }
@@ -251,7 +255,7 @@ class Clusterize {
         }
 
         // Filter is applied to entire dataset.
-        const max_items = await this.options.callbacks.filterData.call(this);
+        const max_items = await this.options.callbacks.filterData();
         await this.setMaxItems(max_items);
     }
 
@@ -287,10 +291,8 @@ class Clusterize {
         }
 
         // Get the first element that isn't one of our placeholder rows.
-        const node = this.content_elem.querySelector(
-            `${this.options.tag}:not(clusterize-extra-row):not(clusterize-no-data)`
-        );
-        if (!isElement(node)) {
+        const node = this.content_elem.querySelector(":scope > :not(.clusterize-extra-row,.clusterize-no-data)");
+        if (!isElementLogError(node)) {
             return;
         }
 
@@ -307,10 +309,13 @@ class Clusterize {
 
         // Update rows in block to match the number of elements that can fit in the view.
         const content_padding = getComputedPaddingDims(this.content_elem);
-        let content_gap = parseFloat(getComputedProperty(this.content_elem, "gap"));
-        if (isNumber(content_gap)) {
-            this.options.item_width += content_gap;
-            this.options.item_height += content_gap;
+        const column_gap = parseFloat(getComputedProperty(this.content_elem, "column-gap"));
+        const row_gap = parseFloat(getComputedProperty(this.content_elem, "row-gap"));
+        if (isNumber(column_gap)) {
+            this.options.item_width += column_gap;
+        }
+        if (isNumber(row_gap)) {
+            this.options.item_height += row_gap;
         }
 
         const inner_width = this.scroll_elem.clientWidth - content_padding.width;
@@ -594,17 +599,17 @@ class Clusterize {
 
     #setupEvent(type, elem, listener) {
         if (elem.addEventListener) {
-            return elem.addEventListener(type, event => listener.call(this), false);
+            return elem.addEventListener(type, listener, false);
         } else {
-            return elem.attachEvent(`on${type}`, event => listener.call(this));
+            return elem.attachEvent(`on${type}`, listener);
         }
     }
 
     #teardownEvent(type, elem, listener) {
         if (elem.removeEventListener) {
-            return elem.removeEventListener(type, event => listener.call(this), false);
+            return elem.removeEventListener(type, listener, false);
         } else {
-            return elem.detachEvent(`on${type}`, event => listener.call(this));
+            return elem.detachEvent(`on${type}`, listener);
         }
     }
 }
