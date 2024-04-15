@@ -411,6 +411,11 @@ function htmlStringToElement(s) {
     return tmp.body.firstElementChild;
 }
 
+function htmlStringToFragment(s) {
+    /** Converts an HTML string into a DocumentFragment. */
+    return document.createRange().createContextualFragment(s);
+}
+
 function toggleCss(key, css, enable) {
     var style = document.getElementById(key);
     if (enable && !style) {

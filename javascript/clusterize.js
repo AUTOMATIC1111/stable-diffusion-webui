@@ -292,7 +292,8 @@ class Clusterize {
 
         // Get the first element that isn't one of our placeholder rows.
         const node = this.content_elem.querySelector(":scope > :not(.clusterize-extra-row,.clusterize-no-data)");
-        if (!isElementLogError(node)) {
+        if (!isElement(node)) {
+            // dont attempt to compute dims if we have no data.
             return;
         }
 

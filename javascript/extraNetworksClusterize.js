@@ -15,6 +15,9 @@
 */
 /*eslint no-undef: "error"*/
 
+// number of list html items to store in cache.
+const EXTRA_NETWORKS_CLUSTERIZE_LRU_CACHE_SIZE = 1000;
+
 class NotImplementedError extends Error {
     constructor(...params) {
         super(...params);
@@ -72,7 +75,7 @@ class ExtraNetworksClusterize extends Clusterize {
         if (this.lru instanceof LRUCache) {
             this.lru.clear();
         } else {
-            this.lru = new LRUCache();
+            this.lru = new LRUCache(EXTRA_NETWORKS_CLUSTERIZE_LRU_CACHE_SIZE);
         }
 
         await this.reinitData();
