@@ -443,7 +443,7 @@ function extraNetworksRemoveFromPrompt(textarea, text, is_neg) {
     let match = text.match(is_neg ? re_extranet_neg : re_extranet);
     let replaced = false;
     let res;
-    let prefix = opts.extra_networks_add_text_separator;
+    let sep = opts.extra_networks_add_text_separator;
 
     if (match) {
         const content = match[1];
@@ -465,12 +465,17 @@ function extraNetworksRemoveFromPrompt(textarea, text, is_neg) {
             if (postfix && res.slice(idx, idx + postfix.length) === postfix) {
                 res = res.slice(0, idx) + res.slice(idx + postfix.length);
             }
-            if (res.slice(idx - prefix.length, idx) === prefix) {
-                res = res.slice(0, idx - prefix.length) + res.slice(idx);
+            if (res.slice(idx - sep.length, idx) === sep) {
+                res = res.slice(0, idx - sep.length) + res.slice(idx);
+            }
+            // Remove separator if it is at beginning of string.
+            console.log("HERE!:", res);
+            if (res.startsWith(sep)) {
+                res = res.slice(sep.length);
             }
         }
     } else {
-        res = textarea.value.replaceAll(new RegExp(`((?:${prefix})?${text})`, "g"), "");
+        res = textarea.value.replaceAll(new RegExp(`((?:${sep})?${text})`, "g"), "");
         replaced = (res !== textarea.value);
     }
 
@@ -484,7 +489,12 @@ function extraNetworksRemoveFromPrompt(textarea, text, is_neg) {
 
 function extraNetworksUpdatePrompt(textarea, text, is_neg) {
     if (!extraNetworksRemoveFromPrompt(textarea, text, is_neg)) {
-        textarea.value = textarea.value + opts.extra_networks_add_text_separator + text;
+        if (!textarea.value) {
+            // if textarea is empty, dont add the separator.
+            textarea.value = text;
+        } else {
+            textarea.value = textarea.value + opts.extra_networks_add_text_separator + text;
+        }
     }
 
     updateInput(textarea);
@@ -606,11 +616,18 @@ function extraNetworksFetchMetadata(extra_networks_tabname, card_name) {
     );
 }
 
-function extraNetworksUnrelatedTabSelected() {
+function extraNetworksUnrelatedTabSelected(tabname) {
     /** called from python when user selects an unrelated tab (generate) */
-    for (const [k, v] of Object.entries(extra_networks_tabs)) {
+    for (const v of Object.values(extra_networks_tabs)) {
         v.unload();
     }
+
+    // Move all prompts into the selected tab.
+    const prompt_container_elem = document.querySelector(`#${tabname}_prompt_container`);
+    const prompt_row_elem = document.querySelector(`#${tabname}_prompt_row`);
+    const neg_prompt_row_elem = document.querySelector(`#${tabname}_neg_prompt_row`);
+    prompt_container_elem.insertBefore(neg_prompt_row_elem, prompt_container_elem.firstChild);
+    prompt_container_elem.insertBefore(prompt_row_elem, prompt_container_elem.firstChild);
 }
 
 async function extraNetworksTabSelected(tabname_full, show_prompt, show_neg_prompt) {
