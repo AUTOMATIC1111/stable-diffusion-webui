@@ -10,7 +10,7 @@
 
 // Many operations can be lenghty. Try to limit their frequency by debouncing.
 const SCROLL_DEBOUNCE_TIME_MS = 50;
-const RESIZE_OBSERVER_DEBOUNCE_TIME_MS = 50; // should be less than refresh debounce time
+const RESIZE_OBSERVER_DEBOUNCE_TIME_MS = 50; // should be <= refresh debounce time
 const ELEMENT_OBSERVER_DEBOUNCE_TIME_MS = 100;
 const REFRESH_DEBOUNCE_TIME_MS = 50;
 
