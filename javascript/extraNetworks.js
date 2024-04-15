@@ -473,7 +473,6 @@ function extraNetworksRemoveFromPrompt(textarea, text, is_neg) {
                 res = res.slice(0, idx - sep.length) + res.slice(idx);
             }
             // Remove separator if it is at beginning of string.
-            console.log("HERE!:", res);
             if (res.startsWith(sep)) {
                 res = res.slice(sep.length);
             }
