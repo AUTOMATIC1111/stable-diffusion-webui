@@ -462,10 +462,10 @@ function extraNetworksRemoveFromPrompt(textarea, text, is_neg) {
             },
         );
         if (idx >= 0) {
-            if (postfix && res.slice(idx, postfix.length) === postfix) {
+            if (postfix && res.slice(idx, idx + postfix.length) === postfix) {
                 res = res.slice(0, idx) + res.slice(idx + postfix.length);
             }
-            if (res.slice(idx - prefix.length, prefix.length) === prefix) {
+            if (res.slice(idx - prefix.length, idx) === prefix) {
                 res = res.slice(0, idx - prefix.length) + res.slice(idx);
             }
         }
