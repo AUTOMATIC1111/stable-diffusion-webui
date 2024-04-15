@@ -261,6 +261,9 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
             if (!isNullOrUndefined(this.selected_div_id) && keyExistsLogError(this.data_obj, this.selected_div_id)) {
                 this.data_obj[this.selected_div_id].selected = false;
                 this.selected_div_id = null;
+                for (const elem of this.content_elem.children) {
+                    delete elem.dataset.selected;
+                }
             }
             return;
         }

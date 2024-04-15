@@ -670,7 +670,9 @@ function extraNetworksBtnDirsViewItemOnClick(event, tabname_full) {
         // Select the corresponding tree view button.
         if ("selected" in elem.dataset) {
             const tree_row = tab.container_elem.querySelector(`.tree-list-item[data-path="${elem.textContent.trim()}"]`);
-            tab.tree_list.onRowSelected(tree_row.dataset.divId, tree_row);
+            if (isElement(tree_row)) {
+                tab.tree_list.onRowSelected(tree_row.dataset.divId, tree_row);
+            }
         }
     };
 
