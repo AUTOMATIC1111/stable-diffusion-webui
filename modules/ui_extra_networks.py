@@ -77,6 +77,18 @@ class TreeListItem(ListItem):
 
 
 class DirectoryTreeNode:
+    """
+    Attributes:
+        root_dir [str]: The root directory used to generate a relative path for this node.
+        abspath [str]: The absolute path of this node.
+        parent [DirectoryTreeNode]: The parent node of this node.
+        depth [int]: The depth of this node in the tree. (folder level)
+        is_dir [bool]: Whether this node is a directory or file.
+        item [Optional[dict]]: The item data dictionary.
+        relpath [str]: Relative path from `root_dir` to this node.
+        children [list[DirectoryTreeNode]]: List of direct child nodes of this node.
+    """
+
     def __init__(
         self,
         root_dir: str,
@@ -156,6 +168,11 @@ def register_page(page):
 
 
 def get_page_by_name(extra_networks_tabname: str = "") -> "ExtraNetworksPage":
+    """Gets a page from extra pages for the specified tabname.
+
+    Raises:
+        HTTPException if the tabname is not in the `extra_pages` dict.
+    """
     for page in extra_pages:
         if page.extra_networks_tabname == extra_networks_tabname:
             return page
@@ -200,6 +217,15 @@ def fetch_cover_images(extra_networks_tabname: str = "", item: str = "", index: 
 
 
 def init_tree_data(tabname: str = "", extra_networks_tabname: str = "") -> JSONResponse:
+    """Generates the initial Tree View data and returns a simplified dataset.
+
+    The data returned does not contain any HTML strings.
+
+    Status Codes:
+        200 on success
+        503 when data is not ready
+        500 on any other error
+    """
     page = get_page_by_name(extra_networks_tabname)
 
     data = page.generate_tree_view_data(tabname)
@@ -214,6 +240,11 @@ def fetch_tree_data(
     extra_networks_tabname: str = "",
     div_ids: str = "",
 ) -> JSONResponse:
+    """Retrieves Tree View HTML strings for the specified `div_ids`.
+
+    Args:
+        div_ids: A string with div_ids in CSV format.
+    """
     page = get_page_by_name(extra_networks_tabname)
 
     res = {}
@@ -228,6 +259,11 @@ def fetch_cards_data(
     extra_networks_tabname: str = "",
     div_ids: str = "",
 ) -> JSONResponse:
+    """Retrieves Cards View HTML strings for the specified `div_ids`.
+
+    Args:
+        div_ids: A string with div_ids in CSV format.
+    """
     page = get_page_by_name(extra_networks_tabname)
 
     res = {}
@@ -239,6 +275,15 @@ def fetch_cards_data(
 
 
 def init_cards_data(tabname: str = "", extra_networks_tabname: str = "") -> JSONResponse:
+    """Generates the initial Cards View data and returns a simplified dataset.
+
+    The data returned does not contain any HTML strings.
+
+    Status Codes:
+        200 on success
+        503 when data is not ready
+        500 on any other error
+    """
     page = get_page_by_name(extra_networks_tabname)
 
     data = page.generate_cards_view_data(tabname)
@@ -250,6 +295,13 @@ def init_cards_data(tabname: str = "", extra_networks_tabname: str = "") -> JSON
 
 
 def page_is_ready(extra_networks_tabname: str = "") -> JSONResponse:
+    """Returns whether the specified page is ready for fetching data.
+
+    Status Codes:
+        200 ready
+        503 not ready
+        500 on any other error
+    """
     page = get_page_by_name(extra_networks_tabname)
 
     try:
@@ -348,6 +400,7 @@ class ExtraNetworksPage:
         self.keys_by_modified = []
 
     def refresh(self):
+        # Whenever we refresh, we want to build our datasets from scratch.
         self.items = {}
         self.cards = {}
         self.tree = {}
@@ -377,7 +430,7 @@ class ExtraNetworksPage:
 
         return ""
 
-    def build_tree_html_dict_row(
+    def build_tree_html_row(
         self,
         tabname: str,
         label: str,
@@ -388,6 +441,27 @@ class ExtraNetworksPage:
         item: Optional[dict] = None,
         onclick_extra: Optional[str] = None,
     ) -> str:
+        """Generates HTML for a single row of the Tree View
+
+        Args:
+            tabname:
+                "txt2img" or "img2img"
+            label:
+                The text to display for this row.
+            btn_type:
+                "dir" or "file"
+            btn_title:
+                Optional hover text for the row. Defaults to `label`.
+            data_attributes:
+                Dictionary defining data attributes to add to the row's tag.
+                Ex: {"one": "1"} would generate <div data-one="1"></div>
+            dir_is_empty:
+                Whether the directory is empty. Only useful if btn_type=="dir".
+            item:
+                Dictionary containing item data such as filename, hash, etc.
+            onclick_extra:
+                Additional javascript code to add to the row's `onclick` attribute.
+        """
         if btn_type not in ["file", "dir"]:
             raise ValueError("Invalid button type:", btn_type)
 
@@ -442,6 +516,7 @@ class ExtraNetworksPage:
         return res
 
     def get_button_row(self, tabname: str, item: dict) -> str:
+        """Generates a row of buttons for use in Tree/Cards View items."""
         metadata = item.get("metadata", None)
         name = item.get("name", "")
         filename = item.get("filename", "")
@@ -481,7 +556,8 @@ class ExtraNetworksPage:
             template: Optional template string to use.
 
         Returns:
-            HTML string generated for this item. Can be empty if the item is not meant to be shown.
+            HTML string generated for this item.
+            Can be empty if the item is not meant to be shown.
         """
         style = f"font-size: {shared.opts.extra_networks_card_text_scale*100}%;"
         if shared.opts.extra_networks_card_height:
@@ -564,6 +640,17 @@ class ExtraNetworksPage:
         )
 
     def generate_cards_view_data(self, tabname: str) -> dict:
+        """Generates the datasets and HTML used to display the Cards View.
+
+        Returns:
+            A dictionary containing necessary info for the client.
+            {
+                search_keys: array of strings,
+                sort_<mode>: string, (for various sort modes),
+                visible: True, // all cards are visible by default.
+            }
+            Return does not contain the HTML since that is fetched by client.
+        """
         for i, item in enumerate(self.items.values()):
             div_id = str(i)
             card_html = self.create_card_html(tabname=tabname, item=item, div_id=div_id)
@@ -591,6 +678,18 @@ class ExtraNetworksPage:
         return res
 
     def generate_tree_view_data(self, tabname: str) -> dict:
+        """Generates the datasets and HTML used to display the Tree View.
+
+        Returns:
+            A dictionary containing necessary info for the client.
+            {
+                parent: None or div_id,
+                children: list of div_id's,
+                visible: bool,
+                expanded: bool,
+            }
+            Return does not contain the HTML since that is fetched by client.
+        """
         if not self.tree_roots:
             return {}
 
@@ -622,7 +721,7 @@ class ExtraNetworksPage:
                     dir_is_empty = node.children == []
                 else:
                     dir_is_empty = all(not x.is_dir for x in node.children)
-                tree_item.html = self.build_tree_html_dict_row(
+                tree_item.html = self.build_tree_html_row(
                     tabname=tabname,
                     label=os.path.basename(node.abspath),
                     btn_type="dir",
@@ -648,7 +747,7 @@ class ExtraNetworksPage:
                     onclick = html.escape(f"extraNetworksCardOnClick(event, '{tabname}_{self.extra_networks_tabname}');")
 
                 item_name = node.item.get("name", "").strip()
-                tree_item.html = self.build_tree_html_dict_row(
+                tree_item.html = self.build_tree_html_row(
                     tabname=tabname,
                     label=html.escape(item_name),
                     btn_type="file",
@@ -728,7 +827,7 @@ class ExtraNetworksPage:
 
         return dirs_html
 
-    def create_html(self, tabname, *, empty=False):
+    def create_html(self, tabname: str, *, empty: bool = False) -> str:
         """Generates an HTML string for the current pane.
 
         The generated HTML uses `extra-networks-pane.html` as a template.
