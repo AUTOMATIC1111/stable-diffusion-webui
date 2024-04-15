@@ -11,6 +11,7 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
 
     def refresh(self):
         shared.reload_hypernetworks()
+        super().refresh()
 
     def create_item(self, name, index=None, enable_filter=True):
         full_path = shared.hypernetworks.get(name)

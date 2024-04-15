@@ -13,6 +13,7 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
 
     def refresh(self):
         shared.refresh_checkpoints()
+        super().refresh()
 
     def create_item(self, name, index=None, enable_filter=True):
         checkpoint: sd_models.CheckpointInfo = sd_models.checkpoint_aliases.get(name)

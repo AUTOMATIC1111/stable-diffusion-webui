@@ -337,6 +337,8 @@ class ExtraNetworksTab {
     }
 
     async onFetchCardsData(div_ids) {
+        await this.waitForServerPageReady();
+
         return JSON.parse(
             await requestGetPromise(
                 "./sd_extra_networks/fetch-cards-data",
@@ -349,6 +351,8 @@ class ExtraNetworksTab {
     }
 
     async onFetchTreeData(div_ids) {
+        await this.waitForServerPageReady();
+
         return JSON.parse(
             await requestGetPromise(
                 "./sd_extra_networks/fetch-tree-data",

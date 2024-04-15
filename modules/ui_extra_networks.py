@@ -201,7 +201,12 @@ def fetch_cover_images(extra_networks_tabname: str = "", item: str = "", index: 
 
 def init_tree_data(tabname: str = "", extra_networks_tabname: str = "") -> JSONResponse:
     page = get_page_by_name(extra_networks_tabname)
+
     data = page.generate_tree_view_data(tabname)
+
+    if data is None:
+        return JSONResponse({}, status_code=503)
+
     return JSONResponse(data, status_code=200)
 
 def fetch_tree_data(

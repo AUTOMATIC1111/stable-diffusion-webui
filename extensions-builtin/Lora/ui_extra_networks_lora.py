@@ -14,6 +14,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
 
     def refresh(self):
         networks.list_available_networks()
+        super().refresh()
 
     def create_item(self, name, index=None, enable_filter=True):
         lora_on_disk = networks.available_networks.get(name)
