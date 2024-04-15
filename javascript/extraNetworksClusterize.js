@@ -244,9 +244,6 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
 
     #setVisibility(div_id, visible) {
         /** Recursively sets the visibility of a div_id and its children. */
-        if (!visible && this.selected_div_id === div_id) {
-            this.selected_div_id = null;
-        }
         const this_obj = this.data_obj[div_id];
         this_obj.visible = visible;
         for (const child_id of this_obj.children) {
@@ -255,7 +252,19 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
     }
 
     onRowSelected(div_id, elem, override) {
-        /** Selects a row and deselects all others. */
+        /** Selects a row and deselects all others.
+         *
+         *  If both `div_id` and `elem` are null/undefined, then we deselect all rows.
+         *  `override` allows us to manually set the new state instead of toggling.
+        */
+        if (isNullOrUndefined(div_id) && isNullOrUndefined(elem)) {
+            if (!isNullOrUndefined(this.selected_div_id) && keyExistsLogError(this.data_obj, this.selected_div_id)) {
+                this.data_obj[this.selected_div_id].selected = false;
+                this.selected_div_id = null;
+            }
+            return;
+        }
+
         if (!isElementLogError(elem)) {
             return;
         }
@@ -373,9 +382,13 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
             if (this.data_obj[div_id].expanded) {
                 parsed_html.dataset.expanded = "";
             }
+
+            // Only allow one item to have `data-selected`.
+            delete parsed_html.dataset.selected;
             if (div_id === this.selected_div_id) {
                 parsed_html.dataset.selected = "";
             }
+
             res.push(parsed_html.outerHTML);
             this.lru.set(String(div_id), parsed_html);
         }

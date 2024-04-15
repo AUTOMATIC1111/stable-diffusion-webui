@@ -637,6 +637,8 @@ function extraNetworksBtnDirsViewItemOnClick(event, tabname_full) {
         ).forEach(elem => {
             delete elem.dataset.selected;
         });
+        // deselect tree view rows
+        tab.tree_list.onRowSelected(); // empty params deselects all rows.
     };
 
     const _select_button = (elem) => {
@@ -648,15 +650,15 @@ function extraNetworksBtnDirsViewItemOnClick(event, tabname_full) {
         // Select the corresponding tree view button.
         if ("selected" in elem.dataset) {
             const tree_row = tab.container_elem.querySelector(`.tree-list-item[data-path="${elem.textContent.trim()}"]`);
-            if (isElement(tree_row)) {
-                tab.tree_list.onRowSelected(tree_row.dataset.divId, tree_row);
-            }
+            tab.tree_list.onRowSelected(tree_row.dataset.divId, tree_row);
         }
     };
 
     const _deselect_button = (elem) => {
         delete elem.dataset.selected;
         txt_search_elem.value = "";
+        // deselect tree view rows
+        tab.tree_list.onRowSelected(); // empty params deselects all rows.
     };
 
     if ("selected" in event.target.dataset) {
