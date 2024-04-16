@@ -1537,6 +1537,9 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             if self.mask_blur_x > 0 or self.mask_blur_y > 0:
                 self.extra_generation_params["Mask blur"] = self.mask_blur
 
+            if image_mask.size != (self.width, self.height):
+                image_mask = images.resize_image(self.resize_mode, image_mask, self.width, self.height)
+
             if self.inpaint_full_res:
                 self.mask_for_overlay = image_mask
                 mask = image_mask.convert('L')
@@ -1551,7 +1554,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 self.extra_generation_params["Inpaint area"] = "Only masked"
                 self.extra_generation_params["Masked area padding"] = self.inpaint_full_res_padding
             else:
-                image_mask = images.resize_image(self.resize_mode, image_mask, self.width, self.height)
                 np_mask = np.array(image_mask)
                 np_mask = np.clip((np_mask.astype(np.float32)) * 2, 0, 255).astype(np.uint8)
                 self.mask_for_overlay = Image.fromarray(np_mask)
