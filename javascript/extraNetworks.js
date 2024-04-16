@@ -17,6 +17,8 @@
 /*eslint no-undef: "error"*/
 
 const SEARCH_INPUT_DEBOUNCE_TIME_MS = 250;
+const EXTRA_NETWORKS_GET_PAGE_READY_MAX_ATTEMPTS = 10;
+const EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS = 1000;
 
 const re_extranet = /<([^:^>]+:[^:]+):[\d.]+>(.*)/;
 const re_extranet_g = /<([^:^>]+:[^:]+):[\d.]+>/g;
@@ -28,8 +30,6 @@ const storedPopupIds = {};
 const extraPageUserMetadataEditors = {};
 const extra_networks_tabs = {};
 /** Boolean flags used along with utils.js::waitForBool(). */
-// Set true when extraNetworksSetup completes.
-const extra_networks_setup_complete = {state: false};
 // Set true when we first load the UI options.
 const initialUiOptionsLoaded = {state: false};
 
@@ -283,85 +283,131 @@ class ExtraNetworksTab {
         }
     }
 
-    async waitForServerPageReady() {
-        // We need to wait for the page to be ready before we can fetch data.
-        // After starting the server, on the first load of the page, if the user
-        // immediately clicks a tab, then we will try to load the card data before
-        // the server has even generated it.
-        // We use status 503 to indicate that the page isnt ready yet.
-        let ready = false;
-        while (!ready) {
-            try {
-                await requestGetPromise(
-                    "./sd_extra_networks/page-is-ready",
-                    {extra_networks_tabname: this.extra_networks_tabname},
-                );
-                ready = true;
-            } catch (error) {
-                if (error.status === 503) {
-                    await new Promise(resolve => setTimeout(resolve, 250));
-                } else {
-                    // We do not want to continue waiting if we get an unhandled error.
-                    throw new Error("Error checking page readiness:", error);
-                }
-            }
-        }
+    async waitForServerPageReady(
+        max_attempts = EXTRA_NETWORKS_GET_PAGE_READY_MAX_ATTEMPTS,
+        delay_ms = EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS,
+    ) {
+        /** Waits for a page on the server to be ready.
+         *
+         *  We need to wait for the page to be ready before we can fetch any data.
+         *  It is possible to click on a tab before the server has any data ready for us.
+         *  Since clicking on tabs triggers a data request, there will be an error from
+         *  the server since the data isn't ready. This function allows us to wait for
+         *  the server to tell us that it is ready for data requests.
+         *
+         *  Resolves when the response from the server is {ready: true}.
+         *  Rejects if we exceed the max number of attempts.
+         *
+         *  Args:
+         *      max_attempts [int]: The max number of reuqests that will be attempted
+         *                          before giving up. If set to 0, will attempt forever.
+         *      delay_ms [int]:     The time between requests to the server. The server
+         *                          responds right away with its state so we need to
+         *                          slow down our request times.
+         */
+        const err_prefix = `error waiting for server page (${this.extra_networks_tabname})`;
+        return new Promise((resolve, reject) => {
+            let attempt = 0;
+            const loop = () => {
+                setTimeout(async() => {
+                    try {
+                        const response = JSON.parse(
+                            await requestGetPromise(
+                                "./sd_extra_networks/page-is-ready",
+                                {extra_networks_tabname: this.extra_networks_tabname},
+                                EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS,
+                            )
+                        );
+                        if (response.ready === true) {
+                            return resolve();
+                        } else if (max_attempts !== 0 && attempt++ >= max_attempts) {
+                            return reject(`${err_prefix}: max attempts exceeded`);
+                        } else {
+                            setTimeout(() => loop(), delay_ms);
+                        }
+                    } catch (error) {
+                        return reject(`${err_prefix}: ${error}`);
+                    }
+                }, 0);
+            };
+            return loop();
+        });
     }
 
     async onInitCardsData() {
-        await this.waitForServerPageReady();
+        try {
+            await this.waitForServerPageReady();
+        } catch (error) {
+            console.error(error);
+            return {};
+        }
 
-        return JSON.parse(
-            await requestGetPromise(
-                "./sd_extra_networks/init-cards-data",
-                {
-                    tabname: this.tabname,
-                    extra_networks_tabname: this.extra_networks_tabname,
-                },
-            )
-        );
+        const url = "./sd_extra_networks/init-cards-data";
+        const payload = {tabname: this.tabname, extra_networks_tabname: this.extra_networks_tabname};
+        const timeout = EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS;
+        try {
+            return JSON.parse(await requestGetPromise(url, payload, timeout));
+        } catch (error) {
+            console.error(error);
+            return {};
+        }
     }
 
     async onInitTreeData() {
-        await this.waitForServerPageReady();
+        try {
+            await this.waitForServerPageReady();
+        } catch (error) {
+            console.error(error);
+            return {};
+        }
 
-        return JSON.parse(
-            await requestGetPromise(
-                "./sd_extra_networks/init-tree-data",
-                {
-                    tabname: this.tabname,
-                    extra_networks_tabname: this.extra_networks_tabname,
-                },
-            )
-        );
+        const url = "./sd_extra_networks/init-tree-data";
+        const payload = {tabname: this.tabname, extra_networks_tabname: this.extra_networks_tabname};
+        const timeout = EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS;
+        try {
+            return JSON.parse(await requestGetPromise(url, payload, timeout));
+        } catch (error) {
+            console.error(error);
+            return {};
+        }
     }
 
     async onFetchCardsData(div_ids) {
-        await this.waitForServerPageReady();
+        try {
+            await this.waitForServerPageReady();
+        } catch (error) {
+            console.error(error);
+            return {};
+        }
 
-        return JSON.parse(
-            await requestGetPromise(
-                "./sd_extra_networks/fetch-cards-data",
-                {
-                    extra_networks_tabname: this.extra_networks_tabname,
-                    div_ids: div_ids,
-                },
-            )
-        );
+        const url = "./sd_extra_networks/fetch-cards-data";
+        const payload = {extra_networks_tabname: this.extra_networks_tabname, div_ids: div_ids};
+        const timeout = EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS;
+        try {
+            return JSON.parse(await requestGetPromise(url, payload, timeout));
+        } catch (error) {
+            console.error(error);
+            return {};
+        }
     }
 
     async onFetchTreeData(div_ids) {
-        await this.waitForServerPageReady();
+        try {
+            await this.waitForServerPageReady();
+        } catch (error) {
+            console.error(error);
+            return {};
+        }
 
-        return JSON.parse(
-            await requestGetPromise(
-                "./sd_extra_networks/fetch-tree-data",
-                {
-                    extra_networks_tabname: this.extra_networks_tabname,
-                    div_ids: div_ids,
-                },
-            )
-        );
+        const url = "./sd_extra_networks/fetch-tree-data";
+        const payload = {extra_networks_tabname: this.extra_networks_tabname, div_ids: div_ids};
+        const timeout = EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS;
+        try {
+            return JSON.parse(await requestGetPromise(url, payload, timeout));
+        } catch (error) {
+            console.error(error);
+            return {};
+        }
     }
 
     updateSearch(text) {
@@ -635,10 +681,11 @@ function extraNetworksUnrelatedTabSelected(tabname) {
 
 async function extraNetworksTabSelected(tabname_full, show_prompt, show_neg_prompt) {
     /** called from python when user selects an extra networks tab */
+
     await waitForKeyInObject({obj: extra_networks_tabs, k: tabname_full});
     for (const [k, v] of Object.entries(extra_networks_tabs)) {
         if (k === tabname_full) {
-            await v.load(show_prompt, show_neg_prompt);
+            v.load(show_prompt, show_neg_prompt);
         } else {
             v.unload();
         }
@@ -960,7 +1007,6 @@ async function extraNetworksSetupTab(tabname) {
 }
 
 async function extraNetworksSetup() {
-    extra_networks_setup_complete.state = false;
     await waitForBool(initialUiOptionsLoaded);
 
     await Promise.all([
@@ -969,8 +1015,6 @@ async function extraNetworksSetup() {
     ]);
 
     extraNetworksSetupEventDelegators();
-
-    extra_networks_setup_complete.state = true;
 }
 
 onUiLoaded(extraNetworksSetup);

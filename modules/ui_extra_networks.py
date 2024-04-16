@@ -323,11 +323,8 @@ def page_is_ready(extra_networks_tabname: str = "") -> JSONResponse:
     page = get_page_by_name(extra_networks_tabname)
 
     try:
-        items_list = list(page.list_items())
-        if len(page.items) == len(items_list):
-            return JSONResponse({}, status_code=200)
-
-        return JSONResponse({"error": "page not ready"}, status_code=503)
+        ready = len(page.items) == len(list(page.list_items()))
+        return JSONResponse({"ready": ready}, status_code=200)
     except Exception as exc:
         return JSONResponse({"error": str(exc)}, status_code=500)
 

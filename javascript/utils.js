@@ -261,9 +261,9 @@ function debounce(handler, timeout_ms) {
     };
 }
 
-function waitForElement(selector) {
+function waitForElement(selector, timeout_ms) {
     /** Promise that waits for an element to exist in DOM. */
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
         if (document.querySelector(selector)) {
             return resolve(document.querySelector(selector));
         }
@@ -271,7 +271,7 @@ function waitForElement(selector) {
         const observer = new MutationObserver(mutations => {
             if (document.querySelector(selector)) {
                 observer.disconnect();
-                resolve(document.querySelector(selector));
+                return resolve(document.querySelector(selector));
             }
         });
 
@@ -279,28 +279,46 @@ function waitForElement(selector) {
             childList: true,
             subtree: true
         });
+
+        if (isNumber(timeout_ms) && timeout_ms !== 0) {
+            setTimeout(() => {
+                observer.takeRecords();
+                observer.disconnect();
+                return reject(`timed out waiting for element: "${selector}"`);
+            }, timeout_ms);
+        }
     });
 }
 
-function waitForBool(o) {
+function waitForBool(o, timeout_ms) {
     /** Promise that waits for a boolean to be true.
      *
      *  `o` must be an Object of the form:
      *  { state: <bool value> }
      *
+     *  If timeout_ms is null/undefined or 0, waits forever.
+     *
      *  Resolves when (state === true)
+     *  Rejects when state is not True before timeout_ms.
      */
-    return new Promise(resolve => {
+    let wait_timer;
+    return new Promise((resolve, reject) => {
+        if (isNumber(timeout_ms) && timeout_ms !== 0) {
+            setTimeout(() => {
+                clearTimeout(wait_timer);
+                return reject("timed out waiting for bool");
+            }, timeout_ms);
+        }
         (function _waitForBool() {
             if (o.state) {
                 return resolve();
             }
-            setTimeout(_waitForBool, 100);
+            wait_timer = setTimeout(_waitForBool, 100);
         })();
     });
 }
 
-function waitForKeyInObject(o) {
+function waitForKeyInObject(o, timeout_ms) {
     /** Promise that waits for a key to exist in an object.
      *
      *  `o` must be an Object of the form:
@@ -309,19 +327,29 @@ function waitForKeyInObject(o) {
      *      k: <key to watch for>,
      *  }
      *
-     *  Resolves when (k in obj)
+     *  If timeout_ms is null/undefined or 0, waits forever.
+     *
+     *  Resolves when (k in obj).
+     *  Rejects when k is not found in obj before timeout_ms.
      */
-    return new Promise(resolve => {
+    let wait_timer;
+    return new Promise((resolve, reject) => {
+        if (isNumber(timeout_ms) && timeout_ms !== 0) {
+            setTimeout(() => {
+                clearTimeout(wait_timer);
+                return reject(`timed out waiting for key: ${o.k}`);
+            }, timeout_ms);
+        }
         (function _waitForKeyInObject() {
             if (o.k in o.obj) {
                 return resolve();
             }
-            setTimeout(_waitForKeyInObject, 100);
+            wait_timer = setTimeout(_waitForKeyInObject, 100);
         })();
     });
 }
 
-function waitForValueInObject(o) {
+function waitForValueInObject(o, timeout_ms) {
     /** Promise that waits for a key value pair in an Object.
      *
      *  `o` must be an Object of the form:
@@ -331,10 +359,19 @@ function waitForValueInObject(o) {
      *      v: <value at key for comparison>
      *  }
      *
+     *  If timeout_ms is null/undefined or 0, waits forever.
+     *
      *  Resolves when obj[k] == v
      */
-    return new Promise(resolve => {
-        waitForKeyInObject({k: o.k, obj: o.obj}).then(() => {
+    let wait_timer;
+    return new Promise((resolve, reject) => {
+        if (isNumber(timeout_ms) && timeout_ms !== 0) {
+            setTimeout(() => {
+                clearTimeout(wait_timer);
+                return reject(`timed out waiting for value: ${o.k}: ${o.v}`);
+            }, timeout_ms);
+        }
+        waitForKeyInObject({k: o.k, obj: o.obj}, timeout_ms).then(() => {
             (function _waitForValueInObject() {
 
                 if (o.k in o.obj && o.obj[o.k] == o.v) {
@@ -342,6 +379,8 @@ function waitForValueInObject(o) {
                 }
                 setTimeout(_waitForValueInObject, 100);
             })();
+        }).catch((error) => {
+            return reject(error);
         });
     });
 }
@@ -374,26 +413,32 @@ function requestGet(url, data, handler, errorHandler) {
     xhr.send(js);
 }
 
-function requestGetPromise(url, data) {
+function requestGetPromise(url, data, timeout_ms) {
     return new Promise((resolve, reject) => {
-        let xhr = new XMLHttpRequest();
-        let args = Object.keys(data).map(k => {
-            return encodeURIComponent(k) + "=" + encodeURIComponent(data[k]);
+        const xhr = new XMLHttpRequest();
+        const args = Object.entries(data).map(([k, v]) => {
+            return `${encodeURIComponent(k)}=${encodeURIComponent(v)}`;
         }).join("&");
-        xhr.open("GET", url + "?" + args, true);
 
         xhr.onload = () => {
             if (xhr.status >= 200 && xhr.status < 300) {
-                resolve(xhr.responseText);
+                return resolve(xhr.responseText);
             } else {
-                reject({status: xhr.status, response: xhr.responseText});
+                return reject({status: xhr.status, response: xhr.responseText});
             }
         };
 
         xhr.onerror = () => {
-            reject({status: xhr.status, response: xhr.responseText});
+            return reject({status: xhr.status, response: xhr.responseText});
         };
+
+        xhr.ontimeout = () => {
+            return reject(`Request for ${url} timed out.`);
+        };
+
         const payload = JSON.stringify(data);
+        xhr.open("GET", `${url}?${args}`, true);
+        xhr.timeout = timeout_ms;
         xhr.send(payload);
     });
 }
