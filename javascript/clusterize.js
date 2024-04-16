@@ -28,6 +28,7 @@ class Clusterize {
         show_no_data_row: true,
         no_data_class: "clusterize-no-data",
         no_data_text: "No data",
+        loading_data_text: "Loading...",
         keep_parity: true,
         callbacks: {},
     };
@@ -124,12 +125,12 @@ class Clusterize {
         this.setup_has_run = true;
     }
 
-    clear() {
+    clear(loading) {
         if (!this.setup_has_run || !this.enabled) {
             return;
         }
 
-        this.#html(this.#generateEmptyRow().join(""));
+        this.#html(this.#generateEmptyRow(loading).join(""));
     }
 
     destroy() {        
@@ -268,7 +269,7 @@ class Clusterize {
             this.options.tag = rows[0].match(/<([^>\s/]*)/)[1].toLowerCase();
         }
         if (this.content_elem.children.length <= 1) {
-            cache.data = this.#html(rows[0] + rows[0] + rows[0]);
+            cache.data = this.#html(rows[0]);
         }
         if (!this.options.tag) {
             this.options.tag = this.content_elem.children[0].tagName.toLowerCase();
@@ -277,10 +278,6 @@ class Clusterize {
     }
 
     #recalculateDims() {
-        const prev_item_height = this.options.item_height;
-        const prev_item_width = this.options.item_width;
-        const prev_rows_in_block = this.options.rows_in_block;
-        const prev_cols_in_block = this.options.cols_in_block;
         const prev_options = JSON.stringify(this.options);
 
         this.options.cluster_height = 0;
@@ -339,12 +336,6 @@ class Clusterize {
         this.#max_rows = Math.ceil(this.#max_items / this.options.cols_in_block, 10);
 
         return prev_options === JSON.stringify(this.options);
-        return (
-            prev_item_height !== this.options.item_height ||
-            prev_item_width !== this.options.item_width ||
-            prev_rows_in_block !== this.options.rows_in_block ||
-            prev_cols_in_block !== this.options.cols_in_block
-        );
     }
 
     #getClusterNum() {
@@ -355,13 +346,17 @@ class Clusterize {
         return Math.min(current_cluster, max_cluster);
     }
 
-    #generateEmptyRow() {
-        if (!this.options.tag || !this.options.show_no_data_row) {
+    #generateEmptyRow(loading) {
+        // If loading==true, then we use the loading text for our element. Defaults to false.
+        loading = loading === true;
+        if (!loading && (!this.options.tag || !this.options.show_no_data_row)) {
             return [];
         }
 
+        const text = loading ? this.options.loading_data_text : this.options.no_data_text;
+
         const empty_row = document.createElement(this.options.tag);
-        const no_data_content = document.createTextNode(this.options.no_data_text);
+        const no_data_content = document.createTextNode(text);
         empty_row.className = this.options.no_data_class;
         if (this.options.tag === "tr") {
             const td = document.createElement("td");

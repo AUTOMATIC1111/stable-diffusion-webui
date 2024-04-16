@@ -1080,7 +1080,13 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
             return ui.pages_contents
 
         button_refresh = gr.Button("Refresh", elem_id=f"{tabname}_{page.extra_networks_tabname}_extra_refresh_internal", visible=False)
-        button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages,).then(fn=lambda: None, _js="setupAllResizeHandles").then(
+        button_refresh.click(
+            fn=refresh,
+            inputs=[],
+            outputs=ui.pages,
+        ).then(
+            fn=lambda: None, _js="setupAllResizeHandles"
+        ).then(
             fn=lambda: None,
             _js=f"function(){{extraNetworksRefreshTab('{tabname}_{page.extra_networks_tabname}');}}",
         )

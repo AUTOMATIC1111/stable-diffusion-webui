@@ -86,20 +86,22 @@ class ExtraNetworksClusterize extends Clusterize {
     }
 
     destroy() {
+        this.data_obj = {};
+        this.data_obj_keys_sorted = [];
         if (this.lru instanceof LRUCache) {
             this.lru.destroy();
             this.lru = null;
         }
-        this.data_obj = {};
-        this.data_obj_keys_sorted = [];
         super.destroy();
     }
 
     clear() {
         this.data_obj = {};
         this.data_obj_keys_sorted = [];
-        this.lru.clear();
-        super.clear();
+        if (this.lru instanceof LRUCache) {
+            this.lru.clear();
+        }
+        super.clear(true);
     }
 
     async load(force_init_data) {
@@ -170,6 +172,9 @@ class ExtraNetworksClusterize extends Clusterize {
         if (isNullOrUndefinedLogError(this.lru)) {
             return [];
         }
+        if (Object.keys(this.data_obj).length === 0) {
+            return [];
+        }
         const lru_keys = Array.from(this.lru.cache.keys());
         const cached_div_ids = div_ids.filter(x => lru_keys.includes(x));
         const missing_div_ids = div_ids.filter(x => !lru_keys.includes(x));
@@ -185,6 +190,9 @@ class ExtraNetworksClusterize extends Clusterize {
 
         // Now load any cached IDs from the LRU Cache
         for (const div_id of cached_div_ids) {
+            if (!keyExistsLogError(this.data_obj, div_id)) {
+                continue;
+            }
             if (this.data_obj[div_id].visible) {
                 data[div_id] = this.lru.get(div_id);
             }
@@ -222,7 +230,7 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
 
     clear() {
         this.selected_div_id = null;
-        super.clear();
+        super.clear(true);
     }
 
     getBoxShadow(depth) {
@@ -363,6 +371,10 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
             return [];
         }
 
+        if (Object.keys(this.data_obj).length === 0) {
+            return [];
+        }
+
         const data = await this.fetchDivIds(this.idxRangeToDivIds(idx_start, idx_end));
         const data_ids_sorted = Object.keys(data).sort((a, b) => {
             return this.data_obj_keys_sorted.indexOf(a) - this.data_obj_keys_sorted.indexOf(b);
@@ -375,6 +387,9 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
 
         const res = [];
         for (const div_id of data_ids_sorted) {
+            if (!keyExistsLogError(this.data_obj, div_id)) {
+                continue;
+            }
             const html_str = data[div_id];
             const parsed_html = isElement(html_str) ? html_str : htmlStringToElement(html_str);
             const depth = Number(parsed_html.dataset.depth);

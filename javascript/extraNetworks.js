@@ -19,6 +19,7 @@
 const SEARCH_INPUT_DEBOUNCE_TIME_MS = 250;
 const EXTRA_NETWORKS_GET_PAGE_READY_MAX_ATTEMPTS = 10;
 const EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS = 1000;
+const EXTRA_NETWORKS_REFRESH_INTERNAL_DEBOUNCE_TIMEOUT_MS = 200;
 
 const re_extranet = /<([^:^>]+:[^:]+):[\d.]+>(.*)/;
 const re_extranet_g = /<([^:^>]+:[^:]+):[\d.]+>/g;
@@ -29,6 +30,8 @@ var globalPopupInner = null;
 const storedPopupIds = {};
 const extraPageUserMetadataEditors = {};
 const extra_networks_tabs = {};
+var extra_networks_refresh_internal_debounce_timer;
+
 /** Boolean flags used along with utils.js::waitForBool(). */
 // Set true when we first load the UI options.
 const initialUiOptionsLoaded = {state: false};
@@ -52,6 +55,7 @@ class ExtraNetworksTab {
     show_prompt = true;
     show_neg_prompt = true;
     compact_prompt_en = false;
+    refresh_in_progress = false;
     constructor({tabname, extra_networks_tabname}) {
         this.tabname = tabname;
         this.extra_networks_tabname = extra_networks_tabname;
@@ -84,8 +88,7 @@ class ExtraNetworksTab {
         this.controls_elem.id = `${this.tabname_full}_controls`;
         controls_div.insertBefore(this.controls_elem, null);
 
-        await this.setupTreeList();
-        await this.setupCardsList();
+        await Promise.all([this.setupTreeList(), this.setupCardsList()]);
 
         const sort_mode_elem = this.controls_elem.querySelector(".extra-network-control--sort-mode[data-selected='']");
         isElementThrowError(sort_mode_elem);
@@ -121,6 +124,7 @@ class ExtraNetworksTab {
         this.txt_prompt_elem = null;
         this.txt_neg_prompt_elem = null;
         this.active_prompt_elem = null;
+        this.refresh_in_progress = false;
     }
 
     async registerPrompt() {
@@ -225,7 +229,7 @@ class ExtraNetworksTab {
         this.controls_elem.classList.add("hidden");
     }
 
-    async refresh() {
+    async #refresh() {
         const btn_dirs_view = this.controls_elem.querySelector(".extra-network-control--dirs-view");
         const btn_tree_view = this.controls_elem.querySelector(".extra-network-control--tree-view");
         const div_dirs = this.container_elem.querySelector(".extra-network-content--dirs-view");
@@ -240,13 +244,22 @@ class ExtraNetworksTab {
         div_tree.classList.toggle("hidden", !("selected" in btn_tree_view.dataset));
 
         await Promise.all([this.setupTreeList(), this.setupCardsList()]);
-        this.tree_list.enable();
-        this.cards_list.enable();
+        this.tree_list.enable(true);
+        this.cards_list.enable(true);
         await Promise.all([this.tree_list.load(true), this.cards_list.load(true)]);
         // apply the previous sort/filter options
         this.setSortMode(this.sort_mode_str);
         this.setSortDir(this.sort_dir_str);
         this.setFilterStr(this.filter_str);
+    }
+
+    async refresh() {
+        if (this.refresh_in_progress) {
+            return;
+        }
+        this.refresh_in_progress = true;
+        await this.#refresh();
+        this.refresh_in_progress = false;
     }
 
     async load(show_prompt, show_neg_prompt) {
@@ -639,9 +652,9 @@ function extraNetworksRefreshSingleCard(tabname, extra_networks_tabname, name) {
     tab.refreshSingleCard(name);
 }
 
-async function extraNetworksRefreshTab(tabname_full) {
+function extraNetworksRefreshTab(tabname_full) {
     /** called from python when user clicks the extra networks refresh tab button */
-    await extra_networks_tabs[tabname_full].refresh();
+    extra_networks_tabs[tabname_full].refresh();
 }
 
 // ==== EVENT HANDLING ====
@@ -832,15 +845,17 @@ function extraNetworksControlRefreshOnClick(event, tabname_full) {
      * event handler that refreshes the page. So what this function here does
      * is it manually raises a `click` event on that button.
      */
-    // We want to reset all tabs lists on refresh click so that the viewing area
-    // shows that it is loading new data.
-    for (const tab of Object.values(extra_networks_tabs)) {
-        tab.tree_list.destroy();
-        tab.cards_list.destroy();
-    }
-
-    // Fire an event for this button click.
-    gradioApp().getElementById(`${tabname_full}_extra_refresh_internal`).dispatchEvent(new Event("click"));
+    clearTimeout(extra_networks_refresh_internal_debounce_timer);
+    extra_networks_refresh_internal_debounce_timer = setTimeout(() => {
+        // We want to reset all tabs lists on refresh click so that the viewing area
+        // shows that it is loading new data.
+        for (const tab of Object.values(extra_networks_tabs)) {
+            tab.tree_list.clear();
+            tab.cards_list.clear();
+        }
+        // Fire an event for this button click.
+        gradioApp().getElementById(`${tabname_full}_extra_refresh_internal`).dispatchEvent(new Event("click"));
+    }, EXTRA_NETWORKS_REFRESH_INTERNAL_DEBOUNCE_TIMEOUT_MS);
 }
 
 function extraNetworksCardOnClick(event, tabname_full) {
