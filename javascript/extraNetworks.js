@@ -18,6 +18,8 @@
 
 const SEARCH_INPUT_DEBOUNCE_TIME_MS = 250;
 const EXTRA_NETWORKS_GET_PAGE_READY_MAX_ATTEMPTS = 10;
+const EXTRA_NETWORKS_WAIT_FOR_PAGE_READY_ATTEMPT_DELAY_MS = 1000;
+const EXTRA_NETWORKS_WAIT_FOR_PAGE_READY_TIMEOUT_MS = 1000;
 const EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS = 1000;
 const EXTRA_NETWORKS_REFRESH_INTERNAL_DEBOUNCE_TIMEOUT_MS = 200;
 
@@ -35,6 +37,33 @@ var extra_networks_refresh_internal_debounce_timer;
 /** Boolean flags used along with utils.js::waitForBool(). */
 // Set true when we first load the UI options.
 const initialUiOptionsLoaded = {state: false};
+
+const _debounce = (handler, timeout_ms) => {
+    /** Debounces a function call.
+     *
+     *  NOTE: This will NOT work if called from within a class.
+     *  It will drop `this` from scope.
+     *
+     *  Repeated calls to the debounce handler will not call the handler until there are
+     *  no new calls to the debounce handler for timeout_ms time.
+     *
+     *  Example:
+     *  function add(x, y) { return x + y; }
+     *  let debounce_handler = debounce(add, 5000);
+     *  let res;
+     *  for (let i = 0; i < 10; i++) {
+     *      res = debounce_handler(i, 100);
+     *  }
+     *  console.log("Result:", res);
+     *
+     *  This example will print "Result: 109".
+     */
+    let timer = null;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => handler(...args), timeout_ms);
+    };
+};
 
 class ExtraNetworksTab {
     tree_list;
@@ -298,7 +327,7 @@ class ExtraNetworksTab {
 
     async waitForServerPageReady(
         max_attempts = EXTRA_NETWORKS_GET_PAGE_READY_MAX_ATTEMPTS,
-        delay_ms = EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS,
+        delay_ms = EXTRA_NETWORKS_WAIT_FOR_PAGE_READY_ATTEMPT_DELAY_MS,
     ) {
         /** Waits for a page on the server to be ready.
          *
@@ -323,23 +352,33 @@ class ExtraNetworksTab {
             let attempt = 0;
             const loop = () => {
                 setTimeout(async() => {
+                    let response;
                     try {
-                        const response = JSON.parse(
+                        response = JSON.parse(
                             await requestGetPromise(
                                 "./sd_extra_networks/page-is-ready",
                                 {extra_networks_tabname: this.extra_networks_tabname},
-                                EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS,
+                                EXTRA_NETWORKS_WAIT_FOR_PAGE_READY_TIMEOUT_MS,
                             )
                         );
                         if (response.ready === true) {
                             return resolve();
-                        } else if (max_attempts !== 0 && attempt++ >= max_attempts) {
-                            return reject(`${err_prefix}: max attempts exceeded`);
-                        } else {
-                            setTimeout(() => loop(), delay_ms);
                         }
                     } catch (error) {
-                        return reject(`${err_prefix}: ${error}`);
+                        // If we get anything other than a timeout error, reject.
+                        // Otherwise, fall through.
+                        if (error !== "Request for ./sd_extra_networks/page-is-ready timed out.") {
+                            return reject(`${err_prefix}: ${error}`);
+                        }
+                    }
+
+                    // If we got here, then we got a timeout error.
+                    // Timeout errors are acceptable until the max number of
+                    // attempts has been reached.
+                    if (max_attempts !== 0 && attempt++ >= max_attempts) {
+                        return reject(`${err_prefix}: max attempts exceeded`);
+                    } else {
+                        setTimeout(() => loop(), delay_ms);
                     }
                 }, 0);
             };
@@ -993,7 +1032,7 @@ function extraNetworksSetupEventDelegators() {
     });
 
     // Debounce search text input. This way we only search after user is done typing.
-    const search_input_debounce = debounce(tabname_full => {
+    const search_input_debounce = _debounce(tabname_full => {
         extra_networks_tabs[tabname_full].applyFilter();
     }, SEARCH_INPUT_DEBOUNCE_TIME_MS);
 

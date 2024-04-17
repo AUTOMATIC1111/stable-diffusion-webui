@@ -234,33 +234,6 @@ function getComputedDims(elem) {
 
 /** Functions for asynchronous operations. */
 
-function debounce(handler, timeout_ms) {
-    /** Debounces a function call.
-     *
-     *  NOTE: This will NOT work if called from within a class.
-     *  It will drop `this` from scope.
-     *
-     *  Repeated calls to the debounce handler will not call the handler until there are
-     *  no new calls to the debounce handler for timeout_ms time.
-     *
-     *  Example:
-     *  function add(x, y) { return x + y; }
-     *  let debounce_handler = debounce(add, 5000);
-     *  let res;
-     *  for (let i = 0; i < 10; i++) {
-     *      res = debounce_handler(i, 100);
-     *  }
-     *  console.log("Result:", res);
-     *
-     *  This example will print "Result: 109".
-     */
-    let timer = null;
-    return (...args) => {
-        clearTimeout(timer);
-        timer = setTimeout(() => handler(...args), timeout_ms);
-    };
-}
-
 function waitForElement(selector, timeout_ms) {
     /** Promise that waits for an element to exist in DOM. */
     return new Promise((resolve, reject) => {
