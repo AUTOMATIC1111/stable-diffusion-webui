@@ -1293,7 +1293,7 @@ body.resizing .resize-handle {
 }
 
 .extra-network-controls-div {
-    margin-left: auto;
+    margin-left: auto !important;
 }
 
 .extra-network-controls {
