@@ -264,13 +264,15 @@ class ExtraNetworksTab {
         const div_dirs = this.container_elem.querySelector(".extra-network-content--dirs-view");
         // We actually want to select the tree view's column in the resize-handle-row.
         // This is what we actually show/hide, not the inner elements.
-        const div_tree = this.container_elem.querySelector(
-            `.extra-network-content.resize-handle-col:has(> #${this.tabname_full}_tree_list_scroll_area)`
-        );
+        const div_tree = this.tree_list.scroll_elem.closest(".resize-handle-col");
 
         // Remove "hidden" class if button is enabled, otherwise add it.
         div_dirs.classList.toggle("hidden", !("selected" in btn_dirs_view.dataset));
         div_tree.classList.toggle("hidden", !("selected" in btn_tree_view.dataset));
+
+        // Apply the current resize handle classes.
+        const resize_handle_row = this.tree_list.scroll_elem.closest(".resize-handle-row");
+        resize_handle_row.classList.toggle("resize-handle-hidden", div_tree.classList.contains("hidden"));
 
         await Promise.all([this.setupTreeList(), this.setupCardsList()]);
         this.tree_list.enable(true);
@@ -864,6 +866,13 @@ function extraNetworksControlTreeViewOnClick(event, tabname_full) {
     const tab = extra_networks_tabs[tabname_full];
     tab.tree_list.scroll_elem.parentElement.classList.toggle("hidden", !show);
     tab.tree_list.enable(show);
+
+    // Apply the resize-handle-hidden class to the resize-handle-row.
+    // NOTE: This can be simplified using only css with the ":has" selector however
+    // this is only recently supported in firefox. So for now we just add a class
+    // to the resize-handle-row instead.
+    const resize_handle_row = tab.tree_list.scroll_elem.closest(".resize-handle-row");
+    resize_handle_row.classList.toggle("resize-handle-hidden", !show);
 
     event.stopPropagation();
 }

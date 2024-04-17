@@ -1212,6 +1212,7 @@ body.resizing .resize-handle {
     color: var(--input-placeholder-color) !important;
 }
 
+/* Custom scrollbar style. Only works on chromium based browsers. */
 .clusterize-scroll::-webkit-scrollbar {
     background: transparent;
     width: var(--text-lg);
@@ -1274,6 +1275,16 @@ body.resizing .resize-handle {
     overflow: auto;
 }
 
+/* Can be simplified using :has but this is only recently supported in firefox. */
+.resize-handle-row.resize-handle-hidden .resize-handle {
+    display: none;
+}
+
+/* Can be simplified using :has but this is only recently supported in firefox. */
+.resize-handle-row.resize-handle-hidden {
+    display: flex !important;
+}
+/*
 .resize-handle-row:has(> .resize-handle-col.hidden) {
     display: flex !important;
 }
@@ -1281,6 +1292,7 @@ body.resizing .resize-handle {
 .resize-handle-row:has(> .resize-handle-col.hidden)>.resize-handle {
     display: none;
 }
+*/
 
 .extra-network-tree {
     display: flex;
