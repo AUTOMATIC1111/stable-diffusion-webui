@@ -847,12 +847,10 @@ function extraNetworksControlRefreshOnClick(event, tabname_full) {
      */
     clearTimeout(extra_networks_refresh_internal_debounce_timer);
     extra_networks_refresh_internal_debounce_timer = setTimeout(() => {
-        // We want to reset all tabs lists on refresh click so that the viewing area
+        // We want to reset tab lists on refresh click so that the viewing area
         // shows that it is loading new data.
-        for (const tab of Object.values(extra_networks_tabs)) {
-            tab.tree_list.clear();
-            tab.cards_list.clear();
-        }
+        extra_networks_tabs[tabname_full].tree_list.clear();
+        extra_networks_tabs[tabname_full].cards_list.clear();
         // Fire an event for this button click.
         gradioApp().getElementById(`${tabname_full}_extra_refresh_internal`).dispatchEvent(new Event("click"));
     }, EXTRA_NETWORKS_REFRESH_INTERNAL_DEBOUNCE_TIMEOUT_MS);

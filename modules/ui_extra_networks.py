@@ -14,22 +14,15 @@ from fastapi.exceptions import HTTPException
 from PIL import Image
 from starlette.responses import FileResponse, JSONResponse, Response
 
-from modules import errors, extra_networks, shared, ui_extra_networks_user_metadata, util
+from modules import errors, extra_networks, shared, util
 from modules.images import read_info_from_image, save_image_with_geninfo
 from modules.infotext_utils import image_from_url_text
+from modules.ui_common import OutputPanel
+from modules.ui_extra_networks_user_metadata import UserMetadataEditor
 
 extra_pages = []
 allowed_dirs = set()
 default_allowed_preview_extensions = ["png", "jpg", "jpeg", "webp", "gif"]
-
-
-@functools.cache
-def allowed_preview_extensions_with_extra(extra_extensions=None):
-    return set(default_allowed_preview_extensions) | set(extra_extensions or [])
-
-
-def allowed_preview_extensions():
-    return allowed_preview_extensions_with_extra((shared.opts.samples_format,))
 
 
 class ListItem:
@@ -175,212 +168,36 @@ class DirectoryTreeNode:
             child.apply(fn)
 
 
-def register_page(page):
-    """registers extra networks page for the UI
+class ExtraNetworksUi:
+    """UI components for Extra Networks
 
-    recommend doing it in on_before_ui() callback for extensions
+    Attributes:
+        button_save_preview:        Gradio button for saving previews.
+        pages:                      Gradio HTML elements for an ExtraNetworks page.
+        pages_contents:             HTML string content for `pages`.
+        preview_target_filename:    Gradio textbox for entering filename.
+        related_tabs:               Gradio Tab instances for each ExtraNetworksPage.
+        stored_extra_pages:         `ExtraNetworksPage` instance for each page.
+        tabname:                    The primary page tab name (i.e. `txt2img`, `img2img`)
+        user_metadata_editors:      The metadata editor objects for a page.
     """
-    extra_pages.append(page)
-    allowed_dirs.clear()
-    allowed_dirs.update(set(sum([x.allowed_directories_for_previews() for x in extra_pages], [])))
 
+    def __init__(self, tabname: str):
+        self.tabname = tabname
+        # Dict keys are "{tabname}_{page.extra_networks_tabname}"
+        self.pages: dict[str, gr.HTML] = {}
+        self.pages_contents: dict[str, str] = {}
+        self.stored_extra_pages: dict[str, ExtraNetworksPage] = {}
+        self.related_tabs: dict[str, gr.Tab] = {}
+        self.user_metadata_editors: dict[str, UserMetadataEditor] = {}
 
-def get_page_by_name(extra_networks_tabname: str = "") -> "ExtraNetworksPage":
-    """Gets a page from extra pages for the specified tabname.
+        self.unrelated_tabs: list[gr.Tab] = []
+        self.button_save_preview: Optional[gr.Button] = None
+        self.preview_target_filename: Optional[gr.Textbox] = None
 
-    Raises:
-        HTTPException if the tabname is not in the `extra_pages` dict.
-    """
-    for page in extra_pages:
-        if page.extra_networks_tabname == extra_networks_tabname:
-            return page
-
-    raise HTTPException(status_code=404, detail=f"Page not found: {extra_networks_tabname}")
-
-
-def fetch_file(filename: str = ""):
-    if not os.path.isfile(filename):
-        raise HTTPException(status_code=404, detail="File not found")
-
-    if not any(Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs):
-        raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
-
-    ext = os.path.splitext(filename)[1].lower()[1:]
-    if ext not in allowed_preview_extensions():
-        raise ValueError(f"File cannot be fetched: {filename}. Extensions allowed: {allowed_preview_extensions()}.")
-
-    # would profit from returning 304
-    return FileResponse(filename, headers={"Accept-Ranges": "bytes"})
-
-
-def fetch_cover_images(extra_networks_tabname: str = "", item: str = "", index: int = 0):
-    page = get_page_by_name(extra_networks_tabname)
-
-    metadata = page.metadata.get(item)
-    if metadata is None:
-        raise HTTPException(status_code=404, detail="File not found")
-
-    cover_images = json.loads(metadata.get("ssmd_cover_images", {}))
-    image = cover_images[index] if index < len(cover_images) else None
-    if not image:
-        raise HTTPException(status_code=404, detail="File not found")
-
-    try:
-        image = Image.open(BytesIO(b64decode(image)))
-        buffer = BytesIO()
-        image.save(buffer, format=image.format)
-        return Response(content=buffer.getvalue(), media_type=image.get_format_mimetype())
-    except Exception as err:
-        raise ValueError(f"File cannot be fetched: {item}. Failed to load cover image.") from err
-
-
-def init_tree_data(tabname: str = "", extra_networks_tabname: str = "") -> JSONResponse:
-    """Generates the initial Tree View data and returns a simplified dataset.
-
-    The data returned does not contain any HTML strings.
-
-    Status Codes:
-        200 on success
-        503 when data is not ready
-        500 on any other error
-    """
-    page = get_page_by_name(extra_networks_tabname)
-
-    data = page.generate_tree_view_data(tabname)
-
-    if data is None:
-        return JSONResponse({}, status_code=503)
-
-    return JSONResponse(data, status_code=200)
-
-
-def fetch_tree_data(
-    extra_networks_tabname: str = "",
-    div_ids: str = "",
-) -> JSONResponse:
-    """Retrieves Tree View HTML strings for the specified `div_ids`.
-
-    Args:
-        div_ids: A string with div_ids in CSV format.
-    """
-    page = get_page_by_name(extra_networks_tabname)
-
-    res = {}
-    for div_id in div_ids.split(","):
-        if div_id in page.tree:
-            res[div_id] = page.tree[div_id].html
-
-    return JSONResponse(res)
-
-
-def fetch_cards_data(
-    extra_networks_tabname: str = "",
-    div_ids: str = "",
-) -> JSONResponse:
-    """Retrieves Cards View HTML strings for the specified `div_ids`.
-
-    Args:
-        div_ids: A string with div_ids in CSV format.
-    """
-    page = get_page_by_name(extra_networks_tabname)
-
-    res = {}
-    for div_id in div_ids.split(","):
-        if div_id in page.cards:
-            res[div_id] = page.cards[div_id].html
-
-    return JSONResponse(res)
-
-
-def init_cards_data(tabname: str = "", extra_networks_tabname: str = "") -> JSONResponse:
-    """Generates the initial Cards View data and returns a simplified dataset.
-
-    The data returned does not contain any HTML strings.
-
-    Status Codes:
-        200 on success
-        503 when data is not ready
-        500 on any other error
-    """
-    page = get_page_by_name(extra_networks_tabname)
-
-    data = page.generate_cards_view_data(tabname)
-
-    if data is None:
-        return JSONResponse({}, status_code=503)
-
-    return JSONResponse(data, status_code=200)
-
-
-def page_is_ready(extra_networks_tabname: str = "") -> JSONResponse:
-    """Returns whether the specified page is ready for fetching data.
-
-    Status Codes:
-        200 ready
-        503 not ready
-        500 on any other error
-    """
-    page = get_page_by_name(extra_networks_tabname)
-
-    try:
-        ready = len(page.items) == len(list(page.list_items()))
-        return JSONResponse({"ready": ready}, status_code=200)
-    except Exception as exc:
-        return JSONResponse({"error": str(exc)}, status_code=500)
-
-
-def get_metadata(extra_networks_tabname: str = "", item: str = "") -> JSONResponse:
-    try:
-        page = get_page_by_name(extra_networks_tabname)
-    except HTTPException:
-        return JSONResponse({})
-
-    metadata = page.metadata.get(item)
-    if metadata is None:
-        return JSONResponse({})
-
-    # those are cover images, and they are too big to display in UI as text
-    # FIXME: WHY WAS THIS HERE?
-    # metadata = {i: metadata[i] for i in metadata if i != 'ssmd_cover_images'}
-
-    return JSONResponse({"metadata": json.dumps(metadata, indent=4, ensure_ascii=False)})
-
-
-def get_single_card(tabname: str = "", extra_networks_tabname: str = "", name: str = "") -> JSONResponse:
-    page = get_page_by_name(extra_networks_tabname)
-
-    try:
-        item = page.create_item(name, enable_filter=False)
-        page.items[name] = item
-    except Exception as exc:
-        errors.display(exc, "creating item for extra network")
-        item = page.items.get(name, None)
-
-    if item is None:
-        return JSONResponse({})
-
-    page.read_user_metadata(item, use_cache=False)
-    item_html = page.create_card_html(tabname=tabname, item=item)
-
-    return JSONResponse({"html": item_html})
-
-
-def add_pages_to_demo(app):
-    app.add_api_route("/sd_extra_networks/thumb", fetch_file, methods=["GET"])
-    app.add_api_route("/sd_extra_networks/cover-images", fetch_cover_images, methods=["GET"])
-    app.add_api_route("/sd_extra_networks/metadata", get_metadata, methods=["GET"])
-    app.add_api_route("/sd_extra_networks/get-single-card", get_single_card, methods=["GET"])
-    app.add_api_route("/sd_extra_networks/init-tree-data", init_tree_data, methods=["GET"])
-    app.add_api_route("/sd_extra_networks/init-cards-data", init_cards_data, methods=["GET"])
-    app.add_api_route("/sd_extra_networks/fetch-tree-data", fetch_tree_data, methods=["GET"])
-    app.add_api_route("/sd_extra_networks/fetch-cards-data", fetch_cards_data, methods=["GET"])
-    app.add_api_route("/sd_extra_networks/page-is-ready", page_is_ready, methods=["GET"])
-
-
-def quote_js(s):
-    s = s.replace("\\", "\\\\")
-    s = s.replace('"', '\\"')
-    return f'"{s}"'
+        # Fetch the extra pages and build a map.
+        for page in pages_in_preferred_order(extra_pages.copy()):
+            self.stored_extra_pages[f"{self.tabname}_{page.extra_networks_tabname}"] = page
 
 
 class ExtraNetworksPage:
@@ -973,8 +790,225 @@ class ExtraNetworksPage:
                 pass
         return None
 
-    def create_user_metadata_editor(self, ui, tabname):
-        return ui_extra_networks_user_metadata.UserMetadataEditor(ui, tabname, self)
+    def create_user_metadata_editor(self, ui, tabname) -> UserMetadataEditor:
+        return UserMetadataEditor(ui, tabname, self)
+
+
+@functools.cache
+def allowed_preview_extensions_with_extra(extra_extensions=None):
+    return set(default_allowed_preview_extensions) | set(extra_extensions or [])
+
+
+def allowed_preview_extensions():
+    return allowed_preview_extensions_with_extra((shared.opts.samples_format,))
+
+
+def register_page(page):
+    """registers extra networks page for the UI
+
+    recommend doing it in on_before_ui() callback for extensions
+    """
+    extra_pages.append(page)
+    allowed_dirs.clear()
+    allowed_dirs.update(set(sum([x.allowed_directories_for_previews() for x in extra_pages], [])))
+
+
+def get_page_by_name(extra_networks_tabname: str = "") -> "ExtraNetworksPage":
+    """Gets a page from extra pages for the specified tabname.
+
+    Raises:
+        HTTPException if the tabname is not in the `extra_pages` dict.
+    """
+    for page in extra_pages:
+        if page.extra_networks_tabname == extra_networks_tabname:
+            return page
+
+    raise HTTPException(status_code=404, detail=f"Page not found: {extra_networks_tabname}")
+
+
+def fetch_file(filename: str = ""):
+    if not os.path.isfile(filename):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    if not any(Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs):
+        raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
+
+    ext = os.path.splitext(filename)[1].lower()[1:]
+    if ext not in allowed_preview_extensions():
+        raise ValueError(f"File cannot be fetched: {filename}. Extensions allowed: {allowed_preview_extensions()}.")
+
+    # would profit from returning 304
+    return FileResponse(filename, headers={"Accept-Ranges": "bytes"})
+
+
+def fetch_cover_images(extra_networks_tabname: str = "", item: str = "", index: int = 0):
+    page = get_page_by_name(extra_networks_tabname)
+
+    metadata = page.metadata.get(item)
+    if metadata is None:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    cover_images = json.loads(metadata.get("ssmd_cover_images", {}))
+    image = cover_images[index] if index < len(cover_images) else None
+    if not image:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    try:
+        image = Image.open(BytesIO(b64decode(image)))
+        buffer = BytesIO()
+        image.save(buffer, format=image.format)
+        return Response(content=buffer.getvalue(), media_type=image.get_format_mimetype())
+    except Exception as err:
+        raise ValueError(f"File cannot be fetched: {item}. Failed to load cover image.") from err
+
+
+def init_tree_data(tabname: str = "", extra_networks_tabname: str = "") -> JSONResponse:
+    """Generates the initial Tree View data and returns a simplified dataset.
+
+    The data returned does not contain any HTML strings.
+
+    Status Codes:
+        200 on success
+        503 when data is not ready
+        500 on any other error
+    """
+    page = get_page_by_name(extra_networks_tabname)
+
+    data = page.generate_tree_view_data(tabname)
+
+    if data is None:
+        return JSONResponse({}, status_code=503)
+
+    return JSONResponse(data, status_code=200)
+
+
+def fetch_tree_data(
+    extra_networks_tabname: str = "",
+    div_ids: str = "",
+) -> JSONResponse:
+    """Retrieves Tree View HTML strings for the specified `div_ids`.
+
+    Args:
+        div_ids: A string with div_ids in CSV format.
+    """
+    page = get_page_by_name(extra_networks_tabname)
+
+    res = {}
+    for div_id in div_ids.split(","):
+        if div_id in page.tree:
+            res[div_id] = page.tree[div_id].html
+
+    return JSONResponse(res)
+
+
+def fetch_cards_data(
+    extra_networks_tabname: str = "",
+    div_ids: str = "",
+) -> JSONResponse:
+    """Retrieves Cards View HTML strings for the specified `div_ids`.
+
+    Args:
+        div_ids: A string with div_ids in CSV format.
+    """
+    page = get_page_by_name(extra_networks_tabname)
+
+    res = {}
+    for div_id in div_ids.split(","):
+        if div_id in page.cards:
+            res[div_id] = page.cards[div_id].html
+
+    return JSONResponse(res)
+
+
+def init_cards_data(tabname: str = "", extra_networks_tabname: str = "") -> JSONResponse:
+    """Generates the initial Cards View data and returns a simplified dataset.
+
+    The data returned does not contain any HTML strings.
+
+    Status Codes:
+        200 on success
+        503 when data is not ready
+        500 on any other error
+    """
+    page = get_page_by_name(extra_networks_tabname)
+
+    data = page.generate_cards_view_data(tabname)
+
+    if data is None:
+        return JSONResponse({}, status_code=503)
+
+    return JSONResponse(data, status_code=200)
+
+
+def page_is_ready(extra_networks_tabname: str = "") -> JSONResponse:
+    """Returns whether the specified page is ready for fetching data.
+
+    Status Codes:
+        200 ready
+        503 not ready
+        500 on any other error
+    """
+    page = get_page_by_name(extra_networks_tabname)
+
+    try:
+        ready = len(page.items) == len(list(page.list_items()))
+        return JSONResponse({"ready": ready}, status_code=200)
+    except Exception as exc:
+        return JSONResponse({"error": str(exc)}, status_code=500)
+
+
+def get_metadata(extra_networks_tabname: str = "", item: str = "") -> JSONResponse:
+    try:
+        page = get_page_by_name(extra_networks_tabname)
+    except HTTPException:
+        return JSONResponse({})
+
+    metadata = page.metadata.get(item)
+    if metadata is None:
+        return JSONResponse({})
+
+    # those are cover images, and they are too big to display in UI as text
+    # FIXME: WHY WAS THIS HERE?
+    # metadata = {i: metadata[i] for i in metadata if i != 'ssmd_cover_images'}
+
+    return JSONResponse({"metadata": json.dumps(metadata, indent=4, ensure_ascii=False)})
+
+
+def get_single_card(tabname: str = "", extra_networks_tabname: str = "", name: str = "") -> JSONResponse:
+    page = get_page_by_name(extra_networks_tabname)
+
+    try:
+        item = page.create_item(name, enable_filter=False)
+        page.items[name] = item
+    except Exception as exc:
+        errors.display(exc, "creating item for extra network")
+        item = page.items.get(name, None)
+
+    if item is None:
+        return JSONResponse({})
+
+    page.read_user_metadata(item, use_cache=False)
+    item_html = page.create_card_html(tabname=tabname, item=item)
+
+    return JSONResponse({"html": item_html})
+
+
+def add_pages_to_demo(app):
+    app.add_api_route("/sd_extra_networks/thumb", fetch_file, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/cover-images", fetch_cover_images, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/metadata", get_metadata, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/get-single-card", get_single_card, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/init-tree-data", init_tree_data, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/init-cards-data", init_cards_data, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/fetch-tree-data", fetch_tree_data, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/fetch-cards-data", fetch_cards_data, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/page-is-ready", page_is_ready, methods=["GET"])
+
+
+def quote_js(s):
+    s = s.replace("\\", "\\\\")
+    s = s.replace('"', '\\"')
+    return f'"{s}"'
 
 
 def initialize():
@@ -989,22 +1023,6 @@ def register_default_pages():
     register_page(ExtraNetworksPageTextualInversion())
     register_page(ExtraNetworksPageHypernetworks())
     register_page(ExtraNetworksPageCheckpoints())
-
-
-class ExtraNetworksUi:
-    def __init__(self):
-        self.pages = None
-        """gradio HTML components related to extra networks' pages"""
-
-        self.page_contents = None
-        """HTML content of the above; empty initially, filled when extra pages have to be shown"""
-
-        self.stored_extra_pages = None
-
-        self.button_save_preview = None
-        self.preview_target_filename = None
-
-        self.tabname = None
 
 
 def pages_in_preferred_order(pages):
@@ -1024,46 +1042,51 @@ def pages_in_preferred_order(pages):
 
 
 def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
-    ui = ExtraNetworksUi()
-    ui.pages = []
-    ui.pages_contents = []
-    ui.user_metadata_editors = []
-    ui.stored_extra_pages = pages_in_preferred_order(extra_pages.copy())
-    ui.tabname = tabname
+    ui = ExtraNetworksUi(tabname)
+    ui.unrelated_tabs = unrelated_tabs
 
-    related_tabs = []
-
-    for page in ui.stored_extra_pages:
-        with gr.Tab(page.title, elem_id=f"{tabname}_{page.extra_networks_tabname}", elem_classes=["extra-page"]) as tab:
-            with gr.Column(elem_id=f"{tabname}_{page.extra_networks_tabname}_prompts", elem_classes=["extra-page-prompts"]):
+    for tabname_full, page in ui.stored_extra_pages.items():
+        with gr.Tab(page.title, elem_id=tabname_full, elem_classes=["extra-page"]) as tab:
+            with gr.Column(elem_id=f"{tabname_full}_prompts", elem_classes=["extra-page-prompts"]):
                 pass
 
-            elem_id = f"{tabname}_{page.extra_networks_tabname}_pane_container"
-            page_elem = gr.HTML(page.create_html(tabname, empty=True), elem_id=elem_id)
-            ui.pages.append(page_elem)
+            page_elem = gr.HTML(
+                page.create_html(tabname, empty=True),
+                elem_id=f"{tabname_full}_pane_container",
+            )
+            ui.pages[tabname_full] = page_elem
             editor = page.create_user_metadata_editor(ui, tabname)
             editor.create_ui()
-            ui.user_metadata_editors.append(editor)
-            related_tabs.append(tab)
+            ui.user_metadata_editors[tabname_full] = editor
+            ui.related_tabs[tabname_full] = tab
 
-    ui.button_save_preview = gr.Button("Save preview", elem_id=f"{tabname}_save_preview", visible=False)
-    ui.preview_target_filename = gr.Textbox("Preview save filename", elem_id=f"{tabname}_preview_filename", visible=False)
+    ui.button_save_preview = gr.Button(
+        "Save preview",
+        elem_id=f"{tabname}_save_preview",
+        visible=False,
+    )
+    ui.preview_target_filename = gr.Textbox(
+        "Preview save filename",
+        elem_id=f"{tabname}_preview_filename",
+        visible=False,
+    )
 
-    for tab in unrelated_tabs:
+    for tab in ui.unrelated_tabs:
         tab.select(
             fn=None,
-            _js=f"function(){{extraNetworksUnrelatedTabSelected('{tabname}');}}",
+            _js=f"function(){{extraNetworksUnrelatedTabSelected('{ui.tabname}');}}",
             inputs=[],
             outputs=[],
             show_progress=False,
         )
 
-    for page, tab in zip(ui.stored_extra_pages, related_tabs):
+    for tabname_full, page in ui.stored_extra_pages.items():
+        tab = ui.related_tabs[tabname_full]
         tab.select(
             fn=None,
             _js=(
                 "function(){extraNetworksTabSelected("
-                f"'{tabname}_{page.extra_networks_tabname}', "
+                f"'{tabname_full}', "
                 f"{str(page.allow_prompt).lower()}, "
                 f"{str(page.allow_negative_prompt).lower()}"
                 ");}"
@@ -1073,33 +1096,39 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
             show_progress=False,
         )
 
-        def refresh():
-            for pg in ui.stored_extra_pages:
-                pg.refresh()
-            create_html()
-            return ui.pages_contents
+        def refresh(tabname_full):
+            page = ui.stored_extra_pages[tabname_full]
+            page.refresh()
+            ui.pages_contents[tabname_full] = page.create_html(ui.tabname)
+            return list(ui.pages_contents.values())
 
-        button_refresh = gr.Button("Refresh", elem_id=f"{tabname}_{page.extra_networks_tabname}_extra_refresh_internal", visible=False)
+        button_refresh = gr.Button(
+            "Refresh",
+            elem_id=f"{tabname_full}_extra_refresh_internal",
+            visible=False,
+        )
         button_refresh.click(
-            fn=refresh,
+            fn=functools.partial(refresh, tabname_full),
             inputs=[],
-            outputs=ui.pages,
-        ).then(
-            fn=lambda: None, _js="setupAllResizeHandles"
+            outputs=list(ui.pages.values()),
         ).then(
             fn=lambda: None,
-            _js=f"function(){{extraNetworksRefreshTab('{tabname}_{page.extra_networks_tabname}');}}",
+            _js="setupAllResizeHandles",
+        ).then(
+            fn=lambda: None,
+            _js=f"function(){{extraNetworksRefreshTab('{tabname_full}');}}",
         )
 
     def create_html():
-        ui.pages_contents = [pg.create_html(ui.tabname) for pg in ui.stored_extra_pages]
+        for tabname_full, page in ui.stored_extra_pages.items():
+            ui.pages_contents[tabname_full] = page.create_html(ui.tabname)
 
     def pages_html():
         if not ui.pages_contents:
             create_html()
-        return ui.pages_contents
+        return list(ui.pages_contents.values())
 
-    interface.load(fn=pages_html, inputs=[], outputs=ui.pages,).then(
+    interface.load(fn=pages_html, inputs=[], outputs=list(ui.pages.values()),).then(
         fn=lambda: None,
         _js="setupAllResizeHandles",
     )
@@ -1114,13 +1143,13 @@ def path_is_parent(parent_path, child_path):
     return child_path.startswith(parent_path)
 
 
-def setup_ui(ui, gallery):
+def setup_ui(ui: ExtraNetworksUi, gallery: OutputPanel):
     def save_preview(index, images, filename):
         # this function is here for backwards compatibility and likely will be removed soon
 
         if len(images) == 0:
             print("There is no image in gallery to save as a preview.")
-            return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
+            return [page.create_html(ui.tabname) for page in ui.stored_extra_pages.values()]
 
         index = int(index)
         index = 0 if index < 0 else index
@@ -1131,8 +1160,8 @@ def setup_ui(ui, gallery):
         geninfo, items = read_info_from_image(image)
 
         is_allowed = False
-        for extra_page in ui.stored_extra_pages:
-            if any(path_is_parent(x, filename) for x in extra_page.allowed_directories_for_previews()):
+        for page in ui.stored_extra_pages.values():
+            if any(path_is_parent(x, filename) for x in page.allowed_directories_for_previews()):
                 is_allowed = True
                 break
 
@@ -1140,14 +1169,14 @@ def setup_ui(ui, gallery):
 
         save_image_with_geninfo(image, geninfo, filename)
 
-        return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
+        return [page.create_html(ui.tabname) for page in ui.stored_extra_pages.values()]
 
     ui.button_save_preview.click(
         fn=save_preview,
         _js="function(x, y, z){return [selected_gallery_index(), y, z]}",
         inputs=[ui.preview_target_filename, gallery, ui.preview_target_filename],
-        outputs=[*ui.pages],
+        outputs=[*list(ui.pages.values())],
     )
 
-    for editor in ui.user_metadata_editors:
+    for editor in ui.user_metadata_editors.values():
         editor.setup_ui(gallery)
