@@ -90,3 +90,5 @@ list_checkpoint_tiles = shared_items.list_checkpoint_tiles
 refresh_checkpoints = shared_items.refresh_checkpoints
 list_samplers = shared_items.list_samplers
 reload_hypernetworks = shared_items.reload_hypernetworks
+
+hf_endpoint = os.getenv('HF_ENDPOINT', 'https://huggingface.co')

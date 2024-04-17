@@ -60,6 +60,9 @@ class Upscaler:
             if img.width >= dest_w and img.height >= dest_h:
                 break
 
+            if shared.state.interrupted:
+                break
+
             shape = (img.width, img.height)
 
             img = self.do_upscale(img, selected_model)

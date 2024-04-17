@@ -58,8 +58,9 @@ def apply_and_restart(disable_list, update_list, disable_all):
 
 def save_config_state(name):
     current_config_state = config_states.get_config()
-    if not name:
-        name = "Config"
+
+    name = os.path.basename(name or "Config")
+
     current_config_state["name"] = name
     timestamp = datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
     filename = os.path.join(config_states_dir, f"{timestamp}_{name}.json")
