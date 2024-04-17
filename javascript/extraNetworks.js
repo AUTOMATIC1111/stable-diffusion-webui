@@ -751,6 +751,8 @@ function extraNetworksBtnDirsViewItemOnClick(event, tabname_full) {
 
     updateInput(txt_search_elem);
     tab.applyFilter();
+
+    event.stopPropagation();
 }
 
 function extraNetworksControlSearchClearOnClick(event, tabname_full) {
@@ -763,6 +765,8 @@ function extraNetworksControlSearchClearOnClick(event, tabname_full) {
             {bubbles: true, detail: {tabname_full: tabname_full}},
         )
     );
+
+    event.stopPropagation();
 }
 
 function extraNetworksControlSortModeOnClick(event, tabname_full) {
@@ -777,6 +781,8 @@ function extraNetworksControlSortModeOnClick(event, tabname_full) {
     const sort_mode_str = event.currentTarget.dataset.sortMode.toLowerCase();
 
     tab.setSortMode(sort_mode_str);
+
+    event.stopPropagation();
 }
 
 function extraNetworksControlSortDirOnClick(event, tabname_full) {
@@ -798,6 +804,8 @@ function extraNetworksControlSortDirOnClick(event, tabname_full) {
     event.currentTarget.setAttribute("title", `Sort ${sort_dir_str}`);
 
     tab.setSortDir(sort_dir_str);
+
+    event.stopPropagation();
 }
 
 function extraNetworksControlTreeViewOnClick(event, tabname_full) {
@@ -817,6 +825,8 @@ function extraNetworksControlTreeViewOnClick(event, tabname_full) {
     const tab = extra_networks_tabs[tabname_full];
     tab.tree_list.scroll_elem.parentElement.classList.toggle("hidden", !show);
     tab.tree_list.enable(show);
+
+    event.stopPropagation();
 }
 
 function extraNetworksControlDirsViewOnClick(event, tabname_full) {
@@ -835,6 +845,8 @@ function extraNetworksControlDirsViewOnClick(event, tabname_full) {
     tab.container_elem.querySelector(
         ".extra-network-content--dirs-view"
     ).classList.toggle("hidden", !show);
+
+    event.stopPropagation();
 }
 
 function extraNetworksControlRefreshOnClick(event, tabname_full) {
@@ -854,6 +866,8 @@ function extraNetworksControlRefreshOnClick(event, tabname_full) {
         // Fire an event for this button click.
         gradioApp().getElementById(`${tabname_full}_extra_refresh_internal`).dispatchEvent(new Event("click"));
     }, EXTRA_NETWORKS_REFRESH_INTERNAL_DEBOUNCE_TIMEOUT_MS);
+
+    event.stopPropagation();
 }
 
 function extraNetworksCardOnClick(event, tabname_full) {
@@ -867,6 +881,8 @@ function extraNetworksCardOnClick(event, tabname_full) {
     } else {
         extraNetworksUpdatePrompt(tab.txt_prompt_elem, elem.dataset.prompt);
     }
+
+    event.stopPropagation();
 }
 
 function extraNetworksTreeFileOnClick(event, btn, tabname_full) {
@@ -943,6 +959,8 @@ function extraNetworksBtnEditMetadataOnClick(event, tabname_full, card_name) {
     editor.button.click();
 
     popup(editor.page);
+
+    event.stopPropagation();
 }
 
 function extraNetworksBtnCopyPathOnClick(event, path) {
