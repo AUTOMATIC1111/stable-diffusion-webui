@@ -302,7 +302,7 @@ class ExtraNetworksPage:
 
         label = label.strip()
         # If not specified, title will just reflect the label
-        btn_title = btn_title.strip() if btn_title else label
+        btn_title = btn_title.strip() if btn_title else f'"{label}"'
 
         action_list_item_action_leading = "<i class='tree-list-item-action-chevron'></i>"
         action_list_item_visual_leading = "🗀"
@@ -440,15 +440,17 @@ class ExtraNetworksPage:
         if not shared.opts.extra_networks_card_description_is_html:
             description = html.escape(description)
 
+        data_name = item.get("name", "").strip()
+        data_path = item.get("filename", "").strip()
         data_attributes = {
-            "data-div-id": div_id if div_id else "",
-            "data-name": item.get("name", "").strip(),
-            "data-path": item.get("filename", "").strip(),
+            "data-div-id": f'"{div_id}"' if div_id else '""',
+            "data-name": f'"{data_name}"',
+            "data-path": f'"{data_path}"',
             "data-hash": item.get("shorthash", None),
             "data-prompt": item.get("prompt", "").strip(),
             "data-neg-prompt": item.get("negative_prompt", "").strip(),
             "data-allow-neg": self.allow_negative_prompt,
-            **{f"data-sort-{sort_mode}": sort_key for sort_mode, sort_key in sort_keys.items()},
+            **{f"data-sort-{sort_mode}": f'"{sort_key}"' for sort_mode, sort_key in sort_keys.items()},
         }
 
         data_attributes_str = ""
@@ -554,18 +556,19 @@ class ExtraNetworksPage:
                     dir_is_empty = node.children == []
                 else:
                     dir_is_empty = all(not x.is_dir for x in node.children)
+
                 tree_item.html = self.build_tree_html_row(
                     tabname=tabname,
                     label=os.path.basename(node.abspath),
                     btn_type="dir",
-                    btn_title=node.abspath,
+                    btn_title=f'"{node.abspath}"',
                     dir_is_empty=dir_is_empty,
                     data_attributes={
-                        "data-div-id": div_id,
-                        "data-parent-id": parent_id,
+                        "data-div-id": f'"{div_id}"',
+                        "data-parent-id": f'"{parent_id}"',
                         "data-tree-entry-type": "dir",
                         "data-depth": node.depth,
-                        "data-path": node.relpath,
+                        "data-path": f'"{node.relpath}"',
                         "data-expanded": node.parent is None,  # Expand root directories
                     },
                 )
@@ -580,17 +583,18 @@ class ExtraNetworksPage:
                     onclick = html.escape(f"extraNetworksCardOnClick(event, '{tabname}_{self.extra_networks_tabname}');")
 
                 item_name = node.item.get("name", "").strip()
+                data_path = node.item.get("filename", "").strip()
                 tree_item.html = self.build_tree_html_row(
                     tabname=tabname,
                     label=html.escape(item_name),
                     btn_type="file",
                     data_attributes={
-                        "data-div-id": div_id,
-                        "data-parent-id": parent_id,
+                        "data-div-id": f'"{div_id}"',
+                        "data-parent-id": f'"{parent_id}"',
                         "data-tree-entry-type": "file",
-                        "data-name": item_name,
+                        "data-name": f'"{item_name}"',
                         "data-depth": node.depth,
-                        "data-path": node.item.get("filename", "").strip(),
+                        "data-path": f'"{data_path}"',
                         "data-hash": node.item.get("shorthash", None),
                         "data-prompt": node.item.get("prompt", "").strip(),
                         "data-neg-prompt": node.item.get("negative_prompt", "").strip(),
