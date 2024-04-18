@@ -25,8 +25,8 @@ libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-d
 
 ## Python Venv
 ```
-pyenv install 3.10.14
-pyenv shell 3.10.14
+pyenv install 3.10.13
+pyenv shell 3.10.13
 ```
 
 # Start
