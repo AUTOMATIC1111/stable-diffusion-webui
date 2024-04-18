@@ -9,8 +9,8 @@ def get_crop_region(mask, pad=0):
     if box:
         x1, y1, x2, y2 = box
     else:  # when no box is found
-        x1 = y1 = 0
-        x2, y2 = mask_img.size
+        x1, y1 = mask_img.size
+        x2 = y2 = 0
     return max(x1 - pad, 0), max(y1 - pad, 0), min(x2 + pad, mask_img.size[0]), min(y2 + pad, mask_img.size[1])
 
 
