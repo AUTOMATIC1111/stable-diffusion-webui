@@ -1,0 +1,265 @@
+{
+    "created_at": 1712092101.286983,
+    "webui": {
+        "remote": "https://github.com/kurukuruinc/stable-diffusion-webui.git",
+        "commit_hash": "8eca4cf29fba0c40f8a71df7b9198a091ccb92fb",
+        "commit_date": 1711744519,
+        "branch": "master"
+    },
+    "extensions": {
+        "LDSR": {
+            "name": "LDSR",
+            "path": "/home/stable-diffusion-webui/extensions-builtin/LDSR",
+            "enabled": true,
+            "is_builtin": true,
+            "remote": null,
+            "commit_hash": "",
+            "commit_date": null,
+            "branch": null,
+            "have_info_from_repo": false
+        },
+        "Lora": {
+            "name": "Lora",
+            "path": "/home/stable-diffusion-webui/extensions-builtin/Lora",
+            "enabled": true,
+            "is_builtin": true,
+            "remote": null,
+            "commit_hash": "",
+            "commit_date": null,
+            "branch": null,
+            "have_info_from_repo": false
+        },
+        "ScuNET": {
+            "name": "ScuNET",
+            "path": "/home/stable-diffusion-webui/extensions-builtin/ScuNET",
+            "enabled": true,
+            "is_builtin": true,
+            "remote": null,
+            "commit_hash": "",
+            "commit_date": null,
+            "branch": null,
+            "have_info_from_repo": false
+        },
+        "SwinIR": {
+            "name": "SwinIR",
+            "path": "/home/stable-diffusion-webui/extensions-builtin/SwinIR",
+            "enabled": true,
+            "is_builtin": true,
+            "remote": null,
+            "commit_hash": "",
+            "commit_date": null,
+            "branch": null,
+            "have_info_from_repo": false
+        },
+        "canvas-zoom-and-pan": {
+            "name": "canvas-zoom-and-pan",
+            "path": "/home/stable-diffusion-webui/extensions-builtin/canvas-zoom-and-pan",
+            "enabled": true,
+            "is_builtin": true,
+            "remote": null,
+            "commit_hash": "",
+            "commit_date": null,
+            "branch": null,
+            "have_info_from_repo": false
+        },
+        "extra-options-section": {
+            "name": "extra-options-section",
+            "path": "/home/stable-diffusion-webui/extensions-builtin/extra-options-section",
+            "enabled": true,
+            "is_builtin": true,
+            "remote": null,
+            "commit_hash": "",
+            "commit_date": null,
+            "branch": null,
+            "have_info_from_repo": false
+        },
+        "hypertile": {
+            "name": "hypertile",
+            "path": "/home/stable-diffusion-webui/extensions-builtin/hypertile",
+            "enabled": true,
+            "is_builtin": true,
+            "remote": null,
+            "commit_hash": "",
+            "commit_date": null,
+            "branch": null,
+            "have_info_from_repo": false
+        },
+        "mobile": {
+            "name": "mobile",
+            "path": "/home/stable-diffusion-webui/extensions-builtin/mobile",
+            "enabled": true,
+            "is_builtin": true,
+            "remote": null,
+            "commit_hash": "",
+            "commit_date": null,
+            "branch": null,
+            "have_info_from_repo": false
+        },
+        "prompt-bracket-checker": {
+            "name": "prompt-bracket-checker",
+            "path": "/home/stable-diffusion-webui/extensions-builtin/prompt-bracket-checker",
+            "enabled": true,
+            "is_builtin": true,
+            "remote": null,
+            "commit_hash": "",
+            "commit_date": null,
+            "branch": null,
+            "have_info_from_repo": false
+        },
+        "soft-inpainting": {
+            "name": "soft-inpainting",
+            "path": "/home/stable-diffusion-webui/extensions-builtin/soft-inpainting",
+            "enabled": true,
+            "is_builtin": true,
+            "remote": null,
+            "commit_hash": "",
+            "commit_date": null,
+            "branch": null,
+            "have_info_from_repo": false
+        },
+        "PBRemTools": {
+            "name": "PBRemTools",
+            "path": "/home/stable-diffusion-webui/extensions/PBRemTools",
+            "enabled": false,
+            "is_builtin": false,
+            "remote": "https://github.com/mattyamonaca/PBRemTools.git",
+            "commit_hash": "91e16d32b1539552707cb1a40be0b969c076c519",
+            "commit_date": 1690884491,
+            "branch": "main",
+            "have_info_from_repo": false
+        },
+        "multi-subject-render": {
+            "name": "multi-subject-render",
+            "path": "/home/stable-diffusion-webui/extensions/multi-subject-render",
+            "enabled": false,
+            "is_builtin": false,
+            "remote": "https://github.com/Extraltodeus/multi-subject-render.git",
+            "commit_hash": "03427e26bebdc6da0ccfb749bf3c4e7e33d7458b",
+            "commit_date": 1678111890,
+            "branch": "main",
+            "have_info_from_repo": false
+        },
+        "multidiffusion-upscaler-for-automatic1111": {
+            "name": "multidiffusion-upscaler-for-automatic1111",
+            "path": "/home/stable-diffusion-webui/extensions/multidiffusion-upscaler-for-automatic1111",
+            "enabled": true,
+            "is_builtin": false,
+            "remote": "https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111",
+            "commit_hash": "76cde3c2bf15b212d4fde66c8a29d96f0a598916",
+            "commit_date": 1709969880,
+            "branch": "main",
+            "have_info_from_repo": true
+        },
+        "sd-civitai-browser-plus": {
+            "name": "sd-civitai-browser-plus",
+            "path": "/home/stable-diffusion-webui/extensions/sd-civitai-browser-plus",
+            "enabled": false,
+            "is_builtin": false,
+            "remote": "https://github.com/BlafKing/sd-civitai-browser-plus.git",
+            "commit_hash": "c6f41adac0877048971574e4949117e85a6bffe0",
+            "commit_date": 1710648272,
+            "branch": "main",
+            "have_info_from_repo": false
+        },
+        "sd-webui-animatediff": {
+            "name": "sd-webui-animatediff",
+            "path": "/home/stable-diffusion-webui/extensions/sd-webui-animatediff",
+            "enabled": false,
+            "is_builtin": false,
+            "remote": "https://github.com/continue-revolution/sd-webui-animatediff.git",
+            "commit_hash": "a81565d906c0f16c9a9b95cd80af7b8bafda7cb3",
+            "commit_date": 1710673541,
+            "branch": "master",
+            "have_info_from_repo": false
+        },
+        "sd-webui-controlnet": {
+            "name": "sd-webui-controlnet",
+            "path": "/home/stable-diffusion-webui/extensions/sd-webui-controlnet",
+            "enabled": true,
+            "is_builtin": false,
+            "remote": "https://github.com/Mikubill/sd-webui-controlnet.git",
+            "commit_hash": "2091b6fb21d9c76becb2a8860c8d2975ad3e428a",
+            "commit_date": 1710469955,
+            "branch": "main",
+            "have_info_from_repo": true
+        },
+        "sd-webui-infinite-image-browsing": {
+            "name": "sd-webui-infinite-image-browsing",
+            "path": "/home/stable-diffusion-webui/extensions/sd-webui-infinite-image-browsing",
+            "enabled": false,
+            "is_builtin": false,
+            "remote": "https://github.com/zanllp/sd-webui-infinite-image-browsing.git",
+            "commit_hash": "67935cb077bb9ee3737bcd6cd039ce33a4c943f9",
+            "commit_date": 1710452669,
+            "branch": "main",
+            "have_info_from_repo": false
+        },
+        "sd-webui-loractl": {
+            "name": "sd-webui-loractl",
+            "path": "/home/stable-diffusion-webui/extensions/sd-webui-loractl",
+            "enabled": true,
+            "is_builtin": false,
+            "remote": "https://github.com/cheald/sd-webui-loractl.git",
+            "commit_hash": "b48cf602b0c414a362726fa079a284f3ae6a51e2",
+            "commit_date": 1695172598,
+            "branch": "master",
+            "have_info_from_repo": true
+        },
+        "sd_civitai_extension": {
+            "name": "sd_civitai_extension",
+            "path": "/home/stable-diffusion-webui/extensions/sd_civitai_extension",
+            "enabled": false,
+            "is_builtin": false,
+            "remote": "https://github.com/civitai/sd_civitai_extension.git",
+            "commit_hash": "115cd9c35b0774c90cb9c397ad60ef6a7dac60de",
+            "commit_date": 1709685471,
+            "branch": "main",
+            "have_info_from_repo": false
+        },
+        "stable-diffusion-webui-images-browser": {
+            "name": "stable-diffusion-webui-images-browser",
+            "path": "/home/stable-diffusion-webui/extensions/stable-diffusion-webui-images-browser",
+            "enabled": true,
+            "is_builtin": false,
+            "remote": "https://github.com/AlUlkesh/stable-diffusion-webui-images-browser.git",
+            "commit_hash": "3d2d0f4c7b0599f88df99a9ea66c21bcbec49bda",
+            "commit_date": 1706884847,
+            "branch": "main",
+            "have_info_from_repo": true
+        },
+        "stable-diffusion-webui-rembg": {
+            "name": "stable-diffusion-webui-rembg",
+            "path": "/home/stable-diffusion-webui/extensions/stable-diffusion-webui-rembg",
+            "enabled": false,
+            "is_builtin": false,
+            "remote": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-rembg",
+            "commit_hash": "a4c07b857e73f3035f759876797fa6de986def3d",
+            "commit_date": 1703941443,
+            "branch": "master",
+            "have_info_from_repo": false
+        },
+        "stable-diffusion-webui-two-shot": {
+            "name": "stable-diffusion-webui-two-shot",
+            "path": "/home/stable-diffusion-webui/extensions/stable-diffusion-webui-two-shot",
+            "enabled": false,
+            "is_builtin": false,
+            "remote": "https://github.com/ashen-sensored/stable-diffusion-webui-two-shot.git",
+            "commit_hash": "6b55dd5248fd07f55ffefbf9be369b439b239502",
+            "commit_date": 1680434665,
+            "branch": "main",
+            "have_info_from_repo": false
+        },
+        "zulu571": {
+            "name": "zulu571",
+            "path": "/home/stable-diffusion-webui/extensions/zulu571",
+            "enabled": false,
+            "is_builtin": false,
+            "remote": "http://47.93.16.222:3000/Iyashinouta/sd-colab-commands-browser",
+            "commit_hash": "dcd26f39829bda68459b73bd21acc090734ffa29",
+            "commit_date": 1677534269,
+            "branch": "main",
+            "have_info_from_repo": false
+        }
+    },
+    "name": "Backup (pre-update)"
+}
