@@ -10,9 +10,9 @@
 
 // Many operations can be lenghty. Try to limit their frequency by debouncing.
 const SCROLL_DEBOUNCE_TIME_MS = 50;
-const RESIZE_OBSERVER_DEBOUNCE_TIME_MS = 50; // should be <= refresh debounce time
+const RESIZE_OBSERVER_DEBOUNCE_TIME_MS = 100; // should be <= refresh debounce time
 const ELEMENT_OBSERVER_DEBOUNCE_TIME_MS = 100;
-const REFRESH_DEBOUNCE_TIME_MS = 50;
+const REFRESH_DEBOUNCE_TIME_MS = 100;
 
 class Clusterize {
     scroll_elem = null;
@@ -125,12 +125,12 @@ class Clusterize {
         this.setup_has_run = true;
     }
 
-    clear(loading) {
+    clear(custom_text) {
         if (!this.setup_has_run || !this.enabled) {
             return;
         }
 
-        this.#html(this.#generateEmptyRow(loading).join(""));
+        this.#html(this.#generateEmptyRow(custom_text).join(""));
     }
 
     destroy() {        
@@ -226,7 +226,11 @@ class Clusterize {
         if (!this.enabled) {
             return;
         }
-        return await this.options.callbacks.fetchData(idx_start, idx_end);
+        try {
+            return await this.options.callbacks.fetchData(idx_start, idx_end);
+        } catch (error) {
+            throw error;
+        }
     }
 
     sortDataDefaultCallback() {
@@ -335,7 +339,7 @@ class Clusterize {
 
         this.#max_rows = Math.ceil(this.#max_items / this.options.cols_in_block, 10);
 
-        return prev_options === JSON.stringify(this.options);
+        return prev_options !== JSON.stringify(this.options);
     }
 
     #getClusterNum() {
@@ -346,26 +350,26 @@ class Clusterize {
         return Math.min(current_cluster, max_cluster);
     }
 
-    #generateEmptyRow(loading) {
-        // If loading==true, then we use the loading text for our element. Defaults to false.
-        loading = loading === true;
-        if (!loading && (!this.options.tag || !this.options.show_no_data_row)) {
-            return [];
+    #generateEmptyRow(text, class_name) {
+        if (isNullOrUndefined(text)) {
+            text = this.options.no_data_text;
         }
 
-        const text = loading ? this.options.loading_data_text : this.options.no_data_text;
+        if (isNullOrUndefined(class_name)) {
+            class_name = this.options.no_data_class;
+        }
 
         const empty_row = document.createElement(this.options.tag);
-        const no_data_content = document.createTextNode(text);
-        empty_row.className = this.options.no_data_class;
+        const content = document.createTextNode(text);
+        empty_row.className = class_name;
         if (this.options.tag === "tr") {
             const td = document.createElement("td");
             // fixes #53
             td.colSpan = 100;
-            td.appendChild(no_data_content);
+            td.appendChild(content);
             empty_row.appendChild(td);
         } else {
-            empty_row.appendChild(no_data_content);
+            empty_row.appendChild(content);
         }
         return [empty_row.outerHTML];
     }
@@ -380,7 +384,11 @@ class Clusterize {
         const idx_start = Math.max(0, rows_start * this.options.cols_in_block);
         const idx_end = Math.min(this.#max_items, rows_end * this.options.cols_in_block);
 
-        const this_cluster_rows = await this.fetchData(idx_start, idx_end);
+        let this_cluster_rows = await this.fetchData(idx_start, idx_end);
+        if (!Array.isArray(this_cluster_rows) || !this_cluster_rows.length) {
+            console.error(`Failed to fetch data for idx range (${idx_start},${idx_end})`);
+            this_cluster_rows = [];
+        }
 
         if (this_cluster_rows.length < this.options.rows_in_block) {
             return {
@@ -402,7 +410,14 @@ class Clusterize {
     async #insertToDOM() {
         if (!this.options.cluster_height || !this.options.cluster_width) {
             const rows = await this.fetchData(0, 1);
-            this.#exploreEnvironment(rows, this.#cache);
+            if (!Array.isArray(rows) || !rows.length) {
+                console.error(`Failed to fetch data for idx range (0, 1)`);
+                this.#html(this.#generateEmptyRow().join(""));
+                return;
+            } else {
+                this.#exploreEnvironment(rows, this.#cache);
+                this.#html(this.#generateEmptyRow("Loading...").join(""));
+            }
         }
 
         const data = await this.#generate();
@@ -502,7 +517,7 @@ class Clusterize {
     }
 
     async #onResize() {
-        await this.refresh(true);
+        await this.refresh();
     }
 
     #fixElementReferences() {

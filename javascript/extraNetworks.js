@@ -18,7 +18,6 @@
 
 const SEARCH_INPUT_DEBOUNCE_TIME_MS = 250;
 const EXTRA_NETWORKS_GET_PAGE_READY_MAX_ATTEMPTS = 10;
-const EXTRA_NETWORKS_WAIT_FOR_PAGE_READY_ATTEMPT_DELAY_MS = 1000;
 const EXTRA_NETWORKS_WAIT_FOR_PAGE_READY_TIMEOUT_MS = 1000;
 const EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS = 1000;
 const EXTRA_NETWORKS_REFRESH_INTERNAL_DEBOUNCE_TIMEOUT_MS = 200;
@@ -66,6 +65,9 @@ const _debounce = (handler, timeout_ms) => {
 };
 
 class ExtraNetworksTab {
+    tabname;
+    extra_networks_tabname;
+    tabname_full; // {tabname}_{extra_networks_tabname}
     tree_list;
     cards_list;
     container_elem;
@@ -327,10 +329,7 @@ class ExtraNetworksTab {
         }
     }
 
-    async waitForServerPageReady(
-        max_attempts = EXTRA_NETWORKS_GET_PAGE_READY_MAX_ATTEMPTS,
-        delay_ms = EXTRA_NETWORKS_WAIT_FOR_PAGE_READY_ATTEMPT_DELAY_MS,
-    ) {
+    async waitForServerPageReady(max_attempts = EXTRA_NETWORKS_GET_PAGE_READY_MAX_ATTEMPTS) {
         /** Waits for a page on the server to be ready.
          *
          *  We need to wait for the page to be ready before we can fetch any data.
@@ -339,48 +338,35 @@ class ExtraNetworksTab {
          *  the server since the data isn't ready. This function allows us to wait for
          *  the server to tell us that it is ready for data requests.
          *
-         *  Resolves when the response from the server is {ready: true}.
-         *  Rejects if we exceed the max number of attempts.
-         *
          *  Args:
-         *      max_attempts [int]: The max number of reuqests that will be attempted
+         *      max_attempts [int]: The max number of requests that will be attempted
          *                          before giving up. If set to 0, will attempt forever.
-         *      delay_ms [int]:     The time between requests to the server. The server
-         *                          responds right away with its state so we need to
-         *                          slow down our request times.
          */
-        const err_prefix = `error waiting for server page (${this.extra_networks_tabname})`;
+        const err_prefix = `error waiting for server page (${this.tabname_full})`;
         return new Promise((resolve, reject) => {
             let attempt = 0;
             const loop = () => {
                 setTimeout(async() => {
-                    let response;
                     try {
-                        response = JSON.parse(
-                            await requestGetPromise(
-                                "./sd_extra_networks/page-is-ready",
-                                {extra_networks_tabname: this.extra_networks_tabname},
-                                EXTRA_NETWORKS_WAIT_FOR_PAGE_READY_TIMEOUT_MS,
-                            )
+                        await requestGetPromise(
+                            "./sd_extra_networks/page-is-ready",
+                            {extra_networks_tabname: this.extra_networks_tabname},
+                            EXTRA_NETWORKS_WAIT_FOR_PAGE_READY_TIMEOUT_MS,
                         );
-                        if (response.ready === true) {
-                            return resolve();
-                        }
+                        return resolve();
                     } catch (error) {
                         // If we get anything other than a timeout error, reject.
-                        // Otherwise, fall through.
-                        if (error !== "Request for ./sd_extra_networks/page-is-ready timed out.") {
-                            return reject(`${err_prefix}: ${error}`);
+                        // Otherwise, fall through to retry request.
+                        if (error.status !== 408) {
+                            return reject(`${err_prefix}: uncaught exception: ${JSON.stringify(error)}`);
                         }
                     }
 
-                    // If we got here, then we got a timeout error.
-                    // Timeout errors are acceptable until the max number of
-                    // attempts has been reached.
                     if (max_attempts !== 0 && attempt++ >= max_attempts) {
                         return reject(`${err_prefix}: max attempts exceeded`);
                     } else {
-                        setTimeout(() => loop(), delay_ms);
+                        // small delay since our request has a timeout.
+                        setTimeout(() => loop(), 100);
                     }
                 }, 0);
             };
@@ -392,7 +378,7 @@ class ExtraNetworksTab {
         try {
             await this.waitForServerPageReady();
         } catch (error) {
-            console.error(error);
+            console.error(JSON.stringify(error));
             return {};
         }
 
@@ -400,9 +386,10 @@ class ExtraNetworksTab {
         const payload = {tabname: this.tabname, extra_networks_tabname: this.extra_networks_tabname};
         const timeout = EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS;
         try {
-            return JSON.parse(await requestGetPromise(url, payload, timeout));
+            const response = await requestGetPromise(url, payload, timeout);
+            return response.response;
         } catch (error) {
-            console.error(error);
+            console.error(JSON.stringify(error));
             return {};
         }
     }
@@ -411,7 +398,7 @@ class ExtraNetworksTab {
         try {
             await this.waitForServerPageReady();
         } catch (error) {
-            console.error(error);
+            console.error(JSON.stringify(error));
             return {};
         }
 
@@ -419,9 +406,10 @@ class ExtraNetworksTab {
         const payload = {tabname: this.tabname, extra_networks_tabname: this.extra_networks_tabname};
         const timeout = EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS;
         try {
-            return JSON.parse(await requestGetPromise(url, payload, timeout));
+            const response = await requestGetPromise(url, payload, timeout);
+            return response.response;
         } catch (error) {
-            console.error(error);
+            console.error(JSON.stringify(error));
             return {};
         }
     }
@@ -430,7 +418,7 @@ class ExtraNetworksTab {
         try {
             await this.waitForServerPageReady();
         } catch (error) {
-            console.error(error);
+            console.error(JSON.stringify(error));
             return {};
         }
 
@@ -438,9 +426,10 @@ class ExtraNetworksTab {
         const payload = {extra_networks_tabname: this.extra_networks_tabname, div_ids: div_ids};
         const timeout = EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS;
         try {
-            return JSON.parse(await requestGetPromise(url, payload, timeout));
+            const response = await requestGetPromise(url, payload, timeout);
+            return response.response;
         } catch (error) {
-            console.error(error);
+            console.error(JSON.stringify(error));
             return {};
         }
     }
@@ -449,7 +438,7 @@ class ExtraNetworksTab {
         try {
             await this.waitForServerPageReady();
         } catch (error) {
-            console.error(error);
+            console.error(JSON.stringify(error));
             return {};
         }
 
@@ -457,9 +446,10 @@ class ExtraNetworksTab {
         const payload = {extra_networks_tabname: this.extra_networks_tabname, div_ids: div_ids};
         const timeout = EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS;
         try {
-            return JSON.parse(await requestGetPromise(url, payload, timeout));
+            const response = await requestGetPromise(url, payload, timeout);
+            return response.response;
         } catch (error) {
-            console.error(error);
+            console.error(JSON.stringify(error));
             return {};
         }
     }
@@ -735,7 +725,6 @@ function extraNetworksUnrelatedTabSelected(tabname) {
 
 async function extraNetworksTabSelected(tabname_full, show_prompt, show_neg_prompt) {
     /** called from python when user selects an extra networks tab */
-
     await waitForKeyInObject({obj: extra_networks_tabs, k: tabname_full});
     for (const [k, v] of Object.entries(extra_networks_tabs)) {
         if (k === tabname_full) {

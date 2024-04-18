@@ -101,7 +101,7 @@ class ExtraNetworksClusterize extends Clusterize {
         if (this.lru instanceof LRUCache) {
             this.lru.clear();
         }
-        super.clear(true);
+        super.clear("Loading...");
     }
 
     async load(force_init_data) {
@@ -182,10 +182,12 @@ class ExtraNetworksClusterize extends Clusterize {
         const data = {};
         // Fetch any div IDs not in the LRU Cache using our callback.
         if (missing_div_ids.length !== 0) {
-            Object.assign(
-                data,
-                await this.options.callbacks.fetchData(missing_div_ids),
-            );
+            const fetched_data = await this.options.callbacks.fetchData(missing_div_ids);
+            if (Object.keys(fetched_data).length !== missing_div_ids.length) {
+                // expected data. got nothing.
+                return {};
+            }
+            Object.assign(data, fetched_data);
         }
 
         // Now load any cached IDs from the LRU Cache
@@ -230,7 +232,7 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
 
     clear() {
         this.selected_div_id = null;
-        super.clear(true);
+        super.clear("Loading...");
     }
 
     getBoxShadow(depth) {

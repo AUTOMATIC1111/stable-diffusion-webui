@@ -873,17 +873,16 @@ def init_tree_data(tabname: str = "", extra_networks_tabname: str = "") -> JSONR
 
     Status Codes:
         200 on success
-        503 when data is not ready
-        500 on any other error
+        404 if data isn't ready or tabname doesn't exist.
     """
     page = get_page_by_name(extra_networks_tabname)
 
     data = page.generate_tree_view_data(tabname)
 
     if data is None:
-        return JSONResponse({}, status_code=503)
+        raise HTTPException(status_code=404, detail=f"data not ready: {extra_networks_tabname}")
 
-    return JSONResponse(data, status_code=200)
+    return JSONResponse(data)
 
 
 def fetch_tree_data(
@@ -894,6 +893,10 @@ def fetch_tree_data(
 
     Args:
         div_ids: A string with div_ids in CSV format.
+
+    Status Codes:
+        200 on success
+        404 if tabname doesn't exist
     """
     page = get_page_by_name(extra_networks_tabname)
 
@@ -913,6 +916,10 @@ def fetch_cards_data(
 
     Args:
         div_ids: A string with div_ids in CSV format.
+
+    Status Codes:
+        200 on success
+        404 if tabname doesn't exist
     """
     page = get_page_by_name(extra_networks_tabname)
 
@@ -931,34 +938,31 @@ def init_cards_data(tabname: str = "", extra_networks_tabname: str = "") -> JSON
 
     Status Codes:
         200 on success
-        503 when data is not ready
-        500 on any other error
+        404 if data isn't ready or tabname doesn't exist.
     """
     page = get_page_by_name(extra_networks_tabname)
 
     data = page.generate_cards_view_data(tabname)
 
     if data is None:
-        return JSONResponse({}, status_code=503)
+        raise HTTPException(status_code=404, detail=f"data not ready: {extra_networks_tabname}")
 
-    return JSONResponse(data, status_code=200)
+    return JSONResponse(data)
 
 
 def page_is_ready(extra_networks_tabname: str = "") -> JSONResponse:
     """Returns whether the specified page is ready for fetching data.
 
     Status Codes:
-        200 ready
-        503 not ready
-        500 on any other error
+        200 if page is ready
+        404 if page isn't ready or tabname doesnt exist.
     """
     page = get_page_by_name(extra_networks_tabname)
 
-    try:
-        ready = len(page.items) == len(list(page.list_items()))
-        return JSONResponse({"ready": ready}, status_code=200)
-    except Exception as exc:
-        return JSONResponse({"error": str(exc)}, status_code=500)
+    if len(page.items) == len(list(page.list_items())):
+        return JSONResponse({}, status_code=200)
+    else:
+        raise HTTPException(status_code=404, detail=f"page not ready: {extra_networks_tabname}")
 
 
 def get_metadata(extra_networks_tabname: str = "", item: str = "") -> JSONResponse:

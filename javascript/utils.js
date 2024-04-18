@@ -387,6 +387,15 @@ function requestGet(url, data, handler, errorHandler) {
 }
 
 function requestGetPromise(url, data, timeout_ms) {
+    /**Asynchronous `GET` request that returns a promise.
+     *
+     * The result will be of the format {status: int, response: JSON object}.
+     * Thus, the xhr.responseText that we receive is expected to be a JSON string.
+     * Acceptable status codes for successful requests are 200 <= status < 300.
+    */
+    if (!isNumber(timeout_ms)) {
+        timeout_ms = 1000;
+    }
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         const args = Object.entries(data).map(([k, v]) => {
@@ -395,18 +404,18 @@ function requestGetPromise(url, data, timeout_ms) {
 
         xhr.onload = () => {
             if (xhr.status >= 200 && xhr.status < 300) {
-                return resolve(xhr.responseText);
+                return resolve({status: xhr.status, response: JSON.parse(xhr.responseText)});
             } else {
-                return reject({status: xhr.status, response: xhr.responseText});
+                return reject({status: xhr.status, response: JSON.parse(xhr.responseText)});
             }
         };
 
         xhr.onerror = () => {
-            return reject({status: xhr.status, response: xhr.responseText});
+            return reject({status: xhr.status, response: JSON.parse(xhr.responseText)});
         };
 
         xhr.ontimeout = () => {
-            return reject(`Request for ${url} timed out.`);
+            return reject({status: 408, response: {detail: `Request timeout: ${url}`}});
         };
 
         const payload = JSON.stringify(data);
