@@ -427,7 +427,10 @@ class ExtraNetworksTab {
         const timeout = EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS;
         try {
             const response = await requestGetPromise(url, payload, timeout);
-            return response.response;
+            if (response.response.missing_div_ids.length) {
+                console.warn(`Failed to fetch multiple div_ids: ${response.response.missing_div_ids}`);
+            }
+            return response.response.data;
         } catch (error) {
             console.error(JSON.stringify(error));
             return {};
@@ -447,7 +450,10 @@ class ExtraNetworksTab {
         const timeout = EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS;
         try {
             const response = await requestGetPromise(url, payload, timeout);
-            return response.response;
+            if (response.response.missing_div_ids.length) {
+                console.warn(`Failed to fetch multiple div_ids: ${response.response.missing_div_ids}`);
+            }
+            return response.response.data;
         } catch (error) {
             console.error(JSON.stringify(error));
             return {};

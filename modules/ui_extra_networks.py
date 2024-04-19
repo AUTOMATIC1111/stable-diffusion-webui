@@ -901,11 +901,14 @@ def fetch_tree_data(
     page = get_page_by_name(extra_networks_tabname)
 
     res = {}
+    missed = []
     for div_id in div_ids.split(","):
         if div_id in page.tree:
             res[div_id] = page.tree[div_id].html
+        else:
+            missed.append(div_id)
 
-    return JSONResponse(res)
+    return JSONResponse({"data": res, "missing_div_ids": missed})
 
 
 def fetch_cards_data(
@@ -924,11 +927,14 @@ def fetch_cards_data(
     page = get_page_by_name(extra_networks_tabname)
 
     res = {}
+    missed = []
     for div_id in div_ids.split(","):
         if div_id in page.cards:
             res[div_id] = page.cards[div_id].html
+        else:
+            missed.append(div_id)
 
-    return JSONResponse(res)
+    return JSONResponse({"data": res, "missing_div_ids": missed})
 
 
 def init_cards_data(tabname: str = "", extra_networks_tabname: str = "") -> JSONResponse:

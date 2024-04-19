@@ -409,13 +409,17 @@ class Clusterize {
 
     async #insertToDOM() {
         if (!this.options.cluster_height || !this.options.cluster_width) {
+            // We need to fetch a single item so that we can calculate the dimensions
+            // for our list.
             const rows = await this.fetchData(0, 1);
             if (!Array.isArray(rows) || !rows.length) {
-                console.error(`Failed to fetch data for idx range (0, 1)`);
+                // This implies there is no data for this list. Not an error.
+                // Errors should be handled in the fetchData callback, not here.
                 this.#html(this.#generateEmptyRow().join(""));
                 return;
             } else {
                 this.#exploreEnvironment(rows, this.#cache);
+                // Remove the temporary item from the data since we calculated its size.
                 this.#html(this.#generateEmptyRow("Loading...").join(""));
             }
         }
