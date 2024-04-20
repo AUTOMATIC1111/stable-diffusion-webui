@@ -1609,18 +1609,26 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 self.extra_generation_params["Mask blur"] = self.mask_blur
 
             if self.inpaint_full_res:
-                self.mask_for_overlay = image_mask
-                mask = image_mask.convert('L')
-                crop_region = masking.get_crop_region(mask, self.inpaint_full_res_padding)
-                crop_region = masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
-                x1, y1, x2, y2 = crop_region
+                try:
+                    self.mask_for_overlay = image_mask
+                    mask = image_mask.convert('L')
+                    crop_region = masking.get_crop_region(mask, self.inpaint_full_res_padding)
+                    crop_region = masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
+                    x1, y1, x2, y2 = crop_region
 
-                mask = mask.crop(crop_region)
-                image_mask = images.resize_image(2, mask, self.width, self.height)
-                self.paste_to = (x1, y1, x2-x1, y2-y1)
+                    mask = mask.crop(crop_region)
+                    image_mask = images.resize_image(2, mask, self.width, self.height)
+                    self.paste_to = (x1, y1, x2-x1, y2-y1)
 
-                self.extra_generation_params["Inpaint area"] = "Only masked"
-                self.extra_generation_params["Masked area padding"] = self.inpaint_full_res_padding
+                    self.extra_generation_params["Inpaint area"] = "Only masked"
+                    self.extra_generation_params["Masked area padding"] = self.inpaint_full_res_padding
+                except ValueError:
+                    self.mask_for_overlay = None
+                    image_mask = None
+                    crop_region = None
+                    massage = 'Unable to perform "Inpaint Only mask" because mask is blank, switch to img2img mode.'
+                    model_hijack.comments.append(massage)
+                    logging.info(massage)
             else:
                 image_mask = images.resize_image(self.resize_mode, image_mask, self.width, self.height)
                 np_mask = np.array(image_mask)
