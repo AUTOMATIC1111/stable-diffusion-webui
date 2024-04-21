@@ -8,7 +8,7 @@ diskcache
 einops
 facexlib
 fastapi>=0.90.1
-gradio==4.19.2
+gradio==4.27.0
 inflection
 jsonmerge
 kornia
