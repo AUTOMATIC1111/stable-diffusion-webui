@@ -420,7 +420,7 @@ def create_override_settings_dict(text_pairs):
     """
 
     res = {}
-    
+
     if not text_pairs:
         return res
 
