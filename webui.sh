@@ -243,7 +243,7 @@ prepare_tcmalloc() {
         for lib in "${TCMALLOC_LIBS[@]}"
         do
             # Determine which type of tcmalloc library the library supports
-            TCMALLOC="$(PATH=/usr/sbin:$PATH ldconfig -p | grep -P $lib | head -n 1)"
+            TCMALLOC="$(PATH=/sbin:/usr/sbin:$PATH ldconfig -p | grep -P $lib | head -n 1)"
             TC_INFO=(${TCMALLOC//=>/})
             if [[ ! -z "${TC_INFO}" ]]; then
                 echo "Check TCMalloc: ${TC_INFO}"
