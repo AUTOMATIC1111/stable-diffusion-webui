@@ -113,13 +113,13 @@ then
     exit 1
 fi
 
-if [[ -d .git ]]
+if [[ -d "$SCRIPT_DIR/.git" ]]
 then
     printf "\n%s\n" "${delimiter}"
     printf "Repo already cloned, using it as install directory"
     printf "\n%s\n" "${delimiter}"
-    install_dir="${PWD}/../"
-    clone_dir="${PWD##*/}"
+    install_dir="${SCRIPT_DIR}/../"
+    clone_dir="${SCRIPT_DIR##*/}"
 fi
 
 # Check prerequisites
