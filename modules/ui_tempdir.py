@@ -68,11 +68,11 @@ def save_pil_to_file(pil_image, cache_dir=None, format="png"):
     return file_obj.name
 
 
-def move_files_to_cache(data, block, postprocess=False, add_urls=False, check_in_upload_folder=False):
+async def async_move_files_to_cache(data, block, postprocess=False, check_in_upload_folder=False, keep_in_cache=False):
     """Move any files in `data` to cache and (optionally), adds URL prefixes (/file=...) needed to access the cached file.
     Also handles the case where the file is on an external Gradio app (/proxy=...).
 
-    Runs after postprocess and before preprocess.
+    Runs after .postprocess() and before .preprocess().
 
     Copied from gradio's processing_utils.py
 
@@ -80,17 +80,17 @@ def move_files_to_cache(data, block, postprocess=False, add_urls=False, check_in
         data: The input or output data for a component. Can be a dictionary or a dataclass
         block: The component whose data is being processed
         postprocess: Whether its running from postprocessing
-        add_urls: Whether to add URLs to the payload
         check_in_upload_folder: If True, instead of moving the file to cache, checks if the file is in already in cache (exception if not).
+        keep_in_cache: If True, the file will not be deleted from cache when the server is shut down.
     """
 
     from gradio import FileData
     from gradio.data_classes import GradioRootModel
     from gradio.data_classes import GradioModel
     from gradio_client import utils as client_utils
-    from gradio.utils import get_upload_folder, is_in_or_equal
+    from gradio.utils import get_upload_folder, is_in_or_equal, is_static_file
 
-    def _move_to_cache(d: dict):
+    async def _move_to_cache(d: dict):
         payload = FileData(**d)
 
         # EDITED
@@ -100,10 +100,11 @@ def move_files_to_cache(data, block, postprocess=False, add_urls=False, check_in
         # postprocess, it means the component can display a URL
         # without it being served from the gradio server
         # This makes it so that the URL is not downloaded and speeds up event processing
-        if payload.url and postprocess:
+        if payload.url and postprocess and client_utils.is_http_url_like(payload.url):
             payload.path = payload.url
+        elif is_static_file(payload):
+            pass
         elif not block.proxy_url:
-
             # EDITED
             if check_tmp_file(shared.demo, payload.path):
                 temp_file_path = payload.path
@@ -117,32 +118,36 @@ def move_files_to_cache(data, block, postprocess=False, add_urls=False, check_in
                         raise ValueError(
                             f"File {path} is not in the upload folder and cannot be accessed."
                         )
+                if not payload.is_stream:
+                    temp_file_path = await block.async_move_resource_to_block_cache(
+                        payload.path
+                    )
+                    if temp_file_path is None:
+                        raise ValueError("Did not determine a file path for the resource.")
+                    payload.path = temp_file_path
+                    if keep_in_cache:
+                        block.keep_in_cache.add(payload.path)
 
-                temp_file_path = block.move_resource_to_block_cache(payload.path)
-
-            if temp_file_path is None:
-                raise ValueError("Did not determine a file path for the resource.")
-            payload.path = temp_file_path
-
-        if add_urls:
-            url_prefix = "/stream/" if payload.is_stream else "/file="
-            if block.proxy_url:
-                proxy_url = block.proxy_url.rstrip("/")
-                url = f"/proxy={proxy_url}{url_prefix}{payload.path}"
-            elif client_utils.is_http_url_like(payload.path) or payload.path.startswith(
-                f"{url_prefix}"
-            ):
-                url = payload.path
-            else:
-                url = f"{url_prefix}{payload.path}"
-            payload.url = url
+        url_prefix = "/stream/" if payload.is_stream else "/file="
+        if block.proxy_url:
+            proxy_url = block.proxy_url.rstrip("/")
+            url = f"/proxy={proxy_url}{url_prefix}{payload.path}"
+        elif client_utils.is_http_url_like(payload.path) or payload.path.startswith(
+            f"{url_prefix}"
+        ):
+            url = payload.path
+        else:
+            url = f"{url_prefix}{payload.path}"
+        payload.url = url
 
         return payload.model_dump()
 
     if isinstance(data, (GradioRootModel, GradioModel)):
         data = data.model_dump()
 
-    return client_utils.traverse(data, _move_to_cache, client_utils.is_file_obj)
+    return await client_utils.async_traverse(
+        data, _move_to_cache, client_utils.is_file_obj
+    )
 
 
 def install_ui_tempdir_override():
@@ -152,7 +157,7 @@ def install_ui_tempdir_override():
     """
 
     gradio.processing_utils.save_pil_to_cache = save_pil_to_file
-    gradio.processing_utils.move_files_to_cache = move_files_to_cache
+    gradio.processing_utils.async_move_files_to_cache = async_move_files_to_cache
 
 
 def on_tmpdir_changed():
