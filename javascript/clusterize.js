@@ -188,22 +188,26 @@ class Clusterize {
     }
 
     async setMaxItems(max_items) {
+        /** Sets the new max number of items.
+         *
+         *  This is used to control the scroll bar's length.
+         *
+         *  Returns whether the number of max items changed.
+         */
         if (!this.setup_has_run || !this.enabled) {
             this.#max_items = max_items;
-            return;
+            return this.#max_items !== max_items;
         }
-
-        if (max_items === this.#max_items) {
+        if (this.#max_items === max_items) {
             // No change. do nothing.
-            return;
+            return false;
         }
-
         // If the number of items changed, we need to update the cluster.
         this.#max_items = max_items;
         await this.refresh();
-
         // Apply sort to the updated data.
         await this.sortData();
+        return true;
     }
 
     // ==== PRIVATE FUNCTIONS ====

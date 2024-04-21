@@ -938,15 +938,14 @@ function extraNetworksTreeDirectoryOnClick(event, btn, tabname_full) {
 
     const tab = extra_networks_tabs[tabname_full];
 
-    if (true_targ.matches(".tree-list-item-action--leading, .tree-list-item-action-chevron")) {
+    const prev_selected_elem = gradioApp().querySelector(".tree-list-item[data-selected='']");
+    if (true_targ.matches(".tree-list-item-action--leading .tree-list-item-action-chevron")) {
         // If user clicks on the chevron, then we do not select the folder.
-        const prev_selected_elem = gradioApp().querySelector(".tree-list-item[data-selected='']");
         tab.tree_list.onRowExpandClick(div_id, btn);
-        const selected_elem = gradioApp().querySelector(".tree-list-item[data-selected='']");
-        if (isElement(prev_selected_elem) && !isElement(selected_elem)) {
-            // is a selected element was removed, clear filter.
-            tab.updateSearch("");
-        }
+    } else if (true_targ.matches(".tree-list-item-action--trailing .tree-list-item-action-expand")) {
+        tab.tree_list.onExpandAllClick(div_id);
+    } else if (true_targ.matches(".tree-list-item-action--trailing .tree-list-item-action-collapse")) {
+        tab.tree_list.onCollapseAllClick(div_id);
     } else {
         // user clicked anywhere else on the row
         tab.tree_list.onRowSelected(div_id, btn);
@@ -962,6 +961,11 @@ function extraNetworksTreeDirectoryOnClick(event, btn, tabname_full) {
 
         }
         tab.updateSearch("selected" in btn.dataset ? btn.dataset.path : "");
+    }
+    const selected_elem = gradioApp().querySelector(".tree-list-item[data-selected='']");
+    if (isElement(prev_selected_elem) && !isElement(selected_elem)) {
+        // if a selected element was removed, clear filter.
+        tab.updateSearch("");
     }
 }
 

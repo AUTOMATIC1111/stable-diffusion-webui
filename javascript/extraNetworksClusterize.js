@@ -338,6 +338,58 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         return max_width;
     }
 
+    async onExpandAllClick(div_id) {
+        if (!keyExistsLogError(this.data_obj, div_id)) {
+            return;
+        }
+
+        const _expand = (parent_id) => {
+            const this_obj = this.data_obj[parent_id];
+            this_obj.visible = true;
+            this_obj.expanded = true;
+            for (const child_id of this_obj.children) {
+                _expand(child_id);
+            }
+        };
+
+        this.data_obj[div_id].expanded = true;
+        for (const child_id of this.data_obj[div_id].children) {
+            _expand(child_id);
+        }
+
+        const new_len = Object.values(this.data_obj).filter(v => v.visible).length;
+        const max_items_changed = await this.setMaxItems(new_len);
+        if (!max_items_changed) {
+            await this.refresh(true);
+        }
+    }
+
+    async onCollapseAllClick(div_id) {
+        if (!keyExistsLogError(this.data_obj, div_id)) {
+            return;
+        }
+
+        const _collapse = (parent_id) => {
+            const this_obj = this.data_obj[parent_id];
+            this_obj.visible = false;
+            this_obj.expanded = false;
+            for (const child_id of this_obj.children) {
+                _collapse(child_id);
+            }
+        };
+
+        this.data_obj[div_id].expanded = false;
+        for (const child_id of this.data_obj[div_id].children) {
+            _collapse(child_id);
+        }
+
+        const new_len = Object.values(this.data_obj).filter(v => v.visible).length;
+        const max_items_changed = await this.setMaxItems(new_len);
+        if (!max_items_changed) {
+            await this.refresh(true);
+        }
+    }
+
     async onRowExpandClick(div_id, elem) {
         /** Expands or collapses a row to show/hide children. */
         if (!keyExistsLogError(this.data_obj, div_id)) {
@@ -353,7 +405,10 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         }
 
         const new_len = Object.values(this.data_obj).filter(v => v.visible).length;
-        await this.setMaxItems(new_len);
+        const max_items_changed = await this.setMaxItems(new_len);
+        if (!max_items_changed) {
+            await this.refresh(true);
+        }
     }
 
     async initData() {

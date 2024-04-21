@@ -317,6 +317,13 @@ class ExtraNetworksPage:
             # Action buttons
             if item is not None:
                 action_list_item_action_trailing += self.get_button_row(tabname, item)
+        else:
+            action_list_item_action_trailing += (
+                "<div class='button-row'>"
+                "<div class='tree-list-item-action-expand card-button' title='Expand All'></div>"
+                "<div class='tree-list-item-action-collapse card-button' title='Collapse All'></div>"
+                "</div>"
+            )
 
         data_attributes_str = ""
         for k, v in data_attributes.items():

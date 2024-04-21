@@ -1272,6 +1272,8 @@ body.resizing .resize-handle {
 }
 
 .extra-network-content.resize-handle-col {
+    display: flex;
+    flex-direction: column;
     overflow: auto;
 }
 
@@ -1526,13 +1528,31 @@ body.resizing .resize-handle {
     color: var(--button-secondary-text-color);
 }
 
+
+/* ==== TREE VIEW EXPAND/COLLAPSE BUTTONS ==== */
+.tree-list-item-action-expand::before {
+    content: "≫";
+}
+
+.tree-list-item-action-expand {
+    transform: rotate(90deg);
+}
+
+.tree-list-item-action-collapse::before {
+    content: "≫";
+}
+
+.tree-list-item-action-collapse {
+    transform: rotate(-90deg);
+}
+
 /* ==== CHEVRON ICON ACTIONS ==== */
 /* Define the animation for the arrow when it is clicked. */
 .tree-list-item-action-chevron {
     display: inline-flex;
     height: var(--button-large-text-size);
     width: var(--button-large-text-size);
-    mask-image: url('data:image/svg+xml,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M7 7H17V17" stroke="%23000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>');
+    mask-image: url('data:image/svg+xml,<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M 4 4 H 12 V 12"/></svg>');
     mask-repeat: no-repeat;
     mask-position: center center;
     mask-size: 100%;
@@ -1594,7 +1614,6 @@ body.resizing .resize-handle {
 
 .tree-list-item-action--trailing {
     grid-area: trailing-action;
-    display: inline-flex;
 }
 
 .tree-list-item .button-row {
@@ -1606,6 +1625,7 @@ body.resizing .resize-handle {
     gap: var(--spacing-sm);
     box-sizing: border-box;
     margin: 0;
+    margin-right: var(--spacing-sm);
 }
 
 .tree-list-item:hover .button-row {
