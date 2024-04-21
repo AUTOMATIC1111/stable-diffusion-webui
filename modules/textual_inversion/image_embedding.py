@@ -47,7 +47,7 @@ def lcg(m=2**32, a=1664525, c=1013904223, seed=0):
 
 def xor_block(block):
     g = lcg()
-    randblock = np.array([next(g) for _ in range(np.product(block.shape))]).astype(np.uint8).reshape(block.shape)
+    randblock = np.array([next(g) for _ in range(np.prod(block.shape))]).astype(np.uint8).reshape(block.shape)
     return np.bitwise_xor(block.astype(np.uint8), randblock & 0x0F)
 
 
