@@ -568,7 +568,7 @@ function extraNetworksShowMetadata(text) {
             return;
         }
     } catch (error) {
-        console.eror(error);
+        console.error(error);
     }
 
     var elem = document.createElement('pre');
