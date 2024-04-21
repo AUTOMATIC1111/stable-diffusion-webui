@@ -1612,13 +1612,16 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 self.mask_for_overlay = image_mask
                 mask = image_mask.convert('L')
                 crop_region = masking.get_crop_region(mask, self.inpaint_full_res_padding)
-                crop_region = masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
-                x1, y1, x2, y2 = crop_region
-
-                mask = mask.crop(crop_region)
-                image_mask = images.resize_image(2, mask, self.width, self.height)
-                self.paste_to = (x1, y1, x2-x1, y2-y1)
-
+                if crop_region[0] >= crop_region[2] and crop_region[1] >= crop_region[3]:
+                    crop_region = None
+                    image_mask = None
+                    self.mask_for_overlay = None
+                else:
+                    crop_region = masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
+                    x1, y1, x2, y2 = crop_region
+                    mask = mask.crop(crop_region)
+                    image_mask = images.resize_image(2, mask, self.width, self.height)
+                    self.paste_to = (x1, y1, x2-x1, y2-y1)
                 self.extra_generation_params["Inpaint area"] = "Only masked"
                 self.extra_generation_params["Masked area padding"] = self.inpaint_full_res_padding
             else:
@@ -1648,6 +1651,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 image = images.resize_image(self.resize_mode, image, self.width, self.height)
 
             if image_mask is not None:
+                if self.mask_for_overlay.size != (image.width, image.height):
+                    self.mask_for_overlay = images.resize_image(self.resize_mode, self.mask_for_overlay, image.width, image.height)
                 image_masked = Image.new('RGBa', (image.width, image.height))
                 image_masked.paste(image.convert("RGBA").convert("RGBa"), mask=ImageOps.invert(self.mask_for_overlay.convert('L')))
 
