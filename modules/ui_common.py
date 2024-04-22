@@ -8,7 +8,6 @@ import gradio as gr
 from PIL import Image
 
 from modules import call_queue, shared, ui_tempdir, util
-from modules.infotext_utils import image_from_url_text
 import modules.images
 from modules.ui_components import ToolButton
 import modules.infotext_utils as parameters_copypaste
