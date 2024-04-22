@@ -113,7 +113,7 @@ def save_files(js_data, images, do_make_zip, index):
             writer.writerow(fields)
 
         for image_index, filedata in enumerate(images, start_index):
-            image = Image.open(filedata)
+            image = Image.open(filedata[0])
 
             is_grid = image_index < p.index_of_first_image
 
