@@ -1,7 +1,7 @@
 from modules import scripts
 from modules.shared import opts
 
-xyz_grid = [x for x in scripts.scripts_data if x.script_class.__module__ == "scripts.xyz_grid"][0].module
+xyz_grid = [x for x in scripts.scripts_data if x.script_class.__module__ == "xyz_grid.py"][0].module
 
 def int_applier(value_name:str, min_range:int = -1, max_range:int = -1):
     """
