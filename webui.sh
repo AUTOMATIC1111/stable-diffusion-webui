@@ -113,13 +113,13 @@ then
     exit 1
 fi
 
-if [[ -d .git ]]
+if [[ -d "$SCRIPT_DIR/.git" ]]
 then
     printf "\n%s\n" "${delimiter}"
     printf "Repo already cloned, using it as install directory"
     printf "\n%s\n" "${delimiter}"
-    install_dir="${PWD}/../"
-    clone_dir="${PWD##*/}"
+    install_dir="${SCRIPT_DIR}/../"
+    clone_dir="${SCRIPT_DIR##*/}"
 fi
 
 # Check prerequisites
@@ -129,7 +129,7 @@ case "$gpu_info" in
         export HSA_OVERRIDE_GFX_VERSION=10.3.0
         if [[ -z "${TORCH_COMMAND}" ]]
         then
-            pyv="$(${python_cmd} -c 'import sys; print(".".join(map(str, sys.version_info[0:2])))')"
+            pyv="$(${python_cmd} -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]:02d}")')"
             # Using an old nightly compiled against rocm 5.2 for Navi1, see https://github.com/pytorch/pytorch/issues/106728#issuecomment-1749511711
             if [[ $pyv == "3.8" ]]
             then
@@ -243,7 +243,7 @@ prepare_tcmalloc() {
         for lib in "${TCMALLOC_LIBS[@]}"
         do
             # Determine which type of tcmalloc library the library supports
-            TCMALLOC="$(PATH=/usr/sbin:$PATH ldconfig -p | grep -P $lib | head -n 1)"
+            TCMALLOC="$(PATH=/sbin:/usr/sbin:$PATH ldconfig -p | grep -P $lib | head -n 1)"
             TC_INFO=(${TCMALLOC//=>/})
             if [[ ! -z "${TC_INFO}" ]]; then
                 echo "Check TCMalloc: ${TC_INFO}"

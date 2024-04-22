@@ -1,11 +1,15 @@
 import base64
 import json
+import os.path
 import warnings
+import logging
 
 import numpy as np
 import zlib
 from PIL import Image, ImageDraw
 import torch
+
+logger = logging.getLogger(__name__)
 
 
 class EmbeddingEncoder(json.JSONEncoder):
@@ -43,7 +47,7 @@ def lcg(m=2**32, a=1664525, c=1013904223, seed=0):
 
 def xor_block(block):
     g = lcg()
-    randblock = np.array([next(g) for _ in range(np.product(block.shape))]).astype(np.uint8).reshape(block.shape)
+    randblock = np.array([next(g) for _ in range(np.prod(block.shape))]).astype(np.uint8).reshape(block.shape)
     return np.bitwise_xor(block.astype(np.uint8), randblock & 0x0F)
 
 
@@ -114,7 +118,7 @@ def extract_image_data_embed(image):
     outarr = crop_black(np.array(image.convert('RGB').getdata()).reshape(image.size[1], image.size[0], d).astype(np.uint8)) & 0x0F
     black_cols = np.where(np.sum(outarr, axis=(0, 2)) == 0)
     if black_cols[0].shape[0] < 2:
-        print('No Image data blocks found.')
+        logger.debug(f'{os.path.basename(getattr(image, "filename", "unknown image file"))}: no embedded information found.')
         return None
 
     data_block_lower = outarr[:, :black_cols[0].min(), :].astype(np.uint8)
