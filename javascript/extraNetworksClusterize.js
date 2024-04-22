@@ -40,15 +40,15 @@ class ExtraNetworksClusterize extends Clusterize {
     tabname = "";
     extra_networks_tabname = "";
 
-    filter_as_dir = false;
-
     // Override base class defaults
     default_sort_mode_str = "divId";
     default_sort_dir_str = "ascending";
     default_filter_str = "";
+    default_directory_filter_str = "";
     sort_mode_str = this.default_sort_mode_str;
     sort_dir_str = this.default_sort_dir_str;
     filter_str = this.default_filter_str;
+    directory_filter_str = this.default_directory_filter_str;
 
     constructor(args) {
         super(args);
@@ -141,14 +141,21 @@ class ExtraNetworksClusterize extends Clusterize {
         this.sortData();
     }
 
-    setFilterStr(filter_str, is_dir) {
+    setFilterStr(filter_str) {
         if (isString(filter_str) && this.filter_str !== filter_str) {
             this.filter_str = filter_str;
         } else if (isNullOrUndefined(filter_str)) {
             this.filter_str = this.default_filter_str;
         }
+        this.filterData();
+    }
 
-        this.filter_as_dir = is_dir === true;
+    setDirectoryFilterStr(filter_str) {
+        if (isString(filter_str) && this.directory_filter_str !== filter_str) {
+            this.directory_filter_str = filter_str;
+        } else if (isNullOrUndefined(filter_str)) {
+            this.directory_filter_str = this.default_directory_filter_str;
+        }
         this.filterData();
     }
 
@@ -229,7 +236,6 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
             ...args,
             no_data_text: "Directory is empty.",
         });
-
     }
 
     clear() {
@@ -258,6 +264,9 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         /** Recursively sets the visibility of a div_id and its children. */
         const this_obj = this.data_obj[div_id];
         this_obj.visible = visible;
+        if (!visible && div_id === this.selected_div_id) {
+            this.selected_div_id = null;
+        }
         for (const child_id of this_obj.children) {
             this.#setVisibility(child_id, visible && this_obj.expanded);
         }
@@ -271,7 +280,6 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         */
         if (isNullOrUndefined(div_id) && isNullOrUndefined(elem)) {
             if (!isNullOrUndefined(this.selected_div_id) && keyExistsLogError(this.data_obj, this.selected_div_id)) {
-                this.data_obj[this.selected_div_id].selected = false;
                 this.selected_div_id = null;
                 for (const elem of this.content_elem.children) {
                     delete elem.dataset.selected;
@@ -288,20 +296,16 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
             return;
         }
 
-        override = override === true;
-
         if (!isNullOrUndefined(this.selected_div_id) && div_id !== this.selected_div_id) {
             const prev_elem = this.content_elem.querySelector(`[data-div-id="${this.selected_div_id}"]`);
             // deselect current selection if exists on page
             if (isElement(prev_elem)) {
                 delete prev_elem.dataset.selected;
-                this.data_obj[prev_elem.dataset.divId].selected = false;
+                this.selected_div_id = null;
             }
         }
-
-        elem.toggleAttribute("data-selected");
+        elem.toggleAttribute("data-selected", override);
         this.selected_div_id = "selected" in elem.dataset ? div_id : null;
-        this.data_obj[elem.dataset.divId].selected = "selected" in elem.dataset;
     }
 
     getMaxRowWidth() {
@@ -576,12 +580,15 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
         /** Filters data by a string and returns number of items after filter. */
         let n_visible = 0;
         for (const [div_id, v] of Object.entries(this.data_obj)) {
-            let visible;
-            if (this.filter_str && this.filter_as_dir) {
-                // Filtering as directory only shows direct children. Case sensitive
-                // comparison against the relative directory of each object.
-                visible = this.filter_str === v.rel_parent_dir;
-            } else if (v.search_only && this.filter_str.length >= 4) {
+            let visible = true;
+            // Filtering as directory only shows direct children. Case sensitive
+            // comparison against the relative directory of each object.
+            if (this.directory_filter_str && this.directory_filter_str !== v.rel_parent_dir) {
+                this.data_obj[div_id].visible = false;
+                continue;
+            }
+
+            if (v.search_only && this.filter_str.length >= 4) {
                 // Custom filter for items marked search_only=true.
                 // TODO: Not ideal. This disregards any search_terms set on the model.
                 // However the search terms are currently set up in a way that would
@@ -594,9 +601,7 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
                 // All other filters treated case insensitive.
                 visible = v.search_terms.toLowerCase().indexOf(this.filter_str.toLowerCase()) !== -1;
             }
-            if (v.search_only && this.filter_str.length < 4) {
-                visible = false;
-            }
+
             this.data_obj[div_id].visible = visible;
             if (visible) {
                 n_visible++;

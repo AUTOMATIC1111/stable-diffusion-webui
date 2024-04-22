@@ -503,8 +503,8 @@ class ExtraNetworksPage:
                 search_only = any(x.startswith(".") for x in filename.split(os.sep))
             self.cards[div_id] = CardListItem(div_id, card_html)
             self.cards[div_id].abspath = os.path.normpath(item.get("filename", ""))
-            for parent_dir in self.allowed_directories_for_previews():
-                parent_dir = os.path.dirname(os.path.abspath(parent_dir))
+            for path in self.allowed_directories_for_previews():
+                parent_dir = os.path.dirname(os.path.abspath(path))
                 if self.cards[div_id].abspath.startswith(parent_dir):
                     self.cards[div_id].relpath = os.path.relpath(self.cards[div_id].abspath, parent_dir)
                     break
