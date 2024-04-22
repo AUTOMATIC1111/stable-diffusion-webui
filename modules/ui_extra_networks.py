@@ -51,6 +51,7 @@ class CardListItem(ListItem):
         self.visible: bool = False
         self.sort_keys = {}
         self.search_terms = ""
+        self.search_only = False
 
 
 class TreeListItem(ListItem):
@@ -105,20 +106,24 @@ class DirectoryTreeNode:
     def add_child(self, child: "DirectoryTreeNode") -> None:
         self.children.append(child)
 
-    def build(self, items: dict[str, dict]) -> None:
+    def build(self, items: dict[str, dict], include_hidden: bool = False) -> None:
         """Builds a tree of nodes as children of this instance.
 
         Args:
             items: A dictionary where keys are absolute filepaths for directories/files.
                 The values are dictionaries representing extra networks items.
+            include_hidden: Whether to include hidden directories in the tree.
         """
         self.is_dir = os.path.isdir(self.abspath)
         if self.is_dir:
             for x in os.listdir(self.abspath):
                 child_path = os.path.join(self.abspath, x)
+                # Skip hidden directories if include_hidden is False
+                if os.path.isdir(child_path) and os.path.basename(child_path).startswith(".") and not include_hidden:
+                    continue
                 # Add all directories but only add files if they are in the items dict.
                 if os.path.isdir(child_path) or child_path in items:
-                    DirectoryTreeNode(self.root_dir, child_path, self).build(items)
+                    DirectoryTreeNode(self.root_dir, child_path, self).build(items, include_hidden)
         else:
             self.item = items.get(self.abspath, None)
 
@@ -418,12 +423,14 @@ class ExtraNetworksPage:
         filename = item.get("filename", "")
         # if this is true, the item must not be shown in the default view,
         # and must instead only be shown when searching for it
-        if shared.opts.extra_networks_hidden_models == "Always":
+        show_hidden_models = str(shared.opts.extra_networks_hidden_models).strip().lower()
+        if show_hidden_models == "always":
             search_only = False
         else:
-            search_only = filename.startswith(".")
+            # If any parent dirs are hidden, the model is also hidden.
+            search_only = any(os.path.basename(x).startswith(".") for x in Path(filename).parents)
 
-        if search_only and shared.opts.extra_networks_hidden_models == "Never":
+        if search_only and show_hidden_models == "never":
             return ""
 
         sort_keys = {}
@@ -497,9 +504,17 @@ class ExtraNetworksPage:
             card_html = self.create_card_html(tabname=tabname, item=item, div_id=div_id)
             sort_keys = {k.strip().lower().replace(" ", "_"): html.escape(str(v)) for k, v in item.get("sort_keys", {}).items()}
             search_terms = item.get("search_terms", [])
+            show_hidden_models = str(shared.opts.extra_networks_hidden_models).strip().lower()
+            if show_hidden_models == "always":
+                search_only = False
+            else:
+                # If any parent dirs are hidden, the model is also hidden.
+                filename = item.get("filename", "")
+                search_only = any(os.path.basename(x).startswith(".") for x in Path(filename).parents)
             self.cards[div_id] = CardListItem(div_id, card_html)
             self.cards[div_id].sort_keys = sort_keys
             self.cards[div_id].search_terms = " ".join(search_terms)
+            self.cards[div_id].search_only = search_only
 
         # Sort cards for all sort modes
         sort_modes = ["name", "path", "date_created", "date_modified"]
@@ -514,7 +529,8 @@ class ExtraNetworksPage:
             res[div_id] = {
                 **{f"sort_{mode}": key for mode, key in card_item.sort_keys.items()},
                 "search_terms": card_item.search_terms,
-                "visible": True,
+                "search_only": card_item.search_only,
+                "visible": not card_item.search_only,
             }
         return res
 
@@ -707,7 +723,10 @@ class ExtraNetworksPage:
             if not os.path.exists(abspath):
                 continue
             self.tree_roots[abspath] = DirectoryTreeNode(os.path.dirname(abspath), abspath, None)
-            self.tree_roots[abspath].build(tree_items if shared.opts.extra_networks_tree_view_show_files else {})
+            self.tree_roots[abspath].build(
+                tree_items if shared.opts.extra_networks_tree_view_show_files else {},
+                include_hidden=shared.opts.extra_networks_show_hidden_directories,
+            )
 
         # Generate the html for displaying directory buttons
         dirs_html = self.create_dirs_view_html(tabname)

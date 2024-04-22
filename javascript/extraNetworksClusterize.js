@@ -513,6 +513,7 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
         /*Expects an object like the following:
             {
                 search_keys: array of strings,
+                search_only: bool,
                 sort_<mode>: string, (for various sort modes)
             }
         */
