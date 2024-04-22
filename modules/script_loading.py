@@ -2,7 +2,6 @@ import os
 import importlib.util
 
 from modules import errors
-import sys
 
 
 loaded_scripts = {}
@@ -14,8 +13,8 @@ def load_module(path):
     module_spec = importlib.util.spec_from_file_location(full_module_name, path)
     module = importlib.util.module_from_spec(module_spec)
     module_spec.loader.exec_module(module)
+
     loaded_scripts[path] = module
-    sys.modules[full_module_name] = module
     return module
 
 
