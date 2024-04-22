@@ -1,3 +1,8 @@
+## 1.9.2
+
+### Extensions and API:
+* restore 1.8.0-style naming of scripts
+
 ## 1.9.1
 
 ### Minor:
