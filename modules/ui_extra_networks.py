@@ -678,18 +678,25 @@ class ExtraNetworksPage:
             tree.values(),
             key=lambda x: shared.natural_sort_key(x.relpath),
         )
-        dirs_html = "".join(
-            [
+        dirs_html = []
+        for node in dir_nodes:
+            if node.parent is None:
+                label = node.relpath
+            else:
+                label = os.sep.join(node.relpath.split(os.sep)[1:])
+
+            dirs_html.append(
                 self.btn_dirs_view_item_tpl.format(
                     **{
                         "extra_class": "search-all" if node.relpath == "" else "",
                         "tabname_full": f"{tabname}_{self.extra_networks_tabname}",
+                        "title": html.escape(node.abspath),
                         "path": html.escape(node.relpath),
+                        "label": html.escape(label),
                     }
                 )
-                for node in dir_nodes
-            ]
-        )
+            )
+        dirs_html = "".join(dirs_html)
 
         return dirs_html
 
