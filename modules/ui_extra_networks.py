@@ -1020,7 +1020,12 @@ def get_metadata(extra_networks_tabname: str = "", item: str = "") -> JSONRespon
     return JSONResponse({"metadata": json.dumps(metadata, indent=4, ensure_ascii=False)})
 
 
-def get_single_card(tabname: str = "", extra_networks_tabname: str = "", name: str = "") -> JSONResponse:
+def get_single_card(
+    tabname: str = "",
+    extra_networks_tabname: str = "",
+    name: str = "",
+    div_id: str = "",
+) -> JSONResponse:
     page = get_page_by_name(extra_networks_tabname)
 
     try:
@@ -1034,7 +1039,9 @@ def get_single_card(tabname: str = "", extra_networks_tabname: str = "", name: s
         return JSONResponse({})
 
     page.read_user_metadata(item, use_cache=False)
-    item_html = page.create_card_html(tabname=tabname, item=item)
+    item_html = page.create_card_html(tabname=tabname, item=item, div_id=div_id)
+    # Update the card's HTML in the page's dataset.
+    page.cards[div_id].html = item_html
 
     return JSONResponse({"html": item_html})
 

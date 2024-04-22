@@ -522,26 +522,14 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
         this.data_obj = await this.options.callbacks.initData();
     }
 
-    updateCard(name, new_html) {
+    updateCard(elem, new_html) {
         const parsed_html = htmlStringToElement(new_html);
 
-        const old_card = this.content_elem.querySelector(`.card[data-name="${name}"]`);
-        if (!isElementLogError(old_card)) {
-            return;
-        }
-
-        const div_id = old_card.dataset.divId;
-
-        // replace new html's data attributes with the current ones
-        for (const [k, v] of Object.entries(old_card.dataset)) {
-            parsed_html.dataset[k] = v;
-        }
-
         // replace the element in DOM with our new element
-        old_card.replaceWith(parsed_html);
+        elem.replaceWith(parsed_html);
 
         // update the internal cache with the new html
-        this.lru.set(String(div_id), new_html);
+        this.lru.set(String(elem.dataset.divId), new_html);
     }
 
     async fetchData(idx_start, idx_end) {

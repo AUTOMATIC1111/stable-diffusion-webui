@@ -236,17 +236,18 @@ class ExtraNetworksTab {
         this.prompts_elem.classList.toggle("extra-page-prompts-active", show_neg_prompt || show_prompt);
     }
 
-    refreshSingleCard(name) {
+    refreshSingleCard(elem) {
         requestGet(
             "./sd_extra_networks/get-single-card",
             {
                 tabname: this.tabname,
                 extra_networks_tabname: this.extra_networks_tabname,
-                name: name,
+                name: elem.dataset.name,
+                div_id: elem.dataset.divId,
             },
             (data) => {
                 if (data && data.html) {
-                    this.cards_list.updateCard(name, data.html);
+                    this.cards_list.updateCard(elem, data.html);
                 }
             },
         );
@@ -686,7 +687,9 @@ function extraNetworksShowMetadata(text) {
 
 function extraNetworksRefreshSingleCard(tabname, extra_networks_tabname, name) {
     const tab = extra_networks_tabs[`${tabname}_${extra_networks_tabname}`];
-    tab.refreshSingleCard(name);
+    const elem = tab.cards_list.content_elem.querySelector(`.card[data-name="${name}"]`);
+    isElementThrowError(elem);
+    tab.refreshSingleCard(elem);
 }
 
 function extraNetworksRefreshTab(tabname_full) {
