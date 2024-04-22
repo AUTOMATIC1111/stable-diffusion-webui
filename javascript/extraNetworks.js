@@ -1010,8 +1010,8 @@ function extraNetworksBtnEditMetadataOnClick(event, tabname_full, card_name) {
     event.stopPropagation();
 }
 
-function extraNetworksBtnCopyPathOnClick(event, path) {
-    copyToClipboard(path);
+function extraNetworksBtnCopyPathOnClick(event) {
+    copyToClipboard(event.target.dataset.clipboardText);
     event.stopPropagation();
 }
 

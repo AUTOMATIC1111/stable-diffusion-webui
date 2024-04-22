@@ -362,7 +362,7 @@ class ExtraNetworksPage:
 
         button_row_tpl = '<div class="button-row">{btn_copy_path}{btn_edit_item}{btn_metadata}</div>'
 
-        btn_copy_path = self.btn_copy_path_tpl.format(filename=filename)
+        btn_copy_path = self.btn_copy_path_tpl.format(clipboard_text=filename)
         btn_edit_item = self.btn_edit_metadata_tpl.format(
             tabname=tabname,
             extra_networks_tabname=self.extra_networks_tabname,
