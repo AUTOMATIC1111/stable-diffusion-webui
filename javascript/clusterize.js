@@ -198,16 +198,8 @@ class Clusterize {
             this.#max_items = max_items;
             return this.#max_items !== max_items;
         }
-        if (this.#max_items === max_items) {
-            // No change. do nothing.
-            return false;
-        }
-        // If the number of items changed, we need to update the cluster.
+
         this.#max_items = max_items;
-        await this.refresh();
-        // Apply sort to the updated data.
-        await this.sortData();
-        return true;
     }
 
     // ==== PRIVATE FUNCTIONS ====
@@ -266,6 +258,8 @@ class Clusterize {
         // Filter is applied to entire dataset.
         const max_items = await this.options.callbacks.filterData();
         await this.setMaxItems(max_items);
+        await this.refresh(true);
+        await this.sortData();
     }
 
     #exploreEnvironment(rows, cache) {

@@ -128,7 +128,7 @@ class ExtraNetworksTab {
 
         this.setSortMode(sort_mode_elem.dataset.sortMode);
         this.setSortDir(sort_dir_elem.dataset.sortDir);
-        this.setFilterStr(this.txt_search_elem.value.toLowerCase());
+        this.setFilterStr(this.txt_search_elem.value);
 
         this.registerPrompt();
 
@@ -214,9 +214,9 @@ class ExtraNetworksTab {
         this.cards_list.setSortDir(this.sort_dir_str);
     }
 
-    setFilterStr(filter_str) {
+    setFilterStr(filter_str, is_dir) {
         this.filter_str = filter_str;
-        this.cards_list.setFilterStr(this.filter_str);
+        this.cards_list.setFilterStr(this.filter_str, is_dir === true);
     }
 
     movePrompt(show_prompt = true, show_neg_prompt = true) {
@@ -310,9 +310,9 @@ class ExtraNetworksTab {
         this.cards_list.enable(false);
     }
 
-    applyFilter() {
+    applyFilter({is_dir = false} = {is_dir: false}) {
         // We only want to filter/sort the cards list.
-        this.setFilterStr(this.txt_search_elem.value.toLowerCase());
+        this.setFilterStr(this.txt_search_elem.value, is_dir);
 
         // If the search input has changed since selecting a button to populate it
         // then we want to disable the button that previously populated the search input.
@@ -460,10 +460,10 @@ class ExtraNetworksTab {
         }
     }
 
-    updateSearch(text) {
+    updateSearch(text, ...args) {
         this.txt_search_elem.value = text;
         updateInput(this.txt_search_elem);
-        this.applyFilter();
+        this.applyFilter(...args);
     }
 
     autoSetTreeWidth() {
@@ -761,7 +761,7 @@ function extraNetworksBtnDirsViewItemOnClick(event, tabname_full) {
         _deselect_all_buttons();
         // update search input with selected button's path.
         elem.dataset.selected = "";
-        txt_search_elem.value = elem.textContent.trim();
+        tab.updateSearch(elem.textContent.trim(), {is_dir: true});
 
         // Select the corresponding tree view button.
         if ("selected" in elem.dataset) {
@@ -774,7 +774,7 @@ function extraNetworksBtnDirsViewItemOnClick(event, tabname_full) {
 
     const _deselect_button = (elem) => {
         delete elem.dataset.selected;
-        txt_search_elem.value = "";
+        tab.updateSearch("");
         // deselect tree view rows
         tab.tree_list.onRowSelected(); // empty params deselects all rows.
     };
@@ -784,9 +784,6 @@ function extraNetworksBtnDirsViewItemOnClick(event, tabname_full) {
     } else {
         _select_button(event.target);
     }
-
-    updateInput(txt_search_elem);
-    tab.applyFilter();
 
     event.stopPropagation();
 }
@@ -960,7 +957,8 @@ function extraNetworksTreeDirectoryOnClick(event, btn, tabname_full) {
             });
 
         }
-        tab.updateSearch("selected" in btn.dataset ? btn.dataset.path : "");
+        const search_txt = "selected" in btn.dataset ? btn.dataset.path : "";
+        tab.updateSearch(search_txt, {is_dir: btn.dataset.treeEntryType === "dir" && search_txt !== ""});
     }
     const selected_elem = gradioApp().querySelector(".tree-list-item[data-selected='']");
     if (isElement(prev_selected_elem) && !isElement(selected_elem)) {

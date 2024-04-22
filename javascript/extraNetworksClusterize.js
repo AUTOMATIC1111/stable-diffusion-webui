@@ -40,6 +40,8 @@ class ExtraNetworksClusterize extends Clusterize {
     tabname = "";
     extra_networks_tabname = "";
 
+    filter_as_dir = false;
+
     // Override base class defaults
     default_sort_mode_str = "divId";
     default_sort_dir_str = "ascending";
@@ -64,6 +66,7 @@ class ExtraNetworksClusterize extends Clusterize {
         // can't use super class' sort since it relies on setup being run first.
         // but we do need to make sure to sort the new data before continuing.
         await this.setMaxItems(Object.keys(this.data_obj).length);
+        await this.refresh(true);
         await this.options.callbacks.sortData();
     }
 
@@ -138,15 +141,14 @@ class ExtraNetworksClusterize extends Clusterize {
         this.sortData();
     }
 
-    setFilterStr(filter_str) {
-        if (isString(filter_str) && this.filter_str !== filter_str.toLowerCase()) {
-            this.filter_str = filter_str.toLowerCase();
-        } else if (isNullOrUndefined(this.filter_str)) {
-            this.filter_str = this.default_filter_str.toLowerCase();
-        } else {
-            return;
+    setFilterStr(filter_str, is_dir) {
+        if (isString(filter_str) && this.filter_str !== filter_str) {
+            this.filter_str = filter_str;
+        } else if (isNullOrUndefined(filter_str)) {
+            this.filter_str = this.default_filter_str;
         }
 
+        this.filter_as_dir = is_dir === true;
         this.filterData();
     }
 
@@ -358,10 +360,9 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         }
 
         const new_len = Object.values(this.data_obj).filter(v => v.visible).length;
-        const max_items_changed = await this.setMaxItems(new_len);
-        if (!max_items_changed) {
-            await this.refresh(true);
-        }
+        await this.setMaxItems(new_len);
+        await this.refresh(true);
+        await this.sortData();
     }
 
     async onCollapseAllClick(div_id) {
@@ -384,10 +385,9 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         }
 
         const new_len = Object.values(this.data_obj).filter(v => v.visible).length;
-        const max_items_changed = await this.setMaxItems(new_len);
-        if (!max_items_changed) {
-            await this.refresh(true);
-        }
+        await this.setMaxItems(new_len);
+        await this.refresh(true);
+        await this.sortData();
     }
 
     async onRowExpandClick(div_id, elem) {
@@ -405,10 +405,9 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         }
 
         const new_len = Object.values(this.data_obj).filter(v => v.visible).length;
-        const max_items_changed = await this.setMaxItems(new_len);
-        if (!max_items_changed) {
-            await this.refresh(true);
-        }
+        await this.setMaxItems(new_len);
+        await this.refresh(true);
+        await this.sortData();
     }
 
     async initData() {
@@ -493,7 +492,10 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
 
     sortByPath(data) {
         return Object.keys(data).sort((a, b) => {
-            return STR_COLLATOR.compare(data[a].sort_path, data[b].sort_path);
+            // Wrap the paths in File objects to allow for proper sorting of filepaths.
+            const a_file = new File([""], data[a].sort_path);
+            const b_file = new File([""], data[b].sort_path);
+            return a_file - b_file;
         });
     }
 
@@ -586,7 +588,24 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
         /** Filters data by a string and returns number of items after filter. */
         let n_visible = 0;
         for (const [div_id, v] of Object.entries(this.data_obj)) {
-            let visible = v.search_terms.toLowerCase().indexOf(this.filter_str) != -1;
+            let visible;
+            if (this.filter_str && this.filter_as_dir) {
+                // Filtering as directory only shows direct children. Case sensitive
+                // comparison against the relative directory of each object.
+                visible = this.filter_str === v.rel_parent_dir;
+            } else if (v.search_only && this.filter_str.length >= 4) {
+                // Custom filter for items marked search_only=true.
+                // TODO: Not ideal. This disregards any search_terms set on the model.
+                // However the search terms are currently set up in a way that would
+                // reveal hidden models if the user searches for any visible parent
+                // directories. For example, searching for "Lora" would reveal a hidden
+                // model in "Lora/.hidden/model.safetensors" since that full path is
+                // included in the search terms.
+                visible = v.rel_parent_dir.toLowerCase().indexOf(this.filter_str.toLowerCase()) !== -1;
+            } else {
+                // All other filters treated case insensitive.
+                visible = v.search_terms.toLowerCase().indexOf(this.filter_str.toLowerCase()) !== -1;
+            }
             if (v.search_only && this.filter_str.length < 4) {
                 visible = false;
             }
@@ -595,7 +614,6 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
                 n_visible++;
             }
         }
-
         return n_visible;
     }
 }

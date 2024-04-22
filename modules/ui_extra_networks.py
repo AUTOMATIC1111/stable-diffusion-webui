@@ -49,6 +49,8 @@ class CardListItem(ListItem):
         super().__init__(*args, **kwargs)
 
         self.visible: bool = False
+        self.abspath = ""
+        self.relpath = ""
         self.sort_keys = {}
         self.search_terms = ""
         self.search_only = False
@@ -244,7 +246,7 @@ class ExtraNetworksPage:
         self.tree_roots = {}
 
     def read_user_metadata(self, item, use_cache=True):
-        filename = item.get("filename", None)
+        filename = os.path.normpath(item.get("filename", None))
         metadata = extra_networks.get_user_metadata(filename, lister=self.lister if use_cache else None)
 
         desc = metadata.get("description", None)
@@ -363,7 +365,7 @@ class ExtraNetworksPage:
         """Generates a row of buttons for use in Tree/Cards View items."""
         metadata = item.get("metadata", None)
         name = item.get("name", "")
-        filename = item.get("filename", "")
+        filename = os.path.normpath(item.get("filename", ""))
 
         button_row_tpl = '<div class="button-row">{btn_copy_path}{btn_edit_item}{btn_metadata}</div>'
 
@@ -420,7 +422,7 @@ class ExtraNetworksPage:
 
         button_row = self.get_button_row(tabname, item)
 
-        filename = item.get("filename", "")
+        filename = os.path.normpath(item.get("filename", ""))
         # if this is true, the item must not be shown in the default view,
         # and must instead only be shown when searching for it
         show_hidden_models = str(shared.opts.extra_networks_hidden_models).strip().lower()
@@ -428,7 +430,7 @@ class ExtraNetworksPage:
             search_only = False
         else:
             # If any parent dirs are hidden, the model is also hidden.
-            search_only = any(os.path.basename(x).startswith(".") for x in Path(filename).parents)
+            search_only = any(x.startswith(".") for x in filename.split(os.sep))
 
         if search_only and show_hidden_models == "never":
             return ""
@@ -436,16 +438,6 @@ class ExtraNetworksPage:
         sort_keys = {}
         for sort_mode, sort_key in item.get("sort_keys", {}).items():
             sort_keys[sort_mode.strip().lower()] = html.escape(str(sort_key))
-
-        search_terms_html = ""
-        search_terms_tpl = "<span class='hidden {class}'>{search_term}</span>"
-        for search_term in item.get("search_terms", []):
-            search_terms_html += search_terms_tpl.format(
-                **{
-                    "class": f"search_terms{' search_only' if search_only else ''}",
-                    "search_term": search_term,
-                }
-            )
 
         description = ""
         if shared.opts.extra_networks_card_show_desc:
@@ -455,7 +447,7 @@ class ExtraNetworksPage:
             description = html.escape(description)
 
         data_name = item.get("name", "").strip()
-        data_path = item.get("filename", "").strip()
+        data_path = os.path.normpath(item.get("filename", "").strip())
         data_attributes = {
             "data-div-id": f'"{div_id}"' if div_id else '""',
             "data-name": f'"{data_name}"',
@@ -464,7 +456,6 @@ class ExtraNetworksPage:
             "data-prompt": item.get("prompt", "").strip(),
             "data-neg-prompt": item.get("negative_prompt", "").strip(),
             "data-allow-neg": self.allow_negative_prompt,
-            **{f"data-sort-{sort_mode}": f'"{sort_key}"' for sort_mode, sort_key in sort_keys.items()},
         }
 
         data_attributes_str = ""
@@ -482,7 +473,6 @@ class ExtraNetworksPage:
             data_attributes=data_attributes_str,
             background_image=background_image,
             button_row=button_row,
-            search_terms=search_terms_html,
             name=html.escape(item["name"].strip()),
             description=description,
         )
@@ -509,9 +499,15 @@ class ExtraNetworksPage:
                 search_only = False
             else:
                 # If any parent dirs are hidden, the model is also hidden.
-                filename = item.get("filename", "")
-                search_only = any(os.path.basename(x).startswith(".") for x in Path(filename).parents)
+                filename = os.path.normpath(item.get("filename", ""))
+                search_only = any(x.startswith(".") for x in filename.split(os.sep))
             self.cards[div_id] = CardListItem(div_id, card_html)
+            self.cards[div_id].abspath = os.path.normpath(item.get("filename", ""))
+            for parent_dir in self.allowed_directories_for_previews():
+                parent_dir = os.path.dirname(os.path.abspath(parent_dir))
+                if self.cards[div_id].abspath.startswith(parent_dir):
+                    self.cards[div_id].relpath = os.path.relpath(self.cards[div_id].abspath, parent_dir)
+                    break
             self.cards[div_id].sort_keys = sort_keys
             self.cards[div_id].search_terms = " ".join(search_terms)
             self.cards[div_id].search_only = search_only
@@ -526,8 +522,18 @@ class ExtraNetworksPage:
 
         res = {}
         for div_id, card_item in self.cards.items():
+            rel_parent_dir = os.path.dirname(card_item.relpath)
+            if (card_item.search_only):
+                parents = card_item.relpath.split(os.sep)
+                idxs = [i for i, x in enumerate(parents) if x.startswith(".")]
+                if len(idxs) > 0:
+                    rel_parent_dir = os.sep.join(parents[idxs[0]:])
+                else:
+                    print(f"search_only is enabled but no hidden dir found: {card_item.abspath}")
+
             res[div_id] = {
                 **{f"sort_{mode}": key for mode, key in card_item.sort_keys.items()},
+                "rel_parent_dir": rel_parent_dir,
                 "search_terms": card_item.search_terms,
                 "search_only": card_item.search_only,
                 "visible": not card_item.search_only,
@@ -606,7 +612,7 @@ class ExtraNetworksPage:
                     onclick = html.escape(f"extraNetworksCardOnClick(event, '{tabname}_{self.extra_networks_tabname}');")
 
                 item_name = node.item.get("name", "").strip()
-                data_path = node.item.get("filename", "").strip()
+                data_path = os.path.normpath(node.item.get("filename", "").strip())
                 tree_item.html = self.build_tree_html_row(
                     tabname=tabname,
                     label=html.escape(item_name),
@@ -715,7 +721,7 @@ class ExtraNetworksPage:
                 self.read_user_metadata(item)
 
         # Setup the tree dictionary.
-        tree_items = {v["filename"]: v for v in self.items.values()}
+        tree_items = {os.path.normpath(v["filename"]): v for v in self.items.values()}
         # Create a DirectoryTreeNode for each root directory since they might not share
         # a common path.
         for path in self.allowed_directories_for_previews():
