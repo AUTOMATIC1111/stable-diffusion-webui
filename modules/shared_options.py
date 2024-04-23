@@ -380,7 +380,8 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     'uni_pc_skip_type': OptionInfo("time_uniform", "UniPC skip type", gr.Radio, {"choices": ["time_uniform", "time_quadratic", "logSNR"]}, infotext='UniPC skip type'),
     'uni_pc_order': OptionInfo(3, "UniPC order", gr.Slider, {"minimum": 1, "maximum": 50, "step": 1}, infotext='UniPC order').info("must be < sampling steps"),
     'uni_pc_lower_order_final': OptionInfo(True, "UniPC lower order final", infotext='UniPC lower order final'),
-    'sd_noise_schedule': OptionInfo("Default", "Noise schedule for sampling", gr.Radio, {"choices": ["Default", "Zero Terminal SNR"]}, infotext="Noise Schedule").info("for use with zero terminal SNR trained models")
+    'sd_noise_schedule': OptionInfo("Default", "Noise schedule for sampling", gr.Radio, {"choices": ["Default", "Zero Terminal SNR"]}, infotext="Noise Schedule").info("for use with zero terminal SNR trained models"),
+    'skip_cond_steps': OptionInfo(0, "Skip CFG on first N steps of sampling", gr.Slider, {"minimum": 0, "maximum": 50, "step": 1}, infotext="Skip CFG first steps"),
 }))
 
 options_templates.update(options_section(('postprocessing', "Postprocessing", "postprocessing"), {
