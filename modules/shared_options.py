@@ -381,7 +381,7 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     'uni_pc_order': OptionInfo(3, "UniPC order", gr.Slider, {"minimum": 1, "maximum": 50, "step": 1}, infotext='UniPC order').info("must be < sampling steps"),
     'uni_pc_lower_order_final': OptionInfo(True, "UniPC lower order final", infotext='UniPC lower order final'),
     'sd_noise_schedule': OptionInfo("Default", "Noise schedule for sampling", gr.Radio, {"choices": ["Default", "Zero Terminal SNR"]}, infotext="Noise Schedule").info("for use with zero terminal SNR trained models"),
-    'skip_cond_steps': OptionInfo(0, "Skip CFG on first N steps of sampling", gr.Slider, {"minimum": 0, "maximum": 50, "step": 1}, infotext="Skip CFG first steps"),
+    'skip_early_cond': OptionInfo(0, "Skip CFG during early sampling", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}, infotext="Skip Early CFG").info("CFG will be disabled (set to 1) on early steps, can both improve sample diversity/quality and speed up sampling"),
 }))
 
 options_templates.update(options_section(('postprocessing', "Postprocessing", "postprocessing"), {
