@@ -1012,22 +1012,24 @@ function extraNetworksTreeFileOnClick(event, btn, tabname_full) {
 }
 
 async function extraNetworksTreeDirectoryOnClick(event, btn, tabname_full) {
-    const true_targ = event.target;
     const div_id = btn.dataset.divId;
 
     const tab = extra_networks_tabs[tabname_full];
 
-    if (true_targ.matches(".tree-list-item-action--leading .tree-list-item-action-chevron")) {
+    if (event.target.matches(".tree-list-item-action--leading .tree-list-item-action-chevron")) {
         // If user clicks on the chevron, then we do not select the folder.
         await tab.tree_list.onRowExpandClick(div_id, btn);
-    } else if (true_targ.matches(".tree-list-item-action--trailing .tree-list-item-action-expand")) {
+        tab.setDirectoryButtons();
+        return;
+    } else if (event.target.matches(".tree-list-item-action--trailing .tree-list-item-action-expand")) {
         await tab.tree_list.onExpandAllClick(div_id);
-    } else if (true_targ.matches(".tree-list-item-action--trailing .tree-list-item-action-collapse")) {
+    } else if (event.target.matches(".tree-list-item-action--trailing .tree-list-item-action-collapse")) {
         await tab.tree_list.onCollapseAllClick(div_id);
     } else {
         // user clicked anywhere else on the row
         await tab.tree_list.onRowSelected(div_id, btn);
     }
+
     tab.setDirectoryButtons(btn);
 }
 
