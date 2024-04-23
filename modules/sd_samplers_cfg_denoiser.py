@@ -212,6 +212,11 @@ class CFGDenoiser(torch.nn.Module):
         uncond = denoiser_params.text_uncond
         skip_uncond = False
 
+        if self.step < shared.opts.skip_cond_steps:
+            skip_uncond = True
+            x_in = x_in[:-batch_size]
+            sigma_in = sigma_in[:-batch_size]
+
         # alternating uncond allows for higher thresholds without the quality loss normally expected from raising it
         if self.step % 2 and s_min_uncond > 0 and sigma[0] < s_min_uncond and not is_edit_model:
             skip_uncond = True
