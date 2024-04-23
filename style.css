@@ -1212,27 +1212,6 @@ body.resizing .resize-handle {
     color: var(--input-placeholder-color) !important;
 }
 
-/* Custom scrollbar style. Only works on chromium based browsers. */
-.clusterize-scroll::-webkit-scrollbar {
-    background: transparent;
-    width: var(--text-lg);
-}
-
-.clusterize-scroll::-webkit-scrollbar-track {
-    background: transparent;
-    background-clip: content-box;
-}
-
-.clusterize-scroll::-webkit-scrollbar-thumb {
-    background: var(--border-color-primary);
-    border-radius: var(--radius-xl);
-    border: calc(var(--button-border-width) * 4) solid var(--background-fill-primary);
-}
-
-.clusterize-scroll::-webkit-scrollbar-button {
-    display: none;
-}
-
 .extra-network-pane {
     display: flex;
     flex-direction: column;
@@ -1256,13 +1235,17 @@ body.resizing .resize-handle {
     width: 100%;
     height: 100%;
     flex-direction: column;
+    gap: var(--spacing-sm);
 }
 
 .extra-network-content--dirs-view {
-    flex: 0 1 0%;
-    flex-direction: row;
-    flex-wrap: wrap;
+    flex: 0 1 min-content;
+    flex-flow: row wrap;
+    max-height: 20%;
     gap: var(--spacing-sm);
+    overflow: clip auto;
+    border: 1px solid var(--block-border-color);
+    padding: var(--spacing-md);
 }
 
 .extra-network-content--cards {
@@ -1660,4 +1643,25 @@ body.resizing .resize-handle {
 .extra-network-dirs-view-button[data-selected] {
     background: var(--button-primary-background-fill);
     border-color: var(--button-primary-border-color);
+}
+
+/* Custom scrollbar style. Only works on chromium based browsers. */
+.styled-scrollbar::-webkit-scrollbar {
+    background: transparent;
+    width: var(--text-lg);
+}
+
+.styled-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+    background-clip: content-box;
+}
+
+.styled-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--border-color-primary);
+    border-radius: var(--radius-xl);
+    border: calc(var(--button-border-width) * 4) solid var(--background-fill-primary);
+}
+
+.styled-scrollbar::-webkit-scrollbar-button {
+    display: none;
 }
