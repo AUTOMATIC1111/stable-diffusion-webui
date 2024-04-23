@@ -1513,14 +1513,14 @@ body.resizing .resize-handle {
     text-align: center;
 }
 
+.tree-list-item[data-selected] {
+    background: var(--button-secondary-background-fill);
+}
+
 .tree-list-item:hover {
     -webkit-transition: all 0.05s ease-in-out;
     transition: all 0.05s ease-in-out;
     background: var(--button-secondary-background-fill-hover);
-}
-
-.tree-list-item[data-selected] {
-    background: var(--button-secondary-background-fill);
 }
 
 .tree-list-item>span {
@@ -1612,8 +1612,17 @@ body.resizing .resize-handle {
     visibility: hidden;
 }
 
+/* Allow trailing action to overlap previous columns when area is too small. */
 .tree-list-item-action--trailing {
-    grid-area: trailing-action;
+    z-index: 10;
+    grid-area: 1 / label / 1 / trailing-action;
+    justify-self: end;
+    padding-left: var(--spacing-sm);
+}
+
+/* Force background color on hover to hide any overlapped column content. */
+.tree-list-item:hover .tree-list-item-action--trailing {
+    background: var(--button-secondary-background-fill-hover);
 }
 
 .tree-list-item .button-row {
