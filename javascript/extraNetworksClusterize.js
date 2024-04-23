@@ -260,18 +260,6 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         return res;
     }
 
-    #setVisibility(div_id, visible) {
-        /** Recursively sets the visibility of a div_id and its children. */
-        const this_obj = this.data_obj[div_id];
-        this_obj.visible = visible;
-        if (!visible && div_id === this.selected_div_id) {
-            this.selected_div_id = null;
-        }
-        for (const child_id of this_obj.children) {
-            this.#setVisibility(child_id, visible && this_obj.expanded);
-        }
-    }
-
     onRowSelected(div_id, elem, override) {
         /** Selects a row and deselects all others.
          *
@@ -388,6 +376,12 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
             _collapse(child_id);
         }
 
+        // Deselect current selected div id if it was just hidden.
+        if (!isNullOrUndefined(this.selected_div_id) && !this.data_obj[this.selected_div_id].visible) {
+            this.selected_div_id = null;
+        }
+
+
         const new_len = Object.values(this.data_obj).filter(v => v.visible).length;
         await this.setMaxItems(new_len);
         await this.refresh(true);
@@ -403,9 +397,21 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         // Toggle state
         this.data_obj[div_id].expanded = !this.data_obj[div_id].expanded;
 
-        const visible = this.data_obj[div_id].expanded;
+        const _set_visibility = (parent_id, visible) => {
+            const this_obj = this.data_obj[parent_id];
+            this_obj.visible = visible;
+            for (const child_id of this_obj.children) {
+                _set_visibility(child_id, visible && this_obj.expanded);
+            }
+        };
+
         for (const child_id of this.data_obj[div_id].children) {
-            this.#setVisibility(child_id, visible);
+            _set_visibility(child_id, this.data_obj[div_id].expanded);
+        }
+
+        // Deselect current selected div id if it was just hidden.
+        if (!isNullOrUndefined(this.selected_div_id) && !this.data_obj[this.selected_div_id].visible) {
+            this.selected_div_id = null;
         }
 
         const new_len = Object.values(this.data_obj).filter(v => v.visible).length;
