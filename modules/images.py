@@ -606,7 +606,8 @@ def save_image_with_geninfo(image, geninfo, filename, extension=None, existing_p
                     piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(geninfo or "", encoding="unicode")
                 },
             })
-
+        else:
+            exif_bytes = None
 
         image.save(filename,format=image_format, quality=opts.jpeg_quality, exif=exif_bytes)
     elif extension.lower() == ".gif":
