@@ -54,7 +54,7 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "save_images_before_color_correction": OptionInfo(False, "Save a copy of image before applying color correction to img2img results"),
     "save_mask": OptionInfo(False, "For inpainting, save a copy of the greyscale mask"),
     "save_mask_composite": OptionInfo(False, "For inpainting, save a masked composite"),
-    "jpeg_quality": OptionInfo(80, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
+    "jpeg_quality": OptionInfo(80, "Quality for saved jpeg and avif images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
     "webp_lossless": OptionInfo(False, "Use lossless compression for webp images"),
     "export_for_4chan": OptionInfo(True, "Save copy of large images as JPG").info("if the file size is above the limit, or either width or height are above the limit"),
     "img_downscale_threshold": OptionInfo(4.0, "File size limit for the above option, MB", gr.Number),
