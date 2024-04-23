@@ -212,7 +212,7 @@ class CFGDenoiser(torch.nn.Module):
         uncond = denoiser_params.text_uncond
         skip_uncond = False
 
-        if self.step < shared.opts.skip_cond_steps:
+        if self.step / self.total_steps <= shared.opts.skip_early_cond:
             skip_uncond = True
             x_in = x_in[:-batch_size]
             sigma_in = sigma_in[:-batch_size]
