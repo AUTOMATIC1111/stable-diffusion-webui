@@ -548,7 +548,7 @@ class ExtraNetworksTab {
                     dirs_btn.dataset.selected = "";
                 }
                 if (_exists(tree_btn)) {
-                    tree_btn.dataset.selected = "";
+                    this.tree_list.onRowSelected(tree_btn.dataset.divId, tree_btn, true);
                 }
                 this.applyDirectoryFilter(source_elem.dataset.path);
             } else {
@@ -556,7 +556,7 @@ class ExtraNetworksTab {
                     delete dirs_btn.dataset.selected;
                 }
                 if (_exists(tree_btn)) {
-                    delete tree_btn.dataset.selected;
+                    this.tree_list.onRowSelected(tree_btn.dataset.divId, tree_btn, false);
                 }
                 this.applyDirectoryFilter("");
             }
@@ -570,7 +570,7 @@ class ExtraNetworksTab {
                     // Filter is already applied from dirs btn. Just need to select the tree btn.
                     _reset();
                     dirs_btn.dataset.selected = "";
-                    tree_btn.dataset.selected = "";
+                    this.tree_list.onRowSelected(tree_btn.dataset.divId, tree_btn, true);
                 }
             } else if (_exists(tree_btn)) {
                 const src_path = String.raw`${tree_btn.dataset.path.replaceAll("\\", "\\\\")}`;
@@ -579,7 +579,7 @@ class ExtraNetworksTab {
                     // Filter is already applied from tree btn. Just need to select the dirs btn.
                     _reset();
                     dirs_btn.dataset.selected = "";
-                    tree_btn.dataset.selected = "";
+                    this.tree_list.onRowSelected(tree_btn.dataset.divId, tree_btn, true);
                 }
             } else {
                 // No tree/dirs button is selected. Apply empty directory filter.
@@ -588,8 +588,6 @@ class ExtraNetworksTab {
         }
     }
 }
-
-//
 
 function popup(contents) {
     if (!globalPopup) {
