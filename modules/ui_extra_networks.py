@@ -35,6 +35,7 @@ class ListItem:
     def __init__(self, _id: str, _html: str) -> None:
         self.id = _id
         self.html = _html
+        self.node: Optional[DirectoryTreeNode] = None
 
 
 class CardListItem(ListItem):
@@ -51,6 +52,7 @@ class CardListItem(ListItem):
         self.visible: bool = False
         self.abspath = ""
         self.relpath = ""
+        self.rel_parent_dir = ""
         self.sort_keys = {}
         self.search_terms = ""
         self.search_only = False
@@ -66,7 +68,6 @@ class TreeListItem(ListItem):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.node: Optional[DirectoryTreeNode] = None
         self.visible: bool = False
         self.expanded: bool = False
 
@@ -94,6 +95,7 @@ class DirectoryTreeNode:
         self.abspath = abspath
         self.parent = parent
 
+        self.id = ""
         self.depth = 0
         self.is_dir = False
         self.item = None
@@ -149,7 +151,7 @@ class DirectoryTreeNode:
         for child in self.children:
             child.flatten(res, dirs_only)
 
-    def to_sorted_list(self, res: list) -> None:
+    def to_sorted_list(self, res: list, dirs_first: bool = True) -> None:
         """Sorts the tree by absolute path and groups by directories/files.
 
         Since we are sorting a directory tree, we always want the directories to come
@@ -160,13 +162,18 @@ class DirectoryTreeNode:
                     as an empty list.
         """
         res.append(self)
-        dir_children = [x for x in self.children if x.is_dir]
-        file_children = [x for x in self.children if not x.is_dir]
-        for child in sorted(dir_children, key=lambda x: shared.natural_sort_key(x.abspath)):
-            child.to_sorted_list(res)
+        files = sorted(
+            [x for x in self.children if not x.is_dir],
+            key=lambda x: shared.natural_sort_key(os.path.basename(x.abspath)),
+        )
+        dirs = sorted(
+            [x for x in self.children if x.is_dir],
+            key=lambda x: shared.natural_sort_key(os.path.basename(x.abspath)),
+        )
 
-        for child in sorted(file_children, key=lambda x: shared.natural_sort_key(x.abspath)):
-            child.to_sorted_list(res)
+        children = [*dirs, *files] if dirs_first else [*files, *dirs]
+        for child in children:
+            child.to_sorted_list(res, dirs_first)
 
     def apply(self, fn: Callable) -> None:
         """Recursively calls passed function with instance for entire tree."""
@@ -220,6 +227,7 @@ class ExtraNetworksPage:
         self.cards = {}
         self.tree = {}
         self.tree_roots = {}
+        self.nodes = {}
         self.lister = util.MassFileLister()
         # HTML Templates
         self.pane_tpl = shared.html("extra-networks-pane.html")
@@ -229,14 +237,6 @@ class ExtraNetworksPage:
         self.btn_show_metadata_tpl = shared.html("extra-networks-btn-show-metadata.html")
         self.btn_edit_metadata_tpl = shared.html("extra-networks-btn-edit-metadata.html")
         self.btn_dirs_view_item_tpl = shared.html("extra-networks-btn-dirs-view-item.html")
-        # Sorted lists
-        # These just store ints so it won't use hardly any memory to just sort ahead
-        # of time for each sort mode. These are lists of keys for each file.
-        self.keys_sorted = {}
-        self.keys_by_name = []
-        self.keys_by_path = []
-        self.keys_by_created = []
-        self.keys_by_modified = []
 
     def refresh(self):
         # Whenever we refresh, we want to build our datasets from scratch.
@@ -489,10 +489,37 @@ class ExtraNetworksPage:
             }
             Return does not contain the HTML since that is fetched by client.
         """
-        for i, item in enumerate(self.items.values()):
-            div_id = str(i)
-            card_html = self.create_card_html(tabname=tabname, item=item, div_id=div_id)
-            sort_keys = {k.strip().lower().replace(" ", "_"): html.escape(str(v)) for k, v in item.get("sort_keys", {}).items()}
+        res = {}
+
+        # Cards require a different sorting method than tree/dirs. We want to present
+        # cards where files in a directory are listed before the contents of subdirectories.
+        # Thus we need to sort each tree node again and provide the dirs_first=False flag.
+        # We then create a mapping between these results and the self.nodes div_ids for sorting.
+        sorted_nodes = []
+        for node in self.tree_roots.values():
+            _sorted_nodes = []
+            node.to_sorted_list(_sorted_nodes, dirs_first=False)
+            _sorted_nodes = [x for x in _sorted_nodes if not x.is_dir]
+            sorted_nodes.extend(_sorted_nodes)
+
+        nodes = {}
+        div_id_to_idx = {}
+        for i, node in enumerate(sorted_nodes):
+            nodes[node.id] = node
+            # Mapping from the self.nodes div_ids to the sorted index.
+            div_id_to_idx[node.id] = i
+
+        for node in nodes.values():
+            card = CardListItem(node.id, "")
+            card.node = node
+            item = node.item
+            card.html = self.create_card_html(tabname=tabname, item=item, div_id=node.id)
+            sort_keys = {}
+            for k, v in item.get("sort_keys", {}).items():
+                sort_keys[k.strip().lower().replace(" ", "_")] = html.escape(str(v))
+            # Manual override the "path" sort key using our sorted path indices.
+            sort_keys["path"] = div_id_to_idx[node.id]
+
             search_terms = item.get("search_terms", [])
             show_hidden_models = str(shared.opts.extra_networks_hidden_models).strip().lower()
             if show_hidden_models == "always":
@@ -501,43 +528,46 @@ class ExtraNetworksPage:
                 # If any parent dirs are hidden, the model is also hidden.
                 filename = os.path.normpath(item.get("filename", ""))
                 search_only = any(x.startswith(".") for x in filename.split(os.sep))
-            self.cards[div_id] = CardListItem(div_id, card_html)
-            self.cards[div_id].abspath = os.path.normpath(item.get("filename", ""))
+            card.abspath = os.path.normpath(item.get("filename", ""))
             for path in self.allowed_directories_for_previews():
                 parent_dir = os.path.dirname(os.path.abspath(path))
-                if self.cards[div_id].abspath.startswith(parent_dir):
-                    self.cards[div_id].relpath = os.path.relpath(self.cards[div_id].abspath, parent_dir)
+                if card.abspath.startswith(parent_dir):
+                    card.relpath = os.path.relpath(card.abspath, parent_dir)
                     break
-            self.cards[div_id].sort_keys = sort_keys
-            self.cards[div_id].search_terms = " ".join(search_terms)
-            self.cards[div_id].search_only = search_only
+            card.sort_keys = sort_keys
+            card.search_terms = " ".join(search_terms)
+            card.search_only = search_only
 
-        # Sort cards for all sort modes
-        sort_modes = ["name", "path", "date_created", "date_modified"]
-        for mode in sort_modes:
-            self.keys_sorted[mode] = sorted(
-                self.cards.keys(),
-                key=lambda k: shared.natural_sort_key(self.cards[k].sort_keys[mode]),
-            )
-
-        res = {}
-        for div_id, card_item in self.cards.items():
-            rel_parent_dir = os.path.dirname(card_item.relpath)
-            if (card_item.search_only):
-                parents = card_item.relpath.split(os.sep)
+            card.rel_parent_dir = os.path.dirname(card.relpath)
+            if card.search_only:
+                parents = card.relpath.split(os.sep)
                 idxs = [i for i, x in enumerate(parents) if x.startswith(".")]
                 if len(idxs) > 0:
-                    rel_parent_dir = os.sep.join(parents[idxs[0]:])
+                    card.rel_parent_dir = os.path.join(*parents[idxs[0]:])
                 else:
-                    print(f"search_only is enabled but no hidden dir found: {card_item.abspath}")
+                    print(f"search_only is enabled but no hidden dir found: {card.abspath}")
 
+            self.cards[node.id] = card
+
+        # Sort card div_ids for all sort modes.
+        keys_sorted = {}
+        sort_modes = self.cards[next(iter(self.cards))].sort_keys.keys()
+        for mode in sort_modes:
+            keys_sorted[mode] = sorted(
+                self.cards.keys(),
+                key=lambda k, sm=mode: shared.natural_sort_key(str(self.cards[k].sort_keys[sm])),
+            )
+
+        # Now that we have sorted, we can create the cards dataset.
+        for div_id, card in self.cards.items():
             res[div_id] = {
-                **{f"sort_{mode}": key for mode, key in card_item.sort_keys.items()},
-                "rel_parent_dir": rel_parent_dir,
-                "search_terms": card_item.search_terms,
-                "search_only": card_item.search_only,
-                "visible": not card_item.search_only,
+                **{f"sort_{mode}": keys_sorted[mode].index(div_id) for mode in card.sort_keys.keys()},
+                "rel_parent_dir": card.rel_parent_dir,
+                "search_terms": card.search_terms,
+                "search_only": card.search_only,
+                "visible": not card.search_only,
             }
+
         return res
 
     def generate_tree_view_data(self, tabname: str) -> dict:
@@ -553,32 +583,23 @@ class ExtraNetworksPage:
             }
             Return does not contain the HTML since that is fetched by client.
         """
-        if not self.tree_roots:
-            return {}
-
-        # Flatten roots into a single sorted list of nodes.
-        # Directories always come before files. After that, natural sort is used.
-        sorted_nodes = []
-        for node in self.tree_roots.values():
-            _sorted_nodes = []
-            node.to_sorted_list(_sorted_nodes)
-            sorted_nodes.extend(_sorted_nodes)
-
-        path_to_div_id = {}
-        div_id_to_node = {}  # reverse mapping
-        # First assign div IDs to each node. Used for parent ID lookup later.
-        for i, node in enumerate(sorted_nodes):
-            div_id = str(i)
-            path_to_div_id[node.abspath] = div_id
-            div_id_to_node[div_id] = node
-
+        res = {}
         show_files = shared.opts.extra_networks_tree_view_show_files is True
-        for div_id, node in div_id_to_node.items():
-            tree_item = TreeListItem(div_id, "")
+        for node in self.nodes.values():
+            tree_item = TreeListItem(node.id, "")
+            # If root node, expand and set visible.
+            if node.parent is None:
+                tree_item.expanded = True
+                tree_item.visible = True
+
+            # If direct child of root node, set visible.
+            if node.parent is not None and node.parent.parent is None:
+                tree_item.visible = True
+
             tree_item.node = node
             parent_id = None
             if node.parent is not None:
-                parent_id = path_to_div_id.get(node.parent.abspath, None)
+                parent_id = node.parent.id
 
             if node.is_dir:  # directory
                 if show_files:
@@ -593,7 +614,7 @@ class ExtraNetworksPage:
                     btn_title=f'"{node.abspath}"',
                     dir_is_empty=dir_is_empty,
                     data_attributes={
-                        "data-div-id": f'"{div_id}"',
+                        "data-div-id": f'"{node.id}"',
                         "data-parent-id": f'"{parent_id}"',
                         "data-tree-entry-type": "dir",
                         "data-depth": node.depth,
@@ -601,7 +622,7 @@ class ExtraNetworksPage:
                         "data-expanded": node.parent is None,  # Expand root directories
                     },
                 )
-                self.tree[div_id] = tree_item
+                self.tree[node.id] = tree_item
             else:  # file
                 if not show_files:
                     # Don't add file if files are disabled in the options.
@@ -618,7 +639,7 @@ class ExtraNetworksPage:
                     label=html.escape(item_name),
                     btn_type="file",
                     data_attributes={
-                        "data-div-id": f'"{div_id}"',
+                        "data-div-id": f'"{node.id}"',
                         "data-parent-id": f'"{parent_id}"',
                         "data-tree-entry-type": "file",
                         "data-name": f'"{item_name}"',
@@ -632,60 +653,35 @@ class ExtraNetworksPage:
                     item=node.item,
                     onclick_extra=onclick,
                 )
-                self.tree[div_id] = tree_item
+                self.tree[node.id] = tree_item
 
-        res = {}
-
-        # Expand all root directories and set them to active so they are displayed.
-        for path in self.tree_roots.keys():
-            div_id = path_to_div_id[path]
-            self.tree[div_id].expanded = True
-            self.tree[div_id].visible = True
-            # Set all direct children to active
-            for child_node in self.tree[div_id].node.children:
-                self.tree[path_to_div_id[child_node.abspath]].visible = True
-
-        for div_id, tree_item in self.tree.items():
-            # Expand root nodes and make them visible.
-            expanded = tree_item.node.parent is None
-            visible = tree_item.node.parent is None
-            parent_id = None
-            if tree_item.node.parent is not None:
-                parent_id = path_to_div_id[tree_item.node.parent.abspath]
-                # Direct children of root nodes should be visible by default.
-                if self.tree[parent_id].node.parent is None:
-                    visible = True
-
-            res[div_id] = {
+            res[node.id] = {
                 "parent": parent_id,
-                "children": [path_to_div_id[child.abspath] for child in tree_item.node.children],
-                "visible": visible,
-                "expanded": expanded,
+                "children": [x.id for x in tree_item.node.children],
+                "visible": tree_item.visible,
+                "expanded": tree_item.expanded,
             }
+
         return res
 
     def create_dirs_view_html(self, tabname: str) -> str:
         """Generates HTML for displaying folders."""
-        # Flatten each root into a single dict. Only get the directories for buttons.
-        tree = {}
-        for node in self.tree_roots.values():
-            subtree = {}
-            node.flatten(subtree, dirs_only=True)
-            tree.update(subtree)
+        res = []
+        div_ids = sorted(self.nodes.keys(), key=shared.natural_sort_key)
+        for div_id in div_ids:
+            node = self.nodes[div_id]
+            # Only process directories. Skip if file.
+            if not node.is_dir:
+                continue
 
-        # Sort the tree nodes by relative paths
-        dir_nodes = sorted(
-            tree.values(),
-            key=lambda x: shared.natural_sort_key(x.relpath),
-        )
-        dirs_html = []
-        for node in dir_nodes:
             if node.parent is None:
                 label = node.relpath
             else:
-                label = os.sep.join(node.relpath.split(os.sep)[1:])
+                # Strip the root directory from the label to reduce size of buttons.
+                parts = [x for x in node.relpath.split(os.sep) if x]
+                label = os.path.join(*parts[1:])
 
-            dirs_html.append(
+            res.append(
                 self.btn_dirs_view_item_tpl.format(
                     **{
                         "extra_class": "search-all" if node.relpath == "" else "",
@@ -696,9 +692,8 @@ class ExtraNetworksPage:
                     }
                 )
             )
-        dirs_html = "".join(dirs_html)
 
-        return dirs_html
+        return "".join(res)
 
     def create_html(self, tabname: str, *, empty: bool = False) -> str:
         """Generates an HTML string for the current pane.
@@ -740,6 +735,19 @@ class ExtraNetworksPage:
                 tree_items if shared.opts.extra_networks_tree_view_show_files else {},
                 include_hidden=shared.opts.extra_networks_show_hidden_directories,
             )
+
+        # Now use tree roots to generate a mapping of div_ids to nodes.
+        # Flatten roots into a single sorted list of nodes.
+        # Directories always come before files. After that, natural sort is used.
+        sorted_nodes = []
+        for node in self.tree_roots.values():
+            _sorted_nodes = []
+            node.to_sorted_list(_sorted_nodes)
+            sorted_nodes.extend(_sorted_nodes)
+
+        for i, node in enumerate(sorted_nodes):
+            node.id = str(i)
+            self.nodes[node.id] = node
 
         # Generate the html for displaying directory buttons
         dirs_html = self.create_dirs_view_html(tabname)

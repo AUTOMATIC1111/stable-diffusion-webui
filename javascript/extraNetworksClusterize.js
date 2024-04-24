@@ -494,18 +494,15 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
         });
     }
 
-    sortByName(data) {
+    sortByPath(data) {
         return Object.keys(data).sort((a, b) => {
-            return STR_COLLATOR.compare(data[a].sort_name, data[b].sort_name);
+            return INT_COLLATOR.compare(data[a].sort_path, data[b].sort_path);
         });
     }
 
-    sortByPath(data) {
+    sortByName(data) {
         return Object.keys(data).sort((a, b) => {
-            // Wrap the paths in File objects to allow for proper sorting of filepaths.
-            const a_file = new File([""], data[a].sort_path);
-            const b_file = new File([""], data[b].sort_path);
-            return a_file - b_file;
+            return INT_COLLATOR.compare(data[a].sort_name, data[b].sort_name);
         });
     }
 
