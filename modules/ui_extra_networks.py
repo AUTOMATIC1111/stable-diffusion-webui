@@ -222,6 +222,7 @@ class ExtraNetworksPage:
         self.extra_networks_tabname = self.name.replace(" ", "_")
         self.allow_prompt = True
         self.allow_negative_prompt = False
+        self.is_ready = False
         self.metadata = {}
         self.items = {}
         self.cards = {}
@@ -238,12 +239,21 @@ class ExtraNetworksPage:
         self.btn_edit_metadata_tpl = shared.html("extra-networks-btn-edit-metadata.html")
         self.btn_dirs_view_item_tpl = shared.html("extra-networks-btn-dirs-view-item.html")
 
-    def refresh(self):
-        # Whenever we refresh, we want to build our datasets from scratch.
+    def clear_data(self) -> None:
+        print(f"clearing data: {self.extra_networks_tabname}")
+        self.is_ready = False
+        self.metadata = {}
         self.items = {}
         self.cards = {}
         self.tree = {}
         self.tree_roots = {}
+        self.nodes = {}
+
+    def refresh(self) -> None:
+        print(f"refreshing: {self.extra_networks_tabname}")
+        # Whenever we refresh, we want to build our datasets from scratch.
+        self.is_ready = False
+        self.clear_data()
 
     def read_user_metadata(self, item, use_cache=True):
         filename = os.path.normpath(item.get("filename", None))
@@ -1003,6 +1013,19 @@ def init_cards_data(tabname: str = "", extra_networks_tabname: str = "") -> JSON
     return JSONResponse(data)
 
 
+def clear_page_data(extra_networks_tabname: str = "") -> JSONResponse:
+    """Returns whether the specified page is ready for fetching data.
+
+    Status Codes:
+        200 on success
+        404 if tabname doesnt exist or other errors.
+    """
+    page = get_page_by_name(extra_networks_tabname)
+
+    page.clear_data()
+
+    return JSONResponse({}, status_code=200)
+
 def page_is_ready(extra_networks_tabname: str = "") -> JSONResponse:
     """Returns whether the specified page is ready for fetching data.
 
@@ -1012,6 +1035,7 @@ def page_is_ready(extra_networks_tabname: str = "") -> JSONResponse:
     """
     page = get_page_by_name(extra_networks_tabname)
 
+    print(f"page_is_ready: {extra_networks_tabname} => {page.is_ready}, {len(page.items)}, {len(list(page.list_items()))}")
     if len(page.items) == len(list(page.list_items())):
         return JSONResponse({}, status_code=200)
     else:
@@ -1071,6 +1095,7 @@ def add_pages_to_demo(app):
     app.add_api_route("/sd_extra_networks/fetch-tree-data", fetch_tree_data, methods=["GET"])
     app.add_api_route("/sd_extra_networks/fetch-cards-data", fetch_cards_data, methods=["GET"])
     app.add_api_route("/sd_extra_networks/page-is-ready", page_is_ready, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/clear-page-data", clear_page_data, methods=["GET"])
 
 
 def quote_js(s):
@@ -1166,8 +1191,10 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
 
         def refresh(tabname_full):
             page = ui.stored_extra_pages[tabname_full]
+            page.is_ready = False
             page.refresh()
             ui.pages_contents[tabname_full] = page.create_html(ui.tabname)
+            page.is_ready = True
             return list(ui.pages_contents.values())
 
         button_refresh = gr.Button(

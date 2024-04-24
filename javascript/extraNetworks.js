@@ -347,6 +347,8 @@ class ExtraNetworksTab {
         return new Promise((resolve, reject) => {
             let attempt = 0;
             const loop = () => {
+                console.log(`waitForServerPageReady: iter ${attempt}`);
+                let retry_delay_ms = 1000;
                 setTimeout(async() => {
                     try {
                         await requestGetPromise(
@@ -354,20 +356,29 @@ class ExtraNetworksTab {
                             {extra_networks_tabname: this.extra_networks_tabname},
                             EXTRA_NETWORKS_WAIT_FOR_PAGE_READY_TIMEOUT_MS,
                         );
+                        console.warn("PAGE READY:", this.extra_networks_tabname);
                         return resolve();
                     } catch (error) {
                         // If we get anything other than a timeout error, reject.
                         // Otherwise, fall through to retry request.
-                        if (error.status !== 408) {
+                        if (error.status !== 408 && error.status !== 404) {
                             return reject(`${err_prefix}: uncaught exception: ${JSON.stringify(error)}`);
                         }
+                        if (error.status === 404) {
+                            retry_delay_ms = 1000;
+                        }
+                        if (error.status === 408) {
+                            retry_delay_ms = 0;
+                        }
+                        console.log("other error:", error.status, error);
                     }
 
                     if (max_attempts !== 0 && attempt++ >= max_attempts) {
                         return reject(`${err_prefix}: max attempts exceeded`);
                     } else {
                         // small delay since our request has a timeout.
-                        setTimeout(() => loop(), 100);
+                        console.log("retrying:", attempt);
+                        setTimeout(loop, retry_delay_ms);
                     }
                 }, 0);
             };
@@ -376,6 +387,7 @@ class ExtraNetworksTab {
     }
 
     async onInitCardsData() {
+        console.log("onInitCardsData");
         try {
             await this.waitForServerPageReady();
         } catch (error) {
@@ -396,6 +408,7 @@ class ExtraNetworksTab {
     }
 
     async onInitTreeData() {
+        console.log("onInitTreeData");
         try {
             await this.waitForServerPageReady();
         } catch (error) {
@@ -416,12 +429,15 @@ class ExtraNetworksTab {
     }
 
     async onFetchCardsData(div_ids) {
+        console.log("onFetchCardsData:", div_ids);
+        /*
         try {
             await this.waitForServerPageReady();
         } catch (error) {
             console.error(JSON.stringify(error));
             return {};
         }
+        */
 
         const url = "./sd_extra_networks/fetch-cards-data";
         const payload = {extra_networks_tabname: this.extra_networks_tabname, div_ids: div_ids};
@@ -439,12 +455,15 @@ class ExtraNetworksTab {
     }
 
     async onFetchTreeData(div_ids) {
+        console.log("onFetchTreeData:", div_ids);
+        /*
         try {
             await this.waitForServerPageReady();
         } catch (error) {
             console.error(JSON.stringify(error));
             return {};
         }
+        */
 
         const url = "./sd_extra_networks/fetch-tree-data";
         const payload = {extra_networks_tabname: this.extra_networks_tabname, div_ids: div_ids};
@@ -977,17 +996,28 @@ function extraNetworksControlRefreshOnClick(event, tabname_full) {
      * event handler that refreshes the page. So what this function here does
      * is it manually raises a `click` event on that button.
      */
+    event.stopPropagation();
+
     clearTimeout(extra_networks_refresh_internal_debounce_timer);
-    extra_networks_refresh_internal_debounce_timer = setTimeout(() => {
+    extra_networks_refresh_internal_debounce_timer = setTimeout(async () => {
+        const tab = extra_networks_tabs[tabname_full];
+        try {
+            await requestGetPromise(
+                "./sd_extra_networks/clear-page-data",
+                {extra_networks_tabname: tab.extra_networks_tabname},
+                5000,
+            );
+            console.log("cleared page data:", tab.extra_networks_tabname);
+        } catch (error) {
+            console.error("error clearing page data:", error);
+        }
         // We want to reset tab lists on refresh click so that the viewing area
         // shows that it is loading new data.
-        extra_networks_tabs[tabname_full].tree_list.clear();
-        extra_networks_tabs[tabname_full].cards_list.clear();
+        tab.tree_list.clear();
+        tab.cards_list.clear();
         // Fire an event for this button click.
         gradioApp().getElementById(`${tabname_full}_extra_refresh_internal`).dispatchEvent(new Event("click"));
     }, EXTRA_NETWORKS_REFRESH_INTERNAL_DEBOUNCE_TIMEOUT_MS);
-
-    event.stopPropagation();
 }
 
 function extraNetworksCardOnClick(event, tabname_full) {
