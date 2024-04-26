@@ -854,6 +854,10 @@ table.popup-table .link{
     display: inline-block;
 }
 
+.compact-checkbox-group  div label {
+    padding: 0.1em 0.3em !important;
+}
+
 /* extensions tab table row hover highlight */
 
 #extensions tr:hover td,
