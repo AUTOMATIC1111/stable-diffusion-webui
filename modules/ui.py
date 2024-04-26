@@ -542,7 +542,7 @@ def create_ui():
                                 add_copy_image_controls('img2img', init_img)
 
                             with gr.TabItem('Sketch', id='img2img_sketch', elem_id="img2img_img2img_sketch_tab") as tab_sketch:
-                                sketch = gr.ImageEditor(label="Image for img2img", elem_id="img2img_sketch", show_label=False, interactive=True, type="pil", image_mode="RGB", brush=Brush(default_color=opts.img2img_sketch_default_brush_color))
+                                sketch = gr.ImageEditor(label="Image for img2img", elem_id="img2img_sketch", show_label=False, interactive=True, type="pil", image_mode="RGBA", brush=Brush(default_color=opts.img2img_sketch_default_brush_color))
                                 add_copy_image_controls('sketch', sketch)
 
                             with gr.TabItem('Inpaint', id='inpaint', elem_id="img2img_inpaint_tab") as tab_inpaint:
@@ -578,23 +578,14 @@ def create_ui():
                             for i, tab in enumerate(img2img_tabs):
                                 tab.select(fn=lambda tabnum=i: tabnum, inputs=[], outputs=[img2img_selected_tab])
 
-                        def copy_image(img):
-                            if isinstance(img, dict) and 'image' in img:
-                                return img['image']
-
-                            if isinstance(img, dict) and 'composite' in img:
-                                return img['composite']
-
-                            return img
-
                         for button, name, elem in copy_image_buttons:
                             button.click(
-                                fn=copy_image,
+                                fn=lambda img: img,
                                 inputs=[elem],
                                 outputs=[copy_image_destinations[name]],
                             )
                             button.click(
-                                fn=lambda: None,
+                                fn=None,
                                 _js=f"switch_to_{name.replace(' ', '_')}",
                                 inputs=[],
                                 outputs=[],
