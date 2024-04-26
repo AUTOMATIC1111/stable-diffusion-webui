@@ -1,6 +1,6 @@
 /** Collators used for sorting. */
-const INT_COLLATOR = new Intl.Collator([], { numeric: true });
-const STR_COLLATOR = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
+const INT_COLLATOR = new Intl.Collator([], {numeric: true});
+const STR_COLLATOR = new Intl.Collator("en", {numeric: true, sensitivity: "base"});
 
 /** Helper functions for checking types and simplifying logging/error handling. */
 function isNumber(x) {
@@ -344,7 +344,7 @@ function waitForValueInObject(o, timeout_ms) {
                 return reject(`timed out waiting for value: ${o.k}: ${o.v}`);
             }, timeout_ms);
         }
-        waitForKeyInObject({ k: o.k, obj: o.obj }, timeout_ms).then(() => {
+        waitForKeyInObject({k: o.k, obj: o.obj}, timeout_ms).then(() => {
             (function _waitForValueInObject() {
 
                 if (o.k in o.obj && o.obj[o.k] == o.v) {
@@ -368,23 +368,33 @@ class FetchError extends Error {
 }
 
 class Fetch4xxError extends FetchError {
-    constructor(...args) { super(...args); }
+    constructor(...args) {
+        super(...args);
+    }
 }
 
 class Fetch5xxError extends FetchError {
-    constructor(...args) { super(...args); }
+    constructor(...args) {
+        super(...args);
+    }
 }
 
 class FetchRetryLimitError extends FetchError {
-    constructor(...args) { super(...args); }
+    constructor(...args) {
+        super(...args);
+    }
 }
 
 class FetchTimeoutError extends FetchError {
-    constructor(...args) { super(...args); }
+    constructor(...args) {
+        super(...args);
+    }
 }
 
 class FetchWithRetryAndBackoffTimeoutError extends FetchError {
-    constructor(...args) { super(...args); }
+    constructor(...args) {
+        super(...args);
+    }
 }
 
 async function fetchWithRetryAndBackoff(url, data, opts = {}) {
@@ -414,18 +424,20 @@ async function fetchWithRetryAndBackoff(url, data, opts = {}) {
     opts.max_delay_ms = opts.max_delay_ms || 3000;
     opts.fetch_timeout_ms = opts.fetch_timeout_ms || 10000;
     // The default response handler function for `fetch` call responses.
-    const response_handler = (response) => new Promise(async (resolve, reject) => {
+    const response_handler = (response) => new Promise((resolve, reject) => {
         if (response.ok) {
-            const json = await response.json();
-            return resolve(json);
+            return response.json().then(json => {
+                return resolve(json);
+            });
+        } else {
+            if (response.status >= 400 && response.status < 500) {
+                throw new Fetch4xxError("client error:", response);
+            }
+            if (response.status >= 500 && response.status < 600) {
+                throw new Fetch5xxError("server error:", response);
+            }
+            return reject(response);
         }
-        if (response.status >= 400 && response.status < 500) {
-            throw new Fetch4xxError("client error:", response);
-        }
-        if (response.status >= 500 && response.status < 600) {
-            throw new Fetch5xxError("server error:", response);
-        }
-        return reject(response);
     });
     opts.response_handler = opts.response_handler || response_handler;
 
@@ -439,10 +451,10 @@ async function fetchWithRetryAndBackoff(url, data, opts = {}) {
 
     const randrange = (min, max) => {
         return Math.floor(Math.random() * (max - min + 1) + min);
-    }
+    };
     const get_jitter = (base, max, prev) => {
         return Math.min(max, randrange(base, prev * 3));
-    }
+    };
 
     const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -468,7 +480,7 @@ async function fetchWithRetryAndBackoff(url, data, opts = {}) {
         });
     };
 
-    const run = async (delay_ms) => {
+    const run = async(delay_ms) => {
         if (!retry) {
             // Retry is controlled externally via `run_timeout`. This function's promise
             // is also handled via that timeout so we can just return here.
@@ -476,7 +488,7 @@ async function fetchWithRetryAndBackoff(url, data, opts = {}) {
         }
         try {
             controller = new AbortController();
-            const fetch_opts = { method: opts.method, signal: controller.signal };
+            const fetch_opts = {method: opts.method, signal: controller.signal};
             const response = await fetch_timeout(opts.fetch_timeout_ms, fetch(url, fetch_opts));
             return await opts.response_handler(response);
         } catch (error) {
@@ -497,18 +509,18 @@ async function fetchWithRetryAndBackoff(url, data, opts = {}) {
             await delay(delay_ms);
             return await run(delay_ms);
         }
-    }
+    };
     return await run_timeout(opts.timeout_ms, run(opts.min_delay_ms));
 }
 
 function requestGet(url, data, handler, errorHandler) {
     var xhr = new XMLHttpRequest();
-    var args = Object.keys(data).map(function (k) {
+    var args = Object.keys(data).map(function(k) {
         return encodeURIComponent(k) + '=' + encodeURIComponent(data[k]);
     }).join('&');
     xhr.open("GET", url + "?" + args, true);
 
-    xhr.onreadystatechange = function () {
+    xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
             if (xhr.status === 200) {
                 try {
@@ -545,18 +557,18 @@ function requestGetPromise(url, data, timeout_ms) {
 
         xhr.onload = () => {
             if (xhr.status >= 200 && xhr.status < 300) {
-                return resolve({ status: xhr.status, response: JSON.parse(xhr.responseText) });
+                return resolve({status: xhr.status, response: JSON.parse(xhr.responseText)});
             } else {
-                return reject({ status: xhr.status, response: JSON.parse(xhr.responseText) });
+                return reject({status: xhr.status, response: JSON.parse(xhr.responseText)});
             }
         };
 
         xhr.onerror = () => {
-            return reject({ status: xhr.status, response: JSON.parse(xhr.responseText) });
+            return reject({status: xhr.status, response: JSON.parse(xhr.responseText)});
         };
 
         xhr.ontimeout = () => {
-            return reject({ status: 408, response: { detail: `Request timeout: ${url}` } });
+            return reject({status: 408, response: {detail: `Request timeout: ${url}`}});
         };
 
         const payload = JSON.stringify(data);

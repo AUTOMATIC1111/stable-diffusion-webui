@@ -36,7 +36,7 @@ var extra_networks_refresh_internal_debounce_timer;
 
 /** Boolean flags used along with utils.js::waitForBool(). */
 // Set true when we first load the UI options.
-const initialUiOptionsLoaded = { state: false };
+const initialUiOptionsLoaded = {state: false};
 
 const _debounce = (handler, timeout_ms) => {
     /** Debounces a function call.
@@ -72,11 +72,15 @@ class ExtraNetworksError extends Error {
     }
 }
 class ExtraNetworksPageReadyError extends Error {
-    constructor(...args) { super(...args); }
+    constructor(...args) {
+        super(...args);
+    }
 }
 
 class ExtraNetworksDataReadyError extends Error {
-    constructor(...args) { super(...args); }
+    constructor(...args) {
+        super(...args);
+    }
 }
 
 class ExtraNetworksTab {
@@ -103,7 +107,7 @@ class ExtraNetworksTab {
     show_neg_prompt = true;
     compact_prompt_en = false;
     refresh_in_progress = false;
-    constructor({ tabname, extra_networks_tabname }) {
+    constructor({tabname, extra_networks_tabname}) {
         this.tabname = tabname;
         this.extra_networks_tabname = extra_networks_tabname;
         this.tabname_full = `${tabname}_${extra_networks_tabname}`;
@@ -364,20 +368,22 @@ class ExtraNetworksTab {
          *                          before giving up. If set to 0, will attempt forever.
          */
         timeout_ms = timeout_ms || EXTRA_NETWORKS_WAIT_FOR_PAGE_READY_TIMEOUT_MS;
-        const response_handler = (response) => new Promise(async (resolve, reject) => {
+        const response_handler = (response) => new Promise((resolve, reject) => {
             if (!response.ok) {
                 return reject(response);
             }
-            const json = await response.json();
-            if (!json.ready) {
-                return reject(`page not ready: ${this.extra_networks_tabname}`);
-            }
-            return resolve(json);
+
+            response.json().then(json => {
+                if (!json.ready) {
+                    return reject(`page not ready: ${this.extra_networks_tabname}`);
+                }
+                return resolve(json);
+            });
         });
 
         const url = "./sd_extra_networks/page-is-ready";
-        const payload = { extra_networks_tabname: this.extra_networks_tabname };
-        const opts = { timeout_ms: timeout_ms, response_handler: response_handler };
+        const payload = {extra_networks_tabname: this.extra_networks_tabname};
+        const opts = {timeout_ms: timeout_ms, response_handler: response_handler};
         return await fetchWithRetryAndBackoff(url, payload, opts);
     }
 
@@ -389,21 +395,22 @@ class ExtraNetworksTab {
             return {};
         }
 
-        const response_handler = (response) => new Promise(async (resolve, reject) => {
+        const response_handler = (response) => new Promise((resolve, reject) => {
             if (!response.ok) {
                 return reject(response);
             }
-            const json = await response.json();
-            if (!json.ready) {
-                return reject(`data not ready: ${this.extra_networks_tabname}`);
-            }
-            return resolve(json);
+            response.json().then(json => {
+                if (!json.ready) {
+                    return reject(`data not ready: ${this.extra_networks_tabname}`);
+                }
+                return resolve(json);
+            });
         });
 
         const url = "./sd_extra_networks/init-cards-data";
-        const payload = { tabname: this.tabname, extra_networks_tabname: this.extra_networks_tabname };
+        const payload = {tabname: this.tabname, extra_networks_tabname: this.extra_networks_tabname};
         const timeout_ms = EXTRA_NETWORKS_INIT_DATA_TIMEOUT_MS;
-        const opts = { timeout_ms: timeout_ms, response_handler: response_handler };
+        const opts = {timeout_ms: timeout_ms, response_handler: response_handler};
         try {
             const response = await fetchWithRetryAndBackoff(url, payload, opts);
             return response.data;
@@ -421,21 +428,22 @@ class ExtraNetworksTab {
             return {};
         }
 
-        const response_handler = (response) => new Promise(async (resolve, reject) => {
+        const response_handler = (response) => new Promise((resolve, reject) => {
             if (!response.ok) {
                 return reject(response);
             }
-            const json = await response.json();
-            if (!json.ready) {
-                return reject(`data not ready: ${this.extra_networks_tabname}`);
-            }
-            return resolve(json);
+            response.json().then(json => {
+                if (!json.ready) {
+                    return reject(`data not ready: ${this.extra_networks_tabname}`);
+                }
+                return resolve(json);
+            });
         });
 
         const url = "./sd_extra_networks/init-tree-data";
-        const payload = { tabname: this.tabname, extra_networks_tabname: this.extra_networks_tabname };
+        const payload = {tabname: this.tabname, extra_networks_tabname: this.extra_networks_tabname};
         const timeout_ms = EXTRA_NETWORKS_INIT_DATA_TIMEOUT_MS;
-        const opts = { timeout_ms: timeout_ms, response_handler: response_handler }
+        const opts = {timeout_ms: timeout_ms, response_handler: response_handler};
         try {
             const response = await fetchWithRetryAndBackoff(url, payload, opts);
             return response.data;
@@ -447,9 +455,9 @@ class ExtraNetworksTab {
 
     async onFetchCardsData(div_ids) {
         const url = "./sd_extra_networks/fetch-cards-data";
-        const payload = { extra_networks_tabname: this.extra_networks_tabname, div_ids: div_ids };
+        const payload = {extra_networks_tabname: this.extra_networks_tabname, div_ids: div_ids};
         const timeout_ms = EXTRA_NETWORKS_FETCH_DATA_TIMEOUT_MS;
-        const opts = { timeout_ms: timeout_ms };
+        const opts = {timeout_ms: timeout_ms};
         try {
             const response = await fetchWithRetryAndBackoff(url, payload, opts);
             if (response.missing_div_ids.length) {
@@ -464,9 +472,9 @@ class ExtraNetworksTab {
 
     async onFetchTreeData(div_ids) {
         const url = "./sd_extra_networks/fetch-tree-data";
-        const payload = { extra_networks_tabname: this.extra_networks_tabname, div_ids: div_ids };
+        const payload = {extra_networks_tabname: this.extra_networks_tabname, div_ids: div_ids};
         const timeout_ms = EXTRA_NETWORKS_FETCH_DATA_TIMEOUT_MS;
-        const opts = { timeout_ms: timeout_ms };
+        const opts = {timeout_ms: timeout_ms};
         try {
             const response = await fetchWithRetryAndBackoff(url, payload, opts);
             if (response.missing_div_ids.length) {
@@ -813,8 +821,8 @@ function extraNetworksFetchMetadata(extra_networks_tabname, card_name) {
 
     requestGet(
         "./sd_extra_networks/metadata",
-        { extra_networks_tabname: extra_networks_tabname, item: card_name },
-        function (data) {
+        {extra_networks_tabname: extra_networks_tabname, item: card_name},
+        function(data) {
             if (data && data.metadata) {
                 extraNetworksShowMetadata(data.metadata);
             } else {
@@ -841,7 +849,7 @@ function extraNetworksUnrelatedTabSelected(tabname) {
 
 async function extraNetworksTabSelected(tabname_full, show_prompt, show_neg_prompt) {
     /** called from python when user selects an extra networks tab */
-    await waitForKeyInObject({ obj: extra_networks_tabs, k: tabname_full });
+    await waitForKeyInObject({obj: extra_networks_tabs, k: tabname_full});
     for (const [k, v] of Object.entries(extra_networks_tabs)) {
         if (k === tabname_full) {
             v.load(show_prompt, show_neg_prompt);
@@ -873,7 +881,7 @@ function extraNetworksControlSearchClearOnClick(event, tabname_full) {
     txt_search_elem.dispatchEvent(
         new CustomEvent(
             "extra-network-control--search-clear",
-            { bubbles: true, detail: { tabname_full: tabname_full } },
+            {bubbles: true, detail: {tabname_full: tabname_full}},
         )
     );
 
@@ -998,7 +1006,7 @@ function extraNetworksControlRefreshOnClick(event, tabname_full) {
     event.stopPropagation();
 
     clearTimeout(extra_networks_refresh_internal_debounce_timer);
-    extra_networks_refresh_internal_debounce_timer = setTimeout(async () => {
+    extra_networks_refresh_internal_debounce_timer = setTimeout(async() => {
         const tab = extra_networks_tabs[tabname_full];
         // We want to reset tab lists on refresh click so that the viewing area
         // shows that it is loading new data.
