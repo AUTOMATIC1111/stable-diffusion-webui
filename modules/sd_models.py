@@ -295,7 +295,7 @@ def read_metadata_from_safetensors(filename):
                         pass
         except:
              errors.report(f"Error reading metadata from file: {filename}", exc_info=True)
-            
+
         return res
 
 
