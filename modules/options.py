@@ -34,7 +34,7 @@ class OptionInfo:
         """If True, the setting will not be accessible via API"""
 
     def link(self, label, url):
-        self.comment_before += f"[<a href='{url}' target='_blank'>{label}</a>]"
+        self.comment_before += f"[<a href='{url}' target='_blank' rel='noopener noreferrer'>{label}</a>]"
         return self
 
     def js(self, label, js_func):

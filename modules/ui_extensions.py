@@ -129,7 +129,7 @@ def make_commit_link(commit_hash, remote, text=None):
         if remote.endswith(".git"):
             remote = remote[:-4]
         href = remote + "/commit/" + commit_hash
-        return f'<a href="{href}" target="_blank">{text}</a>'
+        return f'<a href="{href}" target="_blank" rel="noopener noreferrer">{text}</a>'
     else:
         return text
 
@@ -157,7 +157,7 @@ def extension_table():
         ext: extensions.Extension
         ext.read_info_from_repo()
 
-        remote = f"""<a href="{html.escape(ext.remote or '')}" target="_blank">{html.escape("built-in" if ext.is_builtin else ext.remote or '')}</a>"""
+        remote = f"""<a href="{html.escape(ext.remote or '')}" target="_blank" rel="noopener noreferrer">{html.escape("built-in" if ext.is_builtin else ext.remote or '')}</a>"""
 
         if ext.can_update:
             ext_status = f"""<label><input class="gr-check-radio gr-checkbox" name="update_{html.escape(ext.name)}" checked="checked" type="checkbox">{html.escape(ext.status)}</label>"""
@@ -211,7 +211,7 @@ def update_config_states_table(state_name):
         else:
             webui_commit_date = "<unknown>"
 
-        remote = f"""<a href="{html.escape(webui_remote)}" target="_blank">{html.escape(webui_remote or '')}</a>"""
+        remote = f"""<a href="{html.escape(webui_remote)}" target="_blank" rel="noopener noreferrer">{html.escape(webui_remote or '')}</a>"""
         commit_link = make_commit_link(webui_commit_hash, webui_remote)
         date_link = make_commit_link(webui_commit_hash, webui_remote, webui_commit_date)
 
@@ -285,7 +285,7 @@ def update_config_states_table(state_name):
             else:
                 ext_commit_date = "<unknown>"
 
-            remote = f"""<a href="{html.escape(ext_remote)}" target="_blank">{html.escape(ext_remote or '')}</a>"""
+            remote = f"""<a href="{html.escape(ext_remote)}" target="_blank" rel="noopener noreferrer">{html.escape(ext_remote or '')}</a>"""
             commit_link = make_commit_link(ext_commit_hash, ext_remote)
             date_link = make_commit_link(ext_commit_hash, ext_remote, ext_commit_date)
 
@@ -504,7 +504,7 @@ def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text="
 
         code += f"""
             <tr>
-                <td><a href="{html.escape(url)}" target="_blank">{html.escape(name)}</a><br />{tags_text}</td>
+                <td><a href="{html.escape(url)}" target="_blank" rel="noopener noreferrer">{html.escape(name)}</a><br />{tags_text}</td>
                 <td>{html.escape(description)}<p class="info">
                 <span class="date_added">Update: {html.escape(update_time)}  Added: {html.escape(added)}  Created: {html.escape(create_time)}</span><span class="star_count">stars: <b>{stars}</b></a></p></td>
                 <td>{install_code}</td>
