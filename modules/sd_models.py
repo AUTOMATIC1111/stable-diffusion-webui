@@ -293,7 +293,7 @@ def read_metadata_from_safetensors(filename):
                         res[k] = json.loads(v)
                     except Exception:
                         pass
-        except:
+        except Exception:
              errors.report(f"Error reading metadata from file: {filename}", exc_info=True)
 
         return res
