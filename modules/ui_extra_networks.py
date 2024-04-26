@@ -240,7 +240,6 @@ class ExtraNetworksPage:
         self.btn_dirs_view_item_tpl = shared.html("extra-networks-btn-dirs-view-item.html")
 
     def clear_data(self) -> None:
-        print(f"clearing data: {self.extra_networks_tabname}")
         self.is_ready = False
         self.metadata = {}
         self.items = {}
@@ -250,9 +249,7 @@ class ExtraNetworksPage:
         self.nodes = {}
 
     def refresh(self) -> None:
-        print(f"refreshing: {self.extra_networks_tabname}")
         # Whenever we refresh, we want to build our datasets from scratch.
-        self.is_ready = False
         self.clear_data()
 
     def read_user_metadata(self, item, use_cache=True):
@@ -936,10 +933,23 @@ def init_tree_data(tabname: str = "", extra_networks_tabname: str = "") -> JSONR
 
     data = page.generate_tree_view_data(tabname)
 
-    if data is None:
-        raise HTTPException(status_code=404, detail=f"data not ready: {extra_networks_tabname}")
+    return JSONResponse({"data": data, "ready": data is not None})
 
-    return JSONResponse(data)
+
+def init_cards_data(tabname: str = "", extra_networks_tabname: str = "") -> JSONResponse:
+    """Generates the initial Cards View data and returns a simplified dataset.
+
+    The data returned does not contain any HTML strings.
+
+    Status Codes:
+        200 on success
+        404 if data isn't ready or tabname doesn't exist.
+    """
+    page = get_page_by_name(extra_networks_tabname)
+
+    data = page.generate_cards_view_data(tabname)
+
+    return JSONResponse({"data": data, "ready": data is not None})
 
 
 def fetch_tree_data(
@@ -990,27 +1000,7 @@ def fetch_cards_data(
             res[div_id] = page.cards[div_id].html
         else:
             missed.append(div_id)
-
     return JSONResponse({"data": res, "missing_div_ids": missed})
-
-
-def init_cards_data(tabname: str = "", extra_networks_tabname: str = "") -> JSONResponse:
-    """Generates the initial Cards View data and returns a simplified dataset.
-
-    The data returned does not contain any HTML strings.
-
-    Status Codes:
-        200 on success
-        404 if data isn't ready or tabname doesn't exist.
-    """
-    page = get_page_by_name(extra_networks_tabname)
-
-    data = page.generate_cards_view_data(tabname)
-
-    if data is None:
-        raise HTTPException(status_code=404, detail=f"data not ready: {extra_networks_tabname}")
-
-    return JSONResponse(data)
 
 
 def clear_page_data(extra_networks_tabname: str = "") -> JSONResponse:
@@ -1024,22 +1014,19 @@ def clear_page_data(extra_networks_tabname: str = "") -> JSONResponse:
 
     page.clear_data()
 
-    return JSONResponse({}, status_code=200)
+    return JSONResponse({})
+
 
 def page_is_ready(extra_networks_tabname: str = "") -> JSONResponse:
     """Returns whether the specified page is ready for fetching data.
 
     Status Codes:
-        200 if page is ready
-        404 if page isn't ready or tabname doesnt exist.
+        200 on success. response contains ready state.
+        404 if tabname doesnt exist.
     """
     page = get_page_by_name(extra_networks_tabname)
 
-    print(f"page_is_ready: {extra_networks_tabname} => {page.is_ready}, {len(page.items)}, {len(list(page.list_items()))}")
-    if len(page.items) == len(list(page.list_items())):
-        return JSONResponse({}, status_code=200)
-    else:
-        raise HTTPException(status_code=404, detail=f"page not ready: {extra_networks_tabname}")
+    return JSONResponse({"ready": page.is_ready})
 
 
 def get_metadata(extra_networks_tabname: str = "", item: str = "") -> JSONResponse:
@@ -1216,7 +1203,9 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
 
     def create_html():
         for tabname_full, page in ui.stored_extra_pages.items():
+            page.is_ready = False
             ui.pages_contents[tabname_full] = page.create_html(ui.tabname)
+            page.is_ready = True
 
     def pages_html():
         if not ui.pages_contents:

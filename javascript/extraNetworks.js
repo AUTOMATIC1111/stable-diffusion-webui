@@ -6,7 +6,7 @@
     isString,
     isElement,
     isElementThrowError,
-    requestGetPromise,
+    fetchWithRetryAndBackoff,
     isElementLogError,
     isNumber,
     waitForKeyInObject,
@@ -18,9 +18,9 @@
 /*eslint no-undef: "error"*/
 
 const SEARCH_INPUT_DEBOUNCE_TIME_MS = 250;
-const EXTRA_NETWORKS_GET_PAGE_READY_MAX_ATTEMPTS = 10;
-const EXTRA_NETWORKS_WAIT_FOR_PAGE_READY_TIMEOUT_MS = 1000;
-const EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS = 1000;
+const EXTRA_NETWORKS_WAIT_FOR_PAGE_READY_TIMEOUT_MS = 30000;
+const EXTRA_NETWORKS_INIT_DATA_TIMEOUT_MS = 60000;
+const EXTRA_NETWORKS_FETCH_DATA_TIMEOUT_MS = 30000;
 const EXTRA_NETWORKS_REFRESH_INTERNAL_DEBOUNCE_TIMEOUT_MS = 200;
 
 const re_extranet = /<([^:^>]+:[^:]+):[\d.]+>(.*)/;
@@ -36,7 +36,7 @@ var extra_networks_refresh_internal_debounce_timer;
 
 /** Boolean flags used along with utils.js::waitForBool(). */
 // Set true when we first load the UI options.
-const initialUiOptionsLoaded = {state: false};
+const initialUiOptionsLoaded = { state: false };
 
 const _debounce = (handler, timeout_ms) => {
     /** Debounces a function call.
@@ -65,6 +65,20 @@ const _debounce = (handler, timeout_ms) => {
     };
 };
 
+class ExtraNetworksError extends Error {
+    constructor(...args) {
+        super(...args);
+        this.name = this.constructor.name;
+    }
+}
+class ExtraNetworksPageReadyError extends Error {
+    constructor(...args) { super(...args); }
+}
+
+class ExtraNetworksDataReadyError extends Error {
+    constructor(...args) { super(...args); }
+}
+
 class ExtraNetworksTab {
     tabname;
     extra_networks_tabname;
@@ -89,7 +103,7 @@ class ExtraNetworksTab {
     show_neg_prompt = true;
     compact_prompt_en = false;
     refresh_in_progress = false;
-    constructor({tabname, extra_networks_tabname}) {
+    constructor({ tabname, extra_networks_tabname }) {
         this.tabname = tabname;
         this.extra_networks_tabname = extra_networks_tabname;
         this.tabname_full = `${tabname}_${extra_networks_tabname}`;
@@ -270,6 +284,12 @@ class ExtraNetworksTab {
     }
 
     async #refresh() {
+        try {
+            await this.waitForServerPageReady();
+        } catch (error) {
+            console.error(`refresh error: ${error.message}`);
+            return;
+        }
         const btn_dirs_view = this.controls_elem.querySelector(".extra-network-control--dirs-view");
         const btn_tree_view = this.controls_elem.querySelector(".extra-network-control--tree-view");
         const div_dirs = this.container_elem.querySelector(".extra-network-content--dirs-view");
@@ -330,7 +350,7 @@ class ExtraNetworksTab {
         this.setFilterStr(filter_str);
     }
 
-    async waitForServerPageReady(max_attempts = EXTRA_NETWORKS_GET_PAGE_READY_MAX_ATTEMPTS) {
+    async waitForServerPageReady(timeout_ms) {
         /** Waits for a page on the server to be ready.
          *
          *  We need to wait for the page to be ready before we can fetch any data.
@@ -343,139 +363,118 @@ class ExtraNetworksTab {
          *      max_attempts [int]: The max number of requests that will be attempted
          *                          before giving up. If set to 0, will attempt forever.
          */
-        const err_prefix = `error waiting for server page (${this.tabname_full})`;
-        return new Promise((resolve, reject) => {
-            let attempt = 0;
-            const loop = () => {
-                console.log(`waitForServerPageReady: iter ${attempt}`);
-                let retry_delay_ms = 1000;
-                setTimeout(async() => {
-                    try {
-                        await requestGetPromise(
-                            "./sd_extra_networks/page-is-ready",
-                            {extra_networks_tabname: this.extra_networks_tabname},
-                            EXTRA_NETWORKS_WAIT_FOR_PAGE_READY_TIMEOUT_MS,
-                        );
-                        console.warn("PAGE READY:", this.extra_networks_tabname);
-                        return resolve();
-                    } catch (error) {
-                        // If we get anything other than a timeout error, reject.
-                        // Otherwise, fall through to retry request.
-                        if (error.status !== 408 && error.status !== 404) {
-                            return reject(`${err_prefix}: uncaught exception: ${JSON.stringify(error)}`);
-                        }
-                        if (error.status === 404) {
-                            retry_delay_ms = 1000;
-                        }
-                        if (error.status === 408) {
-                            retry_delay_ms = 0;
-                        }
-                        console.log("other error:", error.status, error);
-                    }
-
-                    if (max_attempts !== 0 && attempt++ >= max_attempts) {
-                        return reject(`${err_prefix}: max attempts exceeded`);
-                    } else {
-                        // small delay since our request has a timeout.
-                        console.log("retrying:", attempt);
-                        setTimeout(loop, retry_delay_ms);
-                    }
-                }, 0);
-            };
-            return loop();
+        timeout_ms = timeout_ms || EXTRA_NETWORKS_WAIT_FOR_PAGE_READY_TIMEOUT_MS;
+        const response_handler = (response) => new Promise(async (resolve, reject) => {
+            if (!response.ok) {
+                return reject(response);
+            }
+            const json = await response.json();
+            if (!json.ready) {
+                return reject(`page not ready: ${this.extra_networks_tabname}`);
+            }
+            return resolve(json);
         });
+
+        const url = "./sd_extra_networks/page-is-ready";
+        const payload = { extra_networks_tabname: this.extra_networks_tabname };
+        const opts = { timeout_ms: timeout_ms, response_handler: response_handler };
+        return await fetchWithRetryAndBackoff(url, payload, opts);
     }
 
     async onInitCardsData() {
-        console.log("onInitCardsData");
         try {
             await this.waitForServerPageReady();
         } catch (error) {
-            console.error(JSON.stringify(error));
+            console.error(`onInitCardsData error: ${error.message}`);
             return {};
         }
 
+        const response_handler = (response) => new Promise(async (resolve, reject) => {
+            if (!response.ok) {
+                return reject(response);
+            }
+            const json = await response.json();
+            if (!json.ready) {
+                return reject(`data not ready: ${this.extra_networks_tabname}`);
+            }
+            return resolve(json);
+        });
+
         const url = "./sd_extra_networks/init-cards-data";
-        const payload = {tabname: this.tabname, extra_networks_tabname: this.extra_networks_tabname};
-        const timeout = EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS;
+        const payload = { tabname: this.tabname, extra_networks_tabname: this.extra_networks_tabname };
+        const timeout_ms = EXTRA_NETWORKS_INIT_DATA_TIMEOUT_MS;
+        const opts = { timeout_ms: timeout_ms, response_handler: response_handler };
         try {
-            const response = await requestGetPromise(url, payload, timeout);
-            return response.response;
+            const response = await fetchWithRetryAndBackoff(url, payload, opts);
+            return response.data;
         } catch (error) {
-            console.error(JSON.stringify(error));
+            console.error(`onInitCardsData error: ${error.message}`);
             return {};
         }
     }
 
     async onInitTreeData() {
-        console.log("onInitTreeData");
         try {
             await this.waitForServerPageReady();
         } catch (error) {
-            console.error(JSON.stringify(error));
+            console.error(`onInitTreeData error: ${error.message}`);
             return {};
         }
 
+        const response_handler = (response) => new Promise(async (resolve, reject) => {
+            if (!response.ok) {
+                return reject(response);
+            }
+            const json = await response.json();
+            if (!json.ready) {
+                return reject(`data not ready: ${this.extra_networks_tabname}`);
+            }
+            return resolve(json);
+        });
+
         const url = "./sd_extra_networks/init-tree-data";
-        const payload = {tabname: this.tabname, extra_networks_tabname: this.extra_networks_tabname};
-        const timeout = EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS;
+        const payload = { tabname: this.tabname, extra_networks_tabname: this.extra_networks_tabname };
+        const timeout_ms = EXTRA_NETWORKS_INIT_DATA_TIMEOUT_MS;
+        const opts = { timeout_ms: timeout_ms, response_handler: response_handler }
         try {
-            const response = await requestGetPromise(url, payload, timeout);
-            return response.response;
+            const response = await fetchWithRetryAndBackoff(url, payload, opts);
+            return response.data;
         } catch (error) {
-            console.error(JSON.stringify(error));
+            console.error(`onInitTreeData error: ${error.message}`);
             return {};
         }
     }
 
     async onFetchCardsData(div_ids) {
-        console.log("onFetchCardsData:", div_ids);
-        /*
-        try {
-            await this.waitForServerPageReady();
-        } catch (error) {
-            console.error(JSON.stringify(error));
-            return {};
-        }
-        */
-
         const url = "./sd_extra_networks/fetch-cards-data";
-        const payload = {extra_networks_tabname: this.extra_networks_tabname, div_ids: div_ids};
-        const timeout = EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS;
+        const payload = { extra_networks_tabname: this.extra_networks_tabname, div_ids: div_ids };
+        const timeout_ms = EXTRA_NETWORKS_FETCH_DATA_TIMEOUT_MS;
+        const opts = { timeout_ms: timeout_ms };
         try {
-            const response = await requestGetPromise(url, payload, timeout);
-            if (response.response.missing_div_ids.length) {
-                console.warn(`Failed to fetch multiple div_ids: ${response.response.missing_div_ids}`);
+            const response = await fetchWithRetryAndBackoff(url, payload, opts);
+            if (response.missing_div_ids.length) {
+                console.warn(`Failed to fetch multiple div_ids: ${response.missing_div_ids}`);
             }
-            return response.response.data;
+            return response.data;
         } catch (error) {
-            console.error(JSON.stringify(error));
+            console.error(`onFetchCardsData error: ${error.message}`);
             return {};
         }
     }
 
     async onFetchTreeData(div_ids) {
-        console.log("onFetchTreeData:", div_ids);
-        /*
-        try {
-            await this.waitForServerPageReady();
-        } catch (error) {
-            console.error(JSON.stringify(error));
-            return {};
-        }
-        */
-
         const url = "./sd_extra_networks/fetch-tree-data";
-        const payload = {extra_networks_tabname: this.extra_networks_tabname, div_ids: div_ids};
-        const timeout = EXTRA_NETWORKS_REQUEST_GET_TIMEOUT_MS;
+        const payload = { extra_networks_tabname: this.extra_networks_tabname, div_ids: div_ids };
+        const timeout_ms = EXTRA_NETWORKS_FETCH_DATA_TIMEOUT_MS;
+        const opts = { timeout_ms: timeout_ms };
         try {
-            const response = await requestGetPromise(url, payload, timeout);
-            if (response.response.missing_div_ids.length) {
-                console.warn(`Failed to fetch multiple div_ids: ${response.response.missing_div_ids}`);
+            const response = await fetchWithRetryAndBackoff(url, payload, opts);
+            if (response.missing_div_ids.length) {
+                console.warn(`Failed to fetch multiple div_ids: ${response.missing_div_ids}`);
             }
-            return response.response.data;
+            return response.data;
         } catch (error) {
-            console.error(JSON.stringify(error));
+            console.error(`onFetchTreeData error: ${error.message}`);
             return {};
         }
     }
@@ -814,8 +813,8 @@ function extraNetworksFetchMetadata(extra_networks_tabname, card_name) {
 
     requestGet(
         "./sd_extra_networks/metadata",
-        {extra_networks_tabname: extra_networks_tabname, item: card_name},
-        function(data) {
+        { extra_networks_tabname: extra_networks_tabname, item: card_name },
+        function (data) {
             if (data && data.metadata) {
                 extraNetworksShowMetadata(data.metadata);
             } else {
@@ -842,7 +841,7 @@ function extraNetworksUnrelatedTabSelected(tabname) {
 
 async function extraNetworksTabSelected(tabname_full, show_prompt, show_neg_prompt) {
     /** called from python when user selects an extra networks tab */
-    await waitForKeyInObject({obj: extra_networks_tabs, k: tabname_full});
+    await waitForKeyInObject({ obj: extra_networks_tabs, k: tabname_full });
     for (const [k, v] of Object.entries(extra_networks_tabs)) {
         if (k === tabname_full) {
             v.load(show_prompt, show_neg_prompt);
@@ -874,7 +873,7 @@ function extraNetworksControlSearchClearOnClick(event, tabname_full) {
     txt_search_elem.dispatchEvent(
         new CustomEvent(
             "extra-network-control--search-clear",
-            {bubbles: true, detail: {tabname_full: tabname_full}},
+            { bubbles: true, detail: { tabname_full: tabname_full } },
         )
     );
 
@@ -1001,16 +1000,6 @@ function extraNetworksControlRefreshOnClick(event, tabname_full) {
     clearTimeout(extra_networks_refresh_internal_debounce_timer);
     extra_networks_refresh_internal_debounce_timer = setTimeout(async () => {
         const tab = extra_networks_tabs[tabname_full];
-        try {
-            await requestGetPromise(
-                "./sd_extra_networks/clear-page-data",
-                {extra_networks_tabname: tab.extra_networks_tabname},
-                5000,
-            );
-            console.log("cleared page data:", tab.extra_networks_tabname);
-        } catch (error) {
-            console.error("error clearing page data:", error);
-        }
         // We want to reset tab lists on refresh click so that the viewing area
         // shows that it is loading new data.
         tab.tree_list.clear();
