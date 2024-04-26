@@ -88,7 +88,7 @@ def image_from_url_text(filedata):
         filename = filedata["name"]
 
     elif isinstance(filedata, tuple) and len(filedata) == 2:  # gradio 4.16 sends images from gallery as a list of tuples
-        filename = filedata[0]
+        return filedata[0]
 
     if filename:
         is_in_right_dir = ui_tempdir.check_tmp_file(shared.demo, filename)
@@ -194,6 +194,8 @@ def connect_paste_params_buttons():
 def send_image_and_dimensions(x):
     if isinstance(x, Image.Image):
         img = x
+    elif isinstance(x, list) and isinstance(x[0], tuple):
+        img = x[0][0]
     else:
         img = image_from_url_text(x)
 
