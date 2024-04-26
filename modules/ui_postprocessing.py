@@ -5,8 +5,8 @@ from modules.ui_components import ResizeHandleRow
 
 
 def create_ui():
-    dummy_component = gr.Label(visible=False)
-    tab_index = gr.Number(value=0, visible=False)
+    dummy_component = gr.Textbox(visible=False)
+    tab_index = gr.State(0)
 
     with ResizeHandleRow(equal_height=False, variant='compact'):
         with gr.Column(variant='compact'):
