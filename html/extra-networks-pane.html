@@ -1,4 +1,5 @@
-<div id='{tabname}_{extra_networks_tabname}_pane' class='extra-network-pane' data-tabname-full="{tabname}_{extra_networks_tabname}">
+<div id='{tabname}_{extra_networks_tabname}_pane' class='extra-network-pane' data-tabname="{tabname}"
+    data-extra-networks-tabname="{extra_networks_tabname}" data-tabname-full="{tabname}_{extra_networks_tabname}">
     <div class="extra-network-controls hidden" data-tabname-full="{tabname}_{extra_networks_tabname}">
         <div class="extra-network-control--search">
             <svg class="extra-network-control--search-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
@@ -7,8 +8,7 @@
                 <line x1="9.75" y1="9.75" x2="13" y2="13" />
             </svg>
             <input class="extra-network-control--search-text" type="text" placeholder="Search">
-            <button role="button" class="extra-network-control extra-network-control--search-clear"
-                onclick="extraNetworksControlSearchClearOnClick(event, '{tabname}_{extra_networks_tabname}');">
+            <button role="button" class="extra-network-control extra-network-control--search-clear">
                 <svg class="extra-network-control--search-clear-icon" viewBox="0 0 16 16"
                     xmlns="http://www.w3.org/2000/svg" stroke-linecap="round" stroke-linejoin="round" stroke-width="1">
                     <path fill="none" stroke="currentColor" d="M 5 5 L 11 11 M 5 11 L 11 5" />
@@ -19,11 +19,8 @@
         <div class="extra-network-controls--container">
             <div class="extra-network-controls--header">Sort Mode</div>
             <div class="extra-network-controls--buttons">
-                <button class="extra-network-control extra-network-control--sort-mode"
-                    title="Sort by path"
-                    onclick="extraNetworksControlSortModeOnClick(event, '{tabname}_{extra_networks_tabname}');"
-                    data-sort-mode="path"
-                    {btn_sort_mode_path_data_attributes}>
+                <button class="extra-network-control extra-network-control--sort-mode" title="Sort by path"
+                    data-sort-mode="path" {btn_sort_mode_path_data_attributes}>
                     <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
                         fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                         stroke-width="1">
@@ -33,22 +30,16 @@
                         <line x1="9" y1="10" x2="10.5" y2="11.5" />
                     </svg>
                 </button>
-                <button class="extra-network-control extra-network-control--sort-mode"
-                    title="Sort by name"
-                    onclick="extraNetworksControlSortModeOnClick(event, '{tabname}_{extra_networks_tabname}');"
-                    data-sort-mode="name"
-                    {btn_sort_mode_name_data_attributes}>
+                <button class="extra-network-control extra-network-control--sort-mode" title="Sort by name"
+                    data-sort-mode="name" {btn_sort_mode_name_data_attributes}>
                     <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
                         fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                         <path stroke-width="1" d="M 2 12 L 6 3 L 10 12 M 3.5 9 L 8.5 9" />
                         <path stroke-width="1" d="M 8 3 L 15 3 M 9.5 6 L 15 6 M 11 9 L 15 9 M 12.5 12 L 15 12">
                     </svg>
                 </button>
-                <button class="extra-network-control extra-network-control--sort-mode"
-                    title="Sort by date created"
-                    onclick="extraNetworksControlSortModeOnClick(event, '{tabname}_{extra_networks_tabname}');"
-                    data-sort-mode="date_created"
-                    {btn_sort_mode_date_created_data_attributes}>
+                <button class="extra-network-control extra-network-control--sort-mode" title="Sort by date created"
+                    data-sort-mode="date_created" {btn_sort_mode_date_created_data_attributes}>
                     <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
                         stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1">
                         <rect x="1" y="2" width="14" height="12" rx="2" fill="none" />
@@ -60,11 +51,8 @@
                         <line x1="12" y1="1" x2="12" y2="3" />
                     </svg>
                 </button>
-                <button class="extra-network-control extra-network-control--sort-mode"
-                    title="Sort by date modified"
-                    onclick="extraNetworksControlSortModeOnClick(event, '{tabname}_{extra_networks_tabname}');"
-                    data-sort-mode="date_modified"
-                    {btn_sort_mode_date_modified_data_attributes}>
+                <button class="extra-network-control extra-network-control--sort-mode" title="Sort by date modified"
+                    data-sort-mode="date_modified" {btn_sort_mode_date_modified_data_attributes}>
                     <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
                         fill="none" stroke="currentColor" stroke-width="1">
                         <g stroke-linecap="round" stroke-linejoin="round">
@@ -84,9 +72,7 @@
         <div class="extra-network-controls--container">
             <div class="extra-network-controls--header">Sort Order</div>
             <div class="extra-network-controls--buttons">
-                <button class="extra-network-control extra-network-control--sort-dir"
-                    title="Sort {data_sort_dir}"
-                    onclick="extraNetworksControlSortDirOnClick(event, '{tabname}_{extra_networks_tabname}');"
+                <button class="extra-network-control extra-network-control--sort-dir" title="Sort {data_sort_dir}"
                     data-sort-dir="{data_sort_dir}">
                     <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
                         fill="none" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
@@ -99,9 +85,7 @@
         <div class="extra-network-controls--container">
             <div class="extra-network-controls--header">View Mode</div>
             <div class="extra-network-controls--buttons">
-                <button class="extra-network-control extra-network-control--dirs-view"
-                    title="Enable Directory View"
-                    onclick="extraNetworksControlDirsViewOnClick(event, '{tabname}_{extra_networks_tabname}');"
+                <button class="extra-network-control extra-network-control--dirs-view" title="Enable Directory View"
                     {btn_dirs_view_data_attributes}>
                     <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
                         fill="currentColor" stroke="none">
@@ -110,9 +94,7 @@
                         <rect x="12" y="6" width="4" height="4" rx="1" />
                     </svg>
                 </button>
-                <button class="extra-network-control extra-network-control--tree-view"
-                    title="Enable Tree View"
-                    onclick="extraNetworksControlTreeViewOnClick(event, '{tabname}_{extra_networks_tabname}');"
+                <button class="extra-network-control extra-network-control--tree-view" title="Enable Tree View"
                     {btn_tree_view_data_attributes}>
                     <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
                         fill="currentColor" stroke="none">
@@ -128,8 +110,7 @@
         <div class="extra-network-controls--container">
             <div class="extra-network-controls--header">Refresh</div>
             <div class="extra-network-controls--buttons">
-                <button class="extra-network-control extra-network-control--refresh" title="Refresh tab"
-                    onclick="extraNetworksControlRefreshOnClick(event, '{tabname}_{extra_networks_tabname}');">
+                <button class="extra-network-control extra-network-control--refresh" title="Refresh tab">
                     <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
                         fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
                         stroke-linejoin="round">

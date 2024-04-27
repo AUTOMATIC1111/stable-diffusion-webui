@@ -859,85 +859,83 @@ async function extraNetworksTabSelected(tabname_full, show_prompt, show_neg_prom
     }
 }
 
-function extraNetworksBtnDirsViewItemOnClick(event, tabname_full) {
+function extraNetworksBtnDirsViewItemOnClick(event) {
     /** Handles `onclick` events for buttons in the directory view. */
-    const tab = extra_networks_tabs[tabname_full];
+    const btn = event.target.closest(".extra-network-dirs-view-button");
+    const pane = btn.closest(".extra-network-pane");
+    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
 
-    if ("selected" in event.target.dataset) {
-        tab.setDirectoryButtons(event.target, false);
+    if ("selected" in btn.dataset) {
+        tab.setDirectoryButtons(btn, false);
     } else {
-        tab.setDirectoryButtons(event.target, true);
+        tab.setDirectoryButtons(btn, true);
+    }
+}
+
+function extraNetworksControlSearchClearOnClick(event) {
+    /** Dispatches custom event when the `clear` button in a search input is clicked. */
+    const btn = event.target.closest(".extra-network-control--search-clear");
+    const controls = btn.closest(".extra-network-controls");
+    extra_networks_tabs[controls.dataset.tabnameFull].updateSearch("");
+}
+
+function extraNetworksControlSortModeOnClick(event) {
+    /** Handles `onclick` events for Sort Mode buttons. */
+    const btn = event.target.closest(".extra-network-control--sort-mode");
+    // No operation if button is already selected.
+    if ("selected" in btn.dataset) {
+        return;
     }
 
-
-
-    event.stopPropagation();
-}
-
-function extraNetworksControlSearchClearOnClick(event, tabname_full) {
-    /** Dispatches custom event when the `clear` button in a search input is clicked. */
-    const txt_search_elem = extra_networks_tabs[tabname_full].txt_search_elem;
-    txt_search_elem.value = "";
-    txt_search_elem.dispatchEvent(
-        new CustomEvent(
-            "extra-network-control--search-clear",
-            {bubbles: true, detail: {tabname_full: tabname_full}},
-        )
-    );
-
-    event.stopPropagation();
-}
-
-function extraNetworksControlSortModeOnClick(event, tabname_full) {
-    /** Handles `onclick` events for Sort Mode buttons. */
-    const tab = extra_networks_tabs[tabname_full];
+    const controls = btn.closest(".extra-network-controls");
+    const tab = extra_networks_tabs[controls.dataset.tabnameFull];
     tab.controls_elem.querySelectorAll(".extra-network-control--sort-mode").forEach(elem => {
         delete elem.dataset.selected;
     });
 
-    event.currentTarget.dataset.selected = "";
+    btn.dataset.selected = "";
 
-    const sort_mode_str = event.currentTarget.dataset.sortMode.toLowerCase();
+    const sort_mode_str = btn.dataset.sortMode.toLowerCase();
 
     tab.setSortMode(sort_mode_str);
-
-    event.stopPropagation();
 }
 
-function extraNetworksControlSortDirOnClick(event, tabname_full) {
+function extraNetworksControlSortDirOnClick(event) {
     /** Handles `onclick` events for the Sort Direction button.
      *
      * Modifies the data attributes of the Sort Direction button to cycle between
      * ascending and descending sort directions.
      */
-    const tab = extra_networks_tabs[tabname_full];
+    const btn = event.target.closest(".extra-network-control--sort-dir");
+    const controls = btn.closest(".extra-network-controls");
+    const tab = extra_networks_tabs[controls.dataset.tabnameFull];
 
-    const curr_sort_dir_str = event.currentTarget.dataset.sortDir.toLowerCase();
+    const curr_sort_dir_str = btn.dataset.sortDir.toLowerCase();
     if (!["ascending", "descending"].includes(curr_sort_dir_str)) {
         console.error(`Invalid sort_dir_str: ${curr_sort_dir_str}`);
         return;
     }
 
     let sort_dir_str = curr_sort_dir_str === "ascending" ? "descending" : "ascending";
-    event.currentTarget.dataset.sortDir = sort_dir_str;
-    event.currentTarget.setAttribute("title", `Sort ${sort_dir_str}`);
+    btn.dataset.sortDir = sort_dir_str;
+    btn.setAttribute("title", `Sort ${sort_dir_str}`);
 
     tab.setSortDir(sort_dir_str);
-
-    event.stopPropagation();
 }
 
-function extraNetworksControlTreeViewOnClick(event, tabname_full) {
+function extraNetworksControlTreeViewOnClick(event) {
     /** Handles `onclick` events for the Tree View button.
      *
      * Toggles the tree view in the extra networks pane.
      */
-    const show = !("selected" in event.currentTarget.dataset);
-    const tab = extra_networks_tabs[tabname_full];
-    if ("selected" in event.currentTarget.dataset) {
-        delete event.currentTarget.dataset.selected;
+    const btn = event.target.closest(".extra-network-control--tree-view");
+    const controls = btn.closest(".extra-network-controls");
+    const tab = extra_networks_tabs[controls.dataset.tabnameFull];
+    const show = !("selected" in btn.dataset);
+    if ("selected" in btn.dataset) {
+        delete btn.dataset.selected;
     } else {
-        event.currentTarget.dataset.selected = "";
+        btn.dataset.selected = "";
     }
 
     if (!show) {
@@ -960,21 +958,21 @@ function extraNetworksControlTreeViewOnClick(event, tabname_full) {
     resize_handle_row.classList.toggle("resize-handle-hidden", !show);
 
     tab.setDirectoryButtons();
-
-    event.stopPropagation();
 }
 
-function extraNetworksControlDirsViewOnClick(event, tabname_full) {
+function extraNetworksControlDirsViewOnClick(event) {
     /** Handles `onclick` events for the Dirs View button.
      *
      * Toggles the directory view in the extra networks pane.
      */
-    const tab = extra_networks_tabs[tabname_full];
-    const show = !("selected" in event.currentTarget.dataset);
+    const btn = event.target.closest(".extra-network-control--dirs-view");
+    const controls = btn.closest(".extra-network-controls");
+    const tab = extra_networks_tabs[controls.dataset.tabnameFull];
+    const show = !("selected" in btn.dataset);
     if (show) {
-        event.currentTarget.dataset.selected = "";
+        btn.dataset.selected = "";
     } else {
-        delete event.currentTarget.dataset.selected;
+        delete btn.dataset.selected;
     }
 
     if (!show) {
@@ -991,11 +989,9 @@ function extraNetworksControlDirsViewOnClick(event, tabname_full) {
     ).classList.toggle("hidden", !show);
 
     tab.setDirectoryButtons();
-
-    event.stopPropagation();
 }
 
-function extraNetworksControlRefreshOnClick(event, tabname_full) {
+function extraNetworksControlRefreshOnClick(event) {
     /** Handles `onclick` events for the Refresh Page button.
      *
      * In order to actually call the python functions in `ui_extra_networks.py`
@@ -1003,81 +999,155 @@ function extraNetworksControlRefreshOnClick(event, tabname_full) {
      * event handler that refreshes the page. So what this function here does
      * is it manually raises a `click` event on that button.
      */
-    event.stopPropagation();
-
     clearTimeout(extra_networks_refresh_internal_debounce_timer);
     extra_networks_refresh_internal_debounce_timer = setTimeout(async() => {
-        const tab = extra_networks_tabs[tabname_full];
+        const btn = event.target.closest(".extra-network-control--refresh");
+        const controls = btn.closest(".extra-network-controls");
+        const tab = extra_networks_tabs[controls.dataset.tabnameFull];
         // We want to reset tab lists on refresh click so that the viewing area
         // shows that it is loading new data.
         tab.tree_list.clear();
         tab.cards_list.clear();
         // Fire an event for this button click.
-        gradioApp().getElementById(`${tabname_full}_extra_refresh_internal`).dispatchEvent(new Event("click"));
+        gradioApp().getElementById(
+            `${controls.dataset.tabnameFull}_extra_refresh_internal`
+        ).dispatchEvent(new Event("click"));
     }, EXTRA_NETWORKS_REFRESH_INTERNAL_DEBOUNCE_TIMEOUT_MS);
 }
 
-function extraNetworksCardOnClick(event, tabname_full) {
-    const elem = event.currentTarget;
-    const tab = extra_networks_tabs[tabname_full];
-    if ("negPrompt" in elem.dataset) {
-        extraNetworksUpdatePrompt(tab.txt_prompt_elem, elem.dataset.prompt);
-        extraNetworksUpdatePrompt(tab.txt_neg_prompt_elem, elem.dataset.negPrompt);
-    } else if ("allowNeg" in elem.dataset) {
-        extraNetworksUpdatePrompt(tab.active_prompt_elem, elem.dataset.prompt);
+function extraNetworksSelectModel(tab, opts = {prompt, neg_prompt, allow_neg, checkpoint_name}) {
+    if (opts.checkpoint_name) {
+        selectCheckpoint(opts.checkpoint_name);
+    } else if (opts.neg_prompt) {
+        extraNetworksUpdatePrompt(tab.txt_prompt_elem, opts.prompt);
+        extraNetworksUpdatePrompt(tab.txt_neg_prompt_elem, opts.neg_prompt);
+    } else if (opts.allow_neg) {
+        extraNetworksUpdatePrompt(tab.active_prompt_elem, opts.prompt);
     } else {
-        extraNetworksUpdatePrompt(tab.txt_prompt_elem, elem.dataset.prompt);
-    }
-
-    event.stopPropagation();
-}
-
-function extraNetworksTreeFileOnClick(event, btn, tabname_full) {
-    return;
-}
-
-async function extraNetworksTreeDirectoryOnClick(event, btn, tabname_full) {
-    const div_id = btn.dataset.divId;
-    const tab = extra_networks_tabs[tabname_full];
-
-    if (event.target.matches(".tree-list-item-action--leading .tree-list-item-action-chevron")) {
-        await tab.tree_list.onRowExpandClick(div_id, btn);
-        tab.setDirectoryButtons();
-    } else if (event.target.matches(".tree-list-item-action--trailing .tree-list-item-action-expand")) {
-        await tab.tree_list.onExpandAllClick(div_id);
-        tab.setDirectoryButtons();
-    } else if (event.target.matches(".tree-list-item-action--trailing .tree-list-item-action-collapse")) {
-        await tab.tree_list.onCollapseAllClick(div_id);
-        tab.setDirectoryButtons();
-    } else {
-        // No action items were clicked. Select the row.
-        await tab.tree_list.onRowSelected(div_id, btn);
-        tab.setDirectoryButtons(btn);
+        extraNetworksUpdatePrompt(tab.txt_prompt_elem, opts.prompt);
     }
 }
 
-function extraNetworksTreeOnClick(event, tabname_full) {
-    const btn = event.target.closest(".tree-list-item");
-    if (!isElementLogError(btn)) {
+function extraNetworksCardOnClick(event) {
+    // Do not select the card if its child button-row is the target of the event.
+    if (event.target.closest(".button-row")) {
         return;
     }
 
-    if (btn.dataset.treeEntryType === "file") {
-        extraNetworksTreeFileOnClick(event, btn, tabname_full);
-    } else {
-        extraNetworksTreeDirectoryOnClick(event, btn, tabname_full);
+    const btn = event.target.closest(".card");
+    const pane = btn.closest(".extra-network-pane");
+    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
+
+    let checkpoint_name;
+    if ("isCheckpoint" in btn.dataset) {
+        checkpoint_name = btn.dataset.name;
+    }
+    extraNetworksSelectModel(tab, {
+        prompt: btn.dataset.prompt,
+        neg_prompt: btn.dataset.negPrompt,
+        allow_neg: btn.dataset.allowNeg,
+        checkpoint_name: checkpoint_name,
+    });
+}
+
+function extraNetworksTreeFileOnClick(event) {
+    // Do not select the row if its child button-row is the target of the event.
+    if (event.target.closest(".tree-list-item-action")) {
+        return;
     }
 
-    event.stopPropagation();
+    const btn = event.target.closest(".tree-list-item");
+    const pane = btn.closest(".extra-network-pane");
+    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
+    
+
+    let checkpoint_name;
+    if ("isCheckpoint" in btn.dataset) {
+        checkpoint_name = btn.dataset.name;
+    }
+    extraNetworksSelectModel(tab, {
+        prompt: btn.dataset.prompt,
+        neg_prompt: btn.dataset.negPrompt,
+        allow_neg: btn.dataset.allowNeg,
+        checkpoint_name: checkpoint_name,
+    });
 }
 
-function extraNetworksBtnShowMetadataOnClick(event, extra_networks_tabname, card_name) {
-    extraNetworksFetchMetadata(extra_networks_tabname, card_name);
-    event.stopPropagation();
+async function extraNetworksTreeDirectoryOnClick(event) {
+    // Do not select the row if its child button-row is the target of the event.
+    if (event.target.closest(".tree-list-item-action")) {
+        return;
+    }
+    const btn = event.target.closest(".tree-list-item");
+    const pane = btn.closest(".extra-network-pane");
+    const div_id = btn.dataset.divId;
+    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
+
+    await tab.tree_list.onRowSelected(div_id, btn);
+    tab.setDirectoryButtons(btn);
 }
 
-function extraNetworksBtnEditMetadataOnClick(event, tabname_full, card_name) {
-    const id = `${tabname_full}_edit_user_metadata`;
+async function extraNetworksBtnTreeViewChevronOnClick(event) {
+    // stopPropagation so we don't also trigger event on parent since this btn is nested.
+    event.stopPropagation();
+    const btn = event.target.closest(".tree-list-item-action-chevron");
+    const row = event.target.closest(".tree-list-item");
+    const pane = btn.closest(".extra-network-pane");
+    const div_id = row.dataset.divId;
+    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
+
+    await tab.tree_list.onRowExpandClick(div_id, btn);
+    tab.setDirectoryButtons();
+}
+
+async function extraNetworksBtnTreeViewExpandOnClick(event) {
+    // stopPropagation so we don't also trigger event on parent since this btn is nested.
+    event.stopPropagation();
+    const btn = event.target.closest(".tree-list-item-action-expand");
+    const row = event.target.closest(".tree-list-item");
+    const pane = btn.closest(".extra-network-pane");
+    const div_id = row.dataset.divId;
+    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
+
+    await tab.tree_list.onExpandAllClick(div_id);
+    tab.setDirectoryButtons();
+}
+
+async function extraNetworksBtnTreeViewCollapseOnClick(event) {
+    // stopPropagation so we don't also trigger event on parent since this btn is nested.
+    event.stopPropagation();
+    const btn = event.target.closest(".tree-list-item-action-collapse");
+    const row = event.target.closest(".tree-list-item");
+    const pane = btn.closest(".extra-network-pane");
+    const div_id = row.dataset.divId;
+    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
+
+    await tab.tree_list.onCollapseAllClick(div_id);
+    tab.setDirectoryButtons();
+}
+
+function extraNetworksBtnShowMetadataOnClick(event) {
+    // stopPropagation so we don't also trigger event on parent since this btn is nested.
+    event.stopPropagation();
+    const btn = event.target.closest(".metadata-button");
+    const pane = btn.closest(".extra-network-pane");
+    let parent = btn.closest(".card");
+    if (!parent) {
+        parent = btn.closest(".tree-list-item");
+    }
+    extraNetworksFetchMetadata(pane.dataset.extraNetworksTabname, parent.dataset.name);
+}
+
+function extraNetworksBtnEditMetadataOnClick(event) {
+    // stopPropagation so we don't also trigger event on parent since this btn is nested.
+    event.stopPropagation();
+    const btn = event.target.closest(".edit-button");
+    const pane = btn.closest(".extra-network-pane");
+    let parent = btn.closest(".card");
+    if (!parent) {
+        parent = btn.closest(".tree-list-item");
+    }
+    const id = `${pane.dataset.tabnameFull}_edit_user_metadata`;
     let editor = extraPageUserMetadataEditors[id];
     if (isNullOrUndefined(editor)) {
         editor = {};
@@ -1087,19 +1157,19 @@ function extraNetworksBtnEditMetadataOnClick(event, tabname_full, card_name) {
         extraPageUserMetadataEditors[id] = editor;
     }
 
-    editor.nameTextarea.value = card_name;
+    editor.nameTextarea.value = parent.dataset.name;
     updateInput(editor.nameTextarea);
 
     editor.button.click();
 
     popup(editor.page);
-
-    event.stopPropagation();
 }
 
 function extraNetworksBtnCopyPathOnClick(event) {
-    copyToClipboard(event.target.dataset.clipboardText);
+    // stopPropagation so we don't also trigger event on parent since this btn is nested.
     event.stopPropagation();
+    const btn = event.target.closest(".copy-path-button");
+    copyToClipboard(btn.dataset.clipboardText);
 }
 
 // ==== MAIN SETUP ====
@@ -1118,12 +1188,6 @@ function extraNetworksSetupEventDelegators() {
         event.stopPropagation();
         const pane = event.target.closest(".extra-network-pane");
         extra_networks_tabs[pane.dataset.tabnameFull].autoSetTreeWidth();
-    });
-
-    // Update search filter whenever the search input's clear button is pressed.
-    window.addEventListener("extra-network-control--search-clear", event => {
-        event.stopPropagation();
-        extra_networks_tabs[event.detail.tabname_full].applyFilter();
     });
 
     // Debounce search text input. This way we only search after user is done typing.
@@ -1147,6 +1211,33 @@ function extraNetworksSetupEventDelegators() {
             closePopup();
         }
     });
+
+    const click_event_map = {
+        ".tree-list-item--dir": extraNetworksTreeDirectoryOnClick,
+        ".tree-list-item--file": extraNetworksTreeFileOnClick,
+        ".card": extraNetworksCardOnClick,
+        ".extra-network-dirs-view-button": extraNetworksBtnDirsViewItemOnClick,
+        ".copy-path-button": extraNetworksBtnCopyPathOnClick,
+        ".edit-button": extraNetworksBtnEditMetadataOnClick,
+        ".metadata-button": extraNetworksBtnShowMetadataOnClick,
+        ".tree-list-item-action-chevron": extraNetworksBtnTreeViewChevronOnClick,
+        ".tree-list-item-action-expand": extraNetworksBtnTreeViewExpandOnClick,
+        ".tree-list-item-action-collapse": extraNetworksBtnTreeViewCollapseOnClick,
+        ".extra-network-control--search-clear": extraNetworksControlSearchClearOnClick,
+        ".extra-network-control--sort-mode": extraNetworksControlSortModeOnClick,
+        ".extra-network-control--sort-dir": extraNetworksControlSortDirOnClick,
+        ".extra-network-control--dirs-view": extraNetworksControlDirsViewOnClick,
+        ".extra-network-control--tree-view": extraNetworksControlTreeViewOnClick,
+        ".extra-network-control--refresh": extraNetworksControlRefreshOnClick,
+    };
+
+    window.addEventListener("click", event => {
+        for (const [selector, handler] of Object.entries(click_event_map)) {
+            if (event.target.closest(selector)) {
+                handler(event);
+            }
+        }
+    })
 }
 
 async function extraNetworksSetupTab(tabname) {

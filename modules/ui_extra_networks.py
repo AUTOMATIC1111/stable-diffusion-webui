@@ -285,7 +285,6 @@ class ExtraNetworksPage:
         data_attributes: Optional[dict] = None,
         dir_is_empty: bool = False,
         item: Optional[dict] = None,
-        onclick_extra: Optional[str] = None,
     ) -> str:
         """Generates HTML for a single row of the Tree View
 
@@ -305,8 +304,6 @@ class ExtraNetworksPage:
                 Whether the directory is empty. Only useful if btn_type=="dir".
             item:
                 Dictionary containing item data such as filename, hash, etc.
-            onclick_extra:
-                Additional javascript code to add to the row's `onclick` attribute.
         """
         if btn_type not in ["file", "dir"]:
             raise ValueError("Invalid button type:", btn_type)
@@ -355,7 +352,6 @@ class ExtraNetworksPage:
                 "btn_type": btn_type,
                 "btn_title": btn_title,
                 "tabname": tabname,
-                "onclick_extra": onclick_extra if onclick_extra else "",
                 "extra_networks_tabname": self.extra_networks_tabname,
                 "action_list_item_action_leading": action_list_item_action_leading,
                 "action_list_item_visual_leading": action_list_item_visual_leading,
@@ -423,10 +419,6 @@ class ExtraNetworksPage:
         if preview:
             background_image = f'<img src="{preview}" class="preview" loading="lazy">'
 
-        onclick = item.get("onclick", None)
-        if onclick is None:
-            onclick = html.escape(f"extraNetworksCardOnClick(event, '{tabname}_{self.extra_networks_tabname}');")
-
         button_row = self.get_button_row(tabname, item)
 
         filename = os.path.normpath(item.get("filename", ""))
@@ -465,6 +457,9 @@ class ExtraNetworksPage:
             "data-allow-neg": self.allow_negative_prompt,
         }
 
+        if self.__class__.__name__ == "ExtraNetworksPageCheckpoints":
+            data_attributes["data-is-checkpoint"] = True
+
         data_attributes_str = ""
         for k, v in data_attributes.items():
             if isinstance(v, (bool,)):
@@ -476,7 +471,6 @@ class ExtraNetworksPage:
 
         return self.card_tpl.format(
             style=style,
-            onclick=onclick,
             data_attributes=data_attributes_str,
             background_image=background_image,
             button_row=button_row,
@@ -635,30 +629,29 @@ class ExtraNetworksPage:
                     # Don't add file if files are disabled in the options.
                     continue
 
-                onclick = node.item.get("onclick", None)
-                if onclick is None:
-                    onclick = html.escape(f"extraNetworksCardOnClick(event, '{tabname}_{self.extra_networks_tabname}');")
-
                 item_name = node.item.get("name", "").strip()
                 data_path = os.path.normpath(node.item.get("filename", "").strip())
+                data_attributes = {
+                    "data-div-id": f'"{node.id}"',
+                    "data-parent-id": f'"{parent_id}"',
+                    "data-tree-entry-type": "file",
+                    "data-name": f'"{item_name}"',
+                    "data-depth": node.depth,
+                    "data-path": f'"{data_path}"',
+                    "data-hash": node.item.get("shorthash", None),
+                    "data-prompt": node.item.get("prompt", "").strip(),
+                    "data-neg-prompt": node.item.get("negative_prompt", "").strip(),
+                    "data-allow-neg": self.allow_negative_prompt,
+                }
+                if self.__class__.__name__ == "ExtraNetworksPageCheckpoints":
+                    data_attributes["data-is-checkpoint"] = True
+
                 tree_item.html = self.build_tree_html_row(
                     tabname=tabname,
                     label=html.escape(item_name),
                     btn_type="file",
-                    data_attributes={
-                        "data-div-id": f'"{node.id}"',
-                        "data-parent-id": f'"{parent_id}"',
-                        "data-tree-entry-type": "file",
-                        "data-name": f'"{item_name}"',
-                        "data-depth": node.depth,
-                        "data-path": f'"{data_path}"',
-                        "data-hash": node.item.get("shorthash", None),
-                        "data-prompt": node.item.get("prompt", "").strip(),
-                        "data-neg-prompt": node.item.get("negative_prompt", "").strip(),
-                        "data-allow-neg": self.allow_negative_prompt,
-                    },
+                    data_attributes=data_attributes,
                     item=node.item,
-                    onclick_extra=onclick,
                 )
                 self.tree[node.id] = tree_item
 
