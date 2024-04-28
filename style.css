@@ -148,6 +148,10 @@ a{
     max-width: 100%;
 }
 
+.layer-wrap > ul {
+    background: var(--background-fill-primary) !important;
+}
+
 /* gradio 3.39 puts a lot of overflow: hidden all over the place for an unknown reason. */
 div.gradio-container, .block.gradio-textbox, div.gradio-group, div.gradio-dropdown{
     overflow: visible !important;
