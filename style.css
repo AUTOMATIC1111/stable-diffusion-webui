@@ -1474,20 +1474,26 @@ body.resizing .resize-handle {
 }
 
 /* BUTTON ELEMENTS */
-/* <button> */
 .tree-list-item {
+    display: grid;
+    grid-auto-rows: 1fr;
+    grid-template-columns: auto 1fr;
+    position: relative;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    user-select: none;
+    border: none;
+}
+
+/* <button> */
+.tree-list-item button {
     display: grid;
     flex: 1;
     width: 100%;
-    position: relative;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    padding-right: 0 !important;
+    padding: 0 !important;
     margin: 0 !important;
     user-select: none;
-    background: transparent;
-    border: none;
-    transition: background 33.333ms linear;
     grid-template-rows: min-content;
     grid-template-areas: "leading-action leading-visual label trailing-visual trailing-action";
     grid-template-columns: min-content min-content minmax(calc(var(--body-text-size) * 1), auto) min-content min-content;
@@ -1496,17 +1502,13 @@ body.resizing .resize-handle {
     text-align: center;
 }
 
-.tree-list-item[data-selected] {
-    background: var(--button-secondary-background-fill);
-}
-
 .tree-list-item:hover {
     -webkit-transition: all 0.05s ease-in-out;
     transition: all 0.05s ease-in-out;
     background: var(--button-secondary-background-fill-hover);
 }
 
-.tree-list-item>span {
+.tree-list-item button > span {
     font-size: var(--button-large-text-size);
     color: var(--button-secondary-text-color);
 }
@@ -1634,17 +1636,6 @@ body.resizing .resize-handle {
     margin: 0;
 }
 
-.extra-network-dirs-view-button:hover {
-    -webkit-transition: all 0.05s ease-in-out;
-    transition: all 0.05s ease-in-out;
-    background: var(--button-secondary-background-fill-hover);
-}
-
-.extra-network-dirs-view-button[data-selected] {
-    background: var(--button-primary-background-fill);
-    border-color: var(--button-primary-border-color);
-}
-
 /* Custom scrollbar style. Only works on chromium based browsers. */
 .styled-scrollbar::-webkit-scrollbar {
     background: transparent;
@@ -1664,4 +1655,121 @@ body.resizing .resize-handle {
 
 .styled-scrollbar::-webkit-scrollbar-button {
     display: none;
+}
+
+.extra-network-dirs-view-button {
+    position: relative;
+    overflow: hidden;
+    z-index: 0;
+    user-select: none;
+}
+
+.extra-network-dirs-view-button:not(.pressed):hover {
+    -webkit-transition: all 0.05s ease-in-out;
+    transition: all 0.05s ease-in-out;
+    background: var(--button-secondary-background-fill-hover);
+}
+
+.extra-network-dirs-view-button[data-selected] {
+    background: var(--button-primary-background-fill);
+}
+
+.extra-network-dirs-view-button[data-selected]:not(.pressed):hover {
+    -webkit-transition: all 0.05s ease-in-out;
+    transition: all 0.05s ease-in-out;
+    background: var(--button-primary-background-fill-hover);
+}
+
+.extra-network-dirs-view-button::after {
+    position: absolute;
+    content: "";
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    transition: all 0.35s cubic-bezier(0.215, 0.61, 0.355, 1);
+    z-index: -1;
+}
+
+.extra-network-dirs-view-button:not([data-selected])::after {
+    background: var(--button-secondary-background-fill-hover);
+}
+
+.extra-network-dirs-view-button[data-selected]::after {
+    background: var(--button-primary-background-fill-hover);
+}
+
+.extra-network-dirs-view-button.pressed::after {
+    width: 100%;
+    transition: all 0.8s cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+.extra-network-dirs-view-button[data-recurse] {
+    box-shadow:
+        inset var(--spacing-sm) 0 0 0 var(--primary-700),
+        inset calc(-1 * var(--spacing-sm)) 0 0 0 var(--primary-700);
+}
+
+.tree-list-item {
+    position: relative;
+    overflow: hidden;
+    z-index: 0;
+}
+
+.tree-list-item:not(.pressed):hover {
+    -webkit-transition: all 0.05s ease-in-out;
+    transition: all 0.05s ease-in-out;
+    background: var(--button-secondary-background-fill-hover);
+}
+
+.tree-list-item[data-selected] {
+    background: var(--button-secondary-background-fill);
+}
+
+.tree-list-item .tree-list-item-action--leading::after {
+    position: absolute;
+    content: "";
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    transition: all 0.35s cubic-bezier(0.215, 0.61, 0.355, 1);
+    z-index: -1;
+}
+
+.tree-list-item.pressed .tree-list-item-action--leading::after {
+    width: 100%;
+    transition: all 0.8s cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+.tree-list-item[data-recurse] .tree-list-item-action--leading .tree-list-item-action-chevron {
+    background: var(--button-primary-background-fill);
+    color: var(--primary-600);
+}
+
+.tree-list-item-indent {
+    height: 100%;
+    position: relative;
+    display: inline-block;
+}
+
+.tree-list-item-indent > * {
+    display: inline-block;
+    position: relative;
+    width: 1em;
+    height: 100%;
+}
+
+.tree-list-item-indent > *::after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    border-left: 1px solid var(--border-color-primary);
+}
+
+.tree-list-item-indent > *[data-selected]::after {
+    border-left: 1px solid var(--button-primary-border-color);
 }

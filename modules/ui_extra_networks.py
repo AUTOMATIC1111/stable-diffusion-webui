@@ -282,6 +282,7 @@ class ExtraNetworksPage:
         label: str,
         btn_type: str,
         btn_title: Optional[str] = None,
+        indent_html: Optional[str] = None,
         data_attributes: Optional[dict] = None,
         dir_is_empty: bool = False,
         item: Optional[dict] = None,
@@ -349,6 +350,7 @@ class ExtraNetworksPage:
             **{
                 "data_attributes": data_attributes_str,
                 "search_terms": "",
+                "indent_spans": indent_html,
                 "btn_type": btn_type,
                 "btn_title": btn_title,
                 "tabname": tabname,
@@ -602,6 +604,20 @@ class ExtraNetworksPage:
             if node.parent is not None:
                 parent_id = node.parent.id
 
+            # Generate indentation for row
+            def gen_indents(node):
+                res = []
+                if node.parent is None:
+                    return res
+                res.append(f"<span data-depth='{node.depth}' data-parent-id='{node.parent.id}'></span>")
+                res.extend(gen_indents(node.parent))
+                return res
+
+            indent_html = gen_indents(node)
+            indent_html.reverse()
+            indent_html = "".join(indent_html)
+            indent_html = f"<div class='tree-list-item-indent'>{indent_html}</div>"
+
             if node.is_dir:  # directory
                 if show_files:
                     dir_is_empty = node.children == []
@@ -614,6 +630,7 @@ class ExtraNetworksPage:
                     btn_type="dir",
                     btn_title=f'"{node.abspath}"',
                     dir_is_empty=dir_is_empty,
+                    indent_html=indent_html,
                     data_attributes={
                         "data-div-id": f'"{node.id}"',
                         "data-parent-id": f'"{parent_id}"',
@@ -650,6 +667,7 @@ class ExtraNetworksPage:
                     tabname=tabname,
                     label=html.escape(item_name),
                     btn_type="file",
+                    indent_html=indent_html,
                     data_attributes=data_attributes,
                     item=node.item,
                 )

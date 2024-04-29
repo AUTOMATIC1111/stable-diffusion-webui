@@ -45,10 +45,12 @@ class ExtraNetworksClusterize extends Clusterize {
     default_sort_dir_str = "ascending";
     default_filter_str = "";
     default_directory_filter_str = "";
+    default_directory_filter_recurse = false;
     sort_mode_str = this.default_sort_mode_str;
     sort_dir_str = this.default_sort_dir_str;
     filter_str = this.default_filter_str;
     directory_filter_str = this.default_directory_filter_str;
+    directory_filter_recurse = this.default_directory_filter_recurse;
 
     constructor(args) {
         super(args);
@@ -150,12 +152,20 @@ class ExtraNetworksClusterize extends Clusterize {
         this.filterData();
     }
 
-    setDirectoryFilterStr(filter_str) {
+    setDirectoryFilterStr(filter_str, recurse) {
+        recurse = recurse === true;
         if (isString(filter_str) && this.directory_filter_str !== filter_str) {
             this.directory_filter_str = filter_str;
         } else if (isNullOrUndefined(filter_str)) {
             this.directory_filter_str = this.default_directory_filter_str;
         }
+
+        if (!isNullOrUndefined(recurse) && this.directory_filter_recurse !== recurse) {
+            this.directory_filter_recurse = recurse;
+        } else if (isNullOrUndefined(recurse)) {
+            this.directory_filter_recurse = this.default_directory_filter_recurse;
+        }
+
         this.filterData();
     }
 
@@ -226,6 +236,27 @@ class ExtraNetworksClusterize extends Clusterize {
     async filterDataDefaultCallback() {
         throw new NotImplementedError();
     }
+
+    updateHtml(elem, new_html) {
+        const existing = this.lru.get(String(elem.dataset.divId));
+        if (new_html) {
+            if (existing === new_html) {
+                return;
+            }
+            const parsed_html = htmlStringToElement(new_html);
+
+            // replace the element in DOM with our new element
+            elem.replaceWith(parsed_html);
+
+            // update the internal cache with the new html
+            this.lru.set(String(elem.dataset.divId), new_html);
+        } else {
+            if (existing === elem.outerHTML) {
+                return;
+            }
+            this.lru.set(String(elem.dataset.divId), elem.outerHTML);
+        }
+    }
 }
 
 class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
@@ -243,35 +274,15 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         super.clear("Loading...");
     }
 
-    getBoxShadow(depth) {
-        /** Generates style for a multi-level box shadow for vertical indentation lines.
-         * This is used to indicate the depth of a directory/file within a directory tree.
-        */
-        let res = "";
-        var style = getComputedStyle(document.body);
-        let bg = style.getPropertyValue("--body-background-fill");
-        let fg = style.getPropertyValue("--border-color-primary");
-        let text_size = style.getPropertyValue("--button-large-text-size");
-        for (let i = 1; i <= depth; i++) {
-            res += `calc((${i} * ${text_size}) - (${text_size} * 0.6)) 0 0 ${bg} inset,`;
-            res += `calc((${i} * ${text_size}) - (${text_size} * 0.4)) 0 0 ${fg} inset`;
-            res += (i + 1 > depth) ? "" : ", ";
-        }
-        return res;
-    }
-
-    onRowSelected(div_id, elem, override) {
+    async onRowSelected(elem) {
         /** Selects a row and deselects all others.
          *
-         *  If both `div_id` and `elem` are null/undefined, then we deselect all rows.
-         *  `override` allows us to manually set the new state instead of toggling.
+         *  If `elem` is null/undefined, then we deselect all rows.
         */
-        if (isNullOrUndefined(div_id) && isNullOrUndefined(elem)) {
-            if (!isNullOrUndefined(this.selected_div_id) && keyExistsLogError(this.data_obj, this.selected_div_id)) {
+        if (isNullOrUndefined(elem)) {
+            if (!isNullOrUndefined(this.selected_div_id)
+                && keyExistsLogError(this.data_obj, this.selected_div_id)) {
                 this.selected_div_id = null;
-                for (const elem of this.content_elem.children) {
-                    delete elem.dataset.selected;
-                }
             }
             return;
         }
@@ -280,20 +291,24 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
             return;
         }
 
+        const div_id = elem.dataset.divId;
+        this.updateHtml(elem);
+
         if (!keyExistsLogError(this.data_obj, div_id)) {
             return;
         }
 
         if (!isNullOrUndefined(this.selected_div_id) && div_id !== this.selected_div_id) {
-            const prev_elem = this.content_elem.querySelector(`[data-div-id="${this.selected_div_id}"]`);
+            const prev_elem = this.content_elem.querySelector(
+                `[data-div-id="${this.selected_div_id}"]`
+            );
             // deselect current selection if exists on page
             if (isElement(prev_elem)) {
-                delete prev_elem.dataset.selected;
                 this.selected_div_id = null;
             }
         }
-        elem.toggleAttribute("data-selected", override);
         this.selected_div_id = "selected" in elem.dataset ? div_id : null;
+        await this.update();
     }
 
     getMaxRowWidth() {
@@ -446,35 +461,28 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
             return this.data_obj_keys_sorted.indexOf(a) - this.data_obj_keys_sorted.indexOf(b);
         });
 
-        // we have to calculate the box shadows here since the element is on the page
-        // at this point and we can get its computed styles.
-        const style = getComputedStyle(document.body);
-        const text_size = style.getPropertyValue("--button-large-text-size");
-
         const res = [];
         for (const div_id of data_ids_sorted) {
             if (!keyExistsLogError(this.data_obj, div_id)) {
                 continue;
             }
             const html_str = data[div_id];
-            const parsed_html = isElement(html_str) ? html_str : htmlStringToElement(html_str);
-            const depth = Number(parsed_html.dataset.depth);
-            parsed_html.style.paddingLeft = `calc(${depth} * ${text_size})`;
-            parsed_html.style.boxShadow = this.getBoxShadow(depth);
+            const elem = isElement(html_str) ? html_str : htmlStringToElement(html_str);
+            
             // Roots come expanded by default. Need to delete if it exists.
-            delete parsed_html.dataset.expanded;
+            delete elem.dataset.expanded;
             if (this.data_obj[div_id].expanded) {
-                parsed_html.dataset.expanded = "";
+                elem.dataset.expanded = "";
             }
 
             // Only allow one item to have `data-selected`.
-            delete parsed_html.dataset.selected;
+            delete elem.dataset.selected;
             if (div_id === this.selected_div_id) {
-                parsed_html.dataset.selected = "";
+                elem.dataset.selected = "";
             }
 
-            res.push(parsed_html.outerHTML);
-            this.lru.set(String(div_id), parsed_html);
+            this.lru.set(String(div_id), elem.outerHTML);
+            res.push(elem.outerHTML);
         }
 
         return res;
@@ -529,16 +537,6 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
         this.data_obj = await this.options.callbacks.initData();
     }
 
-    updateCard(elem, new_html) {
-        const parsed_html = htmlStringToElement(new_html);
-
-        // replace the element in DOM with our new element
-        elem.replaceWith(parsed_html);
-
-        // update the internal cache with the new html
-        this.lru.set(String(elem.dataset.divId), new_html);
-    }
-
     async fetchData(idx_start, idx_end) {
         if (!this.enabled) {
             return [];
@@ -582,13 +580,24 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
     async filterDataDefaultCallback() {
         /** Filters data by a string and returns number of items after filter. */
         let n_visible = 0;
+
         for (const [div_id, v] of Object.entries(this.data_obj)) {
             let visible = true;
-            // Filtering as directory only shows direct children. Case sensitive
-            // comparison against the relative directory of each object.
-            if (this.directory_filter_str && this.directory_filter_str !== v.rel_parent_dir) {
-                this.data_obj[div_id].visible = false;
-                continue;
+            
+            if (this.directory_filter_recurse) {
+                // Filter as directory with recurse shows all nested children.
+                // Case sensitive comparison against the relative directory of each object.
+                if (this.directory_filter_str && !this.directory_filter_str.startsWith(v.rel_parent_dir)) {
+                    this.data_obj[div_id].visible = false;
+                    continue;
+                }
+            } else {
+                // Filtering as directory without recurse only shows direct children.
+                // Case sensitive comparison against the relative directory of each object.
+                if (this.directory_filter_str && this.directory_filter_str !== v.rel_parent_dir) {
+                    this.data_obj[div_id].visible = false;
+                    continue;
+                }
             }
 
             if (v.search_only && this.filter_str.length >= 4) {

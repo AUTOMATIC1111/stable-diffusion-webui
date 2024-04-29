@@ -103,10 +103,13 @@ class ExtraNetworksTab {
     sort_dir_str = "";
     filter_str = "";
     directory_filter_str = "";
+    directory_filter_recurse = false;
     show_prompt = true;
     show_neg_prompt = true;
     compact_prompt_en = false;
     refresh_in_progress = false;
+    dirs_view_en = false;
+    tree_view_en = false;
     constructor({tabname, extra_networks_tabname}) {
         this.tabname = tabname;
         this.extra_networks_tabname = extra_networks_tabname;
@@ -130,6 +133,12 @@ class ExtraNetworksTab {
         ]);
 
         this.txt_search_elem = this.controls_elem.querySelector(".extra-network-control--search-text");
+        this.dirs_view_en = "selected" in this.controls_elem.querySelector(
+            ".extra-network-control--dirs-view"
+        ).dataset;
+        this.tree_view_en = "selected" in this.controls_elem.querySelector(
+            ".extra-network-control--tree-view"
+        ).dataset;
 
         // determine whether compact prompt mode is enabled.
         // cannot await this since it may not exist on page depending on user setting.
@@ -141,7 +150,7 @@ class ExtraNetworksTab {
 
         await Promise.all([this.setupTreeList(), this.setupCardsList()]);
 
-        const sort_mode_elem = this.controls_elem.querySelector(".extra-network-control--sort-mode[data-selected='']");
+        const sort_mode_elem = this.controls_elem.querySelector(".extra-network-control--sort-mode[data-selected]");
         isElementThrowError(sort_mode_elem);
         const sort_dir_elem = this.controls_elem.querySelector(".extra-network-control--sort-dir");
         isElementThrowError(sort_dir_elem);
@@ -177,6 +186,8 @@ class ExtraNetworksTab {
         this.txt_neg_prompt_elem = null;
         this.active_prompt_elem = null;
         this.refresh_in_progress = false;
+        this.tree_view_en = false;
+        this.dirs_view_en = false;
     }
 
     async registerPrompt() {
@@ -240,9 +251,10 @@ class ExtraNetworksTab {
         this.cards_list.setFilterStr(this.filter_str);
     }
 
-    setDirectoryFilterStr(filter_str) {
+    setDirectoryFilterStr(filter_str, recurse) {
         this.directory_filter_str = filter_str;
-        this.cards_list.setDirectoryFilterStr(this.directory_filter_str);
+        this.directory_filter_recurse = recurse;
+        this.cards_list.setDirectoryFilterStr(this.directory_filter_str, this.directory_filter_recurse);
     }
 
     movePrompt(show_prompt = true, show_neg_prompt = true) {
@@ -273,7 +285,7 @@ class ExtraNetworksTab {
             },
             (data) => {
                 if (data && data.html) {
-                    this.cards_list.updateCard(elem, data.html);
+                    this.cards_list.updateHtml(elem, data.html);
                 }
             },
         );
@@ -301,9 +313,13 @@ class ExtraNetworksTab {
         // This is what we actually show/hide, not the inner elements.
         const div_tree = this.tree_list.scroll_elem.closest(".resize-handle-col");
 
+        this.dirs_view_en = "selected" in btn_dirs_view.dataset;
+        this.tree_view_en = "selected" in btn_tree_view.dataset;
         // Remove "hidden" class if button is enabled, otherwise add it.
-        div_dirs.classList.toggle("hidden", !("selected" in btn_dirs_view.dataset));
-        div_tree.classList.toggle("hidden", !("selected" in btn_tree_view.dataset));
+        div_dirs.classList.toggle("hidden", !this.dirs_view_en);
+        div_tree.classList.toggle("hidden", !this.tree_view_en);
+
+        
 
         // Apply the current resize handle classes.
         const resize_handle_row = this.tree_list.scroll_elem.closest(".resize-handle-row");
@@ -316,7 +332,7 @@ class ExtraNetworksTab {
         // apply the previous sort/filter options
         this.setSortMode(this.sort_mode_str);
         this.setSortDir(this.sort_dir_str);
-        this.applyDirectoryFilter(this.directory_filter_str);
+        this.applyDirectoryFilter(this.directory_filter_str, this.directory_filter_recurse);
         this.applyFilter(this.filter_str);
     }
 
@@ -344,9 +360,10 @@ class ExtraNetworksTab {
         this.cards_list.enable(false);
     }
 
-    applyDirectoryFilter(filter_str) {
-        filter_str = !isString(filter_str) ? "" : filter_str;
-        this.setDirectoryFilterStr(filter_str);
+    applyDirectoryFilter(filter_str, recurse) {
+        filter_str = isString(filter_str) ? filter_str : "";
+        recurse = recurse === true || recurse === false ? recurse : false;
+        this.setDirectoryFilterStr(filter_str, recurse);
     }
 
     applyFilter(filter_str) {
@@ -523,95 +540,109 @@ class ExtraNetworksTab {
         row.style.gridTemplateColumns = `${max_width}px ${pad}px 1fr`;
     }
 
-    setDirectoryButtons(source_elem, override) {
-        /** Sets the selected state of buttons in the tree and dirs views.
-         *
-         *  Args:
-         *      source_elem: If passed, the `data-selected` attribute of this element
-         *          will be applied to the tree/dirs view buttons. This element MUST
-         *          have a `data-path` attribute as this will be used to lookup matching
-         *          tree/dirs buttons. If not passed, then the selected state is
-         *          inferred from the existing DOM.
-         *      override: Optional new selected state.
-         */
+    async setDirectoryButtons({source_elem, source_selector, source_class}={}) {
+        // At least one argument must be specified.
+        if (isNullOrUndefined(source_elem)
+            && isNullOrUndefined(source_selector)
+            && isNullOrUndefined(source_class)) {
+            console.error("At least one argument must be specified.")
+            return;
+        }
+
         // Checks if an element exists and is visible on the page.
         const _exists = (elem) => {
             return isElement(elem) && !isNullOrUndefined(elem.offsetParent);
         };
 
+        // source_elem is specified but invalid.
+        if (!isNullOrUndefined(source_elem) && !_exists(source_elem)) {
+            return;
+        }
+
         // Removes `data-selected` attribute from all tree/dirs buttons.
-        const _reset = () => {
-            this.container_elem.querySelectorAll(".extra-network-dirs-view-button").forEach(elem => {
+        const _reset_all_buttons = async ({excluded_elems}={}) => {
+            const elems = this.container_elem.querySelectorAll(
+                ".extra-network-dirs-view-button, .tree-list-item"
+            );
+            for (const elem of elems) {
+                if (Array.isArray(excluded_elems) && excluded_elems.includes(elem)) {
+                    continue;
+                }
+
+                const prev = elem.outerHTML;
                 delete elem.dataset.selected;
-            });
-            this.tree_list.content_elem.querySelectorAll(".tree-list-item").forEach(elem => {
+                delete elem.dataset.recurse;
+                elem.classList.remove("short-pressed");
+                elem.classList.remove("long-pressed");
+                if (prev !== elem.outerHTML) {
+                    this.tree_list.updateHtml(elem);
+                }
+            };
+
+            this.tree_list.content_elem.querySelectorAll(
+                ".tree-list-item-indent [data-selected]"
+            ).forEach(elem => {
                 delete elem.dataset.selected;
             });
         };
-        _reset.bind(this);
+        _reset_all_buttons.bind(this);
 
-        let dirs_btn;
-        let tree_btn;
+        const _set_recursion_depth = (parent_id, state) => {
+            this.tree_list.content_elem.querySelectorAll(
+                `.tree-list-item-indent [data-parent-id="${parent_id}"]`
+            ).forEach(elem => {
+                elem.toggleAttribute("data-selected", state);
+            });
+        };
+        _set_recursion_depth.bind(this);
 
-        let new_state;
-        if (override === true || override === false) {
-            new_state = override;
+        if (!_exists(source_elem) && isString(source_selector)) {
+            source_elem = this.container_elem.querySelector(source_selector);
         }
 
-        if (_exists(source_elem)) {
-            if (isNullOrUndefined(new_state)) {
-                new_state = "selected" in source_elem.dataset;
-            }
-            // Escape backslashes and create raw string to select data attributes with backslash.
-            const src_path = String.raw`${source_elem.dataset.path.replaceAll("\\", "\\\\")}`;
-            dirs_btn = this.container_elem.querySelector(`.extra-network-dirs-view-button[data-path="${src_path}"]`);
-            tree_btn = this.tree_list.content_elem.querySelector(`.tree-list-item[data-path="${src_path}"]`);
-
-            _reset();
-
-            if (new_state) {
-                if (_exists(dirs_btn)) {
-                    dirs_btn.dataset.selected = "";
-                }
-                if (_exists(tree_btn)) {
-                    this.tree_list.onRowSelected(tree_btn.dataset.divId, tree_btn, true);
-                }
-                this.applyDirectoryFilter(source_elem.dataset.path);
-            } else {
-                if (_exists(dirs_btn)) {
-                    delete dirs_btn.dataset.selected;
-                }
-                if (_exists(tree_btn)) {
-                    this.tree_list.onRowSelected(tree_btn.dataset.divId, tree_btn, false);
-                }
-                this.applyDirectoryFilter("");
-            }
-        } else {
-            dirs_btn = this.container_elem.querySelector(".extra-network-dirs-view-button[data-selected='']");
-            tree_btn = this.tree_list.content_elem.querySelector(".tree-list-item[data-selected='']");
-            if (_exists(dirs_btn)) {
-                const src_path = String.raw`${dirs_btn.dataset.path.replaceAll("\\", "\\\\")}`;
-                tree_btn = this.tree_list.content_elem.querySelector(`.tree-list-item[data-path="${src_path}"]`);
-                if (_exists(tree_btn)) {
-                    // Filter is already applied from dirs btn. Just need to select the tree btn.
-                    _reset();
-                    dirs_btn.dataset.selected = "";
-                    this.tree_list.onRowSelected(tree_btn.dataset.divId, tree_btn, true);
-                }
-            } else if (_exists(tree_btn)) {
-                const src_path = String.raw`${tree_btn.dataset.path.replaceAll("\\", "\\\\")}`;
-                dirs_btn = this.container_elem.querySelector(`.extra-network-dirs-view-button[data-path="${src_path}"]`);
-                if (_exists(dirs_btn)) {
-                    // Filter is already applied from tree btn. Just need to select the dirs btn.
-                    _reset();
-                    dirs_btn.dataset.selected = "";
-                    this.tree_list.onRowSelected(tree_btn.dataset.divId, tree_btn, true);
-                }
-            } else {
-                // No tree/dirs button is selected. Apply empty directory filter.
-                this.applyDirectoryFilter("");
-            }
+        if (!_exists(source_elem) && isString(source_class)) {
+            source_elem = this.container_elem.querySelector(`${source_class}[data-selected]`);
         }
+
+        // If we got here with no source elem, then we will take this to mean that
+        // we are deselecting all.
+        if (!_exists(source_elem)) {
+            _reset_all_buttons();
+            await this.tree_list.onRowSelected(); // no args deselects all.
+            return;
+        }
+
+        const source_is_tree = source_elem.classList.contains("tree-list-item");
+        const data_path = String.raw`${source_elem.dataset.path.replaceAll("\\", "\\\\")}`;
+        const other_selector = source_is_tree ? ".extra-network-dirs-view-button" : ".tree-list-item";
+        const other_elem = document.querySelector(`${other_selector}[data-path="${data_path}"]`);
+        if (!_exists(other_elem)) {
+            // Can't reflect attributes since no matching element exists.
+            // This can happen when tree/dirs view is disabled or tree is collapsed.
+            _reset_all_buttons({excluded_elems: [source_elem]});
+            if (source_is_tree) {
+                await this.tree_list.onRowSelected(source_elem);
+                _set_recursion_depth(source_elem.dataset.divId, "recurse" in source_elem.dataset);
+            } else {
+                await this.tree_list.onRowSelected();
+            }
+            return;
+        }
+
+        const data_selected = "selected" in source_elem.dataset;
+        const data_recurse = "recurse" in source_elem.dataset;
+        const short_pressed = source_elem.classList.contains("short-pressed");
+        const long_pressed = source_elem.classList.contains("long-pressed");
+
+        _reset_all_buttons({excluded_elems: [source_elem, other_elem]});
+        other_elem.toggleAttribute("data-selected", data_selected);
+        other_elem.toggleAttribute("data-recurse", data_recurse);
+        other_elem.classList.toggle("short-pressed", short_pressed);
+        other_elem.classList.toggle("long-pressed", long_pressed);
+
+        await this.tree_list.onRowSelected(source_is_tree ? source_elem : other_elem);
+        const div_id = source_is_tree ? source_elem.dataset.divId : other_elem.dataset.divId;
+        _set_recursion_depth(div_id, data_recurse);
     }
 }
 
@@ -859,17 +890,21 @@ async function extraNetworksTabSelected(tabname_full, show_prompt, show_neg_prom
     }
 }
 
+function extraNetworksBtnDirsViewItemOnLongPress(event) {
+    const btn = event.target.closest(".extra-network-dirs-view-button");
+    const pane = btn.closest(".extra-network-pane");
+    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
+
+    tab.setDirectoryButtons({source_elem: btn});
+}
+
 function extraNetworksBtnDirsViewItemOnClick(event) {
     /** Handles `onclick` events for buttons in the directory view. */
     const btn = event.target.closest(".extra-network-dirs-view-button");
     const pane = btn.closest(".extra-network-pane");
     const tab = extra_networks_tabs[pane.dataset.tabnameFull];
 
-    if ("selected" in btn.dataset) {
-        tab.setDirectoryButtons(btn, false);
-    } else {
-        tab.setDirectoryButtons(btn, true);
-    }
+    tab.setDirectoryButtons({source_elem: btn});
 }
 
 function extraNetworksControlSearchClearOnClick(event) {
@@ -891,6 +926,7 @@ function extraNetworksControlSortModeOnClick(event) {
     const tab = extra_networks_tabs[controls.dataset.tabnameFull];
     tab.controls_elem.querySelectorAll(".extra-network-control--sort-mode").forEach(elem => {
         delete elem.dataset.selected;
+        delete elem.dataset.recurse;
     });
 
     btn.dataset.selected = "";
@@ -923,7 +959,7 @@ function extraNetworksControlSortDirOnClick(event) {
     tab.setSortDir(sort_dir_str);
 }
 
-function extraNetworksControlTreeViewOnClick(event) {
+async function extraNetworksControlTreeViewOnClick(event) {
     /** Handles `onclick` events for the Tree View button.
      *
      * Toggles the tree view in the extra networks pane.
@@ -931,33 +967,31 @@ function extraNetworksControlTreeViewOnClick(event) {
     const btn = event.target.closest(".extra-network-control--tree-view");
     const controls = btn.closest(".extra-network-controls");
     const tab = extra_networks_tabs[controls.dataset.tabnameFull];
-    const show = !("selected" in btn.dataset);
+    tab.tree_view_en = !("selected" in btn.dataset);
     if ("selected" in btn.dataset) {
         delete btn.dataset.selected;
     } else {
         btn.dataset.selected = "";
     }
-
-    if (!show) {
-        // If hiding, we want to deselect all buttons prior to hiding.
-        tab.tree_list.content_elem.querySelectorAll(
-            ".tree-list-item[data-selected='']"
-        ).forEach(elem => {
-            delete elem.dataset.selected;
-        });
+    
+    // If hiding, clear the tree list selections before hiding it.
+    if (!tab.tree_view_en) {
+        await tab.tree_list.onRowSelected();
     }
 
-    tab.tree_list.scroll_elem.parentElement.classList.toggle("hidden", !show);
-    tab.tree_list.enable(show);
+    tab.tree_list.scroll_elem.parentElement.classList.toggle("hidden", !tab.tree_view_en);
+    tab.tree_list.enable(tab.tree_view_en);
 
     // Apply the resize-handle-hidden class to the resize-handle-row.
     // NOTE: This can be simplified using only css with the ":has" selector however
     // this is only recently supported in firefox. So for now we just add a class
     // to the resize-handle-row instead.
     const resize_handle_row = tab.tree_list.scroll_elem.closest(".resize-handle-row");
-    resize_handle_row.classList.toggle("resize-handle-hidden", !show);
+    resize_handle_row.classList.toggle("resize-handle-hidden", !tab.tree_view_en);
 
-    tab.setDirectoryButtons();
+    if (tab.tree_view_en && tab.dirs_view_en) {
+        tab.setDirectoryButtons({source_class: ".extra-network-dirs-view-button"});
+    }
 }
 
 function extraNetworksControlDirsViewOnClick(event) {
@@ -968,27 +1002,30 @@ function extraNetworksControlDirsViewOnClick(event) {
     const btn = event.target.closest(".extra-network-control--dirs-view");
     const controls = btn.closest(".extra-network-controls");
     const tab = extra_networks_tabs[controls.dataset.tabnameFull];
-    const show = !("selected" in btn.dataset);
-    if (show) {
+    tab.dirs_view_en = !("selected" in btn.dataset);
+    if (tab.dirs_view_en) {
         btn.dataset.selected = "";
     } else {
         delete btn.dataset.selected;
     }
 
-    if (!show) {
+    if (!tab.dirs_view_en) {
         // If hiding, we want to deselect all buttons prior to hiding.
         tab.container_elem.querySelectorAll(
-            ".extra-network-dirs-view-button[data-selected='']"
+            ".extra-network-dirs-view-button[data-selected]"
         ).forEach(elem => {
             delete elem.dataset.selected;
+            delete elem.dataset.recurse;
         });
     }
 
     tab.container_elem.querySelector(
         ".extra-network-content--dirs-view"
-    ).classList.toggle("hidden", !show);
+    ).classList.toggle("hidden", !tab.dirs_view_en);
 
-    tab.setDirectoryButtons();
+    if (tab.dirs_view_en && tab.tree_view_en) {
+        tab.setDirectoryButtons({source_class: ".tree-list-item"});
+    }
 }
 
 function extraNetworksControlRefreshOnClick(event) {
@@ -1015,16 +1052,16 @@ function extraNetworksControlRefreshOnClick(event) {
     }, EXTRA_NETWORKS_REFRESH_INTERNAL_DEBOUNCE_TIMEOUT_MS);
 }
 
-function extraNetworksSelectModel(tab, opts = {prompt, neg_prompt, allow_neg, checkpoint_name}) {
-    if (opts.checkpoint_name) {
-        selectCheckpoint(opts.checkpoint_name);
-    } else if (opts.neg_prompt) {
-        extraNetworksUpdatePrompt(tab.txt_prompt_elem, opts.prompt);
-        extraNetworksUpdatePrompt(tab.txt_neg_prompt_elem, opts.neg_prompt);
-    } else if (opts.allow_neg) {
-        extraNetworksUpdatePrompt(tab.active_prompt_elem, opts.prompt);
+function extraNetworksSelectModel({tab, prompt, neg_prompt, allow_neg, checkpoint_name}) {
+    if (checkpoint_name) {
+        selectCheckpoint(checkpoint_name);
+    } else if (neg_prompt) {
+        extraNetworksUpdatePrompt(tab.txt_prompt_elem, prompt);
+        extraNetworksUpdatePrompt(tab.txt_neg_prompt_elem, neg_prompt);
+    } else if (allow_neg) {
+        extraNetworksUpdatePrompt(tab.active_prompt_elem, prompt);
     } else {
-        extraNetworksUpdatePrompt(tab.txt_prompt_elem, opts.prompt);
+        extraNetworksUpdatePrompt(tab.txt_prompt_elem, prompt);
     }
 }
 
@@ -1042,7 +1079,8 @@ function extraNetworksCardOnClick(event) {
     if ("isCheckpoint" in btn.dataset) {
         checkpoint_name = btn.dataset.name;
     }
-    extraNetworksSelectModel(tab, {
+    extraNetworksSelectModel({
+        tab: tab,
         prompt: btn.dataset.prompt,
         neg_prompt: btn.dataset.negPrompt,
         allow_neg: btn.dataset.allowNeg,
@@ -1065,7 +1103,8 @@ function extraNetworksTreeFileOnClick(event) {
     if ("isCheckpoint" in btn.dataset) {
         checkpoint_name = btn.dataset.name;
     }
-    extraNetworksSelectModel(tab, {
+    extraNetworksSelectModel({
+        tab: tab,
         prompt: btn.dataset.prompt,
         neg_prompt: btn.dataset.negPrompt,
         allow_neg: btn.dataset.allowNeg,
@@ -1073,18 +1112,41 @@ function extraNetworksTreeFileOnClick(event) {
     });
 }
 
+async function extraNetworksTreeDirectoryOnLongPress(event) {
+    // Do not select the row if its child button-row is the target of the event.
+    if (event.target.closest(".tree-list-item-action")) {
+        return;
+    }
+
+    const btn = event.target.closest(".tree-list-item");
+    const pane = btn.closest(".extra-network-pane");
+    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
+
+    tab.setDirectoryButtons({source_elem: btn});
+}
+
+async function extraNetworksTreeDirectoryOnDblClick(event) {
+    // stopPropagation so we don't also trigger event on parent since this btn is nested.
+    event.stopPropagation();
+    const btn = event.target.closest(".tree-list-item");
+    if ("expanded" in btn.dataset) {
+        await extraNetworksBtnTreeViewCollapseOnClick(event);
+    } else {
+        await extraNetworksBtnTreeViewExpandOnClick(event);
+    }
+}
+
 async function extraNetworksTreeDirectoryOnClick(event) {
     // Do not select the row if its child button-row is the target of the event.
     if (event.target.closest(".tree-list-item-action")) {
         return;
     }
+
     const btn = event.target.closest(".tree-list-item");
     const pane = btn.closest(".extra-network-pane");
-    const div_id = btn.dataset.divId;
     const tab = extra_networks_tabs[pane.dataset.tabnameFull];
 
-    await tab.tree_list.onRowSelected(div_id, btn);
-    tab.setDirectoryButtons(btn);
+    tab.setDirectoryButtons({source_elem: btn});
 }
 
 async function extraNetworksBtnTreeViewChevronOnClick(event) {
@@ -1097,33 +1159,31 @@ async function extraNetworksBtnTreeViewChevronOnClick(event) {
     const tab = extra_networks_tabs[pane.dataset.tabnameFull];
 
     await tab.tree_list.onRowExpandClick(div_id, btn);
-    tab.setDirectoryButtons();
+    tab.setDirectoryButtons({source_class: ".tree-list-item"});
 }
 
 async function extraNetworksBtnTreeViewExpandOnClick(event) {
     // stopPropagation so we don't also trigger event on parent since this btn is nested.
     event.stopPropagation();
-    const btn = event.target.closest(".tree-list-item-action-expand");
-    const row = event.target.closest(".tree-list-item");
+    const btn = event.target.closest(".tree-list-item");
     const pane = btn.closest(".extra-network-pane");
-    const div_id = row.dataset.divId;
+    const div_id = btn.dataset.divId;
     const tab = extra_networks_tabs[pane.dataset.tabnameFull];
 
     await tab.tree_list.onExpandAllClick(div_id);
-    tab.setDirectoryButtons();
+    tab.setDirectoryButtons({source_class: ".tree-list-item"});
 }
 
 async function extraNetworksBtnTreeViewCollapseOnClick(event) {
     // stopPropagation so we don't also trigger event on parent since this btn is nested.
     event.stopPropagation();
-    const btn = event.target.closest(".tree-list-item-action-collapse");
-    const row = event.target.closest(".tree-list-item");
+    const btn = event.target.closest(".tree-list-item");
     const pane = btn.closest(".extra-network-pane");
-    const div_id = row.dataset.divId;
+    const div_id = btn.dataset.divId;
     const tab = extra_networks_tabs[pane.dataset.tabnameFull];
 
     await tab.tree_list.onCollapseAllClick(div_id);
-    tab.setDirectoryButtons();
+    tab.setDirectoryButtons({source_class: ".tree-list-item"});
 }
 
 function extraNetworksBtnShowMetadataOnClick(event) {
@@ -1213,10 +1273,8 @@ function extraNetworksSetupEventDelegators() {
     });
 
     const click_event_map = {
-        ".tree-list-item--dir": extraNetworksTreeDirectoryOnClick,
         ".tree-list-item--file": extraNetworksTreeFileOnClick,
         ".card": extraNetworksCardOnClick,
-        ".extra-network-dirs-view-button": extraNetworksBtnDirsViewItemOnClick,
         ".copy-path-button": extraNetworksBtnCopyPathOnClick,
         ".edit-button": extraNetworksBtnEditMetadataOnClick,
         ".metadata-button": extraNetworksBtnShowMetadataOnClick,
@@ -1237,7 +1295,135 @@ function extraNetworksSetupEventDelegators() {
                 handler(event);
             }
         }
-    })
+    });
+
+    // effectively just a click but we need to handle separate from "click" events
+    // since the same elements are also handling long press events.
+    const short_press_event_map = {
+        ".tree-list-item--dir": extraNetworksTreeDirectoryOnClick,
+        ".extra-network-dirs-view-button": extraNetworksBtnDirsViewItemOnClick,
+    }
+    const short_press_ignore_map = {
+        ".tree-list-item--dir": [".tree-list-item-action"],
+    }
+    const long_press_event_map = {
+        ".tree-list-item--dir": extraNetworksTreeDirectoryOnLongPress,
+        ".extra-network-dirs-view-button": extraNetworksBtnDirsViewItemOnLongPress,
+    };
+    const long_press_ignore_map = {
+        ".tree-list-item--dir": [".tree-list-item-action"],
+    }
+
+    const dbl_press_event_map = {
+        ".tree-list-item--dir": extraNetworksTreeDirectoryOnDblClick,
+    }
+
+    const dbl_press_ignore_map = {
+        ".tree-list-item--dir": [".tree-list-item-action"],
+    }
+    
+    const on_short_press = (event, elem, selector) => {
+        let ignores = short_press_ignore_map[selector];
+        ignores = ignores || [];
+        for (const ignore of Object.values(ignores)) {
+            if (event.target.closest(ignore)) {
+                return;
+            }
+        }
+        elem.classList.remove("pressed");
+        // Toggle
+        if (elem.classList.contains("long-pressed")) {
+            elem.classList.remove("long-pressed");
+            delete elem.dataset.selected;
+            delete elem.dataset.recurse;
+        } else {
+            elem.classList.toggle("short-pressed");
+            elem.toggleAttribute("data-selected");
+        }
+
+        elem.dispatchEvent(new Event("shortpress", event));
+        short_press_event_map[selector](event);
+    };
+
+    const on_long_press = (event, elem, selector) => {
+        let ignores = long_press_ignore_map[selector];
+        ignores = ignores || [];
+        for (const ignore of Object.values(ignores)) {
+            if (event.target.closest(ignore)) {
+                return;
+            }
+        }
+        elem.classList.remove("pressed");
+        // If long pressed, we deselect.
+        // Else we set as long pressed.
+        if (elem.classList.contains("short-pressed")) {
+            elem.classList.remove("short-pressed");
+            elem.classList.add("long-pressed");
+            elem.dataset.selected = "";
+            elem.dataset.recurse = "";
+        } else {
+            elem.classList.toggle("long-pressed");
+            elem.toggleAttribute("data-selected");
+            elem.toggleAttribute("data-recurse");
+        }
+
+        elem.dispatchEvent(new Event("longpress", event));
+        long_press_event_map[selector](event);
+    };
+
+    const on_dbl_press = (event, elem, selector) => {
+        let ignores = dbl_press_ignore_map[selector];
+        ignores = ignores || [];
+        for (const ignore of Object.values(ignores)) {
+            if (event.target.closest(ignore)) {
+                return;
+            }
+        }
+        elem.classList.remove("pressed");
+        dbl_press_event_map[selector](event);
+    }
+
+    let press_timer;
+    let press_time_ms = 800;
+    const event_maps = [
+        short_press_event_map,
+        long_press_event_map,
+        dbl_press_event_map,
+    ];
+    const selectors = Object.keys(Object.assign({}, ...event_maps));
+
+    window.addEventListener("mousedown", event => {
+        for (const selector of selectors) {
+            const elem = event.target.closest(selector);
+            if (elem) {
+                event.preventDefault();
+                elem.classList.add("pressed");
+                press_timer = setTimeout((event) => {
+                    on_long_press(event, elem, selector);
+                }, press_time_ms, event);
+                return;
+            }
+        }
+    });
+
+    window.addEventListener("mouseup", event => {
+        for (const selector of selectors) {
+            const elem = event.target.closest(selector);
+            if (elem) {
+                event.preventDefault();
+                clearTimeout(press_timer);
+                
+                if (elem.classList.contains("pressed")) {
+                    if (event.detail === 1) {
+                        on_short_press(event, elem, selector);
+                    } else if (event.detail === 2) {
+                        on_dbl_press(event, elem, selector);
+                    }
+                }
+                return;
+            }
+        }
+    });
 }
 
 async function extraNetworksSetupTab(tabname) {
