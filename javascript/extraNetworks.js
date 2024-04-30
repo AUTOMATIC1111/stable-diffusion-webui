@@ -1455,7 +1455,7 @@ function extraNetworksSetupEventDelegators() {
             }
         }
 
-        if (event.detail === 2) {
+        if (event.detail % 2 === 0) {
             for (const obj of dbl_press_event_map) {
                 const elem = event.target.closest(obj.selector);
                 const neg = obj.negative ? event.target.closest(obj.negative) : null;
