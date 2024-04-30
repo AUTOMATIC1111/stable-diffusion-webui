@@ -1375,15 +1375,17 @@ function extraNetworksSetupEventDelegators() {
         }
         // If long pressed, we deselect.
         // Else we set as long pressed.
-        if (elem.classList.contains("short-pressed")) {
-            elem.classList.remove("short-pressed");
-            elem.classList.add("long-pressed");
-            elem.dataset.selected = "";
-            elem.dataset.recurse = "";
+        if (elem.classList.contains("long-pressed")) {
+            elem.classList.remove("long-pressed");
+            delete elem.dataset.recurse;
+            // Don't want to remove selected state if btn was previously short-pressed.
+            if (!elem.classList.contains("short-pressed")) {
+                delete elem.dataset.selected;
+            }
         } else {
             elem.classList.toggle("long-pressed");
-            elem.toggleAttribute("data-selected");
-            elem.toggleAttribute("data-recurse");
+            elem.dataset.selected = "";
+            elem.dataset.recurse = "";
         }
 
         elem.dispatchEvent(new Event("longpress", event));
