@@ -540,11 +540,12 @@ class ExtraNetworksTab {
         row.style.gridTemplateColumns = `${max_width}px ${pad}px 1fr`;
     }
 
-    async setDirectoryButtons({source_elem, source_selector, source_class}={}) {
+    async setDirectoryButtons({source_elem, source_selector, source_class, reset_all}={}) {
         // At least one argument must be specified.
         if (isNullOrUndefined(source_elem)
             && isNullOrUndefined(source_selector)
-            && isNullOrUndefined(source_class)) {
+            && isNullOrUndefined(source_class)
+            && isNullOrUndefined(reset_all)) {
             console.error("At least one argument must be specified.")
             return;
         }
@@ -596,6 +597,13 @@ class ExtraNetworksTab {
         };
         _set_recursion_depth.bind(this);
 
+        if (reset_all === true) {
+            _reset_all_buttons();
+            await this.tree_list.onRowSelected(); // no args deselects all.
+            this.applyDirectoryFilter();
+            return;
+        }
+
         if (!_exists(source_elem) && isString(source_selector)) {
             source_elem = this.container_elem.querySelector(source_selector);
         }
@@ -604,11 +612,17 @@ class ExtraNetworksTab {
             source_elem = this.container_elem.querySelector(`${source_class}[data-selected]`);
         }
 
+        // try to find any selected buttons to use as a source.
+        if (!_exists(source_elem)) {
+            source_elem = this.container_elem.querySelector("[data-selected]");
+        }
+
         // If we got here with no source elem, then we will take this to mean that
         // we are deselecting all.
         if (!_exists(source_elem)) {
             _reset_all_buttons();
             await this.tree_list.onRowSelected(); // no args deselects all.
+            this.applyDirectoryFilter();
             return;
         }
 
@@ -626,6 +640,10 @@ class ExtraNetworksTab {
             } else {
                 await this.tree_list.onRowSelected();
             }
+            this.applyDirectoryFilter(
+                "selected" in source_elem.dataset ? data_path : null,
+                "recurse" in source_elem.dataset,
+            );
             return;
         }
 
@@ -643,6 +661,10 @@ class ExtraNetworksTab {
         await this.tree_list.onRowSelected(source_is_tree ? source_elem : other_elem);
         const div_id = source_is_tree ? source_elem.dataset.divId : other_elem.dataset.divId;
         _set_recursion_depth(div_id, data_recurse);
+        this.applyDirectoryFilter(
+            "selected" in source_elem.dataset ? data_path : null,
+            "recurse" in source_elem.dataset,
+        );
     }
 }
 
@@ -1129,11 +1151,11 @@ async function extraNetworksTreeDirectoryOnDblClick(event) {
     // stopPropagation so we don't also trigger event on parent since this btn is nested.
     event.stopPropagation();
     const btn = event.target.closest(".tree-list-item");
-    if ("expanded" in btn.dataset) {
-        await extraNetworksBtnTreeViewCollapseOnClick(event);
-    } else {
-        await extraNetworksBtnTreeViewExpandOnClick(event);
-    }
+    const pane = btn.closest(".extra-network-pane");
+    const div_id = btn.dataset.divId;
+    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
+    await tab.tree_list.toggleRowExpanded(div_id);
+    tab.setDirectoryButtons({source_class: ".tree-list-item"});
 }
 
 async function extraNetworksTreeDirectoryOnClick(event) {
@@ -1141,48 +1163,36 @@ async function extraNetworksTreeDirectoryOnClick(event) {
     if (event.target.closest(".tree-list-item-action")) {
         return;
     }
-
     const btn = event.target.closest(".tree-list-item");
     const pane = btn.closest(".extra-network-pane");
     const tab = extra_networks_tabs[pane.dataset.tabnameFull];
-
     tab.setDirectoryButtons({source_elem: btn});
+}
+
+async function extraNetworksTreeDirectoryChevronOnLongPress(event) {
+    // stopPropagation so we don't also trigger event on parent since this btn is nested.
+    event.stopPropagation();
+    const chevron = event.target.closest(".tree-list-item-action--chevron");
+    const btn = event.target.closest(".tree-list-item");
+    const pane = btn.closest(".extra-network-pane");
+    const div_id = btn.dataset.divId;
+    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
+    if ("expanded" in btn.dataset) {
+        await tab.tree_list.collapseAllRows(div_id);
+    } else {
+        await tab.tree_list.expandAllRows(div_id);
+    }
+    tab.setDirectoryButtons({source_class: ".tree-list-item"});
 }
 
 async function extraNetworksBtnTreeViewChevronOnClick(event) {
     // stopPropagation so we don't also trigger event on parent since this btn is nested.
     event.stopPropagation();
-    const btn = event.target.closest(".tree-list-item-action-chevron");
-    const row = event.target.closest(".tree-list-item");
-    const pane = btn.closest(".extra-network-pane");
-    const div_id = row.dataset.divId;
-    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
-
-    await tab.tree_list.onRowExpandClick(div_id, btn);
-    tab.setDirectoryButtons({source_class: ".tree-list-item"});
-}
-
-async function extraNetworksBtnTreeViewExpandOnClick(event) {
-    // stopPropagation so we don't also trigger event on parent since this btn is nested.
-    event.stopPropagation();
     const btn = event.target.closest(".tree-list-item");
     const pane = btn.closest(".extra-network-pane");
     const div_id = btn.dataset.divId;
     const tab = extra_networks_tabs[pane.dataset.tabnameFull];
-
-    await tab.tree_list.onExpandAllClick(div_id);
-    tab.setDirectoryButtons({source_class: ".tree-list-item"});
-}
-
-async function extraNetworksBtnTreeViewCollapseOnClick(event) {
-    // stopPropagation so we don't also trigger event on parent since this btn is nested.
-    event.stopPropagation();
-    const btn = event.target.closest(".tree-list-item");
-    const pane = btn.closest(".extra-network-pane");
-    const div_id = btn.dataset.divId;
-    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
-
-    await tab.tree_list.onCollapseAllClick(div_id);
+    await tab.tree_list.toggleRowExpanded(div_id);
     tab.setDirectoryButtons({source_class: ".tree-list-item"});
 }
 
@@ -1278,9 +1288,6 @@ function extraNetworksSetupEventDelegators() {
         ".copy-path-button": extraNetworksBtnCopyPathOnClick,
         ".edit-button": extraNetworksBtnEditMetadataOnClick,
         ".metadata-button": extraNetworksBtnShowMetadataOnClick,
-        ".tree-list-item-action-chevron": extraNetworksBtnTreeViewChevronOnClick,
-        ".tree-list-item-action-expand": extraNetworksBtnTreeViewExpandOnClick,
-        ".tree-list-item-action-collapse": extraNetworksBtnTreeViewCollapseOnClick,
         ".extra-network-control--search-clear": extraNetworksControlSearchClearOnClick,
         ".extra-network-control--sort-mode": extraNetworksControlSortModeOnClick,
         ".extra-network-control--sort-dir": extraNetworksControlSortDirOnClick,
@@ -1297,40 +1304,56 @@ function extraNetworksSetupEventDelegators() {
         }
     });
 
-    // effectively just a click but we need to handle separate from "click" events
-    // since the same elements are also handling long press events.
-    const short_press_event_map = {
-        ".tree-list-item--dir": extraNetworksTreeDirectoryOnClick,
-        ".extra-network-dirs-view-button": extraNetworksBtnDirsViewItemOnClick,
-    }
-    const short_press_ignore_map = {
-        ".tree-list-item--dir": [".tree-list-item-action"],
-    }
-    const long_press_event_map = {
-        ".tree-list-item--dir": extraNetworksTreeDirectoryOnLongPress,
-        ".extra-network-dirs-view-button": extraNetworksBtnDirsViewItemOnLongPress,
-    };
-    const long_press_ignore_map = {
-        ".tree-list-item--dir": [".tree-list-item-action"],
-    }
+    // Order in these maps matters since we may have separate events for both a div
+    // and for a child within that div however if the child is clicked then we wouldn't
+    // want to handle clicks for the parent as well. In this case, order the child's event
+    // before the parent and the parent will be ignored.
+    // Can add entries with handler=null to forcefully ignore specific event types.
 
-    const dbl_press_event_map = {
-        ".tree-list-item--dir": extraNetworksTreeDirectoryOnDblClick,
-    }
+    const short_press_event_map = [
+        {
+            "selector": ".tree-list-item-action--chevron",
+            "handler": extraNetworksBtnTreeViewChevronOnClick,
+        },
+        {
+            "selector": ".tree-list-item--dir",
+            "negative": ".tree-list-item-action",
+            "handler": extraNetworksTreeDirectoryOnClick,
+        },
+        {
+            "selector": ".extra-network-dirs-view-button",
+            "handler": extraNetworksBtnDirsViewItemOnClick,
+        },
+    ];
 
-    const dbl_press_ignore_map = {
-        ".tree-list-item--dir": [".tree-list-item-action"],
-    }
-    
-    const on_short_press = (event, elem, selector) => {
-        let ignores = short_press_ignore_map[selector];
-        ignores = ignores || [];
-        for (const ignore of Object.values(ignores)) {
-            if (event.target.closest(ignore)) {
-                return;
-            }
+    const long_press_event_map = [
+        {
+            "selector": ".tree-list-item-action--chevron",
+            "handler": extraNetworksTreeDirectoryChevronOnLongPress,
+        },
+        {
+            "selector": ".tree-list-item--dir",
+            "negative": ".tree-list-item-action",
+            "handler": extraNetworksTreeDirectoryOnLongPress,
+        },
+        {
+            "selector": ".extra-network-dirs-view-button",
+            "handler": extraNetworksBtnDirsViewItemOnLongPress,
+        },
+    ];
+
+    const dbl_press_event_map = [
+        {
+            "selector": ".tree-list-item--dir",
+            "negative": ".tree-list-item-action",
+            "handler": extraNetworksTreeDirectoryOnDblClick,
+        },
+    ];
+
+    const on_short_press = (event, elem, handler) => {
+        if (!handler) {
+            return;
         }
-        elem.classList.remove("pressed");
         // Toggle
         if (elem.classList.contains("long-pressed")) {
             elem.classList.remove("long-pressed");
@@ -1342,18 +1365,13 @@ function extraNetworksSetupEventDelegators() {
         }
 
         elem.dispatchEvent(new Event("shortpress", event));
-        short_press_event_map[selector](event);
+        handler(event);
     };
 
-    const on_long_press = (event, elem, selector) => {
-        let ignores = long_press_ignore_map[selector];
-        ignores = ignores || [];
-        for (const ignore of Object.values(ignores)) {
-            if (event.target.closest(ignore)) {
-                return;
-            }
+    const on_long_press = (event, elem, handler) => {
+        if (!handler) {
+            return;
         }
-        elem.classList.remove("pressed");
         // If long pressed, we deselect.
         // Else we set as long pressed.
         if (elem.classList.contains("short-pressed")) {
@@ -1368,61 +1386,91 @@ function extraNetworksSetupEventDelegators() {
         }
 
         elem.dispatchEvent(new Event("longpress", event));
-        long_press_event_map[selector](event);
+        handler(event);
     };
 
-    const on_dbl_press = (event, elem, selector) => {
-        let ignores = dbl_press_ignore_map[selector];
-        ignores = ignores || [];
-        for (const ignore of Object.values(ignores)) {
-            if (event.target.closest(ignore)) {
-                return;
-            }
+    const on_dbl_press = (event, elem, handler) => {
+        if (!handler) {
+            return;
         }
-        elem.classList.remove("pressed");
-        dbl_press_event_map[selector](event);
+        handler(event);
     }
 
     let press_timer;
     let press_time_ms = 800;
-    const event_maps = [
-        short_press_event_map,
-        long_press_event_map,
-        dbl_press_event_map,
-    ];
-    const selectors = Object.keys(Object.assign({}, ...event_maps));
 
     window.addEventListener("mousedown", event => {
-        for (const selector of selectors) {
-            const elem = event.target.closest(selector);
-            if (elem) {
+        for (const obj of short_press_event_map) {
+            const elem = event.target.closest(obj.selector);
+            const neg = obj.negative ? event.target.closest(obj.negative) : null;
+            if (elem && !neg) {
                 event.preventDefault();
+                event.stopPropagation();
                 elem.classList.add("pressed");
-                press_timer = setTimeout((event) => {
-                    on_long_press(event, elem, selector);
-                }, press_time_ms, event);
-                return;
+            }
+        }
+
+        for (const obj of long_press_event_map) {
+            const elem = event.target.closest(obj.selector);
+            const neg = obj.negative ? event.target.closest(obj.negative) : null;
+            if (elem && !neg) {
+                event.preventDefault();
+                event.stopPropagation();
+                elem.classList.add("pressed");
+                press_timer = setTimeout(() => {
+                    elem.classList.remove("pressed");
+                    on_long_press(event, elem, obj.handler);
+                }, press_time_ms);
+            }
+        }
+
+        for (const obj of dbl_press_event_map) {
+            const elem = event.target.closest(obj.selector);
+            const neg = obj.negative ? event.target.closest(obj.negative) : null;
+            if (elem && !neg) {
+                event.preventDefault();
+                event.stopPropagation();
+                elem.classList.add("pressed");
             }
         }
     });
 
     window.addEventListener("mouseup", event => {
-        for (const selector of selectors) {
-            const elem = event.target.closest(selector);
-            if (elem) {
+        for (const obj of short_press_event_map) {
+            const elem = event.target.closest(obj.selector);
+            const neg = obj.negative ? event.target.closest(obj.negative) : null;
+            if (elem && !neg) {
                 event.preventDefault();
+                event.stopPropagation();
                 clearTimeout(press_timer);
-                
                 if (elem.classList.contains("pressed")) {
-                    if (event.detail === 1) {
-                        on_short_press(event, elem, selector);
-                    } else if (event.detail === 2) {
-                        on_dbl_press(event, elem, selector);
+                    if (event.detail === 1
+                        || !dbl_press_event_map.map(x => x.selector).includes(obj.selector)
+                    ) {
+                        elem.classList.remove("pressed");
+                        on_short_press(event, elem, obj.handler);
                     }
                 }
-                return;
             }
         }
+
+        if (event.detail === 2) {
+            for (const obj of dbl_press_event_map) {
+                const elem = event.target.closest(obj.selector);
+                const neg = obj.negative ? event.target.closest(obj.negative) : null;
+                if (elem && !neg) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    clearTimeout(press_timer);
+                    if (elem.classList.contains("pressed")) {
+                        elem.classList.remove("pressed");
+                        on_dbl_press(event, elem, obj.handler);
+                    }
+                }
+            }
+        }
+
+        // long_press_event_map is handled by the timer setup in "mousedown" handlers.
     });
 }
 

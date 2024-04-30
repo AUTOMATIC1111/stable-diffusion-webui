@@ -238,6 +238,7 @@ class ExtraNetworksPage:
         self.btn_show_metadata_tpl = shared.html("extra-networks-btn-show-metadata.html")
         self.btn_edit_metadata_tpl = shared.html("extra-networks-btn-edit-metadata.html")
         self.btn_dirs_view_item_tpl = shared.html("extra-networks-btn-dirs-view-item.html")
+        self.btn_chevron_tpl = shared.html("extra-networks-btn-chevron.html")
 
     def clear_data(self) -> None:
         self.is_ready = False
@@ -316,26 +317,19 @@ class ExtraNetworksPage:
         # If not specified, title will just reflect the label
         btn_title = btn_title.strip() if btn_title else f'"{label}"'
 
-        action_list_item_action_leading = "<i class='tree-list-item-action-chevron'></i>"
+        action_list_item_action_leading = self.btn_chevron_tpl.format(extra_classes="")
         action_list_item_visual_leading = "🗀"
         action_list_item_visual_trailing = ""
         action_list_item_action_trailing = ""
 
         if dir_is_empty:
-            action_list_item_action_leading = "<i class='tree-list-item-action-chevron' style='visibility: hidden'></i>"
+            action_list_item_action_leading = self.btn_chevron_tpl.format(extra_classes="invisible")
 
         if btn_type == "file":
             action_list_item_visual_leading = "🗎"
             # Action buttons
             if item is not None:
                 action_list_item_action_trailing += self.get_button_row(tabname, item)
-        else:
-            action_list_item_action_trailing += (
-                "<div class='button-row'>"
-                "<div class='tree-list-item-action-expand card-button' title='Expand All'></div>"
-                "<div class='tree-list-item-action-collapse card-button' title='Collapse All'></div>"
-                "</div>"
-            )
 
         data_attributes_str = ""
         for k, v in data_attributes.items():

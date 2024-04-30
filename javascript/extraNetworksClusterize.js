@@ -347,7 +347,8 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         return max_width;
     }
 
-    async onExpandAllClick(div_id) {
+    async expandAllRows(div_id) {
+        /** Recursively expands all directories below the passed div_id. */
         if (!keyExistsLogError(this.data_obj, div_id)) {
             return;
         }
@@ -372,7 +373,8 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         await this.sortData();
     }
 
-    async onCollapseAllClick(div_id) {
+    async collapseAllRows(div_id) {
+        /** Recursively collapses all directories below the passed div_id. */
         if (!keyExistsLogError(this.data_obj, div_id)) {
             return;
         }
@@ -403,8 +405,8 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         await this.sortData();
     }
 
-    async onRowExpandClick(div_id, elem) {
-        /** Expands or collapses a row to show/hide children. */
+    async toggleRowExpanded(div_id) {
+        /** Toggles a row between expanded and collapses states. */
         if (!keyExistsLogError(this.data_obj, div_id)) {
             return;
         }
@@ -584,11 +586,11 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
         for (const [div_id, v] of Object.entries(this.data_obj)) {
             let visible = true;
             
-            if (this.directory_filter_recurse) {
+            if (this.directory_filter_str && this.directory_filter_recurse) {
                 // Filter as directory with recurse shows all nested children.
                 // Case sensitive comparison against the relative directory of each object.
-                if (this.directory_filter_str && !this.directory_filter_str.startsWith(v.rel_parent_dir)) {
-                    this.data_obj[div_id].visible = false;
+                this.data_obj[div_id].visible = v.rel_parent_dir.startsWith(this.directory_filter_str);
+                if (!this.data_obj[div_id].visible) {
                     continue;
                 }
             } else {

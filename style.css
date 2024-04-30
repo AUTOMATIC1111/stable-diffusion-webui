@@ -31,6 +31,10 @@ div.gradio-container{
     display: none !important;
 }
 
+.invisible {
+    visibility: hidden !important;
+}
+
 .compact{
     background: transparent !important;
     padding: 0 !important;
@@ -1269,7 +1273,7 @@ body.resizing .resize-handle {
 .resize-handle-row.resize-handle-hidden {
     display: flex !important;
 }
-/*
+/* Only recently supported in firefox. Switch to this eventually to simplify code.
 .resize-handle-row:has(> .resize-handle-col.hidden) {
     display: flex !important;
 }
@@ -1513,45 +1517,67 @@ body.resizing .resize-handle {
     color: var(--button-secondary-text-color);
 }
 
-
-/* ==== TREE VIEW EXPAND/COLLAPSE BUTTONS ==== */
-.tree-list-item-action-expand::before {
-    content: "≫";
-}
-
-.tree-list-item-action-expand {
-    transform: rotate(90deg);
-}
-
-.tree-list-item-action-collapse::before {
-    content: "≫";
-}
-
-.tree-list-item-action-collapse {
-    transform: rotate(-90deg);
-}
-
 /* ==== CHEVRON ICON ACTIONS ==== */
 /* Define the animation for the arrow when it is clicked. */
-.tree-list-item-action-chevron {
-    display: inline-flex;
+.tree-list-item-action--chevron {
     height: var(--button-large-text-size);
     width: var(--button-large-text-size);
-    mask-image: url('data:image/svg+xml,<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M 4 4 H 12 V 12"/></svg>');
-    mask-repeat: no-repeat;
-    mask-position: center center;
-    mask-size: 100%;
-    background: var(--input-placeholder-color);
+    background: transparent;
+    margin: 0 !important;
+    padding: 0 !important;
+    -ms-transform: rotate(45deg);
+    -webkit-transform: rotate(45deg);
     transform: rotate(45deg);
+    transition: transform 0.2s;
+    transition-delay: 0.3s;
+    z-index: 0;
 }
 
-.tree-list-item[data-expanded] .tree-list-item-action-chevron {
+.tree-list-item[data-expanded] .tree-list-item-action--chevron {
     -ms-transform: rotate(135deg);
     -webkit-transform: rotate(135deg);
     transform: rotate(135deg);
-    transition: transform 0.2s;
-    /* currently broken since we remove/add elements to clusterize.js list */
 }
+
+.tree-list-item[data-expanded] .tree-list-item-action--chevron.pressed {
+    -ms-transform: rotate(-45deg);
+    -webkit-transform: rotate(-45deg);
+    transform: rotate(-45deg);
+}
+
+.tree-list-item:not([data-expanded]) .tree-list-item-action--chevron.pressed {
+    -ms-transform: rotate(135deg);
+    -webkit-transform: rotate(135deg);
+    transform: rotate(135deg);
+}
+
+.tree-list-item-action--chevron .chevron-icon-single,
+.tree-list-item-action--chevron .chevron-icon-double {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transition: all 0.1s ease;
+    transition-delay: 0.3s;
+}
+
+.tree-list-item-action--chevron:not(.pressed) .chevron-icon-single {
+    opacity: 1;
+    stroke: var(--input-placeholder-color);
+}
+
+.tree-list-item-action--chevron.pressed .chevron-icon-double {
+    opacity: 1;
+    stroke: var(--button-primary-border-color);
+}
+
+.tree-list-item-action--chevron.pressed .chevron-icon-single,
+.tree-list-item-action--chevron:not(.pressed) .chevron-icon-double {
+    opacity: 0;
+}
+
+
 
 /* Text for button. */
 .tree-list-item-label {
@@ -1657,6 +1683,7 @@ body.resizing .resize-handle {
     display: none;
 }
 
+/* Long-press buttons. Wipe L->R effect when button is held, then toggles color. */
 .extra-network-dirs-view-button {
     position: relative;
     overflow: hidden;
@@ -1671,10 +1698,21 @@ body.resizing .resize-handle {
 }
 
 .extra-network-dirs-view-button[data-selected] {
-    background: var(--button-primary-background-fill);
+    background: var(--button-secondary-background-fill);
 }
 
 .extra-network-dirs-view-button[data-selected]:not(.pressed):hover {
+    -webkit-transition: all 0.05s ease-in-out;
+    transition: all 0.05s ease-in-out;
+    background: var(--button-secondary-background-fill-hover);
+}
+
+.extra-network-dirs-view-button[data-recurse] {
+    background: var(--button-primary-background-fill);
+    border-color: var(--button-primary-border-color);
+}
+
+.extra-network-dirs-view-button[data-recurse]:not(.pressed):hover {
     -webkit-transition: all 0.05s ease-in-out;
     transition: all 0.05s ease-in-out;
     background: var(--button-primary-background-fill-hover);
@@ -1691,11 +1729,11 @@ body.resizing .resize-handle {
     z-index: -1;
 }
 
-.extra-network-dirs-view-button:not([data-selected])::after {
+.extra-network-dirs-view-button:not([data-recurse])::after {
     background: var(--button-secondary-background-fill-hover);
 }
 
-.extra-network-dirs-view-button[data-selected]::after {
+.extra-network-dirs-view-button[data-recurse]::after {
     background: var(--button-primary-background-fill-hover);
 }
 
@@ -1704,16 +1742,16 @@ body.resizing .resize-handle {
     transition: all 0.8s cubic-bezier(0.215, 0.61, 0.355, 1);
 }
 
-.extra-network-dirs-view-button[data-recurse] {
-    box-shadow:
-        inset var(--spacing-sm) 0 0 0 var(--primary-700),
-        inset calc(-1 * var(--spacing-sm)) 0 0 0 var(--primary-700);
+.extra-network-dirs-view-button[data-selected] {
+    outline: var(--spacing-xs) solid var(--button-primary-border-color);
+    outline-offset: calc(-1 * var(--spacing-xs));
 }
 
 .tree-list-item {
     position: relative;
     overflow: hidden;
     z-index: 0;
+    user-select: none;
 }
 
 .tree-list-item:not(.pressed):hover {
@@ -1726,25 +1764,31 @@ body.resizing .resize-handle {
     background: var(--button-secondary-background-fill);
 }
 
-.tree-list-item .tree-list-item-action--leading::after {
+.tree-list-item.pressed:hover {
+    -webkit-transition: all 0.05s ease-in-out;
+    transition: all 0.05s ease-in-out;
+    background: var(--button-secondary-background-fill);
+}
+
+.tree-list-item::after {
     position: absolute;
     content: "";
     top: 0;
     left: 0;
     width: 0;
     height: 100%;
+    background: var(--button-secondary-background-fill-hover);
     transition: all 0.35s cubic-bezier(0.215, 0.61, 0.355, 1);
     z-index: -1;
 }
 
-.tree-list-item.pressed .tree-list-item-action--leading::after {
+.tree-list-item.pressed::after {
     width: 100%;
     transition: all 0.8s cubic-bezier(0.215, 0.61, 0.355, 1);
 }
 
-.tree-list-item[data-recurse] .tree-list-item-action--leading .tree-list-item-action-chevron {
-    background: var(--button-primary-background-fill);
-    color: var(--primary-600);
+.tree-list-item[data-recurse] .tree-list-item-action--chevron .chevron-icon-single {
+    stroke: var(--button-primary-border-color);
 }
 
 .tree-list-item-indent {
