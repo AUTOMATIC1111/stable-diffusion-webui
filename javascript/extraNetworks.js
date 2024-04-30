@@ -1,5 +1,6 @@
 // Prevent eslint errors on functions defined in other files.
 /*global
+    selectCheckpoint,
     ExtraNetworksClusterizeTreeList,
     ExtraNetworksClusterizeCardsList,
     waitForElement,
@@ -319,7 +320,7 @@ class ExtraNetworksTab {
         div_dirs.classList.toggle("hidden", !this.dirs_view_en);
         div_tree.classList.toggle("hidden", !this.tree_view_en);
 
-        
+
 
         // Apply the current resize handle classes.
         const resize_handle_row = this.tree_list.scroll_elem.closest(".resize-handle-row");
@@ -540,13 +541,13 @@ class ExtraNetworksTab {
         row.style.gridTemplateColumns = `${max_width}px ${pad}px 1fr`;
     }
 
-    async setDirectoryButtons({source_elem, source_selector, source_class, reset_all}={}) {
+    async setDirectoryButtons({source_elem, source_selector, source_class, reset_all} = {}) {
         // At least one argument must be specified.
-        if (isNullOrUndefined(source_elem)
-            && isNullOrUndefined(source_selector)
-            && isNullOrUndefined(source_class)
-            && isNullOrUndefined(reset_all)) {
-            console.error("At least one argument must be specified.")
+        if (isNullOrUndefined(source_elem) &&
+            isNullOrUndefined(source_selector) &&
+            isNullOrUndefined(source_class) &&
+            isNullOrUndefined(reset_all)) {
+            console.error("At least one argument must be specified.");
             return;
         }
 
@@ -561,7 +562,7 @@ class ExtraNetworksTab {
         }
 
         // Removes `data-selected` attribute from all tree/dirs buttons.
-        const _reset_all_buttons = async ({excluded_elems}={}) => {
+        const _reset_all_buttons = async({excluded_elems} = {}) => {
             const elems = this.container_elem.querySelectorAll(
                 ".extra-network-dirs-view-button, .tree-list-item"
             );
@@ -578,7 +579,7 @@ class ExtraNetworksTab {
                 if (prev !== elem.outerHTML) {
                     this.tree_list.updateHtml(elem);
                 }
-            };
+            }
 
             this.tree_list.content_elem.querySelectorAll(
                 ".tree-list-item-indent [data-selected]"
@@ -995,7 +996,7 @@ async function extraNetworksControlTreeViewOnClick(event) {
     } else {
         btn.dataset.selected = "";
     }
-    
+
     // If hiding, clear the tree list selections before hiding it.
     if (!tab.tree_view_en) {
         await tab.tree_list.onRowSelected();
@@ -1119,7 +1120,7 @@ function extraNetworksTreeFileOnClick(event) {
     const btn = event.target.closest(".tree-list-item");
     const pane = btn.closest(".extra-network-pane");
     const tab = extra_networks_tabs[pane.dataset.tabnameFull];
-    
+
 
     let checkpoint_name;
     if ("isCheckpoint" in btn.dataset) {
@@ -1312,41 +1313,41 @@ function extraNetworksSetupEventDelegators() {
 
     const short_press_event_map = [
         {
-            "selector": ".tree-list-item-action--chevron",
-            "handler": extraNetworksBtnTreeViewChevronOnClick,
+            selector: ".tree-list-item-action--chevron",
+            handler: extraNetworksBtnTreeViewChevronOnClick,
         },
         {
-            "selector": ".tree-list-item--dir",
-            "negative": ".tree-list-item-action",
-            "handler": extraNetworksTreeDirectoryOnClick,
+            selector: ".tree-list-item--dir",
+            negative: ".tree-list-item-action",
+            handler: extraNetworksTreeDirectoryOnClick,
         },
         {
-            "selector": ".extra-network-dirs-view-button",
-            "handler": extraNetworksBtnDirsViewItemOnClick,
+            selector: ".extra-network-dirs-view-button",
+            handler: extraNetworksBtnDirsViewItemOnClick,
         },
     ];
 
     const long_press_event_map = [
         {
-            "selector": ".tree-list-item-action--chevron",
-            "handler": extraNetworksTreeDirectoryChevronOnLongPress,
+            selector: ".tree-list-item-action--chevron",
+            handler: extraNetworksTreeDirectoryChevronOnLongPress,
         },
         {
-            "selector": ".tree-list-item--dir",
-            "negative": ".tree-list-item-action",
-            "handler": extraNetworksTreeDirectoryOnLongPress,
+            selector: ".tree-list-item--dir",
+            negative: ".tree-list-item-action",
+            handler: extraNetworksTreeDirectoryOnLongPress,
         },
         {
-            "selector": ".extra-network-dirs-view-button",
-            "handler": extraNetworksBtnDirsViewItemOnLongPress,
+            selector: ".extra-network-dirs-view-button",
+            handler: extraNetworksBtnDirsViewItemOnLongPress,
         },
     ];
 
     const dbl_press_event_map = [
         {
-            "selector": ".tree-list-item--dir",
-            "negative": ".tree-list-item-action",
-            "handler": extraNetworksTreeDirectoryOnDblClick,
+            selector: ".tree-list-item--dir",
+            negative: ".tree-list-item-action",
+            handler: extraNetworksTreeDirectoryOnDblClick,
         },
     ];
 
@@ -1394,7 +1395,7 @@ function extraNetworksSetupEventDelegators() {
             return;
         }
         handler(event);
-    }
+    };
 
     let press_timer;
     let press_time_ms = 800;
@@ -1444,8 +1445,8 @@ function extraNetworksSetupEventDelegators() {
                 event.stopPropagation();
                 clearTimeout(press_timer);
                 if (elem.classList.contains("pressed")) {
-                    if (event.detail === 1
-                        || !dbl_press_event_map.map(x => x.selector).includes(obj.selector)
+                    if (event.detail === 1 ||
+                        !dbl_press_event_map.map(x => x.selector).includes(obj.selector)
                     ) {
                         elem.classList.remove("pressed");
                         on_short_press(event, elem, obj.handler);

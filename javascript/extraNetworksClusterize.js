@@ -280,8 +280,8 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
          *  If `elem` is null/undefined, then we deselect all rows.
         */
         if (isNullOrUndefined(elem)) {
-            if (!isNullOrUndefined(this.selected_div_id)
-                && keyExistsLogError(this.data_obj, this.selected_div_id)) {
+            if (!isNullOrUndefined(this.selected_div_id) &&
+                keyExistsLogError(this.data_obj, this.selected_div_id)) {
                 this.selected_div_id = null;
             }
             return;
@@ -470,7 +470,7 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
             }
             const html_str = data[div_id];
             const elem = isElement(html_str) ? html_str : htmlStringToElement(html_str);
-            
+
             // Roots come expanded by default. Need to delete if it exists.
             delete elem.dataset.expanded;
             if (this.data_obj[div_id].expanded) {
@@ -585,7 +585,7 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
 
         for (const [div_id, v] of Object.entries(this.data_obj)) {
             let visible = true;
-            
+
             if (this.directory_filter_str && this.directory_filter_recurse) {
                 // Filter as directory with recurse shows all nested children.
                 // Case sensitive comparison against the relative directory of each object.
