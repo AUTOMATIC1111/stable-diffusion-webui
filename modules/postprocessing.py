@@ -2,7 +2,7 @@ import os
 
 from PIL import Image
 
-from modules import shared, images, devices, scripts, scripts_postprocessing, ui_common, infotext_utils
+from modules import shared, images, devices, scripts, scripts_postprocessing, ui_common, infotext_utils, util
 from modules.shared import opts
 
 
@@ -31,6 +31,8 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
             for filename in image_list:
                 yield filename, filename
         else:
+            if isinstance(image, str):
+                image = util.decode_base64_to_image(image)
             assert image, 'image not selected'
             yield image, None
 
