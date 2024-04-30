@@ -211,3 +211,13 @@ Requested path was: {path}
         subprocess.Popen(["wsl-open", path])
     else:
         subprocess.Popen(["xdg-open", path])
+
+
+def decode_base64_to_image(base64_str: str):
+    from modules import images
+    from io import BytesIO
+    import base64
+    if base64_str.startswith("data:image/"):
+        base64_str = base64_str.partition(';')[2].partition(',')[2]
+    image = images.read(BytesIO(base64.b64decode(base64_str)))
+    return image
