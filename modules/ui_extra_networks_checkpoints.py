@@ -1,4 +1,3 @@
-import html
 import os
 
 from modules import shared, ui_extra_networks, sd_models
