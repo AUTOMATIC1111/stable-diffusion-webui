@@ -546,6 +546,9 @@ class ExtraNetworksPage:
 
             self.cards[node.id] = card
 
+        if self.cards is None or not self.cards:
+            return {}
+
         # Sort card div_ids for all sort modes.
         keys_sorted = {}
         sort_modes = self.cards[next(iter(self.cards))].sort_keys.keys()
@@ -582,6 +585,16 @@ class ExtraNetworksPage:
         """
         res = {}
         show_files = shared.opts.extra_networks_tree_view_show_files is True
+
+        # Generate indentation for row
+        def _gen_indents(node):
+            if node.parent is None:
+                return []
+            _tpl = "<span data-depth='{depth}' data-parent-id='{parent_id}'></span>"
+            _res = [_tpl.format(depth=node.depth, parent_id=node.parent.id)]
+            _res.extend(_gen_indents(node.parent))
+            return _res
+
         for node in self.nodes.values():
             tree_item = TreeListItem(node.id, "")
             # If root node, expand and set visible.
@@ -598,16 +611,7 @@ class ExtraNetworksPage:
             if node.parent is not None:
                 parent_id = node.parent.id
 
-            # Generate indentation for row
-            def gen_indents(node):
-                res = []
-                if node.parent is None:
-                    return res
-                res.append(f"<span data-depth='{node.depth}' data-parent-id='{node.parent.id}'></span>")
-                res.extend(gen_indents(node.parent))
-                return res
-
-            indent_html = gen_indents(node)
+            indent_html = _gen_indents(node)
             indent_html.reverse()
             indent_html = "".join(indent_html)
             indent_html = f"<div class='tree-list-item-indent'>{indent_html}</div>"
@@ -654,6 +658,8 @@ class ExtraNetworksPage:
                     "data-neg-prompt": node.item.get("negative_prompt", "").strip(),
                     "data-allow-neg": self.allow_negative_prompt,
                 }
+                # Special case for checkpoints since they need to switch model on click.
+                # The JS code uses this flag to determine if it needs to swith model.
                 if self.__class__.__name__ == "ExtraNetworksPageCheckpoints":
                     data_attributes["data-is-checkpoint"] = True
 
@@ -667,9 +673,14 @@ class ExtraNetworksPage:
                 )
                 self.tree[node.id] = tree_item
 
+            if show_files:
+                children = [x.id for x in tree_item.node.children]
+            else:
+                children = [x.id for x in tree_item.node.children if x.is_dir]
+
             res[node.id] = {
                 "parent": parent_id,
-                "children": [x.id for x in tree_item.node.children],
+                "children": children,
                 "visible": tree_item.visible,
                 "expanded": tree_item.expanded,
             }
@@ -744,7 +755,7 @@ class ExtraNetworksPage:
                 continue
             self.tree_roots[abspath] = DirectoryTreeNode(os.path.dirname(abspath), abspath, None)
             self.tree_roots[abspath].build(
-                tree_items if shared.opts.extra_networks_tree_view_show_files else {},
+                tree_items,
                 include_hidden=shared.opts.extra_networks_show_hidden_directories,
             )
 
