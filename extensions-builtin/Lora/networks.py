@@ -229,6 +229,7 @@ def load_network(name, network_on_disk):
     for emb_name, data in bundle_embeddings.items():
         embedding = textual_inversion.create_embedding_from_data(data, emb_name, filename=network_on_disk.filename + "/" + emb_name)
         embedding.loaded = None
+        embedding.shorthash = 'bundled'
         embeddings[emb_name] = embedding
 
     net.bundle_embeddings = embeddings
