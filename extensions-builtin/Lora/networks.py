@@ -143,6 +143,14 @@ def assign_network_names_to_compvis_modules(sd_model):
     sd_model.network_layer_mapping = network_layer_mapping
 
 
+class BundledTIHash(str):
+    def __init__(self, hash_str):
+        self.hash = hash_str
+
+    def __str__(self):
+        return self.hash if shared.opts.lora_bundled_ti_to_infotext else ''
+
+
 def load_network(name, network_on_disk):
     net = network.Network(name, network_on_disk)
     net.mtime = os.path.getmtime(network_on_disk.filename)
@@ -229,6 +237,7 @@ def load_network(name, network_on_disk):
     for emb_name, data in bundle_embeddings.items():
         embedding = textual_inversion.create_embedding_from_data(data, emb_name, filename=network_on_disk.filename + "/" + emb_name)
         embedding.loaded = None
+        embedding.shorthash = BundledTIHash(name)
         embeddings[emb_name] = embedding
 
     net.bundle_embeddings = embeddings
