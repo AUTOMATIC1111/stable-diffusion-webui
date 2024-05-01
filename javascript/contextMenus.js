@@ -107,16 +107,23 @@ var contextMenuInit = function() {
                 oldMenu.remove();
             }
         });
-        gradioApp().addEventListener("contextmenu", function(e) {
-            let oldMenu = gradioApp().querySelector('#context-menu');
-            if (oldMenu) {
-                oldMenu.remove();
-            }
-            menuSpecs.forEach(function(v, k) {
-                if (e.composedPath()[0].matches(k)) {
-                    showContextMenu(e, e.composedPath()[0], v);
-                    e.preventDefault();
+        ['contextmenu', 'touchstart'].forEach((eventType) => {
+            gradioApp().addEventListener(eventType, function(e) {
+                let ev = e;
+                if (eventType.startsWith('touch')) {
+                    if (e.touches.length !== 2) return;
+                    ev = e.touches[0];
                 }
+                let oldMenu = gradioApp().querySelector('#context-menu');
+                if (oldMenu) {
+                    oldMenu.remove();
+                }
+                menuSpecs.forEach(function(v, k) {
+                    if (e.composedPath()[0].matches(k)) {
+                        showContextMenu(ev, e.composedPath()[0], v);
+                        e.preventDefault();
+                    }
+                });
             });
         });
         eventListenerApplied = true;
