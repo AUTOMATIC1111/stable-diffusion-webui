@@ -151,6 +151,23 @@ class ExtraNetworksTab {
 
         await Promise.all([this.setupTreeList(), this.setupCardsList()]);
 
+        const btn_dirs_view = this.controls_elem.querySelector(".extra-network-control--dirs-view");
+        const btn_tree_view = this.controls_elem.querySelector(".extra-network-control--tree-view");
+        const div_dirs = this.container_elem.querySelector(".extra-network-content--dirs-view");
+        // We actually want to select the tree view's column in the resize-handle-row.
+        // This is what we actually show/hide, not the inner elements.
+        const div_tree = this.tree_list.scroll_elem.closest(".resize-handle-col");
+
+        this.dirs_view_en = "selected" in btn_dirs_view.dataset;
+        this.tree_view_en = "selected" in btn_tree_view.dataset;
+        // Remove "hidden" class if button is enabled, otherwise add it.
+        div_dirs.classList.toggle("hidden", !this.dirs_view_en);
+        div_tree.classList.toggle("hidden", !this.tree_view_en);
+
+        // Apply the current resize handle classes.
+        const resize_handle_row = this.tree_list.scroll_elem.closest(".resize-handle-row");
+        resize_handle_row.classList.toggle("resize-handle-hidden", div_tree.classList.contains("hidden"));
+
         const sort_mode_elem = this.controls_elem.querySelector(".extra-network-control--sort-mode[data-selected]");
         isElementThrowError(sort_mode_elem);
         const sort_dir_elem = this.controls_elem.querySelector(".extra-network-control--sort-dir");
@@ -319,8 +336,6 @@ class ExtraNetworksTab {
         // Remove "hidden" class if button is enabled, otherwise add it.
         div_dirs.classList.toggle("hidden", !this.dirs_view_en);
         div_tree.classList.toggle("hidden", !this.tree_view_en);
-
-
 
         // Apply the current resize handle classes.
         const resize_handle_row = this.tree_list.scroll_elem.closest(".resize-handle-row");
@@ -628,8 +643,10 @@ class ExtraNetworksTab {
         }
 
         const source_is_tree = source_elem.classList.contains("tree-list-item");
-        const data_path = String.raw`${source_elem.dataset.path.replaceAll("\\", "\\\\")}`;
         const other_selector = source_is_tree ? ".extra-network-dirs-view-button" : ".tree-list-item";
+        // NOTE: We only use this escaped path in selectors since html handles these chars
+        // different from JS. We don't need to escape the path for any internal operations.
+        const data_path = String.raw`${source_elem.dataset.path.replaceAll("\\", "\\\\")}`;
         const other_elem = document.querySelector(`${other_selector}[data-path="${data_path}"]`);
         if (!_exists(other_elem)) {
             // Can't reflect attributes since no matching element exists.
@@ -641,8 +658,9 @@ class ExtraNetworksTab {
             } else {
                 await this.tree_list.onRowSelected();
             }
+            // Don't use escaped path here since this is pure javascript beyond this point.
             this.applyDirectoryFilter(
-                "selected" in source_elem.dataset ? data_path : null,
+                "selected" in source_elem.dataset ? source_elem.dataset.path : null,
                 "recurse" in source_elem.dataset,
             );
             return;
@@ -662,8 +680,9 @@ class ExtraNetworksTab {
         await this.tree_list.onRowSelected(source_is_tree ? source_elem : other_elem);
         const div_id = source_is_tree ? source_elem.dataset.divId : other_elem.dataset.divId;
         _set_recursion_depth(div_id, data_recurse);
+        // Don't use escaped path here since this is pure javascript beyond this point.
         this.applyDirectoryFilter(
-            "selected" in source_elem.dataset ? data_path : null,
+            "selected" in source_elem.dataset ? source_elem.dataset.path : null,
             "recurse" in source_elem.dataset,
         );
     }

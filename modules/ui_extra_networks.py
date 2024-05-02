@@ -791,8 +791,6 @@ class ExtraNetworksPage:
                 "btn_sort_mode_date_modified_data_attributes": "data-selected" if sort_mode == "date_modified" else "",
                 "btn_dirs_view_data_attributes": "data-selected" if dirs_view_en else "",
                 "btn_tree_view_data_attributes": "data-selected" if tree_view_en else "",
-                "dirs_view_hidden_cls": "" if dirs_view_en else "hidden",
-                "tree_view_hidden_cls": "" if tree_view_en else "hidden",
                 "tree_view_style": f"flex-basis: {shared.opts.extra_networks_tree_view_default_width}px;",
                 "cards_view_style": "flex-grow: 1;",
                 "dirs_html": dirs_html,
