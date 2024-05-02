@@ -120,20 +120,33 @@ Alternatively, use online services (like Google Colab):
 1. Install the dependencies:
 ```bash
 # Debian-based:
-sudo apt install wget git python3 python3-venv libgl1 libglib2.0-0
+sudo apt install wget git python3 python3-venv libgl1 libglib2.0-0 make dpkg
 # Red Hat-based:
-sudo dnf install wget git python3 gperftools-libs libglvnd-glx 
+sudo dnf install wget git python3 gperftools-libs libglvnd-glx make dpkg
 # openSUSE-based:
-sudo zypper install wget git python3 libtcmalloc4 libglvnd
+sudo zypper install wget git python3 libtcmalloc4 libglvnd make dpkg
 # Arch-based:
-sudo pacman -S wget git python3
+sudo pacman -S wget make dpkg git python3
 ```
-2. Navigate to the directory you would like the webui to be installed and execute the following command:
+2. Download: https://www.python.org/ftp/python/3.10.6/Python-3.10.6.tar.xz
+
+3. extract using ark or any file archive tool
+
+```
+cd $HOME/python-3.10.6
+
+./configure
+
+make
+
+sudo make install
+```
+4. Navigate to the directory you would like the webui to be installed and execute the following command:
 ```bash
 wget -q https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/master/webui.sh
 ```
-3. Run `webui.sh`.
-4. Check `webui-user.sh` for options.
+5. Run `webui.sh`.
+6. Check `webui-user.sh` for options.
 ### Installation on Apple Silicon
 
 Find the instructions [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Installation-on-Apple-Silicon).
