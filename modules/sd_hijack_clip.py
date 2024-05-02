@@ -353,8 +353,13 @@ class FrozenCLIPEmbedderForSDXLWithCustomWords(FrozenCLIPEmbedderWithCustomWords
     def encode_with_transformers(self, tokens):
         outputs = self.wrapped.transformer(input_ids=tokens, output_hidden_states=self.wrapped.layer == "hidden")
 
+        # If 'last' is specified on line 48 in .yaml config or 0 is set in clip skip option then last_hidden_state will be used. If clip skip setting is above 0 (1 and above) then the hidden_state layer shall be set to the chosen one. If any other (-1) setting for clip skip is set then it will fall back to default which is equivalent to clip skip 2.
         if self.wrapped.layer == "last":
             z = outputs.last_hidden_state
+        elif opts.CLIP_stop_at_last_layers == 0:
+            z = outputs.last_hidden_state
+        elif opts.CLIP_stop_at_last_layers > 0:
+            z = outputs.hidden_states[-opts.CLIP_stop_at_last_layers]
         else:
             z = outputs.hidden_states[self.wrapped.layer_idx]
 
