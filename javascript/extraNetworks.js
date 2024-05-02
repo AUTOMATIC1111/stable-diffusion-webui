@@ -1009,16 +1009,18 @@ async function extraNetworksControlTreeViewOnClick(event) {
     const btn = event.target.closest(".extra-network-control--tree-view");
     const controls = btn.closest(".extra-network-controls");
     const tab = extra_networks_tabs[controls.dataset.tabnameFull];
-    tab.tree_view_en = !("selected" in btn.dataset);
-    if ("selected" in btn.dataset) {
-        delete btn.dataset.selected;
-    } else {
-        btn.dataset.selected = "";
-    }
+    btn.toggleAttribute("data-selected");
+    tab.tree_view_en = "selected" in btn.dataset;
 
     // If hiding, clear the tree list selections before hiding it.
     if (!tab.tree_view_en) {
         await tab.tree_list.onRowSelected();
+        tab.tree_list.content_elem.querySelectorAll(
+            ".tree-list-item[data-selected]"
+        ).forEach(elem => {
+            delete elem.dataset.selected;
+            delete elem.dataset.recurse;
+        });
     }
 
     tab.tree_list.scroll_elem.parentElement.classList.toggle("hidden", !tab.tree_view_en);
@@ -1031,8 +1033,12 @@ async function extraNetworksControlTreeViewOnClick(event) {
     const resize_handle_row = tab.tree_list.scroll_elem.closest(".resize-handle-row");
     resize_handle_row.classList.toggle("resize-handle-hidden", !tab.tree_view_en);
 
-    if (tab.tree_view_en && tab.dirs_view_en) {
+    if ((tab.tree_view_en && tab.dirs_view_en) || (!tab.tree_view_en && tab.dirs_view_en)) {
         tab.setDirectoryButtons({source_class: ".extra-network-dirs-view-button"});
+    } else if (tab.tree_view_en) {
+        tab.setDirectoryButtons({source_class: ".tree-list-item"});
+    } else {
+        tab.setDirectoryButtons({reset_all: true});
     }
 }
 
@@ -1044,12 +1050,8 @@ function extraNetworksControlDirsViewOnClick(event) {
     const btn = event.target.closest(".extra-network-control--dirs-view");
     const controls = btn.closest(".extra-network-controls");
     const tab = extra_networks_tabs[controls.dataset.tabnameFull];
-    tab.dirs_view_en = !("selected" in btn.dataset);
-    if (tab.dirs_view_en) {
-        btn.dataset.selected = "";
-    } else {
-        delete btn.dataset.selected;
-    }
+    btn.toggleAttribute("data-selected");
+    tab.dirs_view_en = "selected" in btn.dataset;
 
     if (!tab.dirs_view_en) {
         // If hiding, we want to deselect all buttons prior to hiding.
@@ -1065,8 +1067,12 @@ function extraNetworksControlDirsViewOnClick(event) {
         ".extra-network-content--dirs-view"
     ).classList.toggle("hidden", !tab.dirs_view_en);
 
-    if (tab.dirs_view_en && tab.tree_view_en) {
+    if ((tab.tree_view_en && tab.dirs_view_en) || (tab.tree_view_en && !tab.dirs_view_en)) {
         tab.setDirectoryButtons({source_class: ".tree-list-item"});
+    } else if (tab.dirs_view_en) {
+        tab.setDirectoryButtons({source_class: ".extra-network-dirs-view-button"});
+    } else {
+        tab.setDirectoryButtons({reset_all: true});
     }
 }
 
