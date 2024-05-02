@@ -57,7 +57,7 @@ class Upscaler:
         dest_h = int((img.height * scale) // 8 * 8)
 
         for _ in range(3):
-            if img.width >= dest_w and img.height >= dest_h:
+            if img.width >= dest_w and img.height >= dest_h and scale != 1:
                 break
 
             if shared.state.interrupted:
