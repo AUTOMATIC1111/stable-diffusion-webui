@@ -946,6 +946,7 @@ footer {
 
 .extra-network-pane .nocards li{
     margin-left: 0.5em;
+    text-align: left;
 }
 
 .extra-network-pane .card .button-row{
@@ -1212,6 +1213,11 @@ body.resizing .resize-handle {
 }
 
 .clusterize-no-data {
+    text-align: center;
+    color: var(--input-placeholder-color) !important;
+}
+
+.clusterize-loading {
     text-align: center;
     color: var(--input-placeholder-color) !important;
 }

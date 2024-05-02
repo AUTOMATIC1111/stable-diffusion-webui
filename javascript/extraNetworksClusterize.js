@@ -106,7 +106,7 @@ class ExtraNetworksClusterize extends Clusterize {
         if (this.lru instanceof LRUCache) {
             this.lru.clear();
         }
-        super.clear("Loading...");
+        super.clear(this.loading_html);
     }
 
     async load(force_init_data) {
@@ -263,15 +263,12 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
     selected_div_id = null;
 
     constructor(args) {
-        super({
-            ...args,
-            no_data_text: "Directory is empty.",
-        });
+        super({...args});
     }
 
     clear() {
         this.selected_div_id = null;
-        super.clear("Loading...");
+        super.clear(this.loading_html);
     }
 
     async onRowSelected(elem) {
@@ -498,10 +495,7 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
 
 class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
     constructor(args) {
-        super({
-            ...args,
-            no_data_text: "No files matching filter.",
-        });
+        super({...args});
     }
 
     sortByPath(data) {

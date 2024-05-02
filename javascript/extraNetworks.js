@@ -111,6 +111,10 @@ class ExtraNetworksTab {
     refresh_in_progress = false;
     dirs_view_en = false;
     tree_view_en = false;
+    tree_list_no_data_html_bkp = null;
+    tree_list_loading_html_bkp = null;
+    cards_list_no_data_html_bkp = null;
+    cards_list_loading_html_bkp = null;
     constructor({tabname, extra_networks_tabname}) {
         this.tabname = tabname;
         this.extra_networks_tabname = extra_networks_tabname;
@@ -148,6 +152,26 @@ class ExtraNetworksTab {
         // setup this tab's controls
         this.controls_elem.id = `${this.tabname_full}_controls`;
         controls_div.insertBefore(this.controls_elem, null);
+
+        // create backups of the no-data and loading elements for tree/cards list
+        const tree_loading_elem = this.container_elem.querySelector(
+            ".extra-network-tree .clusterize-loading"
+        );
+        const tree_no_data_elem = this.container_elem.querySelector(
+            ".extra-network-tree .clusterize-no-data"
+        );
+        const cards_loading_elem = this.container_elem.querySelector(
+            ".extra-network-cards-content .clusterize-loading"
+        );
+        const cards_no_data_elem = this.container_elem.querySelector(
+            ".extra-network-cards-content .clusterize-no-data"
+        );
+        // need to store backup of these since they are removed on clusterize clear.
+        // we re-apply them next time we call setup.
+        this.cards_list_no_data_html_bkp = cards_no_data_elem.outerHTML;
+        this.cards_list_loading_html_bkp = cards_loading_elem.outerHTML;
+        this.tree_list_no_data_html_bkp = tree_no_data_elem.outerHTML;
+        this.tree_list_loading_html_bkp = tree_loading_elem.outerHTML;
 
         await Promise.all([this.setupTreeList(), this.setupCardsList()]);
 
@@ -232,6 +256,8 @@ class ExtraNetworksTab {
                 initData: this.onInitTreeData.bind(this),
                 fetchData: this.onFetchTreeData.bind(this),
             },
+            no_data_html: this.tree_list_no_data_html_bkp,
+            loading_html: this.tree_list_loading_html_bkp,
         });
         await this.tree_list.setup();
     }
@@ -250,6 +276,8 @@ class ExtraNetworksTab {
                 initData: this.onInitCardsData.bind(this),
                 fetchData: this.onFetchCardsData.bind(this),
             },
+            no_data_html: this.cards_list_no_data_html_bkp,
+            loading_html: this.cards_list_loading_html_bkp,
         });
         await this.cards_list.setup();
     }

@@ -759,6 +759,16 @@ class ExtraNetworksPage:
                 include_hidden=shared.opts.extra_networks_show_hidden_directories,
             )
 
+        no_cards_html_dirs = "".join(
+            [f"<li>{x}</li>" for x in self.allowed_directories_for_previews()]
+        )
+        no_cards_html = (
+            "<div class='nocards'>"
+            "<h1>Nothing here. Add some content to the following directories:</h1>"
+            f"<ul>{no_cards_html_dirs}</ul>"
+            "</div>"
+        )
+
         # Now use tree roots to generate a mapping of div_ids to nodes.
         # Flatten roots into a single sorted list of nodes.
         # Directories always come before files. After that, natural sort is used.
@@ -794,6 +804,7 @@ class ExtraNetworksPage:
                 "tree_view_style": f"flex-basis: {shared.opts.extra_networks_tree_view_default_width}px;",
                 "cards_view_style": "flex-grow: 1;",
                 "dirs_html": dirs_html,
+                "no_cards_html": no_cards_html,
             }
         )
 
