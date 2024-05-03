@@ -227,7 +227,11 @@ class ExtraNetworksClusterize extends Clusterize {
     }
 
     async sortDataDefaultCallback() {
-        this.data_obj_keys_sorted = this.sort_fn(this.data_obj);
+        // we want to apply the sort to the visible items only.
+        const filtered = Object.fromEntries(
+            Object.entries(this.data_obj).filter(([k, v]) => v.visible)
+        );
+        this.data_obj_keys_sorted = this.sort_fn(filtered);
         if (this.sort_reverse) {
             this.data_obj_keys_sorted = this.data_obj_keys_sorted.reverse();
         }
