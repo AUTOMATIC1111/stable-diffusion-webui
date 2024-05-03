@@ -39,6 +39,7 @@ class ExtraNetworksClusterize extends Clusterize {
     sort_fn = this.default_sort_fn;
     tabname = "";
     extra_networks_tabname = "";
+    initial_load = false;
 
     // Override base class defaults
     default_sort_mode_str = "divId";
@@ -91,6 +92,7 @@ class ExtraNetworksClusterize extends Clusterize {
     }
 
     destroy() {
+        this.initial_load = false;
         this.data_obj = {};
         this.data_obj_keys_sorted = [];
         if (this.lru instanceof LRUCache) {
@@ -101,12 +103,13 @@ class ExtraNetworksClusterize extends Clusterize {
     }
 
     clear() {
+        this.initial_load = false;
         this.data_obj = {};
         this.data_obj_keys_sorted = [];
         if (this.lru instanceof LRUCache) {
             this.lru.clear();
         }
-        super.clear(this.loading_html);
+        super.clear();
     }
 
     async load(force_init_data) {
@@ -114,6 +117,7 @@ class ExtraNetworksClusterize extends Clusterize {
             return;
         }
 
+        this.initial_load = true;
         if (!this.setup_has_run) {
             await this.setup();
         } else if (force_init_data) {
@@ -174,17 +178,7 @@ class ExtraNetworksClusterize extends Clusterize {
     }
 
     idxRangeToDivIds(idx_start, idx_end) {
-        const n_items = idx_end - idx_start;
-        const div_ids = [];
-        for (const div_id of this.data_obj_keys_sorted.slice(idx_start)) {
-            if (this.data_obj[div_id].visible) {
-                div_ids.push(div_id);
-            }
-            if (div_ids.length >= n_items) {
-                break;
-            }
-        }
-        return div_ids;
+        return this.data_obj_keys_sorted.slice(idx_start, idx_end);
     }
 
     async fetchDivIds(div_ids) {
@@ -272,7 +266,7 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
 
     clear() {
         this.selected_div_id = null;
-        super.clear(this.loading_html);
+        super.clear();
     }
 
     async onRowSelected(elem) {

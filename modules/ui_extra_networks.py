@@ -759,15 +759,18 @@ class ExtraNetworksPage:
                 include_hidden=shared.opts.extra_networks_show_hidden_directories,
             )
 
+        cards_list_loading_splash_content = "Loading..."
         no_cards_html_dirs = "".join(
             [f"<li>{x}</li>" for x in self.allowed_directories_for_previews()]
         )
-        no_cards_html = (
+        cards_list_no_data_splash_content = (
             "<div class='nocards'>"
             "<h1>Nothing here. Add some content to the following directories:</h1>"
             f"<ul>{no_cards_html_dirs}</ul>"
             "</div>"
         )
+        tree_list_loading_splash_content = "Loading..."
+        tree_list_no_data_splash_content = "No Data"
 
         # Now use tree roots to generate a mapping of div_ids to nodes.
         # Flatten roots into a single sorted list of nodes.
@@ -804,7 +807,10 @@ class ExtraNetworksPage:
                 "tree_view_style": f"flex-basis: {shared.opts.extra_networks_tree_view_default_width}px;",
                 "cards_view_style": "flex-grow: 1;",
                 "dirs_html": dirs_html,
-                "no_cards_html": no_cards_html,
+                "cards_list_loading_splash_content": cards_list_loading_splash_content,
+                "cards_list_no_data_splash_content": cards_list_no_data_splash_content,
+                "tree_list_loading_splash_content": tree_list_loading_splash_content,
+                "tree_list_no_data_splash_content": tree_list_no_data_splash_content,
             }
         )
 

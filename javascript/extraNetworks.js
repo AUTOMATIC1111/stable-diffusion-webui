@@ -111,10 +111,12 @@ class ExtraNetworksTab {
     refresh_in_progress = false;
     dirs_view_en = false;
     tree_view_en = false;
-    tree_list_no_data_html_bkp = null;
-    tree_list_loading_html_bkp = null;
-    cards_list_no_data_html_bkp = null;
-    cards_list_loading_html_bkp = null;
+    cards_list_loading_splash_elem = null;
+    cards_list_no_data_splash_elem = null;
+    tree_list_loading_splash_elem = null;
+    tree_list_no_data_splash_elem = null;
+    cards_list_splash_state = null;
+    tree_list_splash_state = null;
     constructor({tabname, extra_networks_tabname}) {
         this.tabname = tabname;
         this.extra_networks_tabname = extra_networks_tabname;
@@ -137,6 +139,21 @@ class ExtraNetworksTab {
             waitForElement(`#${this.tabname_full}_cards_list_content_area`),
         ]);
 
+        this.cards_list_loading_splash_elem = document.getElementById(
+            `${this.tabname_full}_cards_list_loading_splash`
+        );
+        this.cards_list_no_data_splash_elem = document.getElementById(
+            `${this.tabname_full}_cards_list_no_data_splash`
+        );
+        this.tree_list_loading_splash_elem = document.getElementById(
+            `${this.tabname_full}_tree_list_loading_splash`
+        );
+        this.tree_list_no_data_splash_elem = document.getElementById(
+            `${this.tabname_full}_tree_list_no_data_splash`
+        );
+
+        this.updateSplashState({cards_list_state: "loading", tree_list_state: "loading"});
+
         this.txt_search_elem = this.controls_elem.querySelector(".extra-network-control--search-text");
         this.dirs_view_en = "selected" in this.controls_elem.querySelector(
             ".extra-network-control--dirs-view"
@@ -152,26 +169,6 @@ class ExtraNetworksTab {
         // setup this tab's controls
         this.controls_elem.id = `${this.tabname_full}_controls`;
         controls_div.insertBefore(this.controls_elem, null);
-
-        // create backups of the no-data and loading elements for tree/cards list
-        const tree_loading_elem = this.container_elem.querySelector(
-            ".extra-network-tree .clusterize-loading"
-        );
-        const tree_no_data_elem = this.container_elem.querySelector(
-            ".extra-network-tree .clusterize-no-data"
-        );
-        const cards_loading_elem = this.container_elem.querySelector(
-            ".extra-network-cards-content .clusterize-loading"
-        );
-        const cards_no_data_elem = this.container_elem.querySelector(
-            ".extra-network-cards-content .clusterize-no-data"
-        );
-        // need to store backup of these since they are removed on clusterize clear.
-        // we re-apply them next time we call setup.
-        this.cards_list_no_data_html_bkp = cards_no_data_elem.outerHTML;
-        this.cards_list_loading_html_bkp = cards_loading_elem.outerHTML;
-        this.tree_list_no_data_html_bkp = tree_no_data_elem.outerHTML;
-        this.tree_list_loading_html_bkp = tree_loading_elem.outerHTML;
 
         await Promise.all([this.setupTreeList(), this.setupCardsList()]);
 
@@ -256,8 +253,6 @@ class ExtraNetworksTab {
                 initData: this.onInitTreeData.bind(this),
                 fetchData: this.onFetchTreeData.bind(this),
             },
-            no_data_html: this.tree_list_no_data_html_bkp,
-            loading_html: this.tree_list_loading_html_bkp,
         });
         await this.tree_list.setup();
     }
@@ -276,8 +271,6 @@ class ExtraNetworksTab {
                 initData: this.onInitCardsData.bind(this),
                 fetchData: this.onFetchCardsData.bind(this),
             },
-            no_data_html: this.cards_list_no_data_html_bkp,
-            loading_html: this.cards_list_loading_html_bkp,
         });
         await this.cards_list.setup();
     }
@@ -345,11 +338,53 @@ class ExtraNetworksTab {
         this.controls_elem.classList.add("hidden");
     }
 
+    updateSplashState({cards_list_state, tree_list_state} = {}) {
+        const _handle_state = (state_str, loading_elem, no_data_elem) => {
+            switch (state_str) {
+            case "loading":
+                no_data_elem.classList.add("hidden");
+                loading_elem.classList.remove("hidden");
+                break;
+            case "no_data":
+                loading_elem.classList.add("hidden");
+                no_data_elem.classList.remove("hidden");
+                break;
+            case "show":
+                no_data_elem.classList.add("hidden");
+                loading_elem.classList.add("hidden");
+                break;
+            default:
+                break;
+            }
+        };
+
+        if (isString(cards_list_state)) {
+            this.cards_list_splash_state = cards_list_state;
+        }
+        _handle_state(
+            cards_list_state,
+            this.cards_list_loading_splash_elem,
+            this.cards_list_no_data_splash_elem,
+        );
+
+        if (isString(tree_list_state)) {
+            this.tree_list_splash_state = tree_list_state;
+        }
+        _handle_state(
+            tree_list_state,
+            this.tree_list_loading_splash_elem,
+            this.tree_list_no_data_splash_elem,
+        );
+    }
+
     async #refresh() {
+        this.updateSplashState({cards_list_state: "loading", tree_list_state: "loading"});
+
         try {
             await this.waitForServerPageReady();
         } catch (error) {
             console.error(`refresh error: ${error.message}`);
+            this.updateSplashState({cards_list_state: "no_data", tree_list_state: "no_data"});
             return;
         }
         const btn_dirs_view = this.controls_elem.querySelector(".extra-network-control--dirs-view");
@@ -370,7 +405,7 @@ class ExtraNetworksTab {
         resize_handle_row.classList.toggle("resize-handle-hidden", div_tree.classList.contains("hidden"));
 
         await Promise.all([this.setupTreeList(), this.setupCardsList()]);
-        this.tree_list.enable(true);
+        this.tree_list.enable(this.tree_view_en);
         this.cards_list.enable(true);
         await Promise.all([this.tree_list.load(true), this.cards_list.load(true)]);
         // apply the previous sort/filter options
@@ -391,8 +426,12 @@ class ExtraNetworksTab {
 
     async load(show_prompt, show_neg_prompt) {
         this.movePrompt(show_prompt, show_neg_prompt);
+        this.updateSplashState({
+            cards_list_state: this.cards_list_splash_state,
+            tree_list_state: this.tree_list_splash_state,
+        });
         this.showControls();
-        this.tree_list.enable(true);
+        this.tree_list.enable(this.tree_view_en);
         this.cards_list.enable(true);
         await Promise.all([this.tree_list.load(), this.cards_list.load()]);
     }
@@ -449,10 +488,12 @@ class ExtraNetworksTab {
     }
 
     async onInitCardsData() {
+        this.updateSplashState({cards_list_state: "loading"});
         try {
             await this.waitForServerPageReady();
         } catch (error) {
             console.error(`onInitCardsData error: ${error.message}`);
+            this.updateSplashState({cards_list_state: "no_data"});
             return {};
         }
 
@@ -474,18 +515,26 @@ class ExtraNetworksTab {
         const opts = {timeout_ms: timeout_ms, response_handler: response_handler};
         try {
             const response = await fetchWithRetryAndBackoff(url, payload, opts);
+            if (Object.keys(response.data).length === 0) {
+                this.updateSplashState({cards_list_state: "no_data"});
+            } else {
+                this.updateSplashState({cards_list_state: "show"});
+            }
             return response.data;
         } catch (error) {
             console.error(`onInitCardsData error: ${error.message}`);
+            this.updateSplashState({cards_list_state: "no_data"});
             return {};
         }
     }
 
     async onInitTreeData() {
+        this.updateSplashState({tree_list_state: "loading"});
         try {
             await this.waitForServerPageReady();
         } catch (error) {
             console.error(`onInitTreeData error: ${error.message}`);
+            this.updateSplashState({tree_list_state: "no_data"});
             return {};
         }
 
@@ -507,9 +556,15 @@ class ExtraNetworksTab {
         const opts = {timeout_ms: timeout_ms, response_handler: response_handler};
         try {
             const response = await fetchWithRetryAndBackoff(url, payload, opts);
+            if (Object.keys(response.data).length === 0) {
+                this.updateSplashState({tree_list_state: "no_data"});
+            } else {
+                this.updateSplashState({tree_list_state: "show"});
+            }
             return response.data;
         } catch (error) {
             console.error(`onInitTreeData error: ${error.message}`);
+            this.updateSplashState({tree_list_state: "no_data"});
             return {};
         }
     }
@@ -1061,6 +1116,13 @@ async function extraNetworksControlTreeViewOnClick(event) {
     const resize_handle_row = tab.tree_list.scroll_elem.closest(".resize-handle-row");
     resize_handle_row.classList.toggle("resize-handle-hidden", !tab.tree_view_en);
 
+    // If the tree list hasn't loaded yet, we need to force it to load.
+    // This can happen if tree view is disabled by default or before refresh.
+    // Then after refresh, enabling the tree view will require a load.
+    if (tab.tree_view_en && !tab.tree_list.initial_load) {
+        await tab.tree_list.load();
+    }
+
     if ((tab.tree_view_en && tab.dirs_view_en) || (!tab.tree_view_en && tab.dirs_view_en)) {
         tab.setDirectoryButtons({source_class: ".extra-network-dirs-view-button"});
     } else if (tab.tree_view_en) {
@@ -1117,6 +1179,7 @@ function extraNetworksControlRefreshOnClick(event) {
         const btn = event.target.closest(".extra-network-control--refresh");
         const controls = btn.closest(".extra-network-controls");
         const tab = extra_networks_tabs[controls.dataset.tabnameFull];
+        tab.updateSplashState({cards_list_state: "loading", tree_list_state: "loading"});
         // We want to reset tab lists on refresh click so that the viewing area
         // shows that it is loading new data.
         tab.tree_list.clear();

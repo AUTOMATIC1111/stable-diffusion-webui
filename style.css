@@ -1217,11 +1217,6 @@ body.resizing .resize-handle {
     color: var(--input-placeholder-color) !important;
 }
 
-.clusterize-loading {
-    text-align: center;
-    color: var(--input-placeholder-color) !important;
-}
-
 .extra-network-pane {
     display: flex;
     flex-direction: column;
@@ -1233,6 +1228,7 @@ body.resizing .resize-handle {
 }
 
 .extra-network-content {
+    position: relative;
     display: flex;
     flex-wrap: nowrap;
     width: 100%;
@@ -1822,4 +1818,17 @@ body.resizing .resize-handle {
 
 .tree-list-item-indent > *[data-selected]::after {
     border-left: 1px solid var(--button-primary-border-color);
+}
+
+.extra-network-list-splash {
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 99;
+    background: var(--body-background-fill);
+    padding: var(--block-label-padding);
+    text-align: center;
 }

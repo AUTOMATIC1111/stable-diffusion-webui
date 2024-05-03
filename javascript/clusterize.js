@@ -19,24 +19,19 @@ class Clusterize {
     content_elem = null;
     scroll_id = null;
     content_id = null;
-    no_data_class_default = "clusterize-no-data";
-    loading_class_default = "clusterize-loading";
     options = {
         rows_in_block: 50,
         cols_in_block: 1,
         blocks_in_cluster: 5,
+        rows_in_cluster: 50 * 5, // default is rows_in_block * blocks_in_cluster
         tag: null,
         id_attr: "data-div-id",
+        no_data_class: "clusterize-no-data",
+        no_data_text: "No Data",
         show_no_data_row: true,
-        no_data_class: this.no_data_class_default,
-        loading_class: this.loading_class_default,
         keep_parity: true,
         callbacks: {},
     };
-    loading_html_default = `<div class="${this.loading_class_default}">Loading...</div>`;
-    no_data_html_default = `<div class="${this.no_data_class_default}">No Data</div>`;
-    loading_html = null;
-    no_data_html = null;
     setup_has_run = false;
     enabled = false;
     #is_mac = null;
@@ -105,9 +100,6 @@ class Clusterize {
         this.#max_items = args.max_items;
 
         this.#on_scroll_bound = this.#onScroll.bind(this);
-
-        this.loading_html = args.loading_html;
-        this.no_data_html = args.no_data_html;
     }
 
     // ==== PUBLIC FUNCTIONS ====
@@ -133,13 +125,12 @@ class Clusterize {
         this.setup_has_run = true;
     }
 
-    clear(custom_html) {
+    clear() {
         if (!this.setup_has_run || !this.enabled) {
             return;
         }
 
-        custom_html = custom_html || this.no_data_html;
-        this.#html(custom_html);
+        this.#html(this.#generateEmptyRow().join(""));
     }
 
     destroy() {        
@@ -147,7 +138,7 @@ class Clusterize {
         this.#teardownElementObservers();
         this.#teardownResizeObservers();
 
-        this.#html(this.no_data_html);
+        this.#html(this.#generateEmptyRow().join(""));
         
         this.setup_has_run = false;
     }
@@ -279,29 +270,13 @@ class Clusterize {
         if (this.#ie && this.#ie <= 9 && !this.options.tag) {
             this.options.tag = rows[0].match(/<([^>\s/]*)/)[1].toLowerCase();
         }
+        // Temporarily add one row so that we can calculate row dimensions.
         if (this.content_elem.children.length <= 1) {
             cache.data = this.#html(rows[0]);
         }
         if (!this.options.tag) {
             this.options.tag = this.content_elem.children[0].tagName.toLowerCase();
         }
-
-        if (!isString(this.loading_html)) {
-            const loading_elem = this.content_elem.querySelector(`.${this.options.loading_class}`);
-            if (isElement(loading_elem)) {
-                this.loading_html = loading_elem.outerHTML;
-                loading_elem.remove();
-            }
-        }
-
-        if (!isString(this.no_data_html)) {
-            const no_data_elem = this.content_elem.querySelector(`.${this.options.no_data_class}`);
-            if (isElement(no_data_elem)) {
-                this.no_data_html = no_data_elem.outerHTML;
-                no_data_elem.remove();
-            }
-        }
-
         this.#recalculateDims();
     }
 
@@ -317,7 +292,7 @@ class Clusterize {
 
         // Get the first element that isn't one of our placeholder rows.
         const node = this.content_elem.querySelector(
-            `:scope > :not(.clusterize-extra-row,.${this.options.no_data_class},.${this.options.loading_class})`
+            `:scope > :not(.clusterize-extra-row,.${this.options.no_data_class})`
         );
         if (!isElement(node)) {
             // dont attempt to compute dims if we have no data.
@@ -368,6 +343,21 @@ class Clusterize {
         return prev_options !== JSON.stringify(this.options);
     }
 
+    #generateEmptyRow() {
+        const row = document.createElement(this.options.tag);
+        row.className = this.options.no_data_class;
+        const node = document.createTextNode(this.options.no_data_text);
+        if (this.options.tag === "tr") {
+            const td = document.createElement("td");
+            td.colSpan = 100;
+            td.appendChild(node);
+            row.appendChild(td);
+        } else {
+            row.appendChild(node);
+        }
+        return [row.outerHTML];
+    }
+
     #getClusterNum() {
         this.options.scroll_top = this.scroll_elem.scrollTop;
         const cluster_divider = this.options.cluster_height - this.options.block_height;
@@ -397,7 +387,7 @@ class Clusterize {
                 top_offset: 0,
                 bottom_offset: 0,
                 rows_above: 0,
-                rows: this_cluster_rows.length ? this_cluster_rows : [this.no_data_html],
+                rows: this_cluster_rows.length ? this_cluster_rows : this.#generateEmptyRow(),
             };
         }
 
@@ -417,12 +407,13 @@ class Clusterize {
             if (!Array.isArray(rows) || !rows.length) {
                 // This implies there is no data for this list. Not an error.
                 // Errors should be handled in the fetchData callback, not here.
-                this.#html(this.no_data_html);
+                this.#html(this.#generateEmptyRow().join(""));
                 return;
             } else {
+                this.#html(rows.join(""));
                 this.#exploreEnvironment(rows, this.#cache);
                 // Remove the temporary item from the data since we calculated its size.
-                this.#html(this.loading_html);
+                this.#html(this.#generateEmptyRow().join(""));
             }
         }
 
@@ -472,6 +463,7 @@ class Clusterize {
         } else {
             content_elem.innerHTML = data;
         }
+        return content_elem.innerHTML;
     }
 
     #renderExtraTag(class_name, height) {
