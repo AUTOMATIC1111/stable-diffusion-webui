@@ -144,12 +144,11 @@ class Clusterize {
     }
 
     async refresh(force) {
-        // Refresh can be a longer operation so we want to debounce it to
-        // avoid refreshing too often.
-        if (!this.setup_has_run || !this.enabled) {
+        if (!this.setup_has_run || !this.enabled || isNullOrUndefined(this.content_elem.offsetParent)) {
             return;
         }
-
+        // Refresh can be a longer operation so we want to debounce it to
+        // avoid refreshing too often.
         clearTimeout(this.#refresh_debounce_timer);
         this.#refresh_debounce_timer = setTimeout(
             async () => {
