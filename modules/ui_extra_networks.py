@@ -94,13 +94,22 @@ class DirectoryTreeNode:
         self.root_dir = root_dir
         self.abspath = abspath
         self.parent = parent
-
-        self.id = ""
-        self.depth = 0
-        self.is_dir = False
-        self.item = None
         self.relpath = os.path.relpath(self.abspath, self.root_dir)
         self.children: list["DirectoryTreeNode"] = []
+        self.is_dir = os.path.isdir(self.abspath)
+        # If any parent dirs are hidden, this node is also considered hidden.
+        self.is_hidden = any(x.startswith(".") for x in self.abspath.split(os.sep))
+        self.id = ""
+        self.depth = 0
+        self.item = None
+
+        self.rel_from_hidden = None
+        if self.is_hidden:
+            # Get the relative path starting from the first hidden directory.
+            parts = self.relpath.split(os.sep)
+            idxs = [i for i, x in enumerate(parts) if x.startswith(".")]
+            if len(idxs) > 0:
+                self.rel_from_hidden = os.path.join(*parts[idxs[0] :])
 
         # If a parent is passed, then we add this instance to the parent's children.
         if self.parent is not None:
@@ -110,24 +119,19 @@ class DirectoryTreeNode:
     def add_child(self, child: "DirectoryTreeNode") -> None:
         self.children.append(child)
 
-    def build(self, items: dict[str, dict], include_hidden: bool = False) -> None:
+    def build(self, items: dict[str, dict]) -> None:
         """Builds a tree of nodes as children of this instance.
 
         Args:
             items: A dictionary where keys are absolute filepaths for directories/files.
                 The values are dictionaries representing extra networks items.
-            include_hidden: Whether to include hidden directories in the tree.
         """
-        self.is_dir = os.path.isdir(self.abspath)
         if self.is_dir:
             for x in os.listdir(self.abspath):
                 child_path = os.path.join(self.abspath, x)
-                # Skip hidden directories if include_hidden is False
-                if os.path.isdir(child_path) and os.path.basename(child_path).startswith(".") and not include_hidden:
-                    continue
                 # Add all directories but only add files if they are in the items dict.
                 if os.path.isdir(child_path) or child_path in items:
-                    DirectoryTreeNode(self.root_dir, child_path, self).build(items, include_hidden)
+                    DirectoryTreeNode(self.root_dir, child_path, self).build(items)
         else:
             self.item = items.get(self.abspath, None)
 
@@ -420,14 +424,10 @@ class ExtraNetworksPage:
         filename = os.path.normpath(item.get("filename", ""))
         # if this is true, the item must not be shown in the default view,
         # and must instead only be shown when searching for it
-        show_hidden_models = str(shared.opts.extra_networks_hidden_models).strip().lower()
-        if show_hidden_models == "always":
-            search_only = False
-        else:
-            # If any parent dirs are hidden, the model is also hidden.
-            search_only = any(x.startswith(".") for x in filename.split(os.sep))
-
-        if search_only and show_hidden_models == "never":
+        show_hidden_models = str(shared.opts.extra_networks_show_hidden_models_cards).strip().lower()
+        # If any parent dirs are hidden, the model is also hidden.
+        is_hidden = any(x.startswith(".") for x in filename.split(os.sep))
+        if show_hidden_models == "never" and is_hidden:
             return ""
 
         sort_keys = {}
@@ -506,7 +506,17 @@ class ExtraNetworksPage:
             # Mapping from the self.nodes div_ids to the sorted index.
             div_id_to_idx[node.id] = i
 
+        show_hidden_cards = str(shared.opts.extra_networks_show_hidden_models_cards).strip().lower()
         for node in nodes.values():
+            search_only = False
+            if show_hidden_cards == "always":
+                search_only = False
+            elif show_hidden_cards == "when searched":
+                search_only = node.is_hidden
+            elif "never" == show_hidden_cards and node.is_hidden:
+                # We never show hidden cards here so don't even add it to the results.
+                continue
+
             card = CardListItem(node.id, "")
             card.node = node
             item = node.item
@@ -518,13 +528,7 @@ class ExtraNetworksPage:
             sort_keys["path"] = div_id_to_idx[node.id]
 
             search_terms = item.get("search_terms", [])
-            show_hidden_models = str(shared.opts.extra_networks_hidden_models).strip().lower()
-            if show_hidden_models == "always":
-                search_only = False
-            else:
-                # If any parent dirs are hidden, the model is also hidden.
-                filename = os.path.normpath(item.get("filename", ""))
-                search_only = any(x.startswith(".") for x in filename.split(os.sep))
+
             card.abspath = os.path.normpath(item.get("filename", ""))
             for path in self.allowed_directories_for_previews():
                 parent_dir = os.path.dirname(os.path.abspath(path))
@@ -534,15 +538,14 @@ class ExtraNetworksPage:
             card.sort_keys = sort_keys
             card.search_terms = " ".join(search_terms)
             card.search_only = search_only
-
             card.rel_parent_dir = os.path.dirname(card.relpath)
-            if card.search_only:
-                parents = card.relpath.split(os.sep)
-                idxs = [i for i, x in enumerate(parents) if x.startswith(".")]
-                if len(idxs) > 0:
-                    card.rel_parent_dir = os.path.join(*parents[idxs[0]:])
-                else:
-                    print(f"search_only is enabled but no hidden dir found: {card.abspath}")
+            if card.node.rel_from_hidden is not None:
+                card.rel_parent_dir = os.path.dirname(card.node.rel_from_hidden)
+
+            if card.search_only and card.node.rel_from_hidden is not None:
+                # Limit the ways of searching for `search_only` cards so that the user
+                # can't search for a parent to a hidden directory to see hidden cards.
+                card.search_terms = card.search_terms.replace(node.relpath, card.node.rel_from_hidden)
 
             self.cards[node.id] = card
 
@@ -595,7 +598,15 @@ class ExtraNetworksPage:
             _res.extend(_gen_indents(node.parent))
             return _res
 
+        show_hidden_dirs = shared.opts.extra_networks_show_hidden_directories_buttons
+        show_hidden_models = shared.opts.extra_networks_show_hidden_models_in_tree_view
         for node in self.nodes.values():
+            if node.is_hidden and node.is_dir and not show_hidden_dirs:
+                continue
+
+            if node.is_hidden and not node.is_dir and show_hidden_dirs and not show_hidden_models:
+                continue
+
             tree_item = TreeListItem(node.id, "")
             # If root node, expand and set visible.
             if node.parent is None:
@@ -616,11 +627,36 @@ class ExtraNetworksPage:
             indent_html = "".join(indent_html)
             indent_html = f"<div class='tree-list-item-indent'>{indent_html}</div>"
 
+            children = []
+
             if node.is_dir:  # directory
                 if show_files:
                     dir_is_empty = node.children == []
                 else:
                     dir_is_empty = all(not x.is_dir for x in node.children)
+
+                if node.is_hidden and not show_hidden_models:
+                    dir_is_empty = all(not x.is_dir for x in node.children)
+
+                if not dir_is_empty:
+                    if show_files and show_hidden_models:
+                        children = [x.id for x in tree_item.node.children]
+                    elif show_files and not show_hidden_models:
+                        children = [x.id for x in tree_item.node.children if x.is_dir or (not x.is_dir and not x.is_hidden)]
+                    else:
+                        children = [x.id for x in tree_item.node.children if x.is_dir]
+
+                data_attributes = {
+                    "data-div-id": f'"{node.id}"',
+                    "data-parent-id": f'"{parent_id}"',
+                    "data-tree-entry-type": "dir",
+                    "data-depth": node.depth,
+                    "data-path": f'"{node.relpath}"',
+                    "data-expanded": node.parent is None,  # Expand root directories
+                }
+
+                if node.is_hidden:
+                    data_attributes["data-directory-filter-override"] = f'"{node.rel_from_hidden}"'
 
                 tree_item.html = self.build_tree_html_row(
                     tabname=tabname,
@@ -629,19 +665,15 @@ class ExtraNetworksPage:
                     btn_title=f'"{node.abspath}"',
                     dir_is_empty=dir_is_empty,
                     indent_html=indent_html,
-                    data_attributes={
-                        "data-div-id": f'"{node.id}"',
-                        "data-parent-id": f'"{parent_id}"',
-                        "data-tree-entry-type": "dir",
-                        "data-depth": node.depth,
-                        "data-path": f'"{node.relpath}"',
-                        "data-expanded": node.parent is None,  # Expand root directories
-                    },
+                    data_attributes=data_attributes,
                 )
                 self.tree[node.id] = tree_item
             else:  # file
                 if not show_files:
                     # Don't add file if files are disabled in the options.
+                    continue
+
+                if node.is_hidden and not show_hidden_models:
                     continue
 
                 item_name = node.item.get("name", "").strip()
@@ -673,11 +705,6 @@ class ExtraNetworksPage:
                 )
                 self.tree[node.id] = tree_item
 
-            if show_files:
-                children = [x.id for x in tree_item.node.children]
-            else:
-                children = [x.id for x in tree_item.node.children if x.is_dir]
-
             res[node.id] = {
                 "parent": parent_id,
                 "children": children,
@@ -697,6 +724,9 @@ class ExtraNetworksPage:
             if not node.is_dir:
                 continue
 
+            if node.is_hidden and not shared.opts.extra_networks_show_hidden_directories_buttons:
+                continue
+
             if node.parent is None:
                 label = node.relpath
             else:
@@ -704,14 +734,28 @@ class ExtraNetworksPage:
                 parts = [x for x in node.relpath.split(os.sep) if x]
                 label = os.path.join(*parts[1:])
 
+            data_attributes = {"data-path": f'"{node.relpath}"'}
+
+            if node.is_hidden:
+                data_attributes["data-directory-filter-override"] = f'"{node.rel_from_hidden}"'
+
+            data_attributes_str = ""
+            for k, v in data_attributes.items():
+                if isinstance(v, (bool,)):
+                    # Boolean data attributes only need a key when true.
+                    if v:
+                        data_attributes_str += f"{k} "
+                elif v not in [None, "", "''", '""']:
+                    data_attributes_str += f"{k}={v} "
+
             res.append(
                 self.btn_dirs_view_item_tpl.format(
                     **{
                         "extra_class": "search-all" if node.relpath == "" else "",
                         "tabname_full": f"{tabname}_{self.extra_networks_tabname}",
                         "title": html.escape(node.abspath),
-                        "path": html.escape(node.relpath),
                         "label": html.escape(label),
+                        "data_attributes": data_attributes_str,
                     }
                 )
             )
@@ -754,15 +798,10 @@ class ExtraNetworksPage:
             if not os.path.exists(abspath):
                 continue
             self.tree_roots[abspath] = DirectoryTreeNode(os.path.dirname(abspath), abspath, None)
-            self.tree_roots[abspath].build(
-                tree_items,
-                include_hidden=shared.opts.extra_networks_show_hidden_directories,
-            )
+            self.tree_roots[abspath].build(tree_items)
 
         cards_list_loading_splash_content = "Loading..."
-        no_cards_html_dirs = "".join(
-            [f"<li>{x}</li>" for x in self.allowed_directories_for_previews()]
-        )
+        no_cards_html_dirs = "".join([f"<li>{x}</li>" for x in self.allowed_directories_for_previews()])
         cards_list_no_data_splash_content = (
             "<div class='nocards'>"
             "<h1>Nothing here. Add some content to the following directories:</h1>"
@@ -1220,11 +1259,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
             elem_id=f"{tabname_full}_extra_refresh_internal",
             visible=False,
         )
-        button_refresh.click(
-            fn=functools.partial(refresh, tabname_full),
-            inputs=[],
-            outputs=list(ui.pages.values()),
-        ).then(
+        button_refresh.click(fn=functools.partial(refresh, tabname_full), inputs=[], outputs=list(ui.pages.values()),).then(
             fn=lambda: None,
             _js="setupAllResizeHandles",
         ).then(

@@ -748,8 +748,12 @@ class ExtraNetworksTab {
                 await this.tree_list.onRowSelected();
             }
             // Don't use escaped path here since this is pure javascript beyond this point.
+            let directory_filter = source_elem.dataset.path;
+            if ("directoryFilterOverride" in source_elem.dataset) {
+                directory_filter = source_elem.dataset.directoryFilterOverride;
+            }
             this.applyDirectoryFilter(
-                "selected" in source_elem.dataset ? source_elem.dataset.path : null,
+                "selected" in source_elem.dataset ? directory_filter : null,
                 "recurse" in source_elem.dataset,
             );
             return;
@@ -770,8 +774,12 @@ class ExtraNetworksTab {
         const div_id = source_is_tree ? source_elem.dataset.divId : other_elem.dataset.divId;
         _set_recursion_depth(div_id, data_recurse);
         // Don't use escaped path here since this is pure javascript beyond this point.
+        let directory_filter = source_elem.dataset.path;
+        if ("directoryFilterOverride" in source_elem.dataset) {
+            directory_filter = source_elem.dataset.directoryFilterOverride;
+        }
         this.applyDirectoryFilter(
-            "selected" in source_elem.dataset ? source_elem.dataset.path : null,
+            "selected" in source_elem.dataset ? directory_filter : null,
             "recurse" in source_elem.dataset,
         );
     }

@@ -581,28 +581,26 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
             if (this.directory_filter_str && this.directory_filter_recurse) {
                 // Filter as directory with recurse shows all nested children.
                 // Case sensitive comparison against the relative directory of each object.
-                this.data_obj[div_id].visible = v.rel_parent_dir.startsWith(this.directory_filter_str);
-                if (!this.data_obj[div_id].visible) {
+                v.visible = v.rel_parent_dir.startsWith(this.directory_filter_str);
+                if (!v.visible) {
                     continue;
                 }
             } else {
                 // Filtering as directory without recurse only shows direct children.
                 // Case sensitive comparison against the relative directory of each object.
                 if (this.directory_filter_str && this.directory_filter_str !== v.rel_parent_dir) {
-                    this.data_obj[div_id].visible = false;
+                    v.visible = false;
                     continue;
                 }
             }
 
-            if (v.search_only && this.filter_str.length >= 4) {
+            if (v.search_only) {
                 // Custom filter for items marked search_only=true.
-                // TODO: Not ideal. This disregards any search_terms set on the model.
-                // However the search terms are currently set up in a way that would
-                // reveal hidden models if the user searches for any visible parent
-                // directories. For example, searching for "Lora" would reveal a hidden
-                // model in "Lora/.hidden/model.safetensors" since that full path is
-                // included in the search terms.
-                visible = v.rel_parent_dir.toLowerCase().indexOf(this.filter_str.toLowerCase()) !== -1;
+                if (this.directory_filter_str || this.filter_str.length >= 4) {
+                    visible = v.search_terms.toLowerCase().indexOf(this.filter_str.toLowerCase()) !== -1;
+                } else {
+                    visible = false;
+                }
             } else {
                 // All other filters treated case insensitive.
                 visible = v.search_terms.toLowerCase().indexOf(this.filter_str.toLowerCase()) !== -1;
