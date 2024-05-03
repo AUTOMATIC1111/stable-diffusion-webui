@@ -600,6 +600,7 @@ class ExtraNetworksPage:
 
         show_hidden_dirs = shared.opts.extra_networks_show_hidden_directories_buttons
         show_hidden_models = shared.opts.extra_networks_show_hidden_models_in_tree_view
+        expand_depth = int(shared.opts.extra_networks_tree_view_expand_depth_default)
         for node in self.nodes.values():
             if node.is_hidden and node.is_dir and not show_hidden_dirs:
                 continue
@@ -608,13 +609,11 @@ class ExtraNetworksPage:
                 continue
 
             tree_item = TreeListItem(node.id, "")
-            # If root node, expand and set visible.
-            if node.parent is None:
-                tree_item.expanded = True
-                tree_item.visible = True
 
-            # If direct child of root node, set visible.
-            if node.parent is not None and node.parent.parent is None:
+            if node.depth <= expand_depth:
+                tree_item.expanded = True
+
+            if node.depth <= expand_depth + 1:
                 tree_item.visible = True
 
             tree_item.node = node
@@ -639,12 +638,19 @@ class ExtraNetworksPage:
                     dir_is_empty = all(not x.is_dir for x in node.children)
 
                 if not dir_is_empty:
-                    if show_files and show_hidden_models:
-                        children = [x.id for x in tree_item.node.children]
-                    elif show_files and not show_hidden_models:
-                        children = [x.id for x in tree_item.node.children if x.is_dir or (not x.is_dir and not x.is_hidden)]
-                    else:
-                        children = [x.id for x in tree_item.node.children if x.is_dir]
+                    for child in tree_item.node.children:
+                        if child.is_dir:
+                            if child.is_hidden:
+                                if show_hidden_dirs:
+                                    children.append(child.id)
+                            else:
+                                children.append(child.id)
+                        elif show_files:
+                            if child.is_hidden:
+                                if show_hidden_dirs and show_hidden_models:
+                                    children.append(child.id)
+                            else:
+                                children.append(child.id)
 
                 data_attributes = {
                     "data-div-id": f'"{node.id}"',
@@ -652,7 +658,7 @@ class ExtraNetworksPage:
                     "data-tree-entry-type": "dir",
                     "data-depth": node.depth,
                     "data-path": f'"{node.relpath}"',
-                    "data-expanded": node.parent is None,  # Expand root directories
+                    "data-expanded": tree_item.expanded,
                 }
 
                 if node.is_hidden:

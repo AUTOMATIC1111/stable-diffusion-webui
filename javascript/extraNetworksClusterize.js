@@ -68,7 +68,8 @@ class ExtraNetworksClusterize extends Clusterize {
         await this.initData();
         // can't use super class' sort since it relies on setup being run first.
         // but we do need to make sure to sort the new data before continuing.
-        await this.setMaxItems(Object.keys(this.data_obj).length);
+        const max_items = Object.keys(this.data_obj).filter(k => this.data_obj[k].visible).length;
+        await this.setMaxItems(max_items);
         await this.refresh(true);
         await this.options.callbacks.sortData();
     }
