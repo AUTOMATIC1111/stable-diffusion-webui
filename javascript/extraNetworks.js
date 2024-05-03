@@ -111,10 +111,6 @@ class ExtraNetworksTab {
     refresh_in_progress = false;
     dirs_view_en = false;
     tree_view_en = false;
-    cards_list_loading_splash_elem = null;
-    cards_list_no_data_splash_elem = null;
-    tree_list_loading_splash_elem = null;
-    tree_list_no_data_splash_elem = null;
     cards_list_splash_state = null;
     tree_list_splash_state = null;
     constructor({tabname, extra_networks_tabname}) {
@@ -139,19 +135,6 @@ class ExtraNetworksTab {
             waitForElement(`#${this.tabname_full}_cards_list_content_area`),
         ]);
 
-        this.cards_list_loading_splash_elem = document.getElementById(
-            `${this.tabname_full}_cards_list_loading_splash`
-        );
-        this.cards_list_no_data_splash_elem = document.getElementById(
-            `${this.tabname_full}_cards_list_no_data_splash`
-        );
-        this.tree_list_loading_splash_elem = document.getElementById(
-            `${this.tabname_full}_tree_list_loading_splash`
-        );
-        this.tree_list_no_data_splash_elem = document.getElementById(
-            `${this.tabname_full}_tree_list_no_data_splash`
-        );
-
         this.updateSplashState({cards_list_state: "loading", tree_list_state: "loading"});
 
         this.txt_search_elem = this.controls_elem.querySelector(".extra-network-control--search-text");
@@ -169,6 +152,15 @@ class ExtraNetworksTab {
         // setup this tab's controls
         this.controls_elem.id = `${this.tabname_full}_controls`;
         controls_div.insertBefore(this.controls_elem, null);
+
+        const error_btn = this.controls_elem.querySelector(
+            ".extra-network-control--refresh"
+        ).cloneNode(true);
+        error_btn.id = null;
+        error_btn.dataset.tabnameFull = this.tabname_full;
+        this.clusterize_error_html = "<div>Data Error.<br/>" +
+            "Please refresh tab.<br>" +
+            `${error_btn.outerHTML}</div>`;
 
         await Promise.all([this.setupTreeList(), this.setupCardsList()]);
 
@@ -249,6 +241,7 @@ class ExtraNetworksTab {
             scrollId: `${this.tabname_full}_tree_list_scroll_area`,
             contentId: `${this.tabname_full}_tree_list_content_area`,
             tag: "button",
+            error_html: this.clusterize_error_html,
             callbacks: {
                 initData: this.onInitTreeData.bind(this),
                 fetchData: this.onFetchTreeData.bind(this),
@@ -267,6 +260,8 @@ class ExtraNetworksTab {
             scrollId: `${this.tabname_full}_cards_list_scroll_area`,
             contentId: `${this.tabname_full}_cards_list_content_area`,
             tag: "div",
+            no_data_html: "No data matching filter.",
+            error_html: this.clusterize_error_html,
             callbacks: {
                 initData: this.onInitCardsData.bind(this),
                 fetchData: this.onFetchCardsData.bind(this),
@@ -358,23 +353,22 @@ class ExtraNetworksTab {
             }
         };
 
+        let loading_elem;
+        let no_data_elem;
+
         if (isString(cards_list_state)) {
             this.cards_list_splash_state = cards_list_state;
+            loading_elem = document.getElementById(`${this.tabname_full}_cards_list_loading_splash`);
+            no_data_elem = document.getElementById(`${this.tabname_full}_cards_list_no_data_splash`);
+            _handle_state(cards_list_state, loading_elem, no_data_elem);
         }
-        _handle_state(
-            cards_list_state,
-            this.cards_list_loading_splash_elem,
-            this.cards_list_no_data_splash_elem,
-        );
 
         if (isString(tree_list_state)) {
             this.tree_list_splash_state = tree_list_state;
+            loading_elem = document.getElementById(`${this.tabname_full}_tree_list_loading_splash`);
+            no_data_elem = document.getElementById(`${this.tabname_full}_tree_list_no_data_splash`);
+            _handle_state(tree_list_state, loading_elem, no_data_elem);
         }
-        _handle_state(
-            tree_list_state,
-            this.tree_list_loading_splash_elem,
-            this.tree_list_no_data_splash_elem,
-        );
     }
 
     async #refresh() {
@@ -579,9 +573,15 @@ class ExtraNetworksTab {
             if (response.missing_div_ids.length) {
                 console.warn(`Failed to fetch multiple div_ids: ${response.missing_div_ids}`);
             }
+            if (Object.keys(response.data).length === 0) {
+                this.updateSplashState({cards_list_state: "no_data"});
+            } else {
+                this.updateSplashState({cards_list_state: "show"});
+            }
             return response.data;
         } catch (error) {
             console.error(`onFetchCardsData error: ${error.message}`);
+            this.updateSplashState({cards_list_state: "no_data"});
             return {};
         }
     }
@@ -596,9 +596,15 @@ class ExtraNetworksTab {
             if (response.missing_div_ids.length) {
                 console.warn(`Failed to fetch multiple div_ids: ${response.missing_div_ids}`);
             }
+            if (Object.keys(response.data).length === 0) {
+                this.updateSplashState({tree_list_state: "no_data"});
+            } else {
+                this.updateSplashState({tree_list_state: "show"});
+            }
             return response.data;
         } catch (error) {
             console.error(`onFetchTreeData error: ${error.message}`);
+            this.updateSplashState({tree_list_state: "no_data"});
             return {};
         }
     }
@@ -1178,7 +1184,19 @@ function extraNetworksControlRefreshOnClick(event) {
     extra_networks_refresh_internal_debounce_timer = setTimeout(async() => {
         const btn = event.target.closest(".extra-network-control--refresh");
         const controls = btn.closest(".extra-network-controls");
-        const tab = extra_networks_tabs[controls.dataset.tabnameFull];
+        // Bit of lazy workaround to allow for us to create copies of the refresh
+        // button anywhere we want as long as we include tabnameFull in the dataset.
+        let tabname_full;
+        if (isElement(controls)) {
+            tabname_full = controls.dataset.tabnameFull;
+        } else {
+            tabname_full = btn.dataset.tabnameFull;
+        }
+        const tab = extra_networks_tabs[tabname_full];
+        if (isNullOrUndefined(tab)) {
+            return;
+        }
+
         tab.updateSplashState({cards_list_state: "loading", tree_list_state: "loading"});
         // We want to reset tab lists on refresh click so that the viewing area
         // shows that it is loading new data.
@@ -1186,7 +1204,7 @@ function extraNetworksControlRefreshOnClick(event) {
         tab.cards_list.clear();
         // Fire an event for this button click.
         gradioApp().getElementById(
-            `${controls.dataset.tabnameFull}_extra_refresh_internal`
+            `${tabname_full}_extra_refresh_internal`
         ).dispatchEvent(new Event("click"));
     }, EXTRA_NETWORKS_REFRESH_INTERNAL_DEBOUNCE_TIMEOUT_MS);
 }
@@ -1588,8 +1606,7 @@ function extraNetworksSetupEventDelegators() {
                 }
             }
         }
-
-        // long_press_event_map is handled by the timer setup in "mousedown" handlers.
+        // NOTE: long_press_event_map is handled by the timer setup in "mousedown" handlers.
     });
 }
 

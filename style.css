@@ -1212,7 +1212,8 @@ body.resizing .resize-handle {
     display: none;
 }
 
-.clusterize-no-data {
+.clusterize-no-data, .clusterize-error {
+    width: 100%;
     text-align: center;
     color: var(--input-placeholder-color) !important;
 }

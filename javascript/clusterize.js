@@ -24,10 +24,12 @@ class Clusterize {
         cols_in_block: 1,
         blocks_in_cluster: 5,
         rows_in_cluster: 50 * 5, // default is rows_in_block * blocks_in_cluster
-        tag: null,
+        tag: "div",
         id_attr: "data-div-id",
         no_data_class: "clusterize-no-data",
-        no_data_text: "No Data",
+        no_data_html: "No Data",
+        error_class: "clusterize-error",
+        error_html: "Data Error",
         show_no_data_row: true,
         keep_parity: true,
         callbacks: {},
@@ -144,15 +146,18 @@ class Clusterize {
     }
 
     async refresh(force) {
-        if (!this.setup_has_run || !this.enabled || isNullOrUndefined(this.content_elem.offsetParent)) {
+        if (!this.setup_has_run || !this.enabled) {
             return;
         }
+
         // Refresh can be a longer operation so we want to debounce it to
         // avoid refreshing too often.
         clearTimeout(this.#refresh_debounce_timer);
         this.#refresh_debounce_timer = setTimeout(
             async () => {
-                this.#fixElementReferences();
+                if (!isElement(this.content_elem.offsetParent)) {
+                    return;
+                }
         
                 if (this.#recalculateDims() || force) {
                     await this.update()
@@ -342,17 +347,16 @@ class Clusterize {
         return prev_options !== JSON.stringify(this.options);
     }
 
-    #generateEmptyRow() {
-        const row = document.createElement(this.options.tag);
-        row.className = this.options.no_data_class;
-        const node = document.createTextNode(this.options.no_data_text);
+    #generateEmptyRow({is_error}={}) {
+        const row = document.createElement(is_error ? "div" : this.options.tag);
+        row.className = is_error ? this.options.error_class : this.options.no_data_class;
         if (this.options.tag === "tr") {
             const td = document.createElement("td");
             td.colSpan = 100;
-            td.appendChild(node);
+            td.innerHTML = is_error ? this.options.error_html : this.options.no_data_html;
             row.appendChild(td);
         } else {
-            row.appendChild(node);
+            row.innerHTML = is_error ? this.options.error_html : this.options.no_data_html;
         }
         return [row.outerHTML];
     }
@@ -386,7 +390,7 @@ class Clusterize {
                 top_offset: 0,
                 bottom_offset: 0,
                 rows_above: 0,
-                rows: this_cluster_rows.length ? this_cluster_rows : this.#generateEmptyRow(),
+                rows: this_cluster_rows.length ? this_cluster_rows : this.#generateEmptyRow({is_error: true}),
             };
         }
 
@@ -522,7 +526,8 @@ class Clusterize {
             return;
         }
 
-        if (!isNullOrUndefined(this.content_elem.offsetParent)) {
+        // Element is already in DOM. Don't need to do anything.
+        if (isElement(this.content_elem.offsetParent)) {
             return;
         }
 
