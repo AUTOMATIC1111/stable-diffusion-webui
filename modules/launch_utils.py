@@ -10,6 +10,7 @@ import importlib.metadata
 import platform
 import json
 from functools import lru_cache
+from pathlib import Path
 
 from modules import cmd_args, errors
 from modules.paths_internal import script_path, extensions_dir
@@ -236,8 +237,16 @@ def run_extension_installer(extension_dir):
         stdout = run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {extension_dir}", custom_env=env).strip()
         if stdout:
             print(stdout)
-    except Exception as e:
-        errors.report(str(e))
+    except Exception:
+        print(f'Failed to install {extension_dir} extension. Try again with another PYTHONPATH env.')
+        try:
+            env['PYTHONPATH'] = f"{str(Path(__file__).parent.parent.absolute().resolve())}{os.pathsep}{env.get('PYTHONPATH', '')}"
+            stdout = run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {extension_dir}", custom_env=env).strip()
+            print(f'Successfuly {path_installer} executed.')
+            if stdout:
+                print(stdout)
+        except Exception as e:
+            errors.report(str(e))
 
 
 def list_extensions(settings_file):
