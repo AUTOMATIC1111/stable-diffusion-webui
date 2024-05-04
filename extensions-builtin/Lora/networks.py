@@ -1,4 +1,5 @@
 import gradio as gr
+import json
 import logging
 import os
 import re
@@ -596,6 +597,17 @@ def list_available_networks():
         available_network_aliases[name] = entry
         available_network_aliases[entry.alias] = entry
 
+        # Try to get modelVersionId from model json
+        json_path = os.path.join(os.path.dirname(filename), name + ".json")
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, "r", encoding="utf-8") as f:
+                    model_json = json.load(f)
+            except (OSError, json.JSONDecodeError):
+                errors.report(f"Failed to load network json: {json_path}", exc_info=False)
+        if "modelVersionId" in model_json:
+            model_ver_id = str(model_json["modelVersionId"])
+            network_version_id_to_alias[model_ver_id] = entry.get_alias()
 
 re_network_name = re.compile(r"(.*)\s*\([0-9a-fA-F]+\)")
 
@@ -642,5 +654,6 @@ loaded_bundle_embeddings = {}
 networks_in_memory = {}
 available_network_hash_lookup = {}
 forbidden_network_aliases = {}
+network_version_id_to_alias = {}
 
 list_available_networks()

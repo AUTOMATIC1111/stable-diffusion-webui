@@ -1,5 +1,6 @@
 from __future__ import annotations
 import base64
+import importlib
 import io
 import json
 import os
@@ -230,6 +231,47 @@ def restore_old_hires_fix_params(res):
     res['Hires resize-2'] = height
 
 
+def parse_civitai_resources(x: str):
+    """parses the Civitai resources string to automatically set the model weights in the prompt:
+```
+Civitai resources: [{"type":"checkpoint","modelVersionId":290640},{"type":"ImageJobNetworkParams { Strength = 0.4, TriggerWord = , Type = lora }","weight":0.4,"modelVersionId":135867},
+{"type":"embed","modelVersionId":250708}]
+```
+    returns a string to append to the prompt
+    """
+    x = "".join(x.strip().split("\n"))
+    if "Civitai resources:" not in x:
+        return ""
+    x = x[x.find("Civitai resources:") + 19:]
+    if "[" not in x or "]" not in x:
+        return ""
+    
+    x = x[x.find("["):x.find("]") + 1]
+    try:
+        resources = json.loads(x)
+    except json.JSONDecodeError:
+        return ""
+    
+    prompt_resources = []
+    for resource in resources:
+        if "type" not in resource or "weight" not in resource or "modelVersionId" not in resource:
+            continue
+        if "ImageJobNetworkParams" not in resource["type"]:
+            continue
+
+        weight = resource["weight"]
+        model_version_id = str(resource["modelVersionId"])
+        networks = importlib.import_module("extensions-builtin.Lora.networks")
+        if model_version_id in networks.network_version_id_to_alias:
+            model_name = networks.network_version_id_to_alias[model_version_id]
+            prompt_resource = f"<lora:{model_name}:{weight}>"
+            prompt_resources.append(prompt_resource)
+
+    if prompt_resources:
+        return " " + " ".join(prompt_resources)
+    return ""
+
+
 def parse_generation_parameters(x: str, skip_fields: list[str] | None = None):
     """parses generation parameters string, the one you see in text field under the picture in UI:
 ```
@@ -295,6 +337,9 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
             prompt, negative_prompt = prompt_no_styles, negative_prompt_no_styles
             if (shared.opts.infotext_styles == "Apply if any" and found_styles) or shared.opts.infotext_styles == "Apply":
                 res['Styles array'] = found_styles
+
+    # Parse civitai resources
+    prompt += parse_civitai_resources(x)
 
     res["Prompt"] = prompt
     res["Negative prompt"] = negative_prompt
