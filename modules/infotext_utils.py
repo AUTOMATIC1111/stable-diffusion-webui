@@ -245,13 +245,13 @@ Civitai resources: [{"type":"checkpoint","modelVersionId":290640},{"type":"Image
     x = x[x.find("Civitai resources:") + 19:]
     if "[" not in x or "]" not in x:
         return ""
-    
+
     x = x[x.find("["):x.find("]") + 1]
     try:
         resources = json.loads(x)
     except json.JSONDecodeError:
         return ""
-    
+
     prompt_resources = []
     for resource in resources:
         if "type" not in resource or "weight" not in resource or "modelVersionId" not in resource:
