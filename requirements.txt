@@ -16,6 +16,7 @@ lark
 numpy
 omegaconf
 open-clip-torch
+spandrel<0.3
 
 piexif
 psutil
