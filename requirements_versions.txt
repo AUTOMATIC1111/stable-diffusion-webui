@@ -6,7 +6,7 @@ clean-fid==0.1.35
 diskcache==5.6.3
 einops==0.8.0
 facexlib==0.3.0
-fastapi==0.111.0
+fastapi==0.90.1
 gradio==3.41.2
 httpcore==1.0.5
 inflection==0.5.1
