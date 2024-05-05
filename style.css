@@ -400,6 +400,7 @@ div#extras_scale_to_tab div.form{
 
 .infotext {
     overflow-wrap: break-word;
+    white-space: pre-wrap;
 }
 
 #img2img_column_batch{
