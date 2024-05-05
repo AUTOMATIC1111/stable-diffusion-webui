@@ -813,9 +813,9 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
 
     generation_params_text = ", ".join([k if k == v else f'{k}: {infotext_utils.quote(v)}' for k, v in generation_params.items() if v is not None])
 
-    negative_prompt_text = f"\nNegative prompt: {negative_prompt}" if negative_prompt else ""
+    negative_prompt_text = f"\00\00\00\nNegative prompt: {negative_prompt}" if negative_prompt else ""
 
-    return f"{prompt_text}{negative_prompt_text}\n{generation_params_text}".strip()
+    return f"{prompt_text}{negative_prompt_text}\00\00\00\n{generation_params_text}".strip()
 
 
 def process_images(p: StableDiffusionProcessing) -> Processed:

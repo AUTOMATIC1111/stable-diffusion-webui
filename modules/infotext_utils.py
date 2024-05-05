@@ -250,13 +250,14 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
 
     done_with_prompt = False
 
-    *lines, lastline = x.strip().split("\n")
+    separator = '\00\00\00\n' if '\00\00\00\n' in x.strip() else '\n'
+    *lines, lastline = x.strip().split(separator)
     if len(re_param.findall(lastline)) < 3:
         lines.append(lastline)
         lastline = ''
 
     for line in lines:
-        line = line.strip()
+        line = line.strip().replace('\00', '')
         if line.startswith("Negative prompt:"):
             done_with_prompt = True
             line = line[16:].strip()
@@ -296,8 +297,8 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
             if (shared.opts.infotext_styles == "Apply if any" and found_styles) or shared.opts.infotext_styles == "Apply":
                 res['Styles array'] = found_styles
 
-    res["Prompt"] = prompt
-    res["Negative prompt"] = negative_prompt
+    res["Prompt"] = prompt.replace('\00', '')
+    res["Negative prompt"] = negative_prompt.replace('\00', '')
 
     # Missing CLIP skip means it was set to 1 (the default)
     if "Clip skip" not in res:
