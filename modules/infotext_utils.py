@@ -254,9 +254,7 @@ Civitai resources: [{"type":"checkpoint","modelVersionId":290640},{"type":"Image
 
     prompt_resources = []
     for resource in resources:
-        if "type" not in resource or "weight" not in resource or "modelVersionId" not in resource:
-            continue
-        if "ImageJobNetworkParams" not in resource["type"]:
+        if "weight" not in resource or "modelVersionId" not in resource:
             continue
 
         weight = resource["weight"]
