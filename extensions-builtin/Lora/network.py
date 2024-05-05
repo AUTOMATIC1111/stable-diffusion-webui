@@ -81,7 +81,7 @@ class NetworkOnDisk:
 
     def get_alias(self):
         import networks
-        if shared.opts.lora_preferred_name == "Filename" or self.alias.lower() in networks.forbidden_network_aliases:
+        if (hasattr(shared.opts, "lora_preferred_name") and shared.opts.lora_preferred_name == "Filename") or self.alias.lower() in networks.forbidden_network_aliases:
             return self.name
         else:
             return self.alias
