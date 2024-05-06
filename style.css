@@ -1531,8 +1531,7 @@ body.resizing .resize-handle {
     -ms-transform: rotate(45deg);
     -webkit-transform: rotate(45deg);
     transform: rotate(45deg);
-    transition: transform 0.2s;
-    transition-delay: 0.3s;
+    transition: transform 0.1s ease;
     z-index: 0;
 }
 
@@ -1542,16 +1541,16 @@ body.resizing .resize-handle {
     transform: rotate(135deg);
 }
 
-.tree-list-item[data-expanded] .tree-list-item-action--chevron.pressed {
-    -ms-transform: rotate(-45deg);
-    -webkit-transform: rotate(-45deg);
-    transform: rotate(-45deg);
-}
-
-.tree-list-item:not([data-expanded]) .tree-list-item-action--chevron.pressed {
+.ctrl-pressed:not(.shift-pressed) .tree-list-item-action--chevron:hover {
     -ms-transform: rotate(135deg);
     -webkit-transform: rotate(135deg);
     transform: rotate(135deg);
+}
+
+.shift-pressed:not(.ctrl-pressed) .tree-list-item-action--chevron:hover {
+    -ms-transform: rotate(-45deg);
+    -webkit-transform: rotate(-45deg);
+    transform: rotate(-45deg);
 }
 
 .tree-list-item-action--chevron .chevron-icon-single,
@@ -1562,25 +1561,22 @@ body.resizing .resize-handle {
     width: 100%;
     height: 100%;
     transition: all 0.1s ease;
-    transition-delay: 0.3s;
 }
 
-.tree-list-item-action--chevron:not(.pressed) .chevron-icon-single {
+.tree-list-item-action--chevron .chevron-icon-single {
     opacity: 1;
     stroke: var(--input-placeholder-color);
 }
 
-.tree-list-item-action--chevron.pressed .chevron-icon-double {
+:is(.ctrl-pressed:not(.shift-pressed), .shift-pressed:not(.ctrl-pressed)) .tree-list-item-action--chevron:hover .chevron-icon-double {
     opacity: 1;
     stroke: var(--button-primary-border-color);
 }
 
-.tree-list-item-action--chevron.pressed .chevron-icon-single,
-.tree-list-item-action--chevron:not(.pressed) .chevron-icon-double {
+:is(.ctrl-pressed:not(.shift-pressed), .shift-pressed:not(.ctrl-pressed)) .tree-list-item-action--chevron:hover .chevron-icon-single,
+:not(.ctrl-pressed:not(.shift-pressed), .shift-pressed:not(.ctrl-pressed)) .tree-list-item-action--chevron .chevron-icon-double {
     opacity: 0;
 }
-
-
 
 /* Text for button. */
 .tree-list-item-label {
@@ -1710,12 +1706,12 @@ body.resizing .resize-handle {
     background: var(--button-secondary-background-fill-hover);
 }
 
-.extra-network-dirs-view-button[data-recurse] {
+.extra-network-dirs-view-button.short-pressed:not(.long-pressed) {
     background: var(--button-primary-background-fill);
     border-color: var(--button-primary-border-color);
 }
 
-.extra-network-dirs-view-button[data-recurse]:not(.pressed):hover {
+.extra-network-dirs-view-button.short-pressed:not(.long-pressed,.pressed):hover {
     -webkit-transition: all 0.05s ease-in-out;
     transition: all 0.05s ease-in-out;
     background: var(--button-primary-background-fill-hover);
@@ -1732,11 +1728,11 @@ body.resizing .resize-handle {
     z-index: -1;
 }
 
-.extra-network-dirs-view-button:not([data-recurse])::after {
+.extra-network-dirs-view-button:not(.short-pressed:not(.long-pressed))::after {
     background: var(--button-secondary-background-fill-hover);
 }
 
-.extra-network-dirs-view-button[data-recurse]::after {
+.extra-network-dirs-view-button.short-pressed:not(.long-pressed)::after {
     background: var(--button-primary-background-fill-hover);
 }
 
@@ -1790,7 +1786,7 @@ body.resizing .resize-handle {
     transition: all 0.8s cubic-bezier(0.215, 0.61, 0.355, 1);
 }
 
-.tree-list-item[data-recurse] .tree-list-item-action--chevron .chevron-icon-single {
+.tree-list-item.short-pressed:not(.long-pressed) .tree-list-item-action--chevron .chevron-icon-single {
     stroke: var(--button-primary-border-color);
 }
 

@@ -740,7 +740,10 @@ class ExtraNetworksPage:
                 parts = [x for x in node.relpath.split(os.sep) if x]
                 label = os.path.join(*parts[1:])
 
-            data_attributes = {"data-path": f'"{node.relpath}"'}
+            data_attributes = {
+                "data-div-id": f'"{node.id}"',
+                "data-path": f'"{node.relpath}"',
+            }
 
             if node.is_hidden:
                 data_attributes["data-directory-filter-override"] = f'"{node.rel_from_hidden}"'

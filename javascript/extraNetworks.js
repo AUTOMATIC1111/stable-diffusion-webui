@@ -103,8 +103,6 @@ class ExtraNetworksTab {
     sort_mode_str = "";
     sort_dir_str = "";
     filter_str = "";
-    directory_filter_str = "";
-    directory_filter_recurse = false;
     show_prompt = true;
     show_neg_prompt = true;
     compact_prompt_en = false;
@@ -113,6 +111,8 @@ class ExtraNetworksTab {
     tree_view_en = false;
     cards_list_splash_state = null;
     tree_list_splash_state = null;
+    directory_filters = {};
+    list_button_states = {};
     constructor({tabname, extra_networks_tabname}) {
         this.tabname = tabname;
         this.extra_networks_tabname = extra_networks_tabname;
@@ -188,7 +188,7 @@ class ExtraNetworksTab {
 
         this.setSortMode(sort_mode_elem.dataset.sortMode);
         this.setSortDir(sort_dir_elem.dataset.sortDir);
-        this.applyDirectoryFilter();
+        this.applyDirectoryFilters();
         this.applyFilter();
 
         this.registerPrompt();
@@ -219,6 +219,8 @@ class ExtraNetworksTab {
         this.refresh_in_progress = false;
         this.tree_view_en = false;
         this.dirs_view_en = false;
+        this.directory_filters = {};
+        this.list_button_states = {};
     }
 
     async registerPrompt() {
@@ -283,12 +285,6 @@ class ExtraNetworksTab {
     setFilterStr(filter_str) {
         this.filter_str = filter_str;
         this.cards_list.setFilterStr(this.filter_str);
-    }
-
-    setDirectoryFilterStr(filter_str, recurse) {
-        this.directory_filter_str = filter_str;
-        this.directory_filter_recurse = recurse;
-        this.cards_list.setDirectoryFilterStr(this.directory_filter_str, this.directory_filter_recurse);
     }
 
     movePrompt(show_prompt = true, show_neg_prompt = true) {
@@ -402,10 +398,12 @@ class ExtraNetworksTab {
         this.tree_list.enable(this.tree_view_en);
         this.cards_list.enable(true);
         await Promise.all([this.tree_list.load(true), this.cards_list.load(true)]);
+
         // apply the previous sort/filter options
+        await this.applyListButtonStates();
         this.setSortMode(this.sort_mode_str);
         this.setSortDir(this.sort_dir_str);
-        this.applyDirectoryFilter(this.directory_filter_str, this.directory_filter_recurse);
+        this.applyDirectoryFilters();
         this.applyFilter(this.filter_str);
     }
 
@@ -437,10 +435,43 @@ class ExtraNetworksTab {
         this.cards_list.enable(false);
     }
 
-    applyDirectoryFilter(filter_str, recurse) {
+    addDirectoryFilter(div_id, filter_str, recurse) {
         filter_str = isString(filter_str) ? filter_str : "";
         recurse = recurse === true || recurse === false ? recurse : false;
-        this.setDirectoryFilterStr(filter_str, recurse);
+        if (this.cards_list.addDirectoryFilter(div_id, filter_str, recurse)) {
+            this.directory_filters[div_id] = {filter_str: filter_str, recurse: recurse};
+        }
+    }
+
+    removeDirectoryFilter(div_id) {
+        this.cards_list.removeDirectoryFilter(div_id);
+        delete this.directory_filters[div_id];
+    }
+
+    clearDirectoryFilters({excluded_div_ids} = {}) {
+        if (isNumber(excluded_div_ids)) {
+            excluded_div_ids = [excluded_div_ids];
+        }
+
+        if (!Array.isArray(excluded_div_ids)) {
+            excluded_div_ids = [];
+        }
+
+        this.cards_list.clearDirectoryFilters({excluded_div_ids: excluded_div_ids});
+        for (const div_id of Object.keys(this.directory_filters)) {
+            if (excluded_div_ids.includes(div_id)) {
+                continue;
+            }
+            delete this.directory_filters[div_id];
+        }
+    }
+
+    setDirectoryFilters() {
+        this.cards_list.setDirectoryFilters(this.directory_filters);
+    }
+
+    applyDirectoryFilters() {
+        this.cards_list.filterData();
     }
 
     applyFilter(filter_str) {
@@ -645,143 +676,150 @@ class ExtraNetworksTab {
         row.style.gridTemplateColumns = `${max_width}px ${pad}px 1fr`;
     }
 
-    async setDirectoryButtons({source_elem, source_selector, source_class, reset_all} = {}) {
-        // At least one argument must be specified.
-        if (isNullOrUndefined(source_elem) &&
-            isNullOrUndefined(source_selector) &&
-            isNullOrUndefined(source_class) &&
-            isNullOrUndefined(reset_all)) {
-            console.error("At least one argument must be specified.");
-            return;
+    async clearSelectedButtons({excluded_div_ids} = {}) {
+        /** excluded_elems can be an element or an array of elements. */
+        if (isNumber(excluded_div_ids)) {
+            excluded_div_ids = [excluded_div_ids];
         }
 
-        // Checks if an element exists and is visible on the page.
-        const _exists = (elem) => {
-            return isElement(elem) && !isNullOrUndefined(elem.offsetParent);
-        };
-
-        // source_elem is specified but invalid.
-        if (!isNullOrUndefined(source_elem) && !_exists(source_elem)) {
-            return;
+        if (!Array.isArray(excluded_div_ids)) {
+            excluded_div_ids = [];
         }
 
-        // Removes `data-selected` attribute from all tree/dirs buttons.
-        const _reset_all_buttons = async({excluded_elems} = {}) => {
-            const elems = this.container_elem.querySelectorAll(
-                ".extra-network-dirs-view-button, .tree-list-item"
-            );
-            for (const elem of elems) {
-                if (Array.isArray(excluded_elems) && excluded_elems.includes(elem)) {
-                    continue;
-                }
-
-                const prev = elem.outerHTML;
-                delete elem.dataset.selected;
-                delete elem.dataset.recurse;
-                elem.classList.remove("short-pressed");
-                elem.classList.remove("long-pressed");
-                if (prev !== elem.outerHTML) {
-                    this.tree_list.updateHtml(elem);
-                }
+        for (const div_id of Object.keys(this.list_button_states)) {
+            if (excluded_div_ids.includes(div_id)) {
+                continue;
             }
 
-            this.tree_list.content_elem.querySelectorAll(
-                ".tree-list-item-indent [data-selected]"
-            ).forEach(elem => {
-                delete elem.dataset.selected;
-            });
-        };
-        _reset_all_buttons.bind(this);
-
-        const _set_recursion_depth = (parent_id, state) => {
-            this.tree_list.content_elem.querySelectorAll(
-                `.tree-list-item-indent [data-parent-id="${parent_id}"]`
-            ).forEach(elem => {
-                elem.toggleAttribute("data-selected", state);
-            });
-        };
-        _set_recursion_depth.bind(this);
-
-        if (reset_all === true) {
-            _reset_all_buttons();
-            await this.tree_list.onRowSelected(); // no args deselects all.
-            this.applyDirectoryFilter();
-            return;
-        }
-
-        if (!_exists(source_elem) && isString(source_selector)) {
-            source_elem = this.container_elem.querySelector(source_selector);
-        }
-
-        if (!_exists(source_elem) && isString(source_class)) {
-            source_elem = this.container_elem.querySelector(`${source_class}[data-selected]`);
-        }
-
-        // try to find any selected buttons to use as a source.
-        if (!_exists(source_elem)) {
-            source_elem = this.container_elem.querySelector("[data-selected]");
-        }
-
-        // If we got here with no source elem, then we will take this to mean that
-        // we are deselecting all.
-        if (!_exists(source_elem)) {
-            _reset_all_buttons();
-            await this.tree_list.onRowSelected(); // no args deselects all.
-            this.applyDirectoryFilter();
-            return;
-        }
-
-        const source_is_tree = source_elem.classList.contains("tree-list-item");
-        const other_selector = source_is_tree ? ".extra-network-dirs-view-button" : ".tree-list-item";
-        // NOTE: We only use this escaped path in selectors since html handles these chars
-        // different from JS. We don't need to escape the path for any internal operations.
-        const data_path = String.raw`${source_elem.dataset.path.replaceAll("\\", "\\\\")}`;
-        const other_elem = document.querySelector(`${other_selector}[data-path="${data_path}"]`);
-        if (!_exists(other_elem)) {
-            // Can't reflect attributes since no matching element exists.
-            // This can happen when tree/dirs view is disabled or tree is collapsed.
-            _reset_all_buttons({excluded_elems: [source_elem]});
-            if (source_is_tree) {
-                await this.tree_list.onRowSelected(source_elem);
-                _set_recursion_depth(source_elem.dataset.divId, "recurse" in source_elem.dataset);
-            } else {
-                await this.tree_list.onRowSelected();
+            const tree_btn = this.tree_list.content_elem.querySelector(`.tree-list-item[data-div-id="${div_id}"]`);
+            const tree_btn_exists = isElement(tree_btn) && !isNullOrUndefined(tree_btn.offsetParent);
+            if (tree_btn_exists) {
+                await this.deselectTreeListRow(tree_btn);
             }
-            // Don't use escaped path here since this is pure javascript beyond this point.
-            let directory_filter = source_elem.dataset.path;
-            if ("directoryFilterOverride" in source_elem.dataset) {
-                directory_filter = source_elem.dataset.directoryFilterOverride;
+
+            const dirs_btn = this.container_elem.querySelector(`.extra-network-dirs-view-button[data-div-id="${div_id}"]`);
+            const dirs_btn_exists = isElement(dirs_btn) && !isNullOrUndefined(dirs_btn.offsetParent);
+            if (dirs_btn_exists) {
+                this.deselectDirsViewButton(dirs_btn);
             }
-            this.applyDirectoryFilter(
-                "selected" in source_elem.dataset ? directory_filter : null,
-                "recurse" in source_elem.dataset,
-            );
-            return;
+
+            delete this.list_button_states[div_id];
         }
 
-        const data_selected = "selected" in source_elem.dataset;
-        const data_recurse = "recurse" in source_elem.dataset;
-        const short_pressed = source_elem.classList.contains("short-pressed");
-        const long_pressed = source_elem.classList.contains("long-pressed");
+        this.tree_list.clearSelectedRows({excluded_div_ids: excluded_div_ids});
+        this.clearDirectoryFilters({excluded_div_ids: excluded_div_ids});
+        await this.tree_list.update();
+    }
 
-        _reset_all_buttons({excluded_elems: [source_elem, other_elem]});
-        other_elem.toggleAttribute("data-selected", data_selected);
-        other_elem.toggleAttribute("data-recurse", data_recurse);
-        other_elem.classList.toggle("short-pressed", short_pressed);
-        other_elem.classList.toggle("long-pressed", long_pressed);
-
-        await this.tree_list.onRowSelected(source_is_tree ? source_elem : other_elem);
-        const div_id = source_is_tree ? source_elem.dataset.divId : other_elem.dataset.divId;
-        _set_recursion_depth(div_id, data_recurse);
-        // Don't use escaped path here since this is pure javascript beyond this point.
-        let directory_filter = source_elem.dataset.path;
-        if ("directoryFilterOverride" in source_elem.dataset) {
-            directory_filter = source_elem.dataset.directoryFilterOverride;
-        }
-        this.applyDirectoryFilter(
-            "selected" in source_elem.dataset ? directory_filter : null,
-            "recurse" in source_elem.dataset,
+    setTreeListRecursionDepth(parent_id, state) {
+        const elems = this.tree_list.content_elem.querySelectorAll(
+            `.tree-list-item-indent [data-parent-id="${parent_id}"]`
         );
+        for (const elem of elems) {
+            elem.toggleAttribute("data-selected", state);
+            this.tree_list.updateHtml(elem.closest(".tree-list-item"));
+        }
+    }
+
+    async selectTreeListRow(elem) {
+        elem.dataset.selected = "";
+        this.tree_list.setRowSelected(elem);
+        let directory_filter = elem.dataset.path;
+        if ("directoryFilterOverride" in elem.dataset) {
+            directory_filter = elem.dataset.directoryFilterOverride;
+        }
+
+        const recurse = elem.classList.contains("short-pressed") && !elem.classList.contains("long-pressed");
+        this.setTreeListRecursionDepth(elem.dataset.divId, recurse);
+        this.addDirectoryFilter(elem.dataset.divId, directory_filter, recurse);
+        await this.tree_list.update();
+
+        this.list_button_states[elem.dataset.divId] = {
+            short_pressed: elem.classList.contains("short-pressed"),
+            long_pressed: elem.classList.contains("long-pressed"),
+        };
+    }
+
+    async deselectTreeListRow(elem) {
+        delete elem.dataset.selected;
+        elem.classList.remove("short-pressed");
+        elem.classList.remove("long-pressed");
+        this.tree_list.setRowDeselected(elem);
+        this.setTreeListRecursionDepth(elem.dataset.divId, false);
+        this.removeDirectoryFilter(elem.dataset.divId);
+        await this.tree_list.update();
+
+        delete this.list_button_states[elem.dataset.divId];
+    }
+
+    selectDirsViewButton(elem) {
+        elem.dataset.selected = "";
+        let directory_filter = elem.dataset.path;
+        if ("directoryFilterOverride" in elem.dataset) {
+            directory_filter = elem.dataset.directoryFilterOverride;
+        }
+
+        const recurse = elem.classList.contains("short-pressed") && !elem.classList.contains("long-pressed");
+        this.addDirectoryFilter(elem.dataset.divId, directory_filter, recurse);
+
+        this.list_button_states[elem.dataset.divId] = {
+            short_pressed: elem.classList.contains("short-pressed"),
+            long_pressed: elem.classList.contains("long-pressed"),
+        };
+    }
+
+    deselectDirsViewButton(elem) {
+        delete elem.dataset.selected;
+        elem.classList.remove("short-pressed");
+        elem.classList.remove("long-pressed");
+        delete this.list_button_states[elem.dataset.divId];
+    }
+
+    async applyListButtonStates() {
+        const selected_tree_rows = this.tree_list.content_elem.querySelectorAll(".tree-list-item[data-selected]");
+        for (const elem of selected_tree_rows) {
+            if (!Object.keys(this.list_button_states).includes(elem.dataset.divId)) {
+                await this.deselectTreeListRow(elem);
+            }
+        }
+
+        const selected_dirs_buttons = this.container_elem.querySelectorAll(".extra-network-dirs-view-button[data-selected]");
+        for (const elem of selected_dirs_buttons) {
+            if (!Object.keys(this.list_button_states).includes(elem.dataset.divId)) {
+                this.deselectDirsViewButton(elem);
+            }
+        }
+
+        for (const [div_id, state] of Object.entries(this.list_button_states)) {
+            const tree_btn = this.tree_list.content_elem.querySelector(`.tree-list-item[data-div-id="${div_id}"]`);
+            const tree_btn_exists = isElement(tree_btn) && !isNullOrUndefined(tree_btn.offsetParent);
+            if (tree_btn_exists) {
+                tree_btn.classList.toggle("short-pressed", state.short_pressed);
+                tree_btn.classList.toggle("long-pressed", state.long_pressed);
+                if (state.short_pressed || state.long_pressed) {
+                    await this.selectTreeListRow(tree_btn);
+                } else {
+                    await this.deselectTreeListRow(tree_btn);
+                }
+            }
+
+            const dirs_btn = this.container_elem.querySelector(`.extra-network-dirs-view-button[data-div-id="${div_id}"]`);
+            const dirs_btn_exists = isElement(dirs_btn) && !isNullOrUndefined(dirs_btn.offsetParent);
+            if (dirs_btn_exists) {
+                dirs_btn.classList.toggle("short-pressed", state.short_pressed);
+                dirs_btn.classList.toggle("long-pressed", state.long_pressed);
+                if (state.short_pressed || state.long_pressed) {
+                    this.selectDirsViewButton(dirs_btn);
+                } else {
+                    this.deselectDirsViewButton(dirs_btn);
+                }
+            }
+
+            if (!tree_btn_exists && !dirs_btn_exists) {
+                this.removeDirectoryFilter(div_id);
+            }
+        }
+        this.applyDirectoryFilters();
     }
 }
 
@@ -1029,23 +1067,6 @@ async function extraNetworksTabSelected(tabname_full, show_prompt, show_neg_prom
     }
 }
 
-function extraNetworksBtnDirsViewItemOnLongPress(event) {
-    const btn = event.target.closest(".extra-network-dirs-view-button");
-    const pane = btn.closest(".extra-network-pane");
-    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
-
-    tab.setDirectoryButtons({source_elem: btn});
-}
-
-function extraNetworksBtnDirsViewItemOnClick(event) {
-    /** Handles `onclick` events for buttons in the directory view. */
-    const btn = event.target.closest(".extra-network-dirs-view-button");
-    const pane = btn.closest(".extra-network-pane");
-    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
-
-    tab.setDirectoryButtons({source_elem: btn});
-}
-
 function extraNetworksControlSearchClearOnClick(event) {
     /** Dispatches custom event when the `clear` button in a search input is clicked. */
     const btn = event.target.closest(".extra-network-control--search-clear");
@@ -1065,7 +1086,6 @@ function extraNetworksControlSortModeOnClick(event) {
     const tab = extra_networks_tabs[controls.dataset.tabnameFull];
     tab.controls_elem.querySelectorAll(".extra-network-control--sort-mode").forEach(elem => {
         delete elem.dataset.selected;
-        delete elem.dataset.recurse;
     });
 
     btn.dataset.selected = "";
@@ -1109,17 +1129,6 @@ async function extraNetworksControlTreeViewOnClick(event) {
     btn.toggleAttribute("data-selected");
     tab.tree_view_en = "selected" in btn.dataset;
 
-    // If hiding, clear the tree list selections before hiding it.
-    if (!tab.tree_view_en) {
-        await tab.tree_list.onRowSelected();
-        tab.tree_list.content_elem.querySelectorAll(
-            ".tree-list-item[data-selected]"
-        ).forEach(elem => {
-            delete elem.dataset.selected;
-            delete elem.dataset.recurse;
-        });
-    }
-
     tab.tree_list.scroll_elem.parentElement.classList.toggle("hidden", !tab.tree_view_en);
     tab.tree_list.enable(tab.tree_view_en);
 
@@ -1137,13 +1146,7 @@ async function extraNetworksControlTreeViewOnClick(event) {
         await tab.tree_list.load();
     }
 
-    if ((tab.tree_view_en && tab.dirs_view_en) || (!tab.tree_view_en && tab.dirs_view_en)) {
-        tab.setDirectoryButtons({source_class: ".extra-network-dirs-view-button"});
-    } else if (tab.tree_view_en) {
-        tab.setDirectoryButtons({source_class: ".tree-list-item"});
-    } else {
-        tab.setDirectoryButtons({reset_all: true});
-    }
+    tab.applyListButtonStates();
 }
 
 function extraNetworksControlDirsViewOnClick(event) {
@@ -1157,27 +1160,11 @@ function extraNetworksControlDirsViewOnClick(event) {
     btn.toggleAttribute("data-selected");
     tab.dirs_view_en = "selected" in btn.dataset;
 
-    if (!tab.dirs_view_en) {
-        // If hiding, we want to deselect all buttons prior to hiding.
-        tab.container_elem.querySelectorAll(
-            ".extra-network-dirs-view-button[data-selected]"
-        ).forEach(elem => {
-            delete elem.dataset.selected;
-            delete elem.dataset.recurse;
-        });
-    }
-
     tab.container_elem.querySelector(
         ".extra-network-content--dirs-view"
     ).classList.toggle("hidden", !tab.dirs_view_en);
 
-    if ((tab.tree_view_en && tab.dirs_view_en) || (tab.tree_view_en && !tab.dirs_view_en)) {
-        tab.setDirectoryButtons({source_class: ".tree-list-item"});
-    } else if (tab.dirs_view_en) {
-        tab.setDirectoryButtons({source_class: ".extra-network-dirs-view-button"});
-    } else {
-        tab.setDirectoryButtons({reset_all: true});
-    }
+    tab.applyListButtonStates();
 }
 
 function extraNetworksControlRefreshOnClick(event) {
@@ -1277,68 +1264,128 @@ function extraNetworksTreeFileOnClick(event) {
     });
 }
 
-async function extraNetworksTreeDirectoryOnLongPress(event) {
-    // Do not select the row if its child button-row is the target of the event.
-    if (event.target.closest(".tree-list-item-action")) {
-        return;
-    }
-
+// ==== TREE VIEW DIRECTORY ROW CLICK EVENTS ====
+async function extraNetworksTreeDirectoryRowClickHandler({event, deselect_others} = {}) {
     const btn = event.target.closest(".tree-list-item");
     const pane = btn.closest(".extra-network-pane");
     const tab = extra_networks_tabs[pane.dataset.tabnameFull];
+    if (deselect_others === true) {
+        await tab.clearSelectedButtons({excluded_div_ids: [btn.dataset.divId]});
+    }
+    if ("selected" in btn.dataset) {
+        await tab.selectTreeListRow(btn);
+    } else {
+        await tab.deselectTreeListRow(btn);
+    }
+    tab.applyListButtonStates();
+}
 
-    tab.setDirectoryButtons({source_elem: btn});
+function extraNetworksTreeDirectoryOnClick(event) {
+    /** Selects the clicked row and applies a recursive filter for the directory.
+     *  Deselects all other rows.
+    */
+    extraNetworksTreeDirectoryRowClickHandler({event: event, deselect_others: true});
+}
+
+function extraNetworksTreeDirectoryOnCtrlClick(event) {
+    /** Selects the clicked row. Does not deselect other rows. */
+    extraNetworksTreeDirectoryRowClickHandler({event: event, deselect_others: false});
+}
+
+function extraNetworksTreeDirectoryOnLongPress(event) {
+    /** Selects the clicked row. Deselects all other rows. */
+    extraNetworksTreeDirectoryRowClickHandler({event: event, deselect_others: true});
+}
+
+function extraNetworksTreeDirectoryOnLongCtrlPress(event) {
+    /** Selects the clicked row and applies a recursive filter for the directory.
+     *  Does not deselect other rows.
+    */
+    extraNetworksTreeDirectoryRowClickHandler({event: event, deselect_others: false});
 }
 
 async function extraNetworksTreeDirectoryOnDblClick(event) {
-    // stopPropagation so we don't also trigger event on parent since this btn is nested.
-    event.stopPropagation();
-    const btn = event.target.closest(".tree-list-item");
-    const pane = btn.closest(".extra-network-pane");
-    const div_id = btn.dataset.divId;
-    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
-    await tab.tree_list.toggleRowExpanded(div_id);
-    tab.setDirectoryButtons({source_class: ".tree-list-item"});
-}
-
-async function extraNetworksTreeDirectoryOnClick(event) {
-    // Do not select the row if its child button-row is the target of the event.
-    if (event.target.closest(".tree-list-item-action")) {
-        return;
-    }
+    /** Expands the selected directory. */
     const btn = event.target.closest(".tree-list-item");
     const pane = btn.closest(".extra-network-pane");
     const tab = extra_networks_tabs[pane.dataset.tabnameFull];
-    tab.setDirectoryButtons({source_elem: btn});
+
+    await tab.tree_list.toggleRowExpanded(btn.dataset.divId);
+
+    await tab.clearSelectedButtons();
 }
 
-async function extraNetworksTreeDirectoryChevronOnLongPress(event) {
-    // stopPropagation so we don't also trigger event on parent since this btn is nested.
-    event.stopPropagation();
-    const chevron = event.target.closest(".tree-list-item-action--chevron");
-    const btn = event.target.closest(".tree-list-item");
-    const pane = btn.closest(".extra-network-pane");
-    const div_id = btn.dataset.divId;
-    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
-    if ("expanded" in btn.dataset) {
-        await tab.tree_list.collapseAllRows(div_id);
-    } else {
-        await tab.tree_list.expandAllRows(div_id);
-    }
-    tab.setDirectoryButtons({source_class: ".tree-list-item"});
-}
-
+// ==== TREE VIEW DIRECTORY ROW CHEVRON CLICK EVENTS ====
 async function extraNetworksBtnTreeViewChevronOnClick(event) {
-    // stopPropagation so we don't also trigger event on parent since this btn is nested.
-    event.stopPropagation();
     const btn = event.target.closest(".tree-list-item");
     const pane = btn.closest(".extra-network-pane");
-    const div_id = btn.dataset.divId;
     const tab = extra_networks_tabs[pane.dataset.tabnameFull];
-    await tab.tree_list.toggleRowExpanded(div_id);
-    tab.setDirectoryButtons({source_class: ".tree-list-item"});
+
+    await tab.tree_list.toggleRowExpanded(btn.dataset.divId);
+
+    tab.applyListButtonStates();
 }
 
+async function extraNetworksBtnTreeViewChevronOnCtrlClick(event) {
+    const btn = event.target.closest(".tree-list-item");
+    const pane = btn.closest(".extra-network-pane");
+    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
+    await tab.tree_list.expandAllRows(btn.dataset.divId);
+
+    tab.applyListButtonStates();
+}
+
+async function extraNetworksBtnTreeViewChevronOnShiftClick(event) {
+    const btn = event.target.closest(".tree-list-item");
+    const pane = btn.closest(".extra-network-pane");
+    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
+    await tab.tree_list.collapseAllRows(btn.dataset.divId);
+
+    tab.applyListButtonStates();
+}
+
+// ==== DIRS VIEW BUTTON CLICK EVENTS ====
+async function extraNetworksBtnDirsViewItemClickHandler({event, deselect_others} = {}) {
+    const btn = event.target.closest(".extra-network-dirs-view-button");
+    const pane = btn.closest(".extra-network-pane");
+    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
+    if (deselect_others === true) {
+        await tab.clearSelectedButtons({excluded_div_ids: [btn.dataset.divId]});
+    }
+    if ("selected" in btn.dataset) {
+        tab.selectDirsViewButton(btn);
+    } else {
+        tab.deselectDirsViewButton(btn);
+    }
+    tab.applyListButtonStates();
+}
+
+function extraNetworksBtnDirsViewItemOnClick(event) {
+    /** Selects the clicked button. Deselects all other buttons. */
+    extraNetworksBtnDirsViewItemClickHandler({event: event, deselect_others: true});
+}
+
+function extraNetworksBtnDirsViewItemOnCtrlClick(event) {
+    /** Selects the clicked button. Does not deselect other buttons. */
+    extraNetworksBtnDirsViewItemClickHandler({event: event, deselect_others: false});
+}
+
+function extraNetworksBtnDirsViewItemOnLongPress(event) {
+    /** Selects the clicked button and applies a recursive filter for the directory.
+     *  Deselects all other buttons.
+    */
+    extraNetworksBtnDirsViewItemClickHandler({event: event, deselect_others: true});
+}
+
+function extraNetworksBtnDirsViewItemOnLongCtrlPress(event) {
+    /** Selects the clicked button and applies a recursive filter for the directory.
+     *  Does not deselect other buttons.
+    */
+    extraNetworksBtnDirsViewItemClickHandler({event: event, deselect_others: false});
+}
+
+
+// ==== OTHER BUTTON HANDLERS ====
 function extraNetworksBtnShowMetadataOnClick(event) {
     // stopPropagation so we don't also trigger event on parent since this btn is nested.
     event.stopPropagation();
@@ -1469,11 +1516,32 @@ function extraNetworksSetupEventDelegators() {
         },
     ];
 
-    const long_press_event_map = [
+    const short_ctrl_press_event_map = [
         {
             selector: ".tree-list-item-action--chevron",
-            handler: extraNetworksTreeDirectoryChevronOnLongPress,
+            handler: extraNetworksBtnTreeViewChevronOnCtrlClick,
         },
+        {
+            selector: ".tree-list-item--dir",
+            negative: ".tree-list-item-action",
+            handler: extraNetworksTreeDirectoryOnCtrlClick,
+        },
+        {
+            selector: ".extra-network-dirs-view-button",
+            handler: extraNetworksBtnDirsViewItemOnCtrlClick,
+        },
+    ];
+
+    const short_shift_press_event_map = [
+        {
+            selector: ".tree-list-item-action--chevron",
+            handler: extraNetworksBtnTreeViewChevronOnShiftClick,
+        },
+    ];
+
+    const short_ctrl_shift_press_event_map = [];
+
+    const long_press_event_map = [
         {
             selector: ".tree-list-item--dir",
             negative: ".tree-list-item-action",
@@ -1484,6 +1552,21 @@ function extraNetworksSetupEventDelegators() {
             handler: extraNetworksBtnDirsViewItemOnLongPress,
         },
     ];
+
+    const long_ctrl_press_event_map = [
+        {
+            selector: ".tree-list-item--dir",
+            negative: ".tree-list-item-action",
+            handler: extraNetworksTreeDirectoryOnLongCtrlPress,
+        },
+        {
+            selector: ".extra-network-dirs-view-button",
+            handler: extraNetworksBtnDirsViewItemOnLongCtrlPress,
+        },
+    ];
+
+    const long_shift_press_event_map = [];
+    const long_ctrl_shift_press_event_map = [];
 
     const dbl_press_event_map = [
         {
@@ -1500,8 +1583,8 @@ function extraNetworksSetupEventDelegators() {
         // Toggle
         if (elem.classList.contains("long-pressed")) {
             elem.classList.remove("long-pressed");
+            elem.classList.remove("short-pressed");
             delete elem.dataset.selected;
-            delete elem.dataset.recurse;
         } else {
             elem.classList.toggle("short-pressed");
             elem.toggleAttribute("data-selected");
@@ -1519,7 +1602,6 @@ function extraNetworksSetupEventDelegators() {
         // Else we set as long pressed.
         if (elem.classList.contains("long-pressed")) {
             elem.classList.remove("long-pressed");
-            delete elem.dataset.recurse;
             // Don't want to remove selected state if btn was previously short-pressed.
             if (!elem.classList.contains("short-pressed")) {
                 delete elem.dataset.selected;
@@ -1527,7 +1609,6 @@ function extraNetworksSetupEventDelegators() {
         } else {
             elem.classList.toggle("long-pressed");
             elem.dataset.selected = "";
-            elem.dataset.recurse = "";
         }
 
         elem.dispatchEvent(new Event("longpress", event));
@@ -1544,18 +1625,41 @@ function extraNetworksSetupEventDelegators() {
     let press_timer;
     let press_time_ms = 800;
 
+    let curr_elem;
+
     window.addEventListener("mousedown", event => {
-        for (const obj of short_press_event_map) {
+        if (event.button !== 0) {
+            return;
+        }
+        let event_map = short_press_event_map;
+        if (event.ctrlKey && event.shiftKey) {
+            event_map = short_ctrl_shift_press_event_map;
+        } else if (event.ctrlKey) {
+            event_map = short_ctrl_press_event_map;
+        } else if (event.shiftKey) {
+            event_map = short_shift_press_event_map;
+        }
+        for (const obj of event_map) {
             const elem = event.target.closest(obj.selector);
             const neg = obj.negative ? event.target.closest(obj.negative) : null;
             if (elem && !neg) {
                 event.preventDefault();
                 event.stopPropagation();
                 elem.classList.add("pressed");
+                curr_elem = elem;
             }
         }
 
-        for (const obj of long_press_event_map) {
+        event_map = long_press_event_map;
+        if (event.ctrlKey && event.shiftKey) {
+            event_map = long_ctrl_shift_press_event_map;
+        } else if (event.ctrlKey) {
+            event_map = long_ctrl_press_event_map;
+        } else if (event.shiftKey) {
+            event_map = long_shift_press_event_map;
+        }
+
+        for (const obj of event_map) {
             const elem = event.target.closest(obj.selector);
             const neg = obj.negative ? event.target.closest(obj.negative) : null;
             if (elem && !neg) {
@@ -1581,20 +1685,32 @@ function extraNetworksSetupEventDelegators() {
     });
 
     window.addEventListener("mouseup", event => {
-        for (const obj of short_press_event_map) {
+        if (event.button !== 0) {
+            clearTimeout(press_timer);
+            return;
+        }
+        let event_map = short_press_event_map;
+        if (event.ctrlKey && event.shiftKey) {
+            event_map = short_ctrl_shift_press_event_map;
+        } else if (event.ctrlKey) {
+            event_map = short_ctrl_press_event_map;
+        } else if (event.shiftKey) {
+            event_map = short_shift_press_event_map;
+        }
+        for (const obj of event_map) {
             const elem = event.target.closest(obj.selector);
             const neg = obj.negative ? event.target.closest(obj.negative) : null;
             if (elem && !neg) {
                 event.preventDefault();
                 event.stopPropagation();
                 clearTimeout(press_timer);
+                if (isElement(curr_elem) && curr_elem !== elem) {
+                    curr_elem.classList.remove("pressed");
+                    return;
+                }
                 if (elem.classList.contains("pressed")) {
-                    if (event.detail === 1 ||
-                        !dbl_press_event_map.map(x => x.selector).includes(obj.selector)
-                    ) {
-                        elem.classList.remove("pressed");
-                        on_short_press(event, elem, obj.handler);
-                    }
+                    elem.classList.remove("pressed");
+                    on_short_press(event, elem, obj.handler);
                 }
             }
         }
@@ -1607,12 +1723,20 @@ function extraNetworksSetupEventDelegators() {
                     event.preventDefault();
                     event.stopPropagation();
                     clearTimeout(press_timer);
-                    if (elem.classList.contains("pressed")) {
-                        elem.classList.remove("pressed");
-                        on_dbl_press(event, elem, obj.handler);
+                    if (isElement(curr_elem) && curr_elem !== elem) {
+                        curr_elem.classList.remove("pressed");
+                        return;
                     }
+                    elem.classList.remove("pressed");
+                    on_dbl_press(event, elem, obj.handler);
                 }
             }
+        }
+
+        if (isElement(curr_elem) && curr_elem !== event.target) {
+            clearTimeout(press_timer);
+            curr_elem.classList.remove("pressed");
+            return;
         }
         // NOTE: long_press_event_map is handled by the timer setup in "mousedown" handlers.
     });
@@ -1650,6 +1774,38 @@ async function extraNetworksSetup() {
 
     extraNetworksSetupEventDelegators();
 }
+
+window.addEventListener("keydown", (event) => {
+    if (event.repeat) {
+        return;
+    }
+
+    if (event.ctrlKey) {
+        document.body.classList.add("ctrl-pressed");
+    }
+    if (event.shiftKey) {
+        document.body.classList.add("shift-pressed");
+    }
+    if (event.altKey) {
+        document.body.classList.add("alt-pressed");
+    }
+});
+
+window.addEventListener("keyup", (event) => {
+    if (event.repeat) {
+        return;
+    }
+
+    if (!event.ctrlKey) {
+        document.body.classList.remove("ctrl-pressed");
+    }
+    if (!event.shiftKey) {
+        document.body.classList.remove("shift-pressed");
+    }
+    if (!event.altKey) {
+        document.body.classList.remove("alt-pressed");
+    }
+});
 
 onUiLoaded(extraNetworksSetup);
 onOptionsChanged(() => initialUiOptionsLoaded.state = true);

@@ -45,13 +45,10 @@ class ExtraNetworksClusterize extends Clusterize {
     default_sort_mode_str = "divId";
     default_sort_dir_str = "ascending";
     default_filter_str = "";
-    default_directory_filter_str = "";
-    default_directory_filter_recurse = false;
     sort_mode_str = this.default_sort_mode_str;
     sort_dir_str = this.default_sort_dir_str;
     filter_str = this.default_filter_str;
-    directory_filter_str = this.default_directory_filter_str;
-    directory_filter_recurse = this.default_directory_filter_recurse;
+    directory_filters = {};
 
     constructor(args) {
         super(args);
@@ -157,21 +154,41 @@ class ExtraNetworksClusterize extends Clusterize {
         this.filterData();
     }
 
-    setDirectoryFilterStr(filter_str, recurse) {
-        recurse = recurse === true;
-        if (isString(filter_str) && this.directory_filter_str !== filter_str) {
-            this.directory_filter_str = filter_str;
-        } else if (isNullOrUndefined(filter_str)) {
-            this.directory_filter_str = this.default_directory_filter_str;
+    setDirectoryFilters(filters) {
+        if (isNullOrUndefined(filters)) {
+            this.directory_filters = {};
+            return;
+        }
+        this.directory_filters = JSON.parse(JSON.stringify(filters));
+    }
+
+    addDirectoryFilter(div_id, filter_str, recurse) {
+        this.directory_filters[div_id] = {filter_str: filter_str, recurse: recurse};
+    }
+
+    removeDirectoryFilter(div_id) {
+        delete this.directory_filters[div_id];
+    }
+
+    clearDirectoryFilters({excluded_div_ids} = {}) {
+        if (isString(excluded_div_ids)) {
+            excluded_div_ids = [excluded_div_ids];
         }
 
-        if (!isNullOrUndefined(recurse) && this.directory_filter_recurse !== recurse) {
-            this.directory_filter_recurse = recurse;
-        } else if (isNullOrUndefined(recurse)) {
-            this.directory_filter_recurse = this.default_directory_filter_recurse;
+        if (!Array.isArray(excluded_div_ids)) {
+            excluded_div_ids = [];
         }
 
-        this.filterData();
+        for (const div_id of Object.keys(this.directory_filters)) {
+            if (excluded_div_ids.includes(div_id)) {
+                continue;
+            }
+            delete this.directory_filters[div_id];
+        }
+    }
+
+    getDirectoryFilters() {
+        return this.directory_filters;
     }
 
     async initDataDefaultCallback() {
@@ -259,52 +276,55 @@ class ExtraNetworksClusterize extends Clusterize {
 }
 
 class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
-    selected_div_id = null;
+    prev_selected_div_id = null;
 
     constructor(args) {
         super({...args});
+        this.selected_div_ids = new Set();
     }
 
     clear() {
-        this.selected_div_id = null;
+        this.prev_selected_div_id = null;
+        this.selected_div_ids.clear();
         super.clear();
     }
 
-    async onRowSelected(elem) {
-        /** Selects a row and deselects all others.
-         *
-         *  If `elem` is null/undefined, then we deselect all rows.
-        */
-        if (isNullOrUndefined(elem)) {
-            if (!isNullOrUndefined(this.selected_div_id) &&
-                keyExistsLogError(this.data_obj, this.selected_div_id)) {
-                this.selected_div_id = null;
-            }
+    setRowSelected(elem) {
+        if (!isElement(elem)) {
             return;
         }
 
-        if (!isElementLogError(elem)) {
-            return;
-        }
-
-        const div_id = elem.dataset.divId;
         this.updateHtml(elem);
+        this.selected_div_ids.add(elem.dataset.divId);
+        this.prev_selected_div_id = elem.dataset.divId;
+    }
 
-        if (!keyExistsLogError(this.data_obj, div_id)) {
+    setRowDeselected(elem) {
+        if (!isElement(elem)) {
             return;
         }
 
-        if (!isNullOrUndefined(this.selected_div_id) && div_id !== this.selected_div_id) {
-            const prev_elem = this.content_elem.querySelector(
-                `[data-div-id="${this.selected_div_id}"]`
-            );
-            // deselect current selection if exists on page
-            if (isElement(prev_elem)) {
-                this.selected_div_id = null;
-            }
+        this.updateHtml(elem);
+        this.selected_div_ids.delete(elem.dataset.divId);
+        this.prev_selected_div_id = null;
+    }
+
+    clearSelectedRows({excluded_div_ids} = {}) {
+        if (isString(excluded_div_ids)) {
+            excluded_div_ids = [excluded_div_ids];
         }
-        this.selected_div_id = "selected" in elem.dataset ? div_id : null;
-        await this.update();
+
+        if (!Array.isArray(excluded_div_ids)) {
+            excluded_div_ids = [];
+        }
+
+        this.selected_div_ids.clear();
+        for (const div_id of excluded_div_ids) {
+            this.selected_div_ids.add(div_id);
+        }
+        if (!excluded_div_ids.includes(this.prev_selected_div_id)) {
+            this.prev_selected_div_id = null;
+        }
     }
 
     getMaxRowWidth() {
@@ -390,15 +410,27 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         }
 
         // Deselect current selected div id if it was just hidden.
-        if (!isNullOrUndefined(this.selected_div_id) && !this.data_obj[this.selected_div_id].visible) {
-            this.selected_div_id = null;
+        if (this.selected_div_ids.has(div_id) && !this.data_obj[div_id].visible) {
+            this.selected_div_ids.delete(div_id);
+            if (this.prev_selected_div_id === div_id) {
+                this.prev_selected_div_id = null;
+            }
         }
-
 
         const new_len = Object.values(this.data_obj).filter(v => v.visible).length;
         await this.setMaxItems(new_len);
         await this.refresh(true);
         await this.sortData();
+    }
+
+    getChildrenDivIds(div_id, {recurse} = {}) {
+        const res = JSON.parse(JSON.stringify(this.data_obj[div_id].children));
+        if (recurse === true) {
+            for (const child_id of this.data_obj[div_id].children) {
+                res.push(...this.getChildrenDivIds(child_id, {recurse: recurse}));
+            }
+        }
+        return res;
     }
 
     async toggleRowExpanded(div_id) {
@@ -423,8 +455,11 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         }
 
         // Deselect current selected div id if it was just hidden.
-        if (!isNullOrUndefined(this.selected_div_id) && !this.data_obj[this.selected_div_id].visible) {
-            this.selected_div_id = null;
+        if (this.selected_div_ids.has(div_id) && !this.data_obj[div_id].visible) {
+            this.selected_div_ids.delete(div_id);
+            if (this.prev_selected_div_id === div_id) {
+                this.prev_selected_div_id = null;
+            }
         }
 
         const new_len = Object.values(this.data_obj).filter(v => v.visible).length;
@@ -473,9 +508,8 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
                 elem.dataset.expanded = "";
             }
 
-            // Only allow one item to have `data-selected`.
             delete elem.dataset.selected;
-            if (div_id === this.selected_div_id) {
+            if (this.selected_div_ids.has(div_id)) {
                 elem.dataset.selected = "";
             }
 
@@ -579,6 +613,22 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
         for (const [div_id, v] of Object.entries(this.data_obj)) {
             let visible = true;
 
+            // Apply the directory filters.
+            if (!Object.keys(this.directory_filters).length) {
+                v.visible = true;
+            } else {
+                v.visible = Object.values(this.directory_filters).some((filter) => {
+                    if (filter.recurse) {
+                        return v.rel_parent_dir.startsWith(filter.filter_str);
+                    } else {
+                        return v.rel_parent_dir === filter.filter_str;
+                    }
+                });
+            }
+            if (!v.visible) {
+                continue;
+            }
+            /*
             if (this.directory_filter_str && this.directory_filter_recurse) {
                 // Filter as directory with recurse shows all nested children.
                 // Case sensitive comparison against the relative directory of each object.
@@ -594,10 +644,11 @@ class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
                     continue;
                 }
             }
-
+            */
+            // Narrow the filtered items based on the search string.
+            // Custom filter for items marked search_only=true.
             if (v.search_only) {
-                // Custom filter for items marked search_only=true.
-                if (this.directory_filter_str || this.filter_str.length >= 4) {
+                if (Object.keys(this.directory_filters).length || this.filter_str.length >= 4) {
                     visible = v.search_terms.toLowerCase().indexOf(this.filter_str.toLowerCase()) !== -1;
                 } else {
                     visible = false;
