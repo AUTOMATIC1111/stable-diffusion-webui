@@ -397,7 +397,7 @@ class FetchWithRetryAndBackoffTimeoutError extends FetchError {
     }
 }
 
-async function fetchWithRetryAndBackoff(url, data, opts = {}) {
+async function fetchWithRetryAndBackoff(url, data, args = {}) {
     /** Wrapper around `fetch` with retries, backoff, and timeout.
      *
      *  Uses a Decorrelated jitter backoff strategy.
@@ -418,11 +418,11 @@ async function fetchWithRetryAndBackoff(url, data, opts = {}) {
      *              This is useful for handling requests whose responses from the server
      *              are erronious but the HTTP status is 200.
      */
-    opts.method = opts.method || "GET";
-    opts.timeout_ms = opts.timeout_ms || 30000;
-    opts.min_delay_ms = opts.min_delay_ms || 100;
-    opts.max_delay_ms = opts.max_delay_ms || 3000;
-    opts.fetch_timeout_ms = opts.fetch_timeout_ms || 10000;
+    args.method = args.method || "GET";
+    args.timeout_ms = args.timeout_ms || 30000;
+    args.min_delay_ms = args.min_delay_ms || 100;
+    args.max_delay_ms = args.max_delay_ms || 3000;
+    args.fetch_timeout_ms = args.fetch_timeout_ms || 10000;
     // The default response handler function for `fetch` call responses.
     const response_handler = (response) => new Promise((resolve, reject) => {
         if (response.ok) {
@@ -439,12 +439,12 @@ async function fetchWithRetryAndBackoff(url, data, opts = {}) {
             return reject(response);
         }
     });
-    opts.response_handler = opts.response_handler || response_handler;
+    args.response_handler = args.response_handler || response_handler;
 
-    const args = Object.entries(data).map(([k, v]) => {
+    const url_args = Object.entries(data).map(([k, v]) => {
         return `${encodeURIComponent(k)}=${encodeURIComponent(v)}`;
     }).join("&");
-    url = `${url}?${args}`;
+    url = `${url}?${url_args}`;
 
     let controller;
     let retry = true;
@@ -488,9 +488,9 @@ async function fetchWithRetryAndBackoff(url, data, opts = {}) {
         }
         try {
             controller = new AbortController();
-            const fetch_opts = {method: opts.method, signal: controller.signal};
-            const response = await fetch_timeout(opts.fetch_timeout_ms, fetch(url, fetch_opts));
-            return await opts.response_handler(response);
+            const fetch_opts = {method: args.method, signal: controller.signal};
+            const response = await fetch_timeout(args.fetch_timeout_ms, fetch(url, fetch_opts));
+            return await args.response_handler(response);
         } catch (error) {
             controller.abort();
             // dont bother with anything else if told to not retry.
@@ -505,12 +505,12 @@ async function fetchWithRetryAndBackoff(url, data, opts = {}) {
                 throw error;
             }
             // Any other errors mean we need to retry the request.
-            delay_ms = get_jitter(opts.min_delay_ms, opts.max_delay_ms, delay_ms);
+            delay_ms = get_jitter(args.min_delay_ms, args.max_delay_ms, delay_ms);
             await delay(delay_ms);
             return await run(delay_ms);
         }
     };
-    return await run_timeout(opts.timeout_ms, run(opts.min_delay_ms));
+    return await run_timeout(args.timeout_ms, run(args.min_delay_ms));
 }
 
 function requestGet(url, data, handler, errorHandler) {
