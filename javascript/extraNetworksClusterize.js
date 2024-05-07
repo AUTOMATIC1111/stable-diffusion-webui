@@ -526,7 +526,7 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
     }
 }
 
-class ExtraNetworksClusterizeCardsList extends ExtraNetworksClusterize {
+class ExtraNetworksClusterizeCardList extends ExtraNetworksClusterize {
     constructor(args) {
         super({...args});
     }

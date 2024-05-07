@@ -365,7 +365,7 @@ class ExtraNetworksPage:
         return res
 
     def get_button_row(self, tabname: str, item: dict) -> str:
-        """Generates a row of buttons for use in Tree/Cards View items."""
+        """Generates a row of buttons for use in Tree/Card View items."""
         metadata = item.get("metadata", None)
         name = item.get("name", "")
         filename = os.path.normpath(item.get("filename", ""))
@@ -474,8 +474,8 @@ class ExtraNetworksPage:
             description=description,
         )
 
-    def generate_cards_view_data(self, tabname: str) -> dict:
-        """Generates the datasets and HTML used to display the Cards View.
+    def generate_card_view_data(self, tabname: str) -> dict:
+        """Generates the datasets and HTML used to display the Card View.
 
         Returns:
             A dictionary containing necessary info for the client.
@@ -809,9 +809,9 @@ class ExtraNetworksPage:
             self.tree_roots[abspath] = DirectoryTreeNode(os.path.dirname(abspath), abspath, None)
             self.tree_roots[abspath].build(tree_items)
 
-        cards_list_loading_splash_content = "Loading..."
+        card_list_loading_splash_content = "Loading..."
         no_cards_html_dirs = "".join([f"<li>{x}</li>" for x in self.allowed_directories_for_previews()])
-        cards_list_no_data_splash_content = (
+        card_list_no_data_splash_content = (
             "<div class='nocards'>"
             "<h1>Nothing here. Add some content to the following directories:</h1>"
             f"<ul>{no_cards_html_dirs}</ul>"
@@ -855,10 +855,10 @@ class ExtraNetworksPage:
                 "btn_tree_view_data_attributes": "data-selected" if tree_view_en else "",
                 "btn_card_view_data_attributes": "data-selected" if card_view_en else "",
                 "tree_view_style": f"flex-basis: {shared.opts.extra_networks_tree_view_default_width}px;",
-                "cards_view_style": "flex-grow: 1;",
+                "card_view_style": "flex-grow: 1;",
                 "dirs_html": dirs_html,
-                "cards_list_loading_splash_content": cards_list_loading_splash_content,
-                "cards_list_no_data_splash_content": cards_list_no_data_splash_content,
+                "card_list_loading_splash_content": card_list_loading_splash_content,
+                "card_list_no_data_splash_content": card_list_no_data_splash_content,
                 "tree_list_loading_splash_content": tree_list_loading_splash_content,
                 "tree_list_no_data_splash_content": tree_list_no_data_splash_content,
             }
@@ -1017,8 +1017,8 @@ def init_tree_data(tabname: str = "", extra_networks_tabname: str = "") -> JSONR
     return JSONResponse({"data": data, "ready": data is not None})
 
 
-def init_cards_data(tabname: str = "", extra_networks_tabname: str = "") -> JSONResponse:
-    """Generates the initial Cards View data and returns a simplified dataset.
+def init_card_data(tabname: str = "", extra_networks_tabname: str = "") -> JSONResponse:
+    """Generates the initial Card View data and returns a simplified dataset.
 
     The data returned does not contain any HTML strings.
 
@@ -1028,7 +1028,7 @@ def init_cards_data(tabname: str = "", extra_networks_tabname: str = "") -> JSON
     """
     page = get_page_by_name(extra_networks_tabname)
 
-    data = page.generate_cards_view_data(tabname)
+    data = page.generate_card_view_data(tabname)
 
     return JSONResponse({"data": data, "ready": data is not None})
 
@@ -1059,11 +1059,11 @@ def fetch_tree_data(
     return JSONResponse({"data": res, "missing_div_ids": missed})
 
 
-def fetch_cards_data(
+def fetch_card_data(
     extra_networks_tabname: str = "",
     div_ids: str = "",
 ) -> JSONResponse:
-    """Retrieves Cards View HTML strings for the specified `div_ids`.
+    """Retrieves Card View HTML strings for the specified `div_ids`.
 
     Args:
         div_ids: A string with div_ids in CSV format.
@@ -1159,9 +1159,9 @@ def add_pages_to_demo(app):
     app.add_api_route("/sd_extra_networks/metadata", get_metadata, methods=["GET"])
     app.add_api_route("/sd_extra_networks/get-single-card", get_single_card, methods=["GET"])
     app.add_api_route("/sd_extra_networks/init-tree-data", init_tree_data, methods=["GET"])
-    app.add_api_route("/sd_extra_networks/init-cards-data", init_cards_data, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/init-card-data", init_card_data, methods=["GET"])
     app.add_api_route("/sd_extra_networks/fetch-tree-data", fetch_tree_data, methods=["GET"])
-    app.add_api_route("/sd_extra_networks/fetch-cards-data", fetch_cards_data, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/fetch-card-data", fetch_card_data, methods=["GET"])
     app.add_api_route("/sd_extra_networks/page-is-ready", page_is_ready, methods=["GET"])
     app.add_api_route("/sd_extra_networks/clear-page-data", clear_page_data, methods=["GET"])
 
