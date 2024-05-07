@@ -109,6 +109,7 @@ class ExtraNetworksTab {
     refresh_in_progress = false;
     dirs_view_en = false;
     tree_view_en = false;
+    cards_view_en = false;
     cards_list_splash_state = null;
     tree_list_splash_state = null;
     directory_filters = {};
@@ -144,6 +145,9 @@ class ExtraNetworksTab {
         this.tree_view_en = "selected" in this.controls_elem.querySelector(
             ".extra-network-control--tree-view"
         ).dataset;
+        this.cards_view_en = "selected" in this.controls_elem.querySelector(
+            ".extra-network-control--cards-view"
+        ).dataset;
 
         // determine whether compact prompt mode is enabled.
         // cannot await this since it may not exist on page depending on user setting.
@@ -166,20 +170,24 @@ class ExtraNetworksTab {
 
         const btn_dirs_view = this.controls_elem.querySelector(".extra-network-control--dirs-view");
         const btn_tree_view = this.controls_elem.querySelector(".extra-network-control--tree-view");
+        const btn_cards_view = this.controls_elem.querySelector(".extra-network-control--cards-view");
         const div_dirs = this.container_elem.querySelector(".extra-network-content--dirs-view");
         // We actually want to select the tree view's column in the resize-handle-row.
         // This is what we actually show/hide, not the inner elements.
         const div_tree = this.tree_list.scroll_elem.closest(".resize-handle-col");
+        const div_cards = this.cards_list.scroll_elem.closest(".resize-handle-col");
 
         this.dirs_view_en = "selected" in btn_dirs_view.dataset;
         this.tree_view_en = "selected" in btn_tree_view.dataset;
+        this.cards_view_en = "selected" in btn_cards_view.dataset;
         // Remove "hidden" class if button is enabled, otherwise add it.
         div_dirs.classList.toggle("hidden", !this.dirs_view_en);
         div_tree.classList.toggle("hidden", !this.tree_view_en);
+        div_cards.classList.toggle("hidden", !this.cards_view_en);
 
         // Apply the current resize handle classes.
         const resize_handle_row = this.tree_list.scroll_elem.closest(".resize-handle-row");
-        resize_handle_row.classList.toggle("resize-handle-hidden", div_tree.classList.contains("hidden"));
+        resize_handle_row.classList.toggle("resize-handle-hidden", !this.tree_view_en || !this.cards_view_en);
 
         const sort_mode_elem = this.controls_elem.querySelector(".extra-network-control--sort-mode[data-selected]");
         isElementThrowError(sort_mode_elem);
@@ -219,6 +227,7 @@ class ExtraNetworksTab {
         this.refresh_in_progress = false;
         this.tree_view_en = false;
         this.dirs_view_en = false;
+        this.cards_view_en = false;
         this.directory_filters = {};
         this.list_button_states = {};
     }
@@ -383,20 +392,28 @@ class ExtraNetworksTab {
         // We actually want to select the tree view's column in the resize-handle-row.
         // This is what we actually show/hide, not the inner elements.
         const div_tree = this.tree_list.scroll_elem.closest(".resize-handle-col");
+        const div_cards = this.cards_list.scroll_elem.closest(".resize-handle-col");
 
         this.dirs_view_en = "selected" in btn_dirs_view.dataset;
         this.tree_view_en = "selected" in btn_tree_view.dataset;
+        this.cards_view_en = "selected" in btn_tree_view.dataset;
         // Remove "hidden" class if button is enabled, otherwise add it.
         div_dirs.classList.toggle("hidden", !this.dirs_view_en);
         div_tree.classList.toggle("hidden", !this.tree_view_en);
+        div_cards.classList.toggle("hidden", !this.cards_view_en);
 
         // Apply the current resize handle classes.
         const resize_handle_row = this.tree_list.scroll_elem.closest(".resize-handle-row");
         resize_handle_row.classList.toggle("resize-handle-hidden", div_tree.classList.contains("hidden"));
+        if (this.tree_view_en && !this.cards_view_en) {
+            this.tree_list.scroll_elem.parentElement.style.flexGrow = 1;
+        } else {
+            this.tree_list.scroll_elem.parentElement.style.flexGrow = null;
+        }
 
         await Promise.all([this.setupTreeList(), this.setupCardsList()]);
         this.tree_list.enable(this.tree_view_en);
-        this.cards_list.enable(true);
+        this.cards_list.enable(this.cards_view_en);
         await Promise.all([this.tree_list.load(true), this.cards_list.load(true)]);
 
         // apply the previous sort/filter options
@@ -424,7 +441,7 @@ class ExtraNetworksTab {
         });
         this.showControls();
         this.tree_list.enable(this.tree_view_en);
-        this.cards_list.enable(true);
+        this.cards_list.enable(this.cards_view_en);
         await Promise.all([this.tree_list.load(), this.cards_list.load()]);
     }
 
@@ -1137,7 +1154,13 @@ async function extraNetworksControlTreeViewOnClick(event) {
     // this is only recently supported in firefox. So for now we just add a class
     // to the resize-handle-row instead.
     const resize_handle_row = tab.tree_list.scroll_elem.closest(".resize-handle-row");
-    resize_handle_row.classList.toggle("resize-handle-hidden", !tab.tree_view_en);
+    resize_handle_row.classList.toggle("resize-handle-hidden", !tab.cards_view_en || !tab.tree_view_en);
+
+    if (tab.tree_view_en && !tab.cards_view_en) {
+        tab.tree_list.scroll_elem.parentElement.style.flexGrow = 1;
+    } else {
+        tab.tree_list.scroll_elem.parentElement.style.flexGrow = null;
+    }
 
     // If the tree list hasn't loaded yet, we need to force it to load.
     // This can happen if tree view is disabled by default or before refresh.
@@ -1165,6 +1188,41 @@ function extraNetworksControlDirsViewOnClick(event) {
     ).classList.toggle("hidden", !tab.dirs_view_en);
 
     tab.applyListButtonStates();
+}
+
+async function extraNetworksControlCardsViewOnClick(event) {
+    /** Handles `onclick` events for the Card View button.
+     *
+     * Toggles the card view in the extra networks pane.
+     */
+    const btn = event.target.closest(".extra-network-control--cards-view");
+    const controls = btn.closest(".extra-network-controls");
+    const tab = extra_networks_tabs[controls.dataset.tabnameFull];
+    btn.toggleAttribute("data-selected");
+    tab.cards_view_en = "selected" in btn.dataset;
+
+    tab.cards_list.scroll_elem.parentElement.classList.toggle("hidden", !tab.cards_view_en);
+    tab.cards_list.enable(tab.cards_view_en);
+
+    // Apply the resize-handle-hidden class to the resize-handle-row.
+    // NOTE: This can be simplified using only css with the ":has" selector however
+    // this is only recently supported in firefox. So for now we just add a class
+    // to the resize-handle-row instead.
+    const resize_handle_row = tab.cards_list.scroll_elem.closest(".resize-handle-row");
+    resize_handle_row.classList.toggle("resize-handle-hidden", !tab.cards_view_en || !tab.tree_view_en);
+
+    if (tab.tree_view_en && !tab.cards_view_en) {
+        tab.tree_list.scroll_elem.parentElement.style.flexGrow = 1;
+    } else {
+        tab.tree_list.scroll_elem.parentElement.style.flexGrow = null;
+    }
+
+    // If the tree list hasn't loaded yet, we need to force it to load.
+    // This can happen if tree view is disabled by default or before refresh.
+    // Then after refresh, enabling the tree view will require a load.
+    if (tab.cards_view_en && !tab.cards_list.initial_load) {
+        await tab.cards_list.load();
+    }
 }
 
 function extraNetworksControlRefreshOnClick(event) {
@@ -1483,6 +1541,7 @@ function extraNetworksSetupEventDelegators() {
         ".extra-network-control--sort-dir": extraNetworksControlSortDirOnClick,
         ".extra-network-control--dirs-view": extraNetworksControlDirsViewOnClick,
         ".extra-network-control--tree-view": extraNetworksControlTreeViewOnClick,
+        ".extra-network-control--cards-view": extraNetworksControlCardsViewOnClick,
         ".extra-network-control--refresh": extraNetworksControlRefreshOnClick,
     };
 

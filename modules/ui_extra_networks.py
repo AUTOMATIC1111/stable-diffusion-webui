@@ -840,6 +840,7 @@ class ExtraNetworksPage:
         sort_dir = shared.opts.extra_networks_card_order.lower().strip()
         dirs_view_en = shared.opts.extra_networks_dirs_view_default_enabled
         tree_view_en = shared.opts.extra_networks_tree_view_default_enabled
+        card_view_en = shared.opts.extra_networks_card_view_default_enabled
 
         return self.pane_tpl.format(
             **{
@@ -852,6 +853,7 @@ class ExtraNetworksPage:
                 "btn_sort_mode_date_modified_data_attributes": "data-selected" if sort_mode == "date_modified" else "",
                 "btn_dirs_view_data_attributes": "data-selected" if dirs_view_en else "",
                 "btn_tree_view_data_attributes": "data-selected" if tree_view_en else "",
+                "btn_card_view_data_attributes": "data-selected" if card_view_en else "",
                 "tree_view_style": f"flex-basis: {shared.opts.extra_networks_tree_view_default_width}px;",
                 "cards_view_style": "flex-grow: 1;",
                 "dirs_html": dirs_html,
