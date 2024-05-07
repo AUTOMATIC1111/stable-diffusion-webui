@@ -748,7 +748,6 @@ class ExtraNetworksTab {
         this.setTreeListRecursionDepth(elem.dataset.divId, false);
         this.removeDirectoryFilter(elem.dataset.divId);
         await this.tree_list.update();
-
         delete this.list_button_states[elem.dataset.divId];
     }
 
@@ -772,6 +771,7 @@ class ExtraNetworksTab {
         delete elem.dataset.selected;
         elem.classList.remove("short-pressed");
         elem.classList.remove("long-pressed");
+        this.removeDirectoryFilter(elem.dataset.divId);
         delete this.list_button_states[elem.dataset.divId];
     }
 
