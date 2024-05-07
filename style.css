@@ -673,6 +673,7 @@ table.popup-table .link{
     user-select: none;
     -webkit-user-select: none;
     flex-direction: column;
+    font-family: var(--font);
 }
 
 .modalControls {
@@ -704,6 +705,18 @@ table.popup-table .link{
 .modalControls span:hover, .modalControls span:focus{
     color: #999;
     text-decoration: none;
+}
+
+.modalControls .modalTitle {
+    display: block;
+    margin-left: auto;
+    width: 100% !important;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.modalControls .modalTitle:hover {
+    color: white;
 }
 
 #lightboxModal > img {

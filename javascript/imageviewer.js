@@ -23,6 +23,19 @@ function showModal(event) {
         gradioApp().getElementById("modal_save").style.display = "none";
     }
     event.stopPropagation();
+
+    setTimeout(() => {
+        updateModalNavigationIndex(selected_gallery_index(), all_gallery_buttons().length);
+    }, 10);
+}
+
+/**
+ * @param idx {number}
+ * @param length {number}
+ */
+function updateModalNavigationIndex(idx, length) {
+    const modalTitle = gradioApp().getElementById("lightboxModal").querySelector('.modalTitle');
+    modalTitle.textContent = `${idx + 1}／${length}`;
 }
 
 function negmod(n, m) {
@@ -51,17 +64,11 @@ function modalImageSwitch(offset) {
     var galleryButtons = all_gallery_buttons();
 
     if (galleryButtons.length > 1) {
-        var currentButton = selected_gallery_button();
-
-        var result = -1;
-        galleryButtons.forEach(function(v, i) {
-            if (v == currentButton) {
-                result = i;
-            }
-        });
+        var result = selected_gallery_index();
 
         if (result != -1) {
-            var nextButton = galleryButtons[negmod((result + offset), galleryButtons.length)];
+            let idx = negmod((result + offset), galleryButtons.length);
+            var nextButton = galleryButtons[idx];
             nextButton.click();
             const modalImage = gradioApp().getElementById("modalImage");
             const modal = gradioApp().getElementById("lightboxModal");
@@ -69,6 +76,7 @@ function modalImageSwitch(offset) {
             if (modalImage.style.display === 'none') {
                 modal.style.setProperty('background-image', `url(${modalImage.src})`);
             }
+            updateModalNavigationIndex(idx, galleryButtons.length);
             setTimeout(function() {
                 modal.focus();
             }, 10);
@@ -215,6 +223,10 @@ document.addEventListener("DOMContentLoaded", function() {
     modalSave.addEventListener("click", modalSaveImage, true);
     modalSave.title = "Save Image(s)";
     modalControls.appendChild(modalSave);
+
+    const modalTitle = document.createElement("span");
+    modalTitle.className = "modalTitle";
+    modalControls.appendChild(modalTitle);
 
     const modalClose = document.createElement('span');
     modalClose.className = 'modalClose cursor';
