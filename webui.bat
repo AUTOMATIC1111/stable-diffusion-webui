@@ -44,6 +44,7 @@ goto :show_stdout_stderr
 :activate_venv
 set PYTHON="%VENV_DIR%\Scripts\Python.exe"
 echo venv %PYTHON%
+%PYTHON% -m pip install --upgrade pip
 
 :skip_venv
 if [%ACCELERATE%] == ["True"] goto :accelerate
