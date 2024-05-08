@@ -41,6 +41,7 @@ mimetypes.add_type('application/javascript', '.js')
 
 # Likewise, add explicit content-type header for certain missing image types
 mimetypes.add_type('image/webp', '.webp')
+mimetypes.add_type('image/avif', '.avif')
 
 if not cmd_opts.share and not cmd_opts.listen:
     # fix gradio phoning home
