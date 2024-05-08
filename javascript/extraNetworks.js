@@ -140,19 +140,13 @@ class ExtraNetworksTab {
         this.updateSplashState({card_list_state: "loading", tree_list_state: "loading"});
 
         this.txt_search_elem = this.controls_elem.querySelector(".extra-network-control--search-text");
-        this.dirs_view_en = "selected" in this.controls_elem.querySelector(
-            ".extra-network-control--dirs-view"
-        ).dataset;
-        this.tree_view_en = "selected" in this.controls_elem.querySelector(
-            ".extra-network-control--tree-view"
-        ).dataset;
-        this.card_view_en = "selected" in this.controls_elem.querySelector(
-            ".extra-network-control--card-view"
-        ).dataset;
 
         // determine whether compact prompt mode is enabled.
         // cannot await this since it may not exist on page depending on user setting.
         this.compact_prompt_en = isElement(gradioApp().querySelector(".toprow-compact-tools"));
+        this.dirs_view_en = opts.extra_networks_dirs_view_default_enabled;
+        this.tree_view_en = opts.extra_networks_tree_view_default_enabled;
+        this.card_view_en = opts.extra_networks_card_view_default_enabled;
 
         // setup this tab's controls
         this.controls_elem.id = `${this.tabname_full}_controls`;
@@ -172,15 +166,13 @@ class ExtraNetworksTab {
         const btn_dirs_view = this.controls_elem.querySelector(".extra-network-control--dirs-view");
         const btn_tree_view = this.controls_elem.querySelector(".extra-network-control--tree-view");
         const btn_card_view = this.controls_elem.querySelector(".extra-network-control--card-view");
+        btn_dirs_view.toggleAttribute("data-selected", this.dirs_view_en);
+        btn_tree_view.toggleAttribute("data-selected", this.tree_view_en);
+        btn_card_view.toggleAttribute("data-selected", this.card_view_en);
+
         const div_dirs = this.container_elem.querySelector(".extra-network-content--dirs-view");
-        // We actually want to select the tree view's column in the resize-handle-row.
-        // This is what we actually show/hide, not the inner elements.
         const div_tree = this.tree_list.scroll_elem.closest(".resize-handle-col");
         const div_card = this.card_list.scroll_elem.closest(".resize-handle-col");
-
-        this.dirs_view_en = "selected" in btn_dirs_view.dataset;
-        this.tree_view_en = "selected" in btn_tree_view.dataset;
-        this.card_view_en = "selected" in btn_card_view.dataset;
         // Remove "hidden" class if button is enabled, otherwise add it.
         div_dirs.classList.toggle("hidden", !this.dirs_view_en);
         div_tree.classList.toggle("hidden", !this.tree_view_en);
@@ -441,6 +433,12 @@ class ExtraNetworksTab {
             tree_list_state: this.tree_list_splash_state,
         });
         this.showControls();
+        const div_dirs = this.container_elem.querySelector(".extra-network-content--dirs-view");
+        const div_tree = this.tree_list.scroll_elem.closest(".resize-handle-col");
+        const div_card = this.card_list.scroll_elem.closest(".resize-handle-col");
+        div_dirs.classList.toggle("hidden", !this.dirs_view_en);
+        div_tree.classList.toggle("hidden", !this.tree_view_en);
+        div_card.classList.toggle("hidden", !this.card_view_en);
         this.tree_list.enable(this.tree_view_en);
         this.card_list.enable(this.card_view_en);
         await Promise.all([this.tree_list.load(), this.card_list.load()]);
