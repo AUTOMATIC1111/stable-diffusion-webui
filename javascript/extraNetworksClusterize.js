@@ -628,23 +628,7 @@ class ExtraNetworksClusterizeCardList extends ExtraNetworksClusterize {
             if (!v.visible) {
                 continue;
             }
-            /*
-            if (this.directory_filter_str && this.directory_filter_recurse) {
-                // Filter as directory with recurse shows all nested children.
-                // Case sensitive comparison against the relative directory of each object.
-                v.visible = v.rel_parent_dir.startsWith(this.directory_filter_str);
-                if (!v.visible) {
-                    continue;
-                }
-            } else {
-                // Filtering as directory without recurse only shows direct children.
-                // Case sensitive comparison against the relative directory of each object.
-                if (this.directory_filter_str && this.directory_filter_str !== v.rel_parent_dir) {
-                    v.visible = false;
-                    continue;
-                }
-            }
-            */
+
             // Narrow the filtered items based on the search string.
             // Custom filter for items marked search_only=true.
             if (v.search_only) {

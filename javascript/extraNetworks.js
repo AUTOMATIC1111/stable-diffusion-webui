@@ -34,6 +34,7 @@ const storedPopupIds = {};
 const extraPageUserMetadataEditors = {};
 const extra_networks_tabs = {};
 var extra_networks_refresh_internal_debounce_timer;
+let extra_networks_curr_options = {};
 
 /** Boolean flags used along with utils.js::waitForBool(). */
 // Set true when we first load the UI options.
@@ -740,13 +741,22 @@ class ExtraNetworksTab {
 
     async selectTreeListRow(elem) {
         elem.dataset.selected = "";
+
+        const left_click_opt = opts.extra_networks_directory_filter_click_behavior.toLowerCase().trim();
+        let recurse;
+        if (left_click_opt === "click") {
+            recurse = elem.classList.contains("short-pressed") && !elem.classList.contains("long-pressed");
+        } else {
+            recurse = elem.classList.contains("long-pressed");
+        }
+        elem.classList.toggle("recurse", recurse);
+
         this.tree_list.setRowSelected(elem);
         let directory_filter = elem.dataset.path;
         if ("directoryFilterOverride" in elem.dataset) {
             directory_filter = elem.dataset.directoryFilterOverride;
         }
 
-        const recurse = elem.classList.contains("short-pressed") && !elem.classList.contains("long-pressed");
         this.setTreeListRecursionDepth(elem.dataset.divId, recurse);
         this.addDirectoryFilter(elem.dataset.divId, directory_filter, recurse);
         await this.tree_list.update();
@@ -754,6 +764,7 @@ class ExtraNetworksTab {
         this.list_button_states[elem.dataset.divId] = {
             short_pressed: elem.classList.contains("short-pressed"),
             long_pressed: elem.classList.contains("long-pressed"),
+            recurse: elem.classList.contains("recurse"),
         };
     }
 
@@ -761,6 +772,7 @@ class ExtraNetworksTab {
         delete elem.dataset.selected;
         elem.classList.remove("short-pressed");
         elem.classList.remove("long-pressed");
+        elem.classList.remove("recurse");
         this.tree_list.setRowDeselected(elem);
         this.setTreeListRecursionDepth(elem.dataset.divId, false);
         this.removeDirectoryFilter(elem.dataset.divId);
@@ -775,12 +787,21 @@ class ExtraNetworksTab {
             directory_filter = elem.dataset.directoryFilterOverride;
         }
 
-        const recurse = elem.classList.contains("short-pressed") && !elem.classList.contains("long-pressed");
+        const left_click_opt = opts.extra_networks_directory_filter_click_behavior.toLowerCase().trim();
+        let recurse;
+        if (left_click_opt === "click") {
+            recurse = elem.classList.contains("short-pressed") && !elem.classList.contains("long-pressed");
+        } else {
+            recurse = elem.classList.contains("long-pressed");
+        }
+        elem.classList.toggle("recurse", recurse);
+
         this.addDirectoryFilter(elem.dataset.divId, directory_filter, recurse);
 
         this.list_button_states[elem.dataset.divId] = {
             short_pressed: elem.classList.contains("short-pressed"),
             long_pressed: elem.classList.contains("long-pressed"),
+            recurse: elem.classList.contains("recurse"),
         };
     }
 
@@ -788,6 +809,7 @@ class ExtraNetworksTab {
         delete elem.dataset.selected;
         elem.classList.remove("short-pressed");
         elem.classList.remove("long-pressed");
+        elem.classList.remove("recurse");
         this.removeDirectoryFilter(elem.dataset.divId);
         delete this.list_button_states[elem.dataset.divId];
     }
@@ -813,7 +835,8 @@ class ExtraNetworksTab {
             if (tree_btn_exists) {
                 tree_btn.classList.toggle("short-pressed", state.short_pressed);
                 tree_btn.classList.toggle("long-pressed", state.long_pressed);
-                if (state.short_pressed || state.long_pressed) {
+                tree_btn.classList.toggle("recurse", state.recurse);
+                if (state.short_pressed || state.long_pressed || state.recurse) {
                     await this.selectTreeListRow(tree_btn);
                 } else {
                     await this.deselectTreeListRow(tree_btn);
@@ -825,7 +848,8 @@ class ExtraNetworksTab {
             if (dirs_btn_exists) {
                 dirs_btn.classList.toggle("short-pressed", state.short_pressed);
                 dirs_btn.classList.toggle("long-pressed", state.long_pressed);
-                if (state.short_pressed || state.long_pressed) {
+                dirs_btn.classList.toggle("recurse", state.recurse);
+                if (state.short_pressed || state.long_pressed || state.recurse) {
                     this.selectDirsViewButton(dirs_btn);
                 } else {
                     this.deselectDirsViewButton(dirs_btn);
@@ -1379,6 +1403,7 @@ async function extraNetworksBtnTreeViewChevronOnClick(event) {
     const pane = btn.closest(".extra-network-pane");
     const tab = extra_networks_tabs[pane.dataset.tabnameFull];
 
+    tab.setTreeListRecursionDepth(btn.dataset.divId, !("expanded" in btn.dataset));
     await tab.tree_list.toggleRowExpanded(btn.dataset.divId);
 
     tab.applyListButtonStates();
@@ -1491,6 +1516,30 @@ function extraNetworksBtnCopyPathOnClick(event) {
 }
 
 // ==== MAIN SETUP ====
+
+function extraNetworksOnOptionsChanged() {
+    initialUiOptionsLoaded.state = true;
+
+    try {
+        const keys = Object.keys(opts).filter(k => k.startsWith("extra_networks_"));
+        const changes = {};
+        for (const k of keys) {
+            if (!(k in opts) || isNullOrUndefined(opts[k])) {
+                continue;
+            }
+            if (!(k in extra_networks_curr_options)) {
+                extra_networks_curr_options[k] = opts[k];
+            } else {
+                if (extra_networks_curr_options[k] !== opts[k]) {
+                    changes[k] = extra_networks_curr_options[k];
+                }
+                extra_networks_curr_options[k] = opts[k];
+            }
+        }
+    } catch (error) {
+        console.warn("Error parsing options:", error);
+    }
+}
 
 function extraNetworksSetupEventDelegators() {
     /** Sets up event delegators for all extraNetworks tabs.
@@ -1867,4 +1916,4 @@ window.addEventListener("keyup", (event) => {
 });
 
 onUiLoaded(extraNetworksSetup);
-onOptionsChanged(() => initialUiOptionsLoaded.state = true);
+onOptionsChanged(extraNetworksOnOptionsChanged);

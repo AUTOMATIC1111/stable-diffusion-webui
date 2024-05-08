@@ -1706,12 +1706,12 @@ body.resizing .resize-handle {
     background: var(--button-secondary-background-fill-hover);
 }
 
-.extra-network-dirs-view-button.short-pressed:not(.long-pressed) {
+.extra-network-dirs-view-button.recurse {
     background: var(--button-primary-background-fill);
     border-color: var(--button-primary-border-color);
 }
 
-.extra-network-dirs-view-button.short-pressed:not(.long-pressed,.pressed):hover {
+.extra-network-dirs-view-button.recurse:not(.pressed):hover {
     -webkit-transition: all 0.05s ease-in-out;
     transition: all 0.05s ease-in-out;
     background: var(--button-primary-background-fill-hover);
@@ -1728,11 +1728,11 @@ body.resizing .resize-handle {
     z-index: -1;
 }
 
-.extra-network-dirs-view-button:not(.short-pressed:not(.long-pressed))::after {
+.extra-network-dirs-view-button:not(.recurse)::after {
     background: var(--button-secondary-background-fill-hover);
 }
 
-.extra-network-dirs-view-button.short-pressed:not(.long-pressed)::after {
+.extra-network-dirs-view-button.recurse::after {
     background: var(--button-primary-background-fill-hover);
 }
 
@@ -1786,7 +1786,7 @@ body.resizing .resize-handle {
     transition: all 0.8s cubic-bezier(0.215, 0.61, 0.355, 1);
 }
 
-.tree-list-item.short-pressed:not(.long-pressed) .tree-list-item-action--chevron .chevron-icon-single {
+.tree-list-item.recurse .tree-list-item-action--chevron .chevron-icon-single {
     stroke: var(--button-primary-border-color);
 }
 
