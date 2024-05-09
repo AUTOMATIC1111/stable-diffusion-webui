@@ -37,9 +37,14 @@ if %ERRORLEVEL% == 0 goto :activate_venv
 for /f "delims=" %%i in ('CALL %PYTHON% -c "import sys; print(sys.executable)"') do set PYTHON_FULLNAME="%%i"
 echo Creating venv in directory %VENV_DIR% using python %PYTHON_FULLNAME%
 %PYTHON_FULLNAME% -m venv "%VENV_DIR%" >tmp/stdout.txt 2>tmp/stderr.txt
-if %ERRORLEVEL% == 0 goto :activate_venv
+if %ERRORLEVEL% == 0 goto :upgrade_pip
 echo Unable to create venv in directory "%VENV_DIR%"
 goto :show_stdout_stderr
+
+:upgrade_pip
+"%VENV_DIR%\Scripts\Python.exe" -m pip install --upgrade pip
+if %ERRORLEVEL% == 0 goto :activate_venv
+echo Warning: Failed to upgrade PIP version
 
 :activate_venv
 set PYTHON="%VENV_DIR%\Scripts\Python.exe"
