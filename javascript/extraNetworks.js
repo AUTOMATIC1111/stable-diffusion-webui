@@ -207,7 +207,7 @@ class ExtraNetworksTab {
         this.txt_neg_prompt_elem.addEventListener("focus", () => this.active_prompt_elem = this.txt_neg_prompt_elem);
     }
 
-    async setupTreeList() {
+    setupTreeList() {
         if (this.tree_list instanceof ExtraNetworksClusterizeTreeList) {
             this.tree_list.destroy();
         }
@@ -225,7 +225,7 @@ class ExtraNetworksTab {
         });
     }
 
-    async setupCardList() {
+    setupCardList() {
         if (this.card_list instanceof ExtraNetworksClusterizeCardList) {
             this.card_list.destroy();
         }
@@ -349,6 +349,7 @@ class ExtraNetworksTab {
             this.updateSplashState({card_list_state: "no_data", tree_list_state: "no_data"});
             return;
         }
+
         const btn_dirs_view = this.controls_elem.querySelector(".extra-network-control--dirs-view");
         const btn_tree_view = this.controls_elem.querySelector(".extra-network-control--tree-view");
         const btn_card_view = this.controls_elem.querySelector(".extra-network-control--card-view");
@@ -403,10 +404,6 @@ class ExtraNetworksTab {
         });
         this.showControls();
 
-        this.tree_list.enable(this.tree_view_en);
-        this.card_list.enable(this.card_view_en);
-        await Promise.all([this.tree_list.load(), this.card_list.load()]);
-
         const div_dirs = this.container_elem.querySelector(".extra-network-content--dirs-view");
         const div_tree = this.container_elem.querySelector(".extra-network-content--tree-view");
         const div_card = this.container_elem.querySelector(".extra-network-content--card-view");
@@ -423,7 +420,9 @@ class ExtraNetworksTab {
             div_tree.style.flexGrow = null;
         }
 
-        await Promise.all([this.tree_list.refresh(), this.card_list.refresh()]);
+        this.tree_list.enable(this.tree_view_en);
+        this.card_list.enable(this.card_view_en);
+        await Promise.all([this.tree_list.load(), this.card_list.load()]);
     }
 
     unload() {
@@ -1950,23 +1949,30 @@ async function extraNetworksSetupTab(tabname) {
     for (const pane of panes) {
         const tabname_full = pane.id;
         const extra_networks_tabname = tabname_full.replace(`${tabname}_`, "");
-        extra_networks_tabs[tabname_full] = new ExtraNetworksTab({
+        const tab = new ExtraNetworksTab({
             tabname: tabname,
             extra_networks_tabname: extra_networks_tabname,
         });
-        await extra_networks_tabs[tabname_full].setup(pane, controls_div);
+        await tab.setup(pane, controls_div);
+        extra_networks_tabs[tabname_full] = tab;
     }
 }
 
 async function extraNetworksSetup() {
     await waitForBool(initialUiOptionsLoaded);
-
-    await Promise.all([
-        extraNetworksSetupTab('txt2img'),
-        extraNetworksSetupTab('img2img'),
-    ]);
-
-    extraNetworksSetupEventDelegators();
+    // FIXME 1s delay added to allow for the rest of the UI to load before we setup
+    // our tabs. This is a workaround to prevent the user from switching tabs too quick
+    // after reloading the UI. If user switches tabs immediately after reloading the webpage
+    // then the tab.load() will run before this setup runs. No clue how this is even possible
+    // since we are waiting for setup to complete before loading so something weird is
+    // happening in the background.
+    setTimeout(async() => {
+        await Promise.all([
+            extraNetworksSetupTab('txt2img'),
+            extraNetworksSetupTab('img2img'),
+        ]);
+        extraNetworksSetupEventDelegators();
+    }, 1000);
 }
 
 window.addEventListener("keydown", (event) => {
