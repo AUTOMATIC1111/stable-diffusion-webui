@@ -6,6 +6,8 @@ import k_diffusion
 
 import numpy as np
 
+from modules import shared
+
 @dataclasses.dataclass
 class Scheduler:
     name: str
@@ -31,7 +33,7 @@ def sgm_uniform(n, sigma_min, sigma_max, inner_model, device):
     sigs += [0.0]
     return torch.FloatTensor(sigs).to(device)
 
-def get_align_your_steps_sigmas(n, device, sigma_id):
+def get_align_your_steps_sigmas(n, sigma_min, sigma_max, device):
     # https://research.nvidia.com/labs/toronto-ai/AlignYourSteps/howto.html
     def loglinear_interp(t_steps, num_steps):
         """
@@ -46,12 +48,10 @@ def get_align_your_steps_sigmas(n, device, sigma_id):
         interped_ys = np.exp(new_ys)[::-1].copy()
         return interped_ys
 
-    if sigma_id == "sdxl":
+    if shared.sd_model.is_sdxl:
         sigmas = [14.615, 6.315, 3.771, 2.181, 1.342, 0.862, 0.555, 0.380, 0.234, 0.113, 0.029]
-    elif sigma_id == "sd15":
-        sigmas = [14.615, 6.475, 3.861, 2.697, 1.886, 1.396, 0.963, 0.652, 0.399, 0.152, 0.029]
     else:
-        print(f'Align Your Steps sigma identifier "{sigma_id}" not recognized, defaulting to SD 1.5.')
+        # Default to SD 1.5 sigmas.
         sigmas = [14.615, 6.475, 3.861, 2.697, 1.886, 1.396, 0.963, 0.652, 0.399, 0.152, 0.029]
 
     if n != len(sigmas):
@@ -68,8 +68,7 @@ schedulers = [
     Scheduler('exponential', 'Exponential', k_diffusion.sampling.get_sigmas_exponential),
     Scheduler('polyexponential', 'Polyexponential', k_diffusion.sampling.get_sigmas_polyexponential, default_rho=1.0),
     Scheduler('sgm_uniform', 'SGM Uniform', sgm_uniform, need_inner_model=True, aliases=["SGMUniform"]),
-    Scheduler('align_your_steps_sdxl', 'Align Your Steps (SDXL)', lambda n, sigma_min, sigma_max, device: get_align_your_steps_sigmas(n, device, "sdxl")),
-    Scheduler('align_your_steps_sd15', 'Align Your Steps (SD 1.5)', lambda n, sigma_min, sigma_max, device: get_align_your_steps_sigmas(n, device, "sd15")),
+    Scheduler('align_your_steps', 'Align Your Steps', get_align_your_steps_sigmas),
 ]
 
 schedulers_map = {**{x.name: x for x in schedulers}, **{x.label: x for x in schedulers}}
