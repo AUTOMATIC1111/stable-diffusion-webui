@@ -1932,7 +1932,7 @@ function extraNetworksSetupEventDelegators() {
     // Disable the context menu for long press items. On mobile, long press causes
     // context menu to appear which we don't want.
     window.oncontextmenu = event => {
-        event_map = long_press_event_map;
+        let event_map = long_press_event_map;
         if (event.ctrlKey && event.shiftKey) {
             event_map = long_ctrl_shift_press_event_map;
         } else if (event.ctrlKey) {
