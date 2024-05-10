@@ -1286,12 +1286,12 @@ body.resizing .resize-handle {
 }
 */
 
-.extra-network-tree {
+.extra-network-content--tree-view {
     display: flex;
     border: 1px solid var(--block-border-color);
 }
 
-.extra-network-cards {
+.extra-network-content--card-view {
     display: flex;
     border: 1px solid var(--block-border-color);
 }

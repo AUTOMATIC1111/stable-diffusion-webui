@@ -161,36 +161,8 @@ class ExtraNetworksTab {
             "Please refresh tab.<br>" +
             `${error_btn.outerHTML}</div>`;
 
-        await Promise.all([this.setupTreeList(), this.setupCardList()]);
-
-        const btn_dirs_view = this.controls_elem.querySelector(".extra-network-control--dirs-view");
-        const btn_tree_view = this.controls_elem.querySelector(".extra-network-control--tree-view");
-        const btn_card_view = this.controls_elem.querySelector(".extra-network-control--card-view");
-        btn_dirs_view.toggleAttribute("data-selected", this.dirs_view_en);
-        btn_tree_view.toggleAttribute("data-selected", this.tree_view_en);
-        btn_card_view.toggleAttribute("data-selected", this.card_view_en);
-
-        const div_dirs = this.container_elem.querySelector(".extra-network-content--dirs-view");
-        const div_tree = this.tree_list.scroll_elem.closest(".resize-handle-col");
-        const div_card = this.card_list.scroll_elem.closest(".resize-handle-col");
-        // Remove "hidden" class if button is enabled, otherwise add it.
-        div_dirs.classList.toggle("hidden", !this.dirs_view_en);
-        div_tree.classList.toggle("hidden", !this.tree_view_en);
-        div_card.classList.toggle("hidden", !this.card_view_en);
-
-        // Apply the current resize handle classes.
-        const resize_handle_row = this.tree_list.scroll_elem.closest(".resize-handle-row");
-        resize_handle_row.classList.toggle("resize-handle-hidden", !this.tree_view_en || !this.card_view_en);
-
-        const sort_mode_elem = this.controls_elem.querySelector(".extra-network-control--sort-mode[data-selected]");
-        isElementThrowError(sort_mode_elem);
-        const sort_dir_elem = this.controls_elem.querySelector(".extra-network-control--sort-dir");
-        isElementThrowError(sort_dir_elem);
-
-        this.setSortMode(sort_mode_elem.dataset.sortMode);
-        this.setSortDir(sort_dir_elem.dataset.sortDir);
-        this.applyDirectoryFilters();
-        this.applyFilter();
+        this.setupTreeList();
+        this.setupCardList();
 
         this.registerPrompt();
 
@@ -251,7 +223,6 @@ class ExtraNetworksTab {
                 fetchData: this.onFetchTreeData.bind(this),
             },
         });
-        await this.tree_list.setup();
     }
 
     async setupCardList() {
@@ -271,7 +242,6 @@ class ExtraNetworksTab {
                 fetchData: this.onFetchCardData.bind(this),
             },
         });
-        await this.card_list.setup();
     }
 
     setSortMode(sort_mode_str) {
@@ -381,27 +351,26 @@ class ExtraNetworksTab {
         }
         const btn_dirs_view = this.controls_elem.querySelector(".extra-network-control--dirs-view");
         const btn_tree_view = this.controls_elem.querySelector(".extra-network-control--tree-view");
-        const div_dirs = this.container_elem.querySelector(".extra-network-content--dirs-view");
-        // We actually want to select the tree view's column in the resize-handle-row.
-        // This is what we actually show/hide, not the inner elements.
-        const div_tree = this.tree_list.scroll_elem.closest(".resize-handle-col");
-        const div_card = this.card_list.scroll_elem.closest(".resize-handle-col");
-
+        const btn_card_view = this.controls_elem.querySelector(".extra-network-control--card-view");
         this.dirs_view_en = "selected" in btn_dirs_view.dataset;
         this.tree_view_en = "selected" in btn_tree_view.dataset;
-        this.card_view_en = "selected" in btn_tree_view.dataset;
+        this.card_view_en = "selected" in btn_card_view.dataset;
+
+        const div_dirs = this.container_elem.querySelector(".extra-network-content--dirs-view");
+        const div_tree = this.container_elem.querySelector(".extra-network-content--tree-view");
+        const div_card = this.container_elem.querySelector(".extra-network-content--card-view");
         // Remove "hidden" class if button is enabled, otherwise add it.
         div_dirs.classList.toggle("hidden", !this.dirs_view_en);
         div_tree.classList.toggle("hidden", !this.tree_view_en);
         div_card.classList.toggle("hidden", !this.card_view_en);
 
         // Apply the current resize handle classes.
-        const resize_handle_row = this.tree_list.scroll_elem.closest(".resize-handle-row");
-        resize_handle_row.classList.toggle("resize-handle-hidden", div_tree.classList.contains("hidden"));
+        const resize_handle_row = div_tree.closest(".resize-handle-row");
+        resize_handle_row.classList.toggle("resize-handle-hidden", !this.tree_view_en || !this.card_view_en);
         if (this.tree_view_en && !this.card_view_en) {
-            this.tree_list.scroll_elem.parentElement.style.flexGrow = 1;
+            div_tree.style.flexGrow = 1;
         } else {
-            this.tree_list.scroll_elem.parentElement.style.flexGrow = null;
+            div_tree.style.flexGrow = null;
         }
 
         await Promise.all([this.setupTreeList(), this.setupCardList()]);
@@ -433,15 +402,28 @@ class ExtraNetworksTab {
             tree_list_state: this.tree_list_splash_state,
         });
         this.showControls();
-        const div_dirs = this.container_elem.querySelector(".extra-network-content--dirs-view");
-        const div_tree = this.tree_list.scroll_elem.closest(".resize-handle-col");
-        const div_card = this.card_list.scroll_elem.closest(".resize-handle-col");
-        div_dirs.classList.toggle("hidden", !this.dirs_view_en);
-        div_tree.classList.toggle("hidden", !this.tree_view_en);
-        div_card.classList.toggle("hidden", !this.card_view_en);
+
         this.tree_list.enable(this.tree_view_en);
         this.card_list.enable(this.card_view_en);
         await Promise.all([this.tree_list.load(), this.card_list.load()]);
+
+        const div_dirs = this.container_elem.querySelector(".extra-network-content--dirs-view");
+        const div_tree = this.container_elem.querySelector(".extra-network-content--tree-view");
+        const div_card = this.container_elem.querySelector(".extra-network-content--card-view");
+        div_dirs.classList.toggle("hidden", !this.dirs_view_en);
+        div_tree.classList.toggle("hidden", !this.tree_view_en);
+        div_card.classList.toggle("hidden", !this.card_view_en);
+
+        // Apply the current resize handle classes.
+        const resize_handle_row = div_tree.closest(".resize-handle-row");
+        resize_handle_row.classList.toggle("resize-handle-hidden", !this.tree_view_en || !this.card_view_en);
+        if (this.tree_view_en && !this.card_view_en) {
+            div_tree.style.flexGrow = 1;
+        } else {
+            div_tree.style.flexGrow = null;
+        }
+
+        await Promise.all([this.tree_list.refresh(), this.card_list.refresh()]);
     }
 
     unload() {
@@ -1183,20 +1165,21 @@ async function extraNetworksControlTreeViewOnClick(event) {
     btn.toggleAttribute("data-selected");
     tab.tree_view_en = "selected" in btn.dataset;
 
-    tab.tree_list.scroll_elem.parentElement.classList.toggle("hidden", !tab.tree_view_en);
+    const div_tree = tab.container_elem.querySelector(".extra-network-content--tree-view");
+    div_tree.classList.toggle("hidden", !tab.tree_view_en);
     tab.tree_list.enable(tab.tree_view_en);
 
     // Apply the resize-handle-hidden class to the resize-handle-row.
     // NOTE: This can be simplified using only css with the ":has" selector however
     // this is only recently supported in firefox. So for now we just add a class
     // to the resize-handle-row instead.
-    const resize_handle_row = tab.tree_list.scroll_elem.closest(".resize-handle-row");
+    const resize_handle_row = div_tree.closest(".resize-handle-row");
     resize_handle_row.classList.toggle("resize-handle-hidden", !tab.card_view_en || !tab.tree_view_en);
 
     if (tab.tree_view_en && !tab.card_view_en) {
-        tab.tree_list.scroll_elem.parentElement.style.flexGrow = 1;
+        div_tree.style.flexGrow = 1;
     } else {
-        tab.tree_list.scroll_elem.parentElement.style.flexGrow = null;
+        div_tree.style.flexGrow = null;
     }
 
     // If the tree list hasn't loaded yet, we need to force it to load.
@@ -1238,20 +1221,22 @@ async function extraNetworksControlCardViewOnClick(event) {
     btn.toggleAttribute("data-selected");
     tab.card_view_en = "selected" in btn.dataset;
 
-    tab.card_list.scroll_elem.parentElement.classList.toggle("hidden", !tab.card_view_en);
+    const div_tree = tab.container_elem.querySelector(".extra-network-content--tree-view");
+    const div_card = tab.container_elem.querySelector(".extra-network-content--card-view");
+    div_card.classList.toggle("hidden", !tab.card_view_en);
     tab.card_list.enable(tab.card_view_en);
 
     // Apply the resize-handle-hidden class to the resize-handle-row.
     // NOTE: This can be simplified using only css with the ":has" selector however
     // this is only recently supported in firefox. So for now we just add a class
     // to the resize-handle-row instead.
-    const resize_handle_row = tab.card_list.scroll_elem.closest(".resize-handle-row");
+    const resize_handle_row = div_card.closest(".resize-handle-row");
     resize_handle_row.classList.toggle("resize-handle-hidden", !tab.card_view_en || !tab.tree_view_en);
 
     if (tab.tree_view_en && !tab.card_view_en) {
-        tab.tree_list.scroll_elem.parentElement.style.flexGrow = 1;
+        div_tree.style.flexGrow = 1;
     } else {
-        tab.tree_list.scroll_elem.parentElement.style.flexGrow = null;
+        div_tree.style.flexGrow = null;
     }
 
     // If the tree list hasn't loaded yet, we need to force it to load.
