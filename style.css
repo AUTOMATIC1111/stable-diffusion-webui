@@ -1255,7 +1255,7 @@ body.resizing .resize-handle {
     padding: var(--spacing-md);
 }
 
-.extra-network-content--cards {
+.extra-network-content--tree-and-cards-view {
     flex: 1;
     flex-direction: row;
     min-height: 0; /* prevent children from oversizing this container */
@@ -1460,6 +1460,11 @@ body.resizing .resize-handle {
 
 .extra-network-control--sort-dir[data-sort-dir="descending"] .extra-network-control--sort-dir-icon-ascending {
     stroke: var(--input-placeholder-color);
+}
+
+.extra-network-control--clear-filters {
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 /* ==== ICONS ==== */

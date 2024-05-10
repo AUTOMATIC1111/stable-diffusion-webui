@@ -134,26 +134,37 @@
         <div class="extra-network-content extra-network-content--dirs-view styled-scrollbar">
             {dirs_html}
         </div>
-        <div class="extra-network-content extra-network-content--cards resize-handle-row">
-            <div class="extra-network-content resize-handle-col" style="{tree_view_style}">
-                <div id='{tabname}_{extra_networks_tabname}_tree_list_loading_splash'
-                    class='extra-network-tree extra-network-list-splash'>{tree_list_loading_splash_content}</div>
+        <div class="extra-network-content--tree-and-cards-view resize-handle-row">
+            <div class="extra-network-content extra-network-tree resize-handle-col" style="{tree_view_style}">
+                <div id='{tabname}_{extra_networks_tabname}_tree_list_loading_splash' class='extra-network-list-splash'>
+                    {tree_list_loading_splash_content}</div>
                 <div id='{tabname}_{extra_networks_tabname}_tree_list_no_data_splash'
-                    class='extra-network-tree extra-network-list-splash hidden'>{tree_list_no_data_splash_content}</div>
+                    class='extra-network-list-splash hidden'>{tree_list_no_data_splash_content}</div>
                 <div id='{tabname}_{extra_networks_tabname}_tree_list_scroll_area'
-                    class='extra-network-tree styled-scrollbar clusterize-scroll'>
+                    class='styled-scrollbar clusterize-scroll'>
                     <div id='{tabname}_{extra_networks_tabname}_tree_list_content_area'
                         class='extra-network-tree-content clusterize-content'></div>
                 </div>
             </div>
-            <div class="extra-network-content resize-handle-col" style="{card_view_style}">
-                <div id='{tabname}_{extra_networks_tabname}_card_list_loading_splash'
-                    class='extra-network-cards extra-network-list-splash'>{card_list_loading_splash_content}</div>
+            <div class="extra-network-content extra-network-cards resize-handle-col" style="{card_view_style}">
+                <div class="extra-network-controls--buttons">
+                    <button class="extra-network-control extra-network-control--clear-filters"
+                        title="Clear all directory filters">
+                        <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
+                            fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                            stroke-width="1">
+                            <path d="M 2 2 V 4 L 6 8 V 13 L 9 14 V 12 M 12 5 L 13 4 V 2 H 2" />
+                            <path d="M 9 10 L 12 7 M 9 7 L 12 10" />
+                        </svg>
+                    </button>
+                </div>
+                <div id='{tabname}_{extra_networks_tabname}_card_list_loading_splash' class='extra-network-list-splash'>
+                    {card_list_loading_splash_content}</div>
                 <div id='{tabname}_{extra_networks_tabname}_card_list_no_data_splash'
-                    class='extra-network-cards extra-network-list-splash hidden'>{card_list_no_data_splash_content}
+                    class='extra-network-list-splash hidden'>{card_list_no_data_splash_content}
                 </div>
                 <div id='{tabname}_{extra_networks_tabname}_card_list_scroll_area'
-                    class='extra-network-cards styled-scrollbar clusterize-scroll'>
+                    class='styled-scrollbar clusterize-scroll'>
                     <div id='{tabname}_{extra_networks_tabname}_card_list_content_area'
                         class='extra-network-card-content clusterize-content'></div>
                 </div>
