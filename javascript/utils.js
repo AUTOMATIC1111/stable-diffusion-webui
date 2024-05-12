@@ -618,3 +618,50 @@ function copyToClipboard(s) {
     isStringThrowError(s);
     navigator.clipboard.writeText(s);
 }
+
+function attrPromise({elem, attr, timeout_ms} = {}) {
+    timeout_ms = timeout_ms || 0;
+    return new Promise((resolve, reject) => {
+        let res = false;
+        const observer_config = {attributes: true, attributeOldValue: true};
+        const observer = new MutationObserver(mutations => {
+            mutations.forEach(mutation => {
+                if (isString(attr) && mutation.attributeName === attr) {
+                    res = true;
+                    observer.disconnect();
+                    resolve(elem, elem.getAttribute(attr));
+                }
+                if (!isString(attr)) {
+                    res = true;
+                    observer.disconnect();
+                    resolve(elem);
+                }
+            });
+        });
+
+        if (timeout_ms > 0) {
+            setTimeout(() => {
+                if (!res) {
+                    reject(elem);
+                }
+            }, timeout_ms);
+        }
+
+        if (isString(attr)) {
+            observer_config.attributeFilter = [attr];
+        }
+        observer.observe(elem, observer_config);
+    });
+}
+
+function waitForVisible(elem, callback) {
+    new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.intersectionRatio > 0) {
+                callback(elem);
+                observer.disconnect();
+            }
+        });
+    }).observe(elem);
+    if (!callback) return new Promise(resolve => callback = resolve);
+}
