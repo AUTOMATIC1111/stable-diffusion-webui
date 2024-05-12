@@ -273,6 +273,8 @@ options_templates.update(options_section(('extra_networks', "Extra Networks", "s
     "textual_inversion_print_at_load": OptionInfo(False, "Print a list of Textual Inversion embeddings when loading model"),
     "textual_inversion_add_hashes_to_infotext": OptionInfo(True, "Add Textual Inversion hashes to infotext"),
     "sd_hypernetwork": OptionInfo("None", "Add hypernetwork to prompt", gr.Dropdown, lambda: {"choices": ["None", *shared.hypernetworks]}, refresh=shared_items.reload_hypernetworks),
+    "extra_networks_long_press_time_ms": OptionInfo(800, "Hold time required to register a long click").info("in milliseconds").info("default 800"),
+    "extra_networks_dbl_press_time_ms": OptionInfo(500, "Time between clicks to register a double click").info("in milliseconds").info("default 500"),
 }))
 
 options_templates.update(options_section(('ui_prompt_editing', "Prompt editing", "ui"), {

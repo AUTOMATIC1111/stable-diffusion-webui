@@ -716,6 +716,41 @@ class ExtraNetworksTab {
         await this.tree_list.update();
     }
 
+    refreshTreeListRecursionDepth() {
+        const keys = Object.keys(this.list_button_states);
+        const div_ids = keys.filter(k => this.list_button_states[k].recurse);
+        // Fix any invalid recursed rows.
+        this.tree_list.content_elem.querySelectorAll(
+            ".tree-list-item.recurse"
+        ).forEach(elem => {
+            if (!keys.includes(elem.dataset.divId) ||
+                !this.list_button_states[elem.dataset.divId].recurse
+            ) {
+                elem.classList.remove("recurse");
+                this.tree_list.updateHtml(elem);
+            }
+        });
+        // Fix any invalid recursed indents.
+        this.tree_list.content_elem.querySelectorAll(
+            ".tree-list-item-indent [data-selected]"
+        ).forEach(elem => {
+            if (!div_ids.includes(elem.dataset.parentId)) {
+                delete elem.dataset.selected;
+                this.tree_list.updateHtml(elem.closest(".tree-list-item"));
+            }
+        });
+
+        // Update indents with current recursed rows.
+        div_ids.forEach(div_id => {
+            this.tree_list.content_elem.querySelectorAll(
+                `.tree-list-item-indent [data-parent-id="${div_id}"]`
+            ).forEach(elem => {
+                elem.dataset.selected = "";
+                this.tree_list.updateHtml(elem.closest(".tree-list-item"));
+            });
+        });
+    }
+
     setTreeListRecursionDepth(parent_id, state) {
         const elems = this.tree_list.content_elem.querySelectorAll(
             `.tree-list-item-indent [data-parent-id="${parent_id}"]`
@@ -1389,13 +1424,11 @@ async function extraNetworksTreeDirectoryOnDblClick(event) {
     const pane = btn.closest(".extra-network-pane");
     const tab = extra_networks_tabs[pane.dataset.tabnameFull];
 
-    // Remove recursion on collapse
-    tab.setTreeListRecursionDepth(btn.dataset.divId, !("expanded" in btn.dataset));
     await tab.tree_list.toggleRowExpanded(btn.dataset.divId);
-    // Add recursion on expand
-    tab.setTreeListRecursionDepth(btn.dataset.divId, ("expanded" in btn.dataset));
+    tab.refreshTreeListRecursionDepth();
 
-    await tab.clearSelectedButtons();
+    //await tab.clearSelectedButtons();
+    tab.applyListButtonStates();
 }
 
 // ==== TREE VIEW DIRECTORY ROW CHEVRON CLICK EVENTS ====
@@ -1404,11 +1437,8 @@ async function extraNetworksBtnTreeViewChevronOnClick(event) {
     const pane = btn.closest(".extra-network-pane");
     const tab = extra_networks_tabs[pane.dataset.tabnameFull];
 
-    // Remove recursion on collapse
-    tab.setTreeListRecursionDepth(btn.dataset.divId, !("expanded" in btn.dataset));
     await tab.tree_list.toggleRowExpanded(btn.dataset.divId);
-    // Add recursion on expand
-    tab.setTreeListRecursionDepth(btn.dataset.divId, ("expanded" in btn.dataset));
+    tab.refreshTreeListRecursionDepth();
 
     tab.applyListButtonStates();
 }
@@ -1553,6 +1583,16 @@ function extraNetworksSetupEventDelegators() {
      *  which would break references to elements in DOM and thus prevent any event
      *  listeners from firing.
      */
+    let long_press_timer;
+    let long_press_time_ms = opts.extra_networks_long_press_time_ms;
+    if (long_press_time_ms < 0) {
+        long_press_time_ms = 0;
+    }
+    let dbl_press_timer;
+    let dbl_press_time_ms = opts.extra_networks_dbl_press_time_ms;
+    if (dbl_press_time_ms < 0) {
+        dbl_press_time_ms = 0;
+    }
 
     window.addEventListener("resizeHandleDblClick", event => {
         // See resizeHandle.js::onDoubleClick() for event detail.
@@ -1652,8 +1692,6 @@ function extraNetworksSetupEventDelegators() {
         },
     ];
 
-    const short_ctrl_shift_press_event_map = [];
-
     const long_press_event_map = [
         {
             selector: ".tree-list-item--dir",
@@ -1678,9 +1716,6 @@ function extraNetworksSetupEventDelegators() {
         },
     ];
 
-    const long_shift_press_event_map = [];
-    const long_ctrl_shift_press_event_map = [];
-
     const dbl_press_event_map = [
         {
             selector: ".tree-list-item--dir",
@@ -1689,7 +1724,7 @@ function extraNetworksSetupEventDelegators() {
         },
     ];
 
-    const on_short_press = (event, elem, handler) => {
+    const _on_short_press = (event, elem, handler) => {
         if (!handler) {
             return;
         }
@@ -1707,7 +1742,7 @@ function extraNetworksSetupEventDelegators() {
         handler(event);
     };
 
-    const on_long_press = (event, elem, handler) => {
+    const _on_long_press = (event, elem, handler) => {
         if (!handler) {
             return;
         }
@@ -1728,209 +1763,171 @@ function extraNetworksSetupEventDelegators() {
         handler(event);
     };
 
-    const on_dbl_press = (event, elem, handler) => {
+    const _on_dbl_press = (event, elem, handler) => {
         if (!handler) {
             return;
         }
         handler(event);
     };
 
-    let press_timer;
-    let press_time_ms = 800;
-    let dbl_tap_timer;
-    const dbl_tap_time_ms = 500;
-    let curr_top;
-    let curr_left;
-    let curr_elem;
+    const _get_elem_from_event_map = (event, event_map) => {
+        for (const obj of event_map) {
+            const elem = event.target.closest(obj.selector);
+            const neg = obj.negative ? event.target.closest(obj.negative) : null;
+            if (isElement(elem) && !neg) {
+                return {target: elem, handler: obj.handler};
+            }
+        }
+        return null;
+    };
 
-    ["mousedown", "touchstart"].forEach(event_type => {
-        window.addEventListener(event_type, event => {
-            if (event_type.startsWith("mouse")) {
-                if (event.button !== 0) {
-                    return;
-                }
-            } else if (event_type.startsWith("touch")) {
-                if (event.changedTouches.length !== 1) {
-                    return;
-                }
-            }
-            let event_map = short_press_event_map;
-            if (event.ctrlKey && event.shiftKey) {
-                event_map = short_ctrl_shift_press_event_map;
-            } else if (event.ctrlKey) {
-                event_map = short_ctrl_press_event_map;
-            } else if (event.shiftKey) {
-                event_map = short_shift_press_event_map;
-            }
-            for (const obj of event_map) {
-                const elem = event.target.closest(obj.selector);
-                const neg = obj.negative ? event.target.closest(obj.negative) : null;
-                if (elem && !neg) {
-                    if (event_type.startsWith("mouse")) {
-                        event.preventDefault();
-                    }
-                    event.stopPropagation();
-                    elem.classList.add("pressed");
-                    curr_elem = elem;
-                    const curr_rect = elem.getBoundingClientRect();
-                    curr_top = curr_rect.top;
-                    curr_left = curr_rect.left;
-                }
-            }
+    const _get_event_map = ({event, default_map, ctrl_map, shift_map, ctrl_shift_map} = {}) => {
+        if (!isNullOrUndefined(ctrl_shift_map) && event.ctrlKey && event.shiftKey) {
+            return ctrl_shift_map;
+        } else if (!isNullOrUndefined(ctrl_map) && event.ctrlKey) {
+            return ctrl_map;
+        } else if (!isNullOrUndefined(shift_map) && event.shiftKey) {
+            return shift_map;
+        } else {
+            return default_map;
+        }
+    };
 
-            event_map = long_press_event_map;
-            if (event.ctrlKey && event.shiftKey) {
-                event_map = long_ctrl_shift_press_event_map;
-            } else if (event.ctrlKey) {
-                event_map = long_ctrl_press_event_map;
-            } else if (event.shiftKey) {
-                event_map = long_shift_press_event_map;
-            }
-
-            for (const obj of event_map) {
-                const elem = event.target.closest(obj.selector);
-                const neg = obj.negative ? event.target.closest(obj.negative) : null;
-                if (elem && !neg) {
-                    if (event_type.startsWith("mouse")) {
-                        event.preventDefault();
-                    }
-                    event.stopPropagation();
-                    elem.classList.add("pressed");
-                    press_timer = setTimeout(() => {
-                        elem.classList.remove("pressed");
-                        const rect = elem.getBoundingClientRect();
-                        if (curr_top !== rect.top || curr_left !== rect.left) {
-                            return;
-                        }
-                        on_long_press(event, elem, obj.handler);
-                    }, press_time_ms);
-                }
-            }
-
-            for (const obj of dbl_press_event_map) {
-                const elem = event.target.closest(obj.selector);
-                const neg = obj.negative ? event.target.closest(obj.negative) : null;
-                if (elem && !neg) {
-                    if (event_type.startsWith("mouse")) {
-                        event.preventDefault();
-                    }
-                    event.stopPropagation();
-                    elem.classList.add("pressed");
-                    if (event_type.startsWith("touch")) {
-                        if (isNullOrUndefined(dbl_tap_timer)) {
-                            dbl_tap_timer = setTimeout(() => {
-                                dbl_tap_timer = null;
-                                elem.classList.remove("pressed");
-                            }, dbl_tap_time_ms);
-                        } else {
-                            clearTimeout(dbl_tap_timer);
-                            dbl_tap_timer = null;
-                            elem.classList.remove("pressed");
-                            // Mimic the mouse events by adding detail=2 to the event.
-                            elem.dispatchEvent(
-                                new CustomEvent("dbltouchend", {bubbles: true, detail: 2}),
-                            );
-                        }
-                    }
-                }
-            }
+    const _get_short_press_event_elem = (event) => {
+        const event_map = _get_event_map({
+            event: event,
+            default_map: short_press_event_map,
+            ctrl_map: short_ctrl_press_event_map,
+            shift_map: short_shift_press_event_map,
         });
+        return _get_elem_from_event_map(event, event_map);
+    };
+
+    const _get_long_press_event_elem = (event) => {
+        const event_map = _get_event_map({
+            event: event,
+            default_map: long_press_event_map,
+            ctrl_map: long_ctrl_press_event_map,
+        });
+        return _get_elem_from_event_map(event, event_map);
+    };
+
+    const _get_dbl_press_event_elem = (event) => {
+        const event_map = _get_event_map({
+            event: event,
+            default_map: dbl_press_event_map,
+        });
+        return _get_elem_from_event_map(event, event_map);
+    };
+
+    window.addEventListener("pointerdown", event => {
+        clearTimeout(long_press_timer);
+        long_press_timer = null;
+
+        if (event.target.hasPointerCapture(event.pointerId)) {
+            event.target.releasePointerCapture(event.pointerId);
+        }
+
+        if (event.pointerType === "mouse" && event.button !== 0) {
+            return;
+        }
+
+        const short_press_res = _get_short_press_event_elem(event);
+        if (!isNullOrUndefined(short_press_res)) {
+            event.stopPropagation();
+            short_press_res.target.classList.add("pressed");
+        }
+
+        const long_press_res = _get_long_press_event_elem(event);
+        if (!isNullOrUndefined(long_press_res)) {
+            event.stopPropagation();
+            long_press_res.target.classList.add("pressed");
+            long_press_timer = setTimeout(() => {
+                long_press_res.target.classList.remove("pressed");
+                long_press_timer = null;
+                _on_long_press(event, long_press_res.target, long_press_res.handler);
+            }, long_press_time_ms);
+        }
     });
 
-    ["mouseup", "touchend", "dbltouchend"].forEach(event_type => {
-        window.addEventListener(event_type, event => {
-            // NOTE: long_press_event_map is handled by the timer setup in "mousedown" handlers.
+    window.addEventListener("pointerup", event => {
+        clearTimeout(long_press_timer);
+        long_press_timer = null;
 
-            if (event_type.startsWith("mouse")) {
-                if (event.button !== 0) {
-                    clearTimeout(press_timer);
-                    return;
-                }
-            } else if (event_type.startsWith("touch")) {
-                if (event.changedTouches.length !== 1) {
-                    clearTimeout(press_timer);
-                    return;
-                }
-            }
+        // Shortcut to avoid lookup of element if no parent is pressed.
+        if (!isElement(event.target.closest(".pressed"))) {
+            return;
+        }
 
-            let event_map = short_press_event_map;
-            if (event.ctrlKey && event.shiftKey) {
-                event_map = short_ctrl_shift_press_event_map;
-            } else if (event.ctrlKey) {
-                event_map = short_ctrl_press_event_map;
-            } else if (event.shiftKey) {
-                event_map = short_shift_press_event_map;
+        const short_press_res = _get_short_press_event_elem(event);
+        if (!isNullOrUndefined(short_press_res)) {
+            event.stopPropagation();
+            if (short_press_res.target.classList.contains("pressed")) {
+                short_press_res.target.classList.remove("pressed");
+                _on_short_press(event, short_press_res.target, short_press_res.handler);
             }
-            for (const obj of event_map) {
-                const elem = event.target.closest(obj.selector);
-                const neg = obj.negative ? event.target.closest(obj.negative) : null;
-                if (elem && !neg) {
-                    if (event_type.startsWith("mouse")) {
-                        event.preventDefault();
-                    }
-                    event.stopPropagation();
-                    clearTimeout(press_timer);
-                    if (isElement(curr_elem) && curr_elem !== elem) {
-                        curr_elem.classList.remove("pressed");
-                        return;
-                    }
-                    if (elem.classList.contains("pressed")) {
-                        elem.classList.remove("pressed");
-                        const rect = elem.getBoundingClientRect();
-                        if (curr_top !== rect.top || curr_left !== rect.left) {
-                            return;
-                        }
-                        on_short_press(event, elem, obj.handler);
-                    }
-                }
-            }
+        }
 
-            if (event.detail !== 0 && event.detail % 2 === 0) {
-                for (const obj of dbl_press_event_map) {
-                    const elem = event.target.closest(obj.selector);
-                    const neg = obj.negative ? event.target.closest(obj.negative) : null;
-                    if (elem && !neg) {
-                        if (event_type.startsWith("mouse")) {
-                            event.preventDefault();
-                        }
-                        event.stopPropagation();
-                        clearTimeout(press_timer);
-                        if (isElement(curr_elem) && curr_elem !== elem) {
-                            curr_elem.classList.remove("pressed");
-                            return;
-                        }
-                        elem.classList.remove("pressed");
-                        on_dbl_press(event, elem, obj.handler);
-                    }
-                }
-            }
+        const long_press_res = _get_short_press_event_elem(event);
+        if (!isNullOrUndefined(long_press_res)) {
+            event.stopPropagation();
+            long_press_res.target.classList.remove("pressed");
+        }
 
-            if (isElement(curr_elem) && curr_elem !== event.target) {
-                clearTimeout(press_timer);
-                curr_elem.classList.remove("pressed");
-                return;
+        const dbl_press_res = _get_dbl_press_event_elem(event);
+        if (!isNullOrUndefined(dbl_press_res)) {
+            if (isNullOrUndefined(dbl_press_timer)) {
+                dbl_press_res.target.dataset.awaitDblClick = "";
+                dbl_press_timer = setTimeout(() => {
+                    dbl_press_timer = null;
+                    delete dbl_press_res.target.dataset.awaitDblClick;
+                }, dbl_press_time_ms);
+            } else if ("awaitDblClick" in dbl_press_res.target.dataset) {
+                // Only count as dbl click if it is the same element.
+                clearTimeout(dbl_press_timer);
+                dbl_press_timer = null;
+                delete dbl_press_res.target.dataset.awaitDblClick;
+                _on_dbl_press(event, dbl_press_res.target, dbl_press_res.handler);
             }
-        });
+        }
+    });
+
+    window.addEventListener("pointerout", event => {
+        clearTimeout(long_press_timer);
+        long_press_timer = null;
+        clearTimeout(dbl_press_timer);
+        dbl_press_timer = null;
+
+        // Shortcut to avoid lookup of element if no parent is pressed.
+        if (!isElement(event.target.closest(".pressed"))) {
+            return;
+        }
+
+        const short_press_res = _get_short_press_event_elem(event);
+        if (!isNullOrUndefined(short_press_res)) {
+            event.stopPropagation();
+            short_press_res.target.classList.remove("pressed");
+        }
+
+        const long_press_res = _get_long_press_event_elem(event);
+        if (!isNullOrUndefined(long_press_res)) {
+            event.stopPropagation();
+            long_press_res.target.classList.remove("pressed");
+        }
+
+        const dbl_press_res = _get_dbl_press_event_elem(event);
+        if (!isNullOrUndefined(dbl_press_res)) {
+            event.stopPropagation();
+            delete dbl_press_res.target.dataset.awaitDblClick;
+        }
     });
 
     // Disable the context menu for long press items. On mobile, long press causes
     // context menu to appear which we don't want.
     window.oncontextmenu = event => {
-        let event_map = long_press_event_map;
-        if (event.ctrlKey && event.shiftKey) {
-            event_map = long_ctrl_shift_press_event_map;
-        } else if (event.ctrlKey) {
-            event_map = long_ctrl_press_event_map;
-        } else if (event.shiftKey) {
-            event_map = long_shift_press_event_map;
-        }
-
-        for (const obj of event_map) {
-            const elem = event.target.closest(obj.selector);
-            const neg = obj.negative ? event.target.closest(obj.negative) : null;
-            if (elem && !neg) {
-                return false;
-            }
+        const long_press_res = _get_long_press_event_elem(event);
+        if (!isNullOrUndefined(long_press_res)) {
+            return false;
         }
     };
 }
