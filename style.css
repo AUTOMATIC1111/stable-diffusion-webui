@@ -1378,6 +1378,7 @@ body.resizing .resize-handle {
     gap: var(--spacing-sm);
     box-sizing: border-box;
     background: var(--input-background-fill);
+    overflow: hidden;
 }
 
 /* Add outline to the contianer when the inner search-text <input> has focus. */
@@ -1425,8 +1426,7 @@ body.resizing .resize-handle {
 /* "Clear" button on right of container. Invisible until user enters text in <input>. */
 .extra-network-control--search .extra-network-control--search-clear {
     visibility: hidden;
-    border-radius: 0 var(--input-radius) var(--input-radius) 0;
-    border: var(--input-border-width) solid transparent;
+    border-radius: 0;
     transition: background var(--button-transition);
     user-select: none;
     cursor: pointer;
@@ -1460,11 +1460,6 @@ body.resizing .resize-handle {
 
 .extra-network-control--sort-dir[data-sort-dir="descending"] .extra-network-control--sort-dir-icon-ascending {
     stroke: var(--input-placeholder-color);
-}
-
-.extra-network-control--clear-filters {
-    margin: 0 !important;
-    padding: 0 !important;
 }
 
 /* ==== ICONS ==== */

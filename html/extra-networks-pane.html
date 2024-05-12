@@ -17,6 +17,20 @@
             </button>
         </div>
         <div class="extra-network-controls--container">
+            <div class="extra-network-controls--header">Clear Filters</div>
+            <div class="extra-network-controls--buttons">
+                <button class="extra-network-control extra-network-control--clear-filters"
+                    title="Clear all directory filters">
+                    <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
+                        fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                        stroke-width="1">
+                        <path d="M 2 2 V 4 L 6 8 V 13 L 9 14 V 12 M 12 5 L 13 4 V 2 H 2" />
+                        <path d="M 9 10 L 12 7 M 9 7 L 12 10" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="extra-network-controls--container">
             <div class="extra-network-controls--header">Sort Mode</div>
             <div class="extra-network-controls--buttons">
                 <button class="extra-network-control extra-network-control--sort-mode" title="Sort by path"
@@ -135,7 +149,8 @@
             {dirs_html}
         </div>
         <div class="extra-network-content--tree-and-cards-view resize-handle-row">
-            <div class="extra-network-content extra-network-content--tree-view resize-handle-col" style="{tree_view_style}">
+            <div class="extra-network-content extra-network-content--tree-view resize-handle-col"
+                style="{tree_view_style}">
                 <div id='{tabname}_{extra_networks_tabname}_tree_list_loading_splash' class='extra-network-list-splash'>
                     {tree_list_loading_splash_content}</div>
                 <div id='{tabname}_{extra_networks_tabname}_tree_list_no_data_splash'
@@ -146,18 +161,8 @@
                         class='extra-network-tree-content clusterize-content'></div>
                 </div>
             </div>
-            <div class="extra-network-content extra-network-content--card-view extra-network-cards resize-handle-col" style="{card_view_style}">
-                <div class="extra-network-controls--buttons">
-                    <button class="extra-network-control extra-network-control--clear-filters hidden"
-                        title="Clear all directory filters">
-                        <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
-                            fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                            stroke-width="1">
-                            <path d="M 2 2 V 4 L 6 8 V 13 L 9 14 V 12 M 12 5 L 13 4 V 2 H 2" />
-                            <path d="M 9 10 L 12 7 M 9 7 L 12 10" />
-                        </svg>
-                    </button>
-                </div>
+            <div class="extra-network-content extra-network-content--card-view extra-network-cards resize-handle-col"
+                style="{card_view_style}">
                 <div id='{tabname}_{extra_networks_tabname}_card_list_loading_splash' class='extra-network-list-splash'>
                     {card_list_loading_splash_content}</div>
                 <div id='{tabname}_{extra_networks_tabname}_card_list_no_data_splash'

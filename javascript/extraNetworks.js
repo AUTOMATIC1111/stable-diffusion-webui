@@ -437,17 +437,11 @@ class ExtraNetworksTab {
         recurse = recurse === true || recurse === false ? recurse : false;
         this.card_list.addDirectoryFilter(div_id, filter_str, recurse);
         this.directory_filters[div_id] = {filter_str: filter_str, recurse: recurse};
-
-        const clear_btn = this.container_elem.querySelector(".extra-network-control--clear-filters");
-        clear_btn.classList.toggle("hidden", !Object.keys(this.directory_filters).length);
     }
 
     removeDirectoryFilter(div_id) {
         this.card_list.removeDirectoryFilter(div_id);
         delete this.directory_filters[div_id];
-
-        const clear_btn = this.container_elem.querySelector(".extra-network-control--clear-filters");
-        clear_btn.classList.toggle("hidden", !Object.keys(this.directory_filters).length);
     }
 
     clearDirectoryFilters({excluded_div_ids} = {}) {
@@ -466,9 +460,6 @@ class ExtraNetworksTab {
             }
             delete this.directory_filters[div_id];
         }
-
-        const clear_btn = this.container_elem.querySelector(".extra-network-control--clear-filters");
-        clear_btn.classList.toggle("hidden", !Object.keys(this.directory_filters).length);
     }
 
     setDirectoryFilters() {
@@ -1136,8 +1127,8 @@ function extraNetworksControlSearchClearOnClick(event) {
 function extraNetworksControlClearFiltersOnClick(event) {
     /** Clears all directory filters applied to the cards list. */
     const btn = event.target.closest(".extra-network-control--clear-filters");
-    const pane = btn.closest(".extra-network-pane");
-    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
+    const controls = btn.closest(".extra-network-controls");
+    const tab = extra_networks_tabs[controls.dataset.tabnameFull];
 
     tab.clearSelectedButtons();
     tab.clearDirectoryFilters();
