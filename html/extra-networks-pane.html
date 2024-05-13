@@ -49,7 +49,7 @@
                     <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
                         fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                         <path stroke-width="1" d="M 2 12 L 6 3 L 10 12 M 3.5 9 L 8.5 9" />
-                        <path stroke-width="1" d="M 8 3 L 15 3 M 9.5 6 L 15 6 M 11 9 L 15 9 M 12.5 12 L 15 12">
+                        <path stroke-width="1" d="M 8 3 L 15 3 M 9.5 6 L 15 6 M 11 9 L 15 9 M 12.5 12 L 15 12" />
                     </svg>
                 </button>
                 <button class="extra-network-control extra-network-control--sort-mode" title="Sort by date created"
@@ -77,7 +77,7 @@
                             <line x1="12" y1="1" x2="12" y2="3" />
                         </g>
                         <g stroke-linecap="square" stroke-linejoin="square">
-                            <path d="M 4 9 H 10 L 12 10 L 10 11 H 4 Z M 6 9 V 10">
+                            <path d="M 4 9 H 10 L 12 10 L 10 11 H 4 Z M 6 9 V 10" />
                         </g>
                     </svg>
                 </button>
@@ -86,12 +86,20 @@
         <div class="extra-network-controls--container">
             <div class="extra-network-controls--header">Sort Order</div>
             <div class="extra-network-controls--buttons">
-                <button class="extra-network-control extra-network-control--sort-dir" title="Sort {data_sort_dir}"
-                    data-sort-dir="{data_sort_dir}">
+                <button class="extra-network-control extra-network-control--sort-dir" title="Sort ascending"
+                    data-sort-dir="ascending" {btn_sort_dir_ascending_data_attributes}>
                     <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
-                        fill="none" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-                        <path class="extra-network-control--sort-dir-icon-ascending" d="M 8 1 L 3 7 L 13 7 Z" />
-                        <path class="extra-network-control--sort-dir-icon-descending" d="M 8 15 L 3 9 L 13 9 Z" />
+                        stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                        <path fill="currentColor" d="M 8 1 L 3 7 L 13 7 Z" />
+                        <path fill="none" stroke="var(--input-placeholder-color)" d="M 8 15 L 3 9 L 13 9 Z" />
+                    </svg>
+                </button>
+                <button class="extra-network-control extra-network-control--sort-dir" title="Sort descending"
+                    data-sort-dir="descending" {btn_sort_dir_descending_data_attributes}>
+                    <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
+                        stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                        <path fill="none" stroke="var(--input-placeholder-color)" d="M 8 1 L 3 7 L 13 7 Z" />
+                        <path fill="currentColor" d="M 8 15 L 3 9 L 13 9 Z" />
                     </svg>
                 </button>
             </div>

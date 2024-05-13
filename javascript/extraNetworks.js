@@ -1173,8 +1173,12 @@ function extraNetworksControlSortDirOnClick(event) {
     }
 
     let sort_dir_str = curr_sort_dir_str === "ascending" ? "descending" : "ascending";
-    btn.dataset.sortDir = sort_dir_str;
-    btn.setAttribute("title", `Sort ${sort_dir_str}`);
+
+    const other_btn = tab.controls_elem.querySelector(
+        `.extra-network-control--sort-dir[data-sort-dir="${sort_dir_str}"]`
+    );
+    delete btn.dataset.selected;
+    other_btn.dataset.selected = "";
 
     tab.setSortDir(sort_dir_str);
 }

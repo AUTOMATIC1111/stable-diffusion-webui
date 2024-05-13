@@ -846,11 +846,12 @@ class ExtraNetworksPage:
             **{
                 "tabname": tabname,
                 "extra_networks_tabname": self.extra_networks_tabname,
-                "data_sort_dir": sort_dir,
                 "btn_sort_mode_path_data_attributes": "data-selected" if sort_mode == "path" else "",
                 "btn_sort_mode_name_data_attributes": "data-selected" if sort_mode == "name" else "",
                 "btn_sort_mode_date_created_data_attributes": "data-selected" if sort_mode == "date_created" else "",
                 "btn_sort_mode_date_modified_data_attributes": "data-selected" if sort_mode == "date_modified" else "",
+                "btn_sort_dir_ascending_data_attributes": "data-selected" if sort_dir == "ascending" else "",
+                "btn_sort_dir_descending_data_attributes": "data-selected" if sort_dir == "descending" else "",
                 "btn_dirs_view_data_attributes": "data-selected" if dirs_view_en else "",
                 "btn_tree_view_data_attributes": "data-selected" if tree_view_en else "",
                 "btn_card_view_data_attributes": "data-selected" if card_view_en else "",

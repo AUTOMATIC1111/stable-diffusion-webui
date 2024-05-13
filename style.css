@@ -1443,23 +1443,9 @@ body.resizing .resize-handle {
     color: var(--button-secondary-text-color-hover);
 }
 
-/* Customize behavior or sort direction button icon. */
-.extra-network-control--sort-dir[data-sort-dir="ascending"] .extra-network-control--sort-dir-icon-ascending {
-    fill: var(--button-secondary-text-color);
-    stroke: var(--button-secondary-text-color);
-}
-
-.extra-network-control--sort-dir[data-sort-dir="ascending"] .extra-network-control--sort-dir-icon-descending {
-    stroke: var(--input-placeholder-color);
-}
-
-.extra-network-control--sort-dir[data-sort-dir="descending"] .extra-network-control--sort-dir-icon-descending {
-    fill: var(--button-secondary-text-color);
-    stroke: var(--button-secondary-text-color);
-}
-
-.extra-network-control--sort-dir[data-sort-dir="descending"] .extra-network-control--sort-dir-icon-ascending {
-    stroke: var(--input-placeholder-color);
+/* Customize behavior of sort direction button icon. */
+.extra-network-control--sort-dir:not([data-selected]) {
+    display: none;
 }
 
 /* ==== ICONS ==== */
