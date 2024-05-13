@@ -68,7 +68,7 @@ class Embedding:
                 'hash': self.checksum(),
                 'optimizer_state_dict': self.optimizer_state_dict,
             }
-            torch.save(optimizer_saved_dict, f"{filename}.optim")
+            torch.save(optimizer_saved_dict, f"{filename}.optim", _use_new_zipfile_serialization=False)
 
     def checksum(self):
         if self.cached_checksum is not None:
