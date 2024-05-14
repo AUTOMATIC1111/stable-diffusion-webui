@@ -32,6 +32,9 @@ def imports():
     import sgm.modules.encoders.modules  # noqa: F401
     startup_timer.record("import sgm")
 
+    from modules import initialize_util
+    initialize_util.fix_pytorch_lightning()
+
     from modules import shared_init
     shared_init.initialize()
     startup_timer.record("initialize shared")

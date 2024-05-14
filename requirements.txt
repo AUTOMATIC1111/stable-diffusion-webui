@@ -16,12 +16,14 @@ lark
 numpy
 omegaconf
 open-clip-torch
+spandrel<0.3
 
 piexif
 psutil
 pytorch_lightning
 requests
 resize-right
+pydantic<2
 
 safetensors
 scikit-image>=0.19
@@ -29,5 +31,5 @@ tomesd
 torch
 torchdiffeq
 torchsde
-transformers==4.30.2
+transformers==4.34.1
 pillow-avif-plugin==1.4.3
