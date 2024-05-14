@@ -1,6 +1,7 @@
 from __future__ import annotations
 import math
 import psutil
+import platform
 
 import torch
 from torch import einsum
@@ -94,7 +95,10 @@ class SdOptimizationSdp(SdOptimizationSdpNoMem):
 class SdOptimizationSubQuad(SdOptimization):
     name = "sub-quadratic"
     cmd_opt = "opt_sub_quad_attention"
-    priority = 10
+
+    @property
+    def priority(self):
+        return 1000 if shared.device.type == 'mps' else 10
 
     def apply(self):
         ldm.modules.attention.CrossAttention.forward = sub_quad_attention_forward
@@ -120,7 +124,7 @@ class SdOptimizationInvokeAI(SdOptimization):
 
     @property
     def priority(self):
-        return 1000 if not torch.cuda.is_available() else 10
+        return 1000 if shared.device.type != 'mps' and not torch.cuda.is_available() else 10
 
     def apply(self):
         ldm.modules.attention.CrossAttention.forward = split_cross_attention_forward_invokeAI
@@ -427,7 +431,10 @@ def sub_quad_attention(q, k, v, q_chunk_size=1024, kv_chunk_size=None, kv_chunk_
     qk_matmul_size_bytes = batch_x_heads * bytes_per_token * q_tokens * k_tokens
 
     if chunk_threshold is None:
-        chunk_threshold_bytes = int(get_available_vram() * 0.9) if q.device.type == 'mps' else int(get_available_vram() * 0.7)
+        if q.device.type == 'mps':
+            chunk_threshold_bytes = 268435456 * (2 if platform.processor() == 'i386' else bytes_per_token)
+        else:
+            chunk_threshold_bytes = int(get_available_vram() * 0.7)
     elif chunk_threshold == 0:
         chunk_threshold_bytes = None
     else:

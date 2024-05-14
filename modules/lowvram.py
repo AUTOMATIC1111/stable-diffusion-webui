@@ -1,5 +1,5 @@
 import torch
-from modules import devices
+from modules import devices, shared
 
 module_in_gpu = None
 cpu = torch.device("cpu")
@@ -14,7 +14,24 @@ def send_everything_to_cpu():
     module_in_gpu = None
 
 
+def is_needed(sd_model):
+    return shared.cmd_opts.lowvram or shared.cmd_opts.medvram or shared.cmd_opts.medvram_sdxl and hasattr(sd_model, 'conditioner')
+
+
+def apply(sd_model):
+    enable = is_needed(sd_model)
+    shared.parallel_processing_allowed = not enable
+
+    if enable:
+        setup_for_low_vram(sd_model, not shared.cmd_opts.lowvram)
+    else:
+        sd_model.lowvram = False
+
+
 def setup_for_low_vram(sd_model, use_medvram):
+    if getattr(sd_model, 'lowvram', False):
+        return
+
     sd_model.lowvram = True
 
     parents = {}
@@ -127,4 +144,4 @@ def setup_for_low_vram(sd_model, use_medvram):
 
 
 def is_enabled(sd_model):
-    return getattr(sd_model, 'lowvram', False)
+    return sd_model.lowvram

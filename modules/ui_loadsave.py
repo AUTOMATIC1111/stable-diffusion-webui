@@ -4,11 +4,15 @@ import os
 import gradio as gr
 
 from modules import errors
-from modules.ui_components import ToolButton
+from modules.ui_components import ToolButton, InputAccordion
+
+
+def radio_choices(comp):  # gradio 3.41 changes choices from list of values to list of pairs
+    return [x[0] if isinstance(x, tuple) else x for x in getattr(comp, 'choices', [])]
 
 
 class UiLoadsave:
-    """allows saving and restorig default values for gradio components"""
+    """allows saving and restoring default values for gradio components"""
 
     def __init__(self, filename):
         self.filename = filename
@@ -22,8 +26,9 @@ class UiLoadsave:
         self.ui_defaults_review = None
 
         try:
-            if os.path.exists(self.filename):
-                self.ui_settings = self.read_from_file()
+            self.ui_settings = self.read_from_file()
+        except FileNotFoundError:
+            pass
         except Exception as e:
             self.error_loading = True
             errors.display(e, "loading settings")
@@ -37,23 +42,35 @@ class UiLoadsave:
             key = f"{path}/{field}"
 
             if getattr(obj, 'custom_script_source', None) is not None:
-              key = f"customscript/{obj.custom_script_source}/{key}"
+                key = f"customscript/{obj.custom_script_source}/{key}"
 
             if getattr(obj, 'do_not_save_to_config', False):
                 return
 
             saved_value = self.ui_settings.get(key, None)
+
+            if isinstance(obj, gr.Accordion) and isinstance(x, InputAccordion) and field == 'value':
+                field = 'open'
+
             if saved_value is None:
                 self.ui_settings[key] = getattr(obj, field)
             elif condition and not condition(saved_value):
                 pass
             else:
+                if isinstance(obj, gr.Textbox) and field == 'value':  # due to an undesirable behavior of gr.Textbox, if you give it an int value instead of str, everything dies
+                    saved_value = str(saved_value)
+                elif isinstance(obj, gr.Number) and field == 'value':
+                    try:
+                        saved_value = float(saved_value)
+                    except ValueError:
+                        return
+
                 setattr(obj, field, saved_value)
                 if init_field is not None:
                     init_field(saved_value)
 
             if field == 'value' and key not in self.component_mapping:
-                self.component_mapping[key] = x
+                self.component_mapping[key] = obj
 
         if type(x) in [gr.Slider, gr.Radio, gr.Checkbox, gr.Textbox, gr.Number, gr.Dropdown, ToolButton, gr.Button] and x.visible:
             apply_field(x, 'visible')
@@ -65,7 +82,7 @@ class UiLoadsave:
             apply_field(x, 'step')
 
         if type(x) == gr.Radio:
-            apply_field(x, 'value', lambda val: val in x.choices)
+            apply_field(x, 'value', lambda val: val in radio_choices(x))
 
         if type(x) == gr.Checkbox:
             apply_field(x, 'value')
@@ -78,12 +95,21 @@ class UiLoadsave:
 
         if type(x) == gr.Dropdown:
             def check_dropdown(val):
+                choices = radio_choices(x)
                 if getattr(x, 'multiselect', False):
-                    return all(value in x.choices for value in val)
+                    return all(value in choices for value in val)
                 else:
-                    return val in x.choices
+                    return val in choices
 
             apply_field(x, 'value', check_dropdown, getattr(x, 'init_field', None))
+
+        if type(x) == InputAccordion:
+            if hasattr(x, 'custom_script_source'):
+                x.accordion.custom_script_source = x.custom_script_source
+            if x.accordion.visible:
+                apply_field(x.accordion, 'visible')
+            apply_field(x, 'value')
+            apply_field(x.accordion, 'value')
 
         def check_tab_id(tab_id):
             tab_items = list(filter(lambda e: isinstance(e, gr.TabItem), x.children))
@@ -118,10 +144,10 @@ class UiLoadsave:
 
     def write_to_file(self, current_ui_settings):
         with open(self.filename, "w", encoding="utf8") as file:
-            json.dump(current_ui_settings, file, indent=4)
+            json.dump(current_ui_settings, file, indent=4, ensure_ascii=False)
 
     def dump_defaults(self):
-        """saves default values to a file unless tjhe file is present and there was an error loading default values at start"""
+        """saves default values to a file unless the file is present and there was an error loading default values at start"""
 
         if self.error_loading and os.path.exists(self.filename):
             return
@@ -138,12 +164,14 @@ class UiLoadsave:
         for (path, component), new_value in zip(self.component_mapping.items(), values):
             old_value = current_ui_settings.get(path)
 
-            choices = getattr(component, 'choices', None)
+            choices = radio_choices(component)
             if isinstance(new_value, int) and choices:
                 if new_value >= len(choices):
                     continue
 
                 new_value = choices[new_value]
+                if isinstance(new_value, tuple):
+                    new_value = new_value[0]
 
             if new_value == old_value:
                 continue

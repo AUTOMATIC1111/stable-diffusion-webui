@@ -121,21 +121,57 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 /**
- * Add a ctrl+enter as a shortcut to start a generation
+ * Add keyboard shortcuts:
+ * Ctrl+Enter to start/restart a generation
+ * Alt/Option+Enter to skip a generation
+ * Esc to interrupt a generation
  */
 document.addEventListener('keydown', function(e) {
-    var handled = false;
-    if (e.key !== undefined) {
-        if ((e.key == "Enter" && (e.metaKey || e.ctrlKey || e.altKey))) handled = true;
-    } else if (e.keyCode !== undefined) {
-        if ((e.keyCode == 13 && (e.metaKey || e.ctrlKey || e.altKey))) handled = true;
-    }
-    if (handled) {
-        var button = get_uiCurrentTabContent().querySelector('button[id$=_generate]');
-        if (button) {
-            button.click();
+    const isEnter = e.key === 'Enter' || e.keyCode === 13;
+    const isCtrlKey = e.metaKey || e.ctrlKey;
+    const isAltKey = e.altKey;
+    const isEsc = e.key === 'Escape';
+
+    const generateButton = get_uiCurrentTabContent().querySelector('button[id$=_generate]');
+    const interruptButton = get_uiCurrentTabContent().querySelector('button[id$=_interrupt]');
+    const skipButton = get_uiCurrentTabContent().querySelector('button[id$=_skip]');
+
+    if (isCtrlKey && isEnter) {
+        if (interruptButton.style.display === 'block') {
+            interruptButton.click();
+            const callback = (mutationList) => {
+                for (const mutation of mutationList) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                        if (interruptButton.style.display === 'none') {
+                            generateButton.click();
+                            observer.disconnect();
+                        }
+                    }
+                }
+            };
+            const observer = new MutationObserver(callback);
+            observer.observe(interruptButton, {attributes: true});
+        } else {
+            generateButton.click();
         }
         e.preventDefault();
+    }
+
+    if (isAltKey && isEnter) {
+        skipButton.click();
+        e.preventDefault();
+    }
+
+    if (isEsc) {
+        const globalPopup = document.querySelector('.global-popup');
+        const lightboxModal = document.querySelector('#lightboxModal');
+        if (!globalPopup || globalPopup.style.display === 'none') {
+            if (document.activeElement === lightboxModal) return;
+            if (interruptButton.style.display === 'block') {
+                interruptButton.click();
+                e.preventDefault();
+            }
+        }
     }
 });
 

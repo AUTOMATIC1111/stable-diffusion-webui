@@ -33,8 +33,11 @@ function updateOnBackgroundChange() {
     const modalImage = gradioApp().getElementById("modalImage");
     if (modalImage && modalImage.offsetParent) {
         let currentButton = selected_gallery_button();
-
-        if (currentButton?.children?.length > 0 && modalImage.src != currentButton.children[0].src) {
+        let preview = gradioApp().querySelectorAll('.livePreview > img');
+        if (opts.js_live_preview_in_modal_lightbox && preview.length > 0) {
+            // show preview image if available
+            modalImage.src = preview[preview.length - 1].src;
+        } else if (currentButton?.children?.length > 0 && modalImage.src != currentButton.children[0].src) {
             modalImage.src = currentButton.children[0].src;
             if (modalImage.style.display === 'none') {
                 const modal = gradioApp().getElementById("lightboxModal");
@@ -128,14 +131,15 @@ function setupImageForLightbox(e) {
     e.style.cursor = 'pointer';
     e.style.userSelect = 'none';
 
-    var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+    e.addEventListener('mousedown', function(evt) {
+        if (evt.button == 1) {
+            open(evt.target.src);
+            evt.preventDefault();
+            return;
+        }
+    }, true);
 
-    // For Firefox, listening on click first switched to next image then shows the lightbox.
-    // If you know how to fix this without switching to mousedown event, please.
-    // For other browsers the event is click to make it possiblr to drag picture.
-    var event = isFirefox ? 'mousedown' : 'click';
-
-    e.addEventListener(event, function(evt) {
+    e.addEventListener('click', function(evt) {
         if (!opts.js_modal_lightbox || evt.button != 0) return;
 
         modalZoomSet(gradioApp().getElementById('modalImage'), opts.js_modal_lightbox_initially_zoomed);

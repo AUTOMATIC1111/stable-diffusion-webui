@@ -2,7 +2,7 @@ import os
 
 import torch
 
-from modules import shared, paths, sd_disable_initialization
+from modules import shared, paths, sd_disable_initialization, devices
 
 sd_configs_path = shared.sd_configs_path
 sd_repo_configs_path = os.path.join(paths.paths['Stable Diffusion'], "configs", "stable-diffusion")
@@ -15,13 +15,14 @@ config_sd2v = os.path.join(sd_repo_configs_path, "v2-inference-v.yaml")
 config_sd2_inpainting = os.path.join(sd_repo_configs_path, "v2-inpainting-inference.yaml")
 config_sdxl = os.path.join(sd_xl_repo_configs_path, "sd_xl_base.yaml")
 config_sdxl_refiner = os.path.join(sd_xl_repo_configs_path, "sd_xl_refiner.yaml")
+config_sdxl_inpainting = os.path.join(sd_configs_path, "sd_xl_inpaint.yaml")
 config_depth_model = os.path.join(sd_repo_configs_path, "v2-midas-inference.yaml")
 config_unclip = os.path.join(sd_repo_configs_path, "v2-1-stable-unclip-l-inference.yaml")
 config_unopenclip = os.path.join(sd_repo_configs_path, "v2-1-stable-unclip-h-inference.yaml")
 config_inpainting = os.path.join(sd_configs_path, "v1-inpainting-inference.yaml")
 config_instruct_pix2pix = os.path.join(sd_configs_path, "instruct-pix2pix.yaml")
 config_alt_diffusion = os.path.join(sd_configs_path, "alt-diffusion-inference.yaml")
-
+config_alt_diffusion_m18 = os.path.join(sd_configs_path, "alt-diffusion-m18-inference.yaml")
 
 def is_using_v_parameterization_for_sd2(state_dict):
     """
@@ -29,7 +30,6 @@ def is_using_v_parameterization_for_sd2(state_dict):
     """
 
     import ldm.modules.diffusionmodules.openaimodel
-    from modules import devices
 
     device = devices.cpu
 
@@ -72,7 +72,10 @@ def guess_model_config_from_state_dict(sd, filename):
     sd2_variations_weight = sd.get('embedder.model.ln_final.weight', None)
 
     if sd.get('conditioner.embedders.1.model.ln_final.weight', None) is not None:
-        return config_sdxl
+        if diffusion_model_input.shape[1] == 9:
+            return config_sdxl_inpainting
+        else:
+            return config_sdxl
     if sd.get('conditioner.embedders.0.model.ln_final.weight', None) is not None:
         return config_sdxl_refiner
     elif sd.get('depth_model.model.pretrained.act_postprocess3.0.project.0.bias', None) is not None:
@@ -96,7 +99,10 @@ def guess_model_config_from_state_dict(sd, filename):
         if diffusion_model_input.shape[1] == 8:
             return config_instruct_pix2pix
 
+
     if sd.get('cond_stage_model.roberta.embeddings.word_embeddings.weight', None) is not None:
+        if sd.get('cond_stage_model.transformation.weight').size()[0] == 1024:
+            return config_alt_diffusion_m18
         return config_alt_diffusion
 
     return config_default

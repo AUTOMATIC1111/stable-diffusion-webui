@@ -74,9 +74,12 @@ module.exports = {
         create_submit_args: "readonly",
         restart_reload: "readonly",
         updateInput: "readonly",
+        onEdit: "readonly",
         //extraNetworks.js
         requestGet: "readonly",
         popup: "readonly",
+        // profilerVisualization.js
+        createVisualizationTable: "readonly",
         // from python
         localization: "readonly",
         // progrssbar.js
@@ -85,7 +88,11 @@ module.exports = {
         // imageviewer.js
         modalPrevImage: "readonly",
         modalNextImage: "readonly",
-        // token-counters.js
-        setupTokenCounters: "readonly",
+        // localStorage.js
+        localSet: "readonly",
+        localGet: "readonly",
+        localRemove: "readonly",
+        // resizeHandle.js
+        setupResizeHandle: "writable"
     }
 };

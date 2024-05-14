@@ -32,7 +32,7 @@ def process_text_old(self: sd_hijack_clip.FrozenCLIPEmbedderWithCustomWordsBase,
 
                 embedding, embedding_length_in_tokens = self.hijack.embedding_db.find_embedding_at_position(tokens, i)
 
-                mult_change = self.token_mults.get(token) if shared.opts.enable_emphasis else None
+                mult_change = self.token_mults.get(token) if shared.opts.emphasis != "None" else None
                 if mult_change is not None:
                     mult *= mult_change
                     i += 1

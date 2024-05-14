@@ -11,15 +11,21 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python 3.10
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.10.6
           cache: pip
           cache-dependency-path: |
             **/requirements*txt
             launch.py
+      - name: Cache models
+        id: cache-models
+        uses: actions/cache@v4
+        with:
+          path: models
+          key: "2023-12-30"
       - name: Install test dependencies
         run: pip install wait-for-it -r requirements-test.txt
         env:
@@ -33,6 +39,8 @@ jobs:
           TORCH_INDEX_URL: https://download.pytorch.org/whl/cpu
           WEBUI_LAUNCH_LIVE_OUTPUT: "1"
           PYTHONUNBUFFERED: "1"
+      - name: Print installed packages
+        run: pip freeze
       - name: Start test server
         run: >
           python -m coverage run
@@ -49,7 +57,7 @@ jobs:
           2>&1 | tee output.txt &
       - name: Run tests
         run: |
-          wait-for-it --service 127.0.0.1:7860 -t 600
+          wait-for-it --service 127.0.0.1:7860 -t 20
           python -m pytest -vv --junitxml=test/results.xml --cov . --cov-report=xml --verify-base-url test
       - name: Kill test server
         if: always()
@@ -60,13 +68,13 @@ jobs:
           python -m coverage report -i
           python -m coverage html -i
       - name: Upload main app output
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: output
           path: output.txt
       - name: Upload coverage HTML
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: htmlcov

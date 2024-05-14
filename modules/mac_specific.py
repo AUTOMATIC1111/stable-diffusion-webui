@@ -1,16 +1,18 @@
 import logging
 
 import torch
+from torch import Tensor
 import platform
 from modules.sd_hijack_utils import CondFunc
 from packaging import version
+from modules import shared
 
 log = logging.getLogger(__name__)
 
 
 # before torch version 1.13, has_mps is only available in nightly pytorch and macOS 12.3+,
 # use check `getattr` and try it for compatibility.
-# in torch version 1.13, backends.mps.is_available() and backends.mps.is_built() are introduced in to check mps availabilty,
+# in torch version 1.13, backends.mps.is_available() and backends.mps.is_built() are introduced in to check mps availability,
 # since torch 2.0.1+ nightly build, getattr(torch, 'has_mps', False) was deprecated, see https://github.com/pytorch/pytorch/pull/103279
 def check_for_mps() -> bool:
     if version.parse(torch.__version__) <= version.parse("2.0.1"):
@@ -30,8 +32,7 @@ has_mps = check_for_mps()
 
 def torch_mps_gc() -> None:
     try:
-        from modules.shared import state
-        if state.current_latent is not None:
+        if shared.state.current_latent is not None:
             log.debug("`current_latent` is set, skipping MPS garbage collection")
             return
         from torch.mps import empty_cache
@@ -51,10 +52,18 @@ def cumsum_fix(input, cumsum_func, *args, **kwargs):
     return cumsum_func(input, *args, **kwargs)
 
 
-if has_mps:
-    # MPS fix for randn in torchsde
-    CondFunc('torchsde._brownian.brownian_interval._randn', lambda _, size, dtype, device, seed: torch.randn(size, dtype=dtype, device=torch.device("cpu"), generator=torch.Generator(torch.device("cpu")).manual_seed(int(seed))).to(device), lambda _, size, dtype, device, seed: device.type == 'mps')
+# MPS workaround for https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14046
+def interpolate_with_fp32_fallback(orig_func, *args, **kwargs) -> Tensor:
+    try:
+        return orig_func(*args, **kwargs)
+    except RuntimeError as e:
+        if "not implemented for" in str(e) and "Half" in str(e):
+            input_tensor = args[0]
+            return orig_func(input_tensor.to(torch.float32), *args[1:], **kwargs).to(input_tensor.dtype)
+        else:
+            print(f"An unexpected RuntimeError occurred: {str(e)}")
 
+if has_mps:
     if platform.mac_ver()[0].startswith("13.2."):
         # MPS workaround for https://github.com/pytorch/pytorch/issues/95188, thanks to danieldk (https://github.com/explosion/curated-transformers/pull/124)
         CondFunc('torch.nn.functional.linear', lambda _, input, weight, bias: (torch.matmul(input, weight.t()) + bias) if bias is not None else torch.matmul(input, weight.t()), lambda _, input, weight, bias: input.numel() > 10485760)
@@ -79,6 +88,9 @@ if has_mps:
 
         # MPS workaround for https://github.com/pytorch/pytorch/issues/96113
         CondFunc('torch.nn.functional.layer_norm', lambda orig_func, x, normalized_shape, weight, bias, eps, **kwargs: orig_func(x.float(), normalized_shape, weight.float() if weight is not None else None, bias.float() if bias is not None else bias, eps).to(x.dtype), lambda _, input, *args, **kwargs: len(args) == 4 and input.device.type == 'mps')
+
+        # MPS workaround for https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14046
+        CondFunc('torch.nn.functional.interpolate', interpolate_with_fp32_fallback, None)
 
         # MPS workaround for https://github.com/pytorch/pytorch/issues/92311
         if platform.processor() == 'i386':

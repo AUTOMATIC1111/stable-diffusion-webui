@@ -15,7 +15,7 @@ onAfterUiUpdate(function() {
         }
     }
 
-    const galleryPreviews = gradioApp().querySelectorAll('div[id^="tab_"][style*="display: block"] div[id$="_results"] .thumbnail-item > img');
+    const galleryPreviews = gradioApp().querySelectorAll('div[id^="tab_"] div[id$="_results"] .thumbnail-item > img');
 
     if (galleryPreviews == null) return;
 
@@ -26,7 +26,11 @@ onAfterUiUpdate(function() {
     lastHeadImg = headImg;
 
     // play notification sound if available
-    gradioApp().querySelector('#audio_notification audio')?.play();
+    const notificationAudio = gradioApp().querySelector('#audio_notification audio');
+    if (notificationAudio) {
+        notificationAudio.volume = opts.notification_volume / 100.0 || 1.0;
+        notificationAudio.play();
+    }
 
     if (document.hasFocus()) return;
 

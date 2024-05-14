@@ -1,5 +1,5 @@
 # Stable Diffusion web UI
-A browser interface based on Gradio library for Stable Diffusion.
+A web interface for Stable Diffusion, implemented using Gradio library.
 
 ![](screenshot.png)
 
@@ -78,7 +78,7 @@ A browser interface based on Gradio library for Stable Diffusion.
 - Clip skip
 - Hypernetworks
 - Loras (same as Hypernetworks but more pretty)
-- A sparate UI where you can choose, with preview, which embeddings, hypernetworks or Loras to add to your prompt 
+- A separate UI where you can choose, with preview, which embeddings, hypernetworks or Loras to add to your prompt 
 - Can select to load a different VAE from settings screen
 - Estimated completion time in progress bar
 - API
@@ -88,19 +88,24 @@ A browser interface based on Gradio library for Stable Diffusion.
 - [Alt-Diffusion](https://arxiv.org/abs/2211.06679) support - see [wiki](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#alt-diffusion) for instructions
 - Now without any bad letters!
 - Load checkpoints in safetensors format
-- Eased resolution restriction: generated image's domension must be a multiple of 8 rather than 64
+- Eased resolution restriction: generated image's dimensions must be a multiple of 8 rather than 64
 - Now with a license!
 - Reorder elements in the UI from settings screen
+- [Segmind Stable Diffusion](https://huggingface.co/segmind/SSD-1B) support
 
 ## Installation and Running
-Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for both [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended) and [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.
+Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for:
+- [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended)
+- [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.
+- [Intel CPUs, Intel GPUs (both integrated and discrete)](https://github.com/openvinotoolkit/stable-diffusion-webui/wiki/Installation-on-Intel-Silicon) (external wiki page)
+- [Ascend NPUs](https://github.com/wangshuai09/stable-diffusion-webui/wiki/Install-and-run-on-Ascend-NPUs) (external wiki page)
 
 Alternatively, use online services (like Google Colab):
 
 - [List of Online Services](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Online-Services)
 
 ### Installation on Windows 10/11 with NVidia-GPUs using release package
-1. Download `sd.webui.zip` from [v1.0.0-pre](https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases/tag/v1.0.0-pre) and extract it's contents.
+1. Download `sd.webui.zip` from [v1.0.0-pre](https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases/tag/v1.0.0-pre) and extract its contents.
 2. Run `update.bat`.
 3. Run `run.bat`.
 > For more details see [Install-and-Run-on-NVidia-GPUs](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs)
@@ -115,15 +120,17 @@ Alternatively, use online services (like Google Colab):
 1. Install the dependencies:
 ```bash
 # Debian-based:
-sudo apt install wget git python3 python3-venv
+sudo apt install wget git python3 python3-venv libgl1 libglib2.0-0
 # Red Hat-based:
-sudo dnf install wget git python3
+sudo dnf install wget git python3 gperftools-libs libglvnd-glx 
+# openSUSE-based:
+sudo zypper install wget git python3 libtcmalloc4 libglvnd
 # Arch-based:
 sudo pacman -S wget git python3
 ```
 2. Navigate to the directory you would like the webui to be installed and execute the following command:
 ```bash
-bash <(wget -qO- https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/master/webui.sh)
+wget -q https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/master/webui.sh
 ```
 3. Run `webui.sh`.
 4. Check `webui-user.sh` for options.
@@ -143,13 +150,14 @@ For the purposes of getting Google and other search engines to crawl the wiki, h
 ## Credits
 Licenses for borrowed code can be found in `Settings -> Licenses` screen, and also in `html/licenses.html` file.
 
-- Stable Diffusion - https://github.com/CompVis/stable-diffusion, https://github.com/CompVis/taming-transformers
+- Stable Diffusion - https://github.com/Stability-AI/stablediffusion, https://github.com/CompVis/taming-transformers
 - k-diffusion - https://github.com/crowsonkb/k-diffusion.git
-- GFPGAN - https://github.com/TencentARC/GFPGAN.git
-- CodeFormer - https://github.com/sczhou/CodeFormer
-- ESRGAN - https://github.com/xinntao/ESRGAN
-- SwinIR - https://github.com/JingyunLiang/SwinIR
-- Swin2SR - https://github.com/mv-lab/swin2sr
+- Spandrel - https://github.com/chaiNNer-org/spandrel implementing
+  - GFPGAN - https://github.com/TencentARC/GFPGAN.git
+  - CodeFormer - https://github.com/sczhou/CodeFormer
+  - ESRGAN - https://github.com/xinntao/ESRGAN
+  - SwinIR - https://github.com/JingyunLiang/SwinIR
+  - Swin2SR - https://github.com/mv-lab/swin2sr
 - LDSR - https://github.com/Hafiidz/latent-diffusion
 - MiDaS - https://github.com/isl-org/MiDaS
 - Ideas for optimizations - https://github.com/basujindal/stable-diffusion
@@ -169,5 +177,7 @@ Licenses for borrowed code can be found in `Settings -> Licenses` screen, and al
 - UniPC sampler - Wenliang Zhao - https://github.com/wl-zhao/UniPC
 - TAESD - Ollin Boer Bohan - https://github.com/madebyollin/taesd
 - LyCORIS - KohakuBlueleaf
+- Restart sampling - lambertae - https://github.com/Newbeeer/diffusion_restart_sampling
+- Hypertile - tfernd - https://github.com/tfernd/HyperTile
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - (You)

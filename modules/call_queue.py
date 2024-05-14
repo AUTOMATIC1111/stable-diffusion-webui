@@ -1,11 +1,10 @@
 from functools import wraps
 import html
-import threading
 import time
 
-from modules import shared, progress, errors, devices
+from modules import shared, progress, errors, devices, fifo_lock
 
-queue_lock = threading.Lock()
+queue_lock = fifo_lock.FIFOLock()
 
 
 def wrap_queued_call(func):
@@ -79,6 +78,7 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
 
         shared.state.skipped = False
         shared.state.interrupted = False
+        shared.state.stopping_generation = False
         shared.state.job_count = 0
 
         if not add_stats:
@@ -100,8 +100,8 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
             sys_pct = sys_peak/max(sys_total, 1) * 100
 
             toltip_a = "Active: peak amount of video memory used during generation (excluding cached data)"
-            toltip_r = "Reserved: total amout of video memory allocated by the Torch library "
-            toltip_sys = "System: peak amout of video memory allocated by all running programs, out of total capacity"
+            toltip_r = "Reserved: total amount of video memory allocated by the Torch library "
+            toltip_sys = "System: peak amount of video memory allocated by all running programs, out of total capacity"
 
             text_a = f"<abbr title='{toltip_a}'>A</abbr>: <span class='measurement'>{active_peak/1024:.2f} GB</span>"
             text_r = f"<abbr title='{toltip_r}'>R</abbr>: <span class='measurement'>{reserved_peak/1024:.2f} GB</span>"

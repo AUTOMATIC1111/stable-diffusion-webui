@@ -1,45 +1,56 @@
 import json
+import os
 import os.path
 import threading
-import time
+
+import diskcache
+import tqdm
 
 from modules.paths import data_path, script_path
 
-cache_filename = os.path.join(data_path, "cache.json")
-cache_data = None
+cache_filename = os.environ.get('SD_WEBUI_CACHE_FILE', os.path.join(data_path, "cache.json"))
+cache_dir = os.environ.get('SD_WEBUI_CACHE_DIR', os.path.join(data_path, "cache"))
+caches = {}
 cache_lock = threading.Lock()
-
-dump_cache_after = None
-dump_cache_thread = None
 
 
 def dump_cache():
-    """
-    Marks cache for writing to disk. 5 seconds after no one else flags the cache for writing, it is written.
-    """
+    """old function for dumping cache to disk; does nothing since diskcache."""
 
-    global dump_cache_after
-    global dump_cache_thread
+    pass
 
-    def thread_func():
-        global dump_cache_after
-        global dump_cache_thread
 
-        while dump_cache_after is not None and time.time() < dump_cache_after:
-            time.sleep(1)
+def make_cache(subsection: str) -> diskcache.Cache:
+    return diskcache.Cache(
+        os.path.join(cache_dir, subsection),
+        size_limit=2**32,  # 4 GB, culling oldest first
+        disk_min_file_size=2**18,  # keep up to 256KB in Sqlite
+    )
 
-        with cache_lock:
-            with open(cache_filename, "w", encoding="utf8") as file:
-                json.dump(cache_data, file, indent=4)
 
-            dump_cache_after = None
-            dump_cache_thread = None
+def convert_old_cached_data():
+    try:
+        with open(cache_filename, "r", encoding="utf8") as file:
+            data = json.load(file)
+    except FileNotFoundError:
+        return
+    except Exception:
+        os.replace(cache_filename, os.path.join(script_path, "tmp", "cache.json"))
+        print('[ERROR] issue occurred while trying to read cache.json; old cache has been moved to tmp/cache.json')
+        return
 
-    with cache_lock:
-        dump_cache_after = time.time() + 5
-        if dump_cache_thread is None:
-            dump_cache_thread = threading.Thread(name='cache-writer', target=thread_func)
-            dump_cache_thread.start()
+    total_count = sum(len(keyvalues) for keyvalues in data.values())
+
+    with tqdm.tqdm(total=total_count, desc="converting cache") as progress:
+        for subsection, keyvalues in data.items():
+            cache_obj = caches.get(subsection)
+            if cache_obj is None:
+                cache_obj = make_cache(subsection)
+                caches[subsection] = cache_obj
+
+            for key, value in keyvalues.items():
+                cache_obj[key] = value
+                progress.update(1)
 
 
 def cache(subsection):
@@ -50,29 +61,21 @@ def cache(subsection):
         subsection (str): The subsection identifier for the cache.
 
     Returns:
-        dict: The cache data for the specified subsection.
+        diskcache.Cache: The cache data for the specified subsection.
     """
 
-    global cache_data
-
-    if cache_data is None:
+    cache_obj = caches.get(subsection)
+    if not cache_obj:
         with cache_lock:
-            if cache_data is None:
-                if not os.path.isfile(cache_filename):
-                    cache_data = {}
-                else:
-                    try:
-                        with open(cache_filename, "r", encoding="utf8") as file:
-                            cache_data = json.load(file)
-                    except Exception:
-                        os.replace(cache_filename, os.path.join(script_path, "tmp", "cache.json"))
-                        print('[ERROR] issue occurred while trying to read cache.json, move current cache to tmp/cache.json and create new cache')
-                        cache_data = {}
+            if not os.path.exists(cache_dir) and os.path.isfile(cache_filename):
+                convert_old_cached_data()
 
-    s = cache_data.get(subsection, {})
-    cache_data[subsection] = s
+            cache_obj = caches.get(subsection)
+            if not cache_obj:
+                cache_obj = make_cache(subsection)
+                caches[subsection] = cache_obj
 
-    return s
+    return cache_obj
 
 
 def cached_data_for_file(subsection, title, filename, func):

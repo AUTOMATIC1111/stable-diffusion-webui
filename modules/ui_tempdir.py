@@ -35,15 +35,14 @@ def save_pil_to_file(self, pil_image, dir=None, format="png"):
     already_saved_as = getattr(pil_image, 'already_saved_as', None)
     if already_saved_as and os.path.isfile(already_saved_as):
         register_tmp_file(shared.demo, already_saved_as)
-        filename = already_saved_as
-
-        if not shared.opts.save_images_add_number:
-            filename += f'?{os.path.getmtime(already_saved_as)}'
-
-        return filename
+        filename_with_mtime = f'{already_saved_as}?{os.path.getmtime(already_saved_as)}'
+        register_tmp_file(shared.demo, filename_with_mtime)
+        return filename_with_mtime
 
     if shared.opts.temp_dir != "":
         dir = shared.opts.temp_dir
+    else:
+        os.makedirs(dir, exist_ok=True)
 
     use_metadata = False
     metadata = PngImagePlugin.PngInfo()
@@ -57,8 +56,9 @@ def save_pil_to_file(self, pil_image, dir=None, format="png"):
     return file_obj.name
 
 
-# override save to file function so that it also writes PNG info
-gradio.components.IOComponent.pil_to_temp_file = save_pil_to_file
+def install_ui_tempdir_override():
+    """override save to file function so that it also writes PNG info"""
+    gradio.components.IOComponent.pil_to_temp_file = save_pil_to_file
 
 
 def on_tmpdir_changed():
@@ -83,3 +83,18 @@ def cleanup_tmpdr():
 
             filename = os.path.join(root, name)
             os.remove(filename)
+
+
+def is_gradio_temp_path(path):
+    """
+    Check if the path is a temp dir used by gradio
+    """
+    path = Path(path)
+    if shared.opts.temp_dir and path.is_relative_to(shared.opts.temp_dir):
+        return True
+    if gradio_temp_dir := os.environ.get("GRADIO_TEMP_DIR"):
+        if path.is_relative_to(gradio_temp_dir):
+            return True
+    if path.is_relative_to(Path(tempfile.gettempdir()) / "gradio"):
+        return True
+    return False

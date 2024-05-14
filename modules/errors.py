@@ -6,6 +6,21 @@ import traceback
 exception_records = []
 
 
+def format_traceback(tb):
+    return [[f"{x.filename}, line {x.lineno}, {x.name}", x.line] for x in traceback.extract_tb(tb)]
+
+
+def format_exception(e, tb):
+    return {"exception": str(e), "traceback": format_traceback(tb)}
+
+
+def get_exceptions():
+    try:
+        return list(reversed(exception_records))
+    except Exception as e:
+        return str(e)
+
+
 def record_exception():
     _, e, tb = sys.exc_info()
     if e is None:
@@ -14,8 +29,7 @@ def record_exception():
     if exception_records and exception_records[-1] == e:
         return
 
-    from modules import sysinfo
-    exception_records.append(sysinfo.format_exception(e, tb))
+    exception_records.append(format_exception(e, tb))
 
     if len(exception_records) > 5:
         exception_records.pop(0)
@@ -84,3 +98,53 @@ def run(code, task):
         code()
     except Exception as e:
         display(task, e)
+
+
+def check_versions():
+    from packaging import version
+    from modules import shared
+
+    import torch
+    import gradio
+
+    expected_torch_version = "2.1.2"
+    expected_xformers_version = "0.0.23.post1"
+    expected_gradio_version = "3.41.2"
+
+    if version.parse(torch.__version__) < version.parse(expected_torch_version):
+        print_error_explanation(f"""
+You are running torch {torch.__version__}.
+The program is tested to work with torch {expected_torch_version}.
+To reinstall the desired version, run with commandline flag --reinstall-torch.
+Beware that this will cause a lot of large files to be downloaded, as well as
+there are reports of issues with training tab on the latest version.
+
+Use --skip-version-check commandline argument to disable this check.
+        """.strip())
+
+    if shared.xformers_available:
+        import xformers
+
+        if version.parse(xformers.__version__) < version.parse(expected_xformers_version):
+            print_error_explanation(f"""
+You are running xformers {xformers.__version__}.
+The program is tested to work with xformers {expected_xformers_version}.
+To reinstall the desired version, run with commandline flag --reinstall-xformers.
+
+Use --skip-version-check commandline argument to disable this check.
+            """.strip())
+
+    if gradio.__version__ != expected_gradio_version:
+        print_error_explanation(f"""
+You are running gradio {gradio.__version__}.
+The program is designed to work with gradio {expected_gradio_version}.
+Using a different version of gradio is extremely likely to break the program.
+
+Reasons why you have the mismatched gradio version can be:
+  - you use --skip-install flag.
+  - you use webui.py to start the program instead of launch.py.
+  - an extension installs the incompatible gradio version.
+
+Use --skip-version-check commandline argument to disable this check.
+        """.strip())
+

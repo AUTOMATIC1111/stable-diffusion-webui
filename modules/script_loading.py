@@ -4,11 +4,15 @@ import importlib.util
 from modules import errors
 
 
+loaded_scripts = {}
+
+
 def load_module(path):
     module_spec = importlib.util.spec_from_file_location(os.path.basename(path), path)
     module = importlib.util.module_from_spec(module_spec)
     module_spec.loader.exec_module(module)
 
+    loaded_scripts[path] = module
     return module
 
 

@@ -4,12 +4,6 @@
 # change the variables in webui-user.sh instead #
 #################################################
 
-
-use_venv=1
-if [[ $venv_dir == "-" ]]; then
-  use_venv=0
-fi
-
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 
@@ -26,6 +20,12 @@ fi
 if [[ -f "$SCRIPT_DIR"/webui-user.sh ]]
 then
     source "$SCRIPT_DIR"/webui-user.sh
+fi
+
+# If $venv_dir is "-", then disable venv support
+use_venv=1
+if [[ $venv_dir == "-" ]]; then
+  use_venv=0
 fi
 
 # Set defaults
@@ -51,6 +51,8 @@ fi
 if [[ -z "${GIT}" ]]
 then
     export GIT="git"
+else
+    export GIT_PYTHON_GIT_EXECUTABLE="${GIT}"
 fi
 
 # python3 venv without trailing slash (defaults to ${install_dir}/${clone_dir}/venv)
@@ -87,7 +89,7 @@ delimiter="################################################################"
 
 printf "\n%s\n" "${delimiter}"
 printf "\e[1m\e[32mInstall script for stable-diffusion + Web UI\n"
-printf "\e[1m\e[34mTested on Debian 11 (Bullseye)\e[0m"
+printf "\e[1m\e[34mTested on Debian 11 (Bullseye), Fedora 34+ and openSUSE Leap 15.4 or newer.\e[0m"
 printf "\n%s\n" "${delimiter}"
 
 # Do not run as root
@@ -111,13 +113,13 @@ then
     exit 1
 fi
 
-if [[ -d .git ]]
+if [[ -d "$SCRIPT_DIR/.git" ]]
 then
     printf "\n%s\n" "${delimiter}"
     printf "Repo already cloned, using it as install directory"
     printf "\n%s\n" "${delimiter}"
-    install_dir="${PWD}/../"
-    clone_dir="${PWD##*/}"
+    install_dir="${SCRIPT_DIR}/../"
+    clone_dir="${SCRIPT_DIR##*/}"
 fi
 
 # Check prerequisites
@@ -127,13 +129,19 @@ case "$gpu_info" in
         export HSA_OVERRIDE_GFX_VERSION=10.3.0
         if [[ -z "${TORCH_COMMAND}" ]]
         then
-            pyv="$(${python_cmd} -c 'import sys; print(".".join(map(str, sys.version_info[0:2])))')"
-            if [[ $(bc <<< "$pyv <= 3.10") -eq 1 ]] 
+            pyv="$(${python_cmd} -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]:02d}")')"
+            # Using an old nightly compiled against rocm 5.2 for Navi1, see https://github.com/pytorch/pytorch/issues/106728#issuecomment-1749511711
+            if [[ $pyv == "3.8" ]]
             then
-                # Navi users will still use torch 1.13 because 2.0 does not seem to work.
-                export TORCH_COMMAND="pip install torch==1.13.1+rocm5.2 torchvision==0.14.1+rocm5.2 --index-url https://download.pytorch.org/whl/rocm5.2"
+                export TORCH_COMMAND="pip install https://download.pytorch.org/whl/nightly/rocm5.2/torch-2.0.0.dev20230209%2Brocm5.2-cp38-cp38-linux_x86_64.whl https://download.pytorch.org/whl/nightly/rocm5.2/torchvision-0.15.0.dev20230209%2Brocm5.2-cp38-cp38-linux_x86_64.whl"
+            elif [[ $pyv == "3.9" ]]
+            then
+                export TORCH_COMMAND="pip install https://download.pytorch.org/whl/nightly/rocm5.2/torch-2.0.0.dev20230209%2Brocm5.2-cp39-cp39-linux_x86_64.whl https://download.pytorch.org/whl/nightly/rocm5.2/torchvision-0.15.0.dev20230209%2Brocm5.2-cp39-cp39-linux_x86_64.whl"
+            elif [[ $pyv == "3.10" ]]
+            then
+                export TORCH_COMMAND="pip install https://download.pytorch.org/whl/nightly/rocm5.2/torch-2.0.0.dev20230209%2Brocm5.2-cp310-cp310-linux_x86_64.whl https://download.pytorch.org/whl/nightly/rocm5.2/torchvision-0.15.0.dev20230209%2Brocm5.2-cp310-cp310-linux_x86_64.whl"
             else
-                printf "\e[1m\e[31mERROR: RX 5000 series GPUs must be using at max python 3.10, aborting...\e[0m"
+                printf "\e[1m\e[31mERROR: RX 5000 series GPUs python version must be between 3.8 and 3.10, aborting...\e[0m"
                 exit 1
             fi
         fi
@@ -141,8 +149,7 @@ case "$gpu_info" in
     *"Navi 2"*) export HSA_OVERRIDE_GFX_VERSION=10.3.0
     ;;
     *"Navi 3"*) [[ -z "${TORCH_COMMAND}" ]] && \
-        export TORCH_COMMAND="pip install --pre torch==2.1.0.dev-20230614+rocm5.5 torchvision==0.16.0.dev-20230614+rocm5.5 --index-url https://download.pytorch.org/whl/nightly/rocm5.5"
-        # Navi 3 needs at least 5.5 which is only on the nightly chain
+         export TORCH_COMMAND="pip install torch torchvision --index-url https://download.pytorch.org/whl/nightly/rocm5.7"
     ;;
     *"Renoir"*) export HSA_OVERRIDE_GFX_VERSION=9.0.0
         printf "\n%s\n" "${delimiter}"
@@ -156,7 +163,10 @@ if ! echo "$gpu_info" | grep -q "NVIDIA";
 then
     if echo "$gpu_info" | grep -q "AMD" && [[ -z "${TORCH_COMMAND}" ]]
     then
-        export TORCH_COMMAND="pip install torch==2.0.1+rocm5.4.2 torchvision==0.15.2+rocm5.4.2 --index-url https://download.pytorch.org/whl/rocm5.4.2"
+	      export TORCH_COMMAND="pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm5.7"
+    elif npu-smi info 2>/dev/null
+    then
+        export TORCH_COMMAND="pip install torch==2.1.0 torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu; pip install torch_npu==2.1.0"
     fi
 fi
 
@@ -221,12 +231,45 @@ fi
 # Try using TCMalloc on Linux
 prepare_tcmalloc() {
     if [[ "${OSTYPE}" == "linux"* ]] && [[ -z "${NO_TCMALLOC}" ]] && [[ -z "${LD_PRELOAD}" ]]; then
-        TCMALLOC="$(PATH=/usr/sbin:$PATH ldconfig -p | grep -Po "libtcmalloc(_minimal|)\.so\.\d" | head -n 1)"
-        if [[ ! -z "${TCMALLOC}" ]]; then
-            echo "Using TCMalloc: ${TCMALLOC}"
-            export LD_PRELOAD="${TCMALLOC}"
-        else
-            printf "\e[1m\e[31mCannot locate TCMalloc (improves CPU memory usage)\e[0m\n"
+        # check glibc version
+        LIBC_VER=$(echo $(ldd --version | awk 'NR==1 {print $NF}') | grep -oP '\d+\.\d+')
+        echo "glibc version is $LIBC_VER"
+        libc_vernum=$(expr $LIBC_VER)
+        # Since 2.34 libpthread is integrated into libc.so
+        libc_v234=2.34
+        # Define Tcmalloc Libs arrays
+        TCMALLOC_LIBS=("libtcmalloc(_minimal|)\.so\.\d" "libtcmalloc\.so\.\d")
+        # Traversal array
+        for lib in "${TCMALLOC_LIBS[@]}"
+        do
+            # Determine which type of tcmalloc library the library supports
+            TCMALLOC="$(PATH=/sbin:/usr/sbin:$PATH ldconfig -p | grep -P $lib | head -n 1)"
+            TC_INFO=(${TCMALLOC//=>/})
+            if [[ ! -z "${TC_INFO}" ]]; then
+                echo "Check TCMalloc: ${TC_INFO}"
+                # Determine if the library is linked to libpthread and resolve undefined symbol: pthread_key_create
+                if [ $(echo "$libc_vernum < $libc_v234" | bc) -eq 1 ]; then
+                    # glibc < 2.34 pthread_key_create into libpthread.so. check linking libpthread.so...
+                    if ldd ${TC_INFO[2]} | grep -q 'libpthread'; then
+                        echo "$TC_INFO is linked with libpthread,execute LD_PRELOAD=${TC_INFO[2]}"
+                        # set fullpath LD_PRELOAD (To be on the safe side)
+                        export LD_PRELOAD="${TC_INFO[2]}"
+                        break
+                    else
+                        echo "$TC_INFO is not linked with libpthread will trigger undefined symbol: pthread_Key_create error"
+                    fi
+                else
+                    # Version 2.34 of libc.so (glibc) includes the pthread library IN GLIBC. (USE ubuntu 22.04 and modern linux system and WSL)
+                    # libc.so(glibc) is linked with a library that works in ALMOST ALL Linux userlands. SO NO CHECK!
+                    echo "$TC_INFO is linked with libc.so,execute LD_PRELOAD=${TC_INFO[2]}"
+                    # set fullpath LD_PRELOAD (To be on the safe side)
+                    export LD_PRELOAD="${TC_INFO[2]}"
+                    break
+                fi
+            fi
+        done
+        if [[ -z "${LD_PRELOAD}" ]]; then
+            printf "\e[1m\e[31mCannot locate TCMalloc. Do you have tcmalloc or google-perftool installed on your system? (improves CPU memory usage)\e[0m\n"
         fi
     fi
 }
@@ -245,7 +288,7 @@ while [[ "$KEEP_GOING" -eq "1" ]]; do
         printf "Launching launch.py..."
         printf "\n%s\n" "${delimiter}"
         prepare_tcmalloc
-        "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
+        "${python_cmd}" -u "${LAUNCH_SCRIPT}" "$@"
     fi
 
     if [[ ! -f tmp/restart ]]; then
