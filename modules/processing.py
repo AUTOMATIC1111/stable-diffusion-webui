@@ -115,7 +115,7 @@ def txt2img_image_conditioning(sd_model, x, width, height):
         return x.new_zeros(x.shape[0], 2*sd_model.noise_augmentor.time_embed.dim, dtype=x.dtype, device=x.device)
 
     else:
-        if sd_model.model.is_sdxl_inpaint:
+        if getattr(sd_model.model, "is_sdxl_inpaint", False):
             # The "masked-image" in this case will just be all 0.5 since the entire image is masked.
             image_conditioning = torch.ones(x.shape[0], 3, height, width, device=x.device) * 0.5
             image_conditioning = images_tensor_to_samples(image_conditioning,
@@ -387,7 +387,7 @@ class StableDiffusionProcessing:
         if self.sampler.conditioning_key == "crossattn-adm":
             return self.unclip_image_conditioning(source_image)
 
-        if self.sampler.model_wrap.inner_model.model.is_sdxl_inpaint:
+        if getattr(self.sampler.model_wrap.inner_model.model, "is_sdxl_inpaint", False):
             return self.inpainting_image_conditioning(source_image, latent_image, image_mask=image_mask)
 
         # Dummy zero conditioning if we're not using inpainting or depth model.
