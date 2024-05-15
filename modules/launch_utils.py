@@ -440,6 +440,10 @@ def prepare_environment():
         git_pull_recursive(extensions_dir)
         startup_timer.record("update extensions")
 
+    if args.disable_nan_check:
+        print("Nan check disabled by default. --disable-nan-check argument is now ignored. "
+              "Use --enable-nan-check to re-enable nan check.")
+
     if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
         exit(0)
@@ -454,8 +458,8 @@ def configure_for_tests():
         sys.argv.append(os.path.join(script_path, "test/test_files/empty.pt"))
     if "--skip-torch-cuda-test" not in sys.argv:
         sys.argv.append("--skip-torch-cuda-test")
-    if "--disable-nan-check" not in sys.argv:
-        sys.argv.append("--disable-nan-check")
+    if "--enable-nan-check" in sys.argv:
+        sys.argv.remove("--enable-nan-check")
 
     os.environ['COMMANDLINE_ARGS'] = ""
 
