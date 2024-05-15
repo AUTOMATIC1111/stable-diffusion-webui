@@ -37,7 +37,7 @@ def get_learned_conditioning(self: sgm.models.diffusion.DiffusionEngine, batch: 
 def apply_model(self: sgm.models.diffusion.DiffusionEngine, x, t, cond):
     """WARNING: This function is called once per denoising iteration. DO NOT add
     expensive functionc calls such as `model.state_dict`. """
-    if self.model.is_sdxl_inpaint:
+    if self.is_sdxl_inpaint:
         x = torch.cat([x] + cond['c_concat'], dim=1)
 
     return self.model(x, t, cond)
