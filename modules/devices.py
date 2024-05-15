@@ -230,7 +230,7 @@ class NansException(Exception):
 
 
 def test_for_nans(x, where):
-    if shared.cmd_opts.disable_nan_check:
+    if not shared.cmd_opts.enable_nan_check:
         return
 
     if not torch.all(torch.isnan(x)).item():
@@ -249,8 +249,6 @@ def test_for_nans(x, where):
             message += " This could be because there's not enough precision to represent the picture. Try adding --no-half-vae commandline argument to fix this."
     else:
         message = "A tensor with all NaNs was produced."
-
-    message += " Use --disable-nan-check commandline argument to disable this check."
 
     raise NansException(message)
 
