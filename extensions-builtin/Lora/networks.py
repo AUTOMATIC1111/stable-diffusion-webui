@@ -378,13 +378,18 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
         self.network_weights_backup = weights_backup
 
     bias_backup = getattr(self, "network_bias_backup", None)
-    if bias_backup is None:
+    if bias_backup is None and wanted_names != ():
         if isinstance(self, torch.nn.MultiheadAttention) and self.out_proj.bias is not None:
             bias_backup = self.out_proj.bias.to(devices.cpu, copy=True)
         elif getattr(self, 'bias', None) is not None:
             bias_backup = self.bias.to(devices.cpu, copy=True)
         else:
             bias_backup = None
+
+        # Unlike weight which always has value, some modules don't have bias.
+        # Only report if bias is not None and current bias are not unchanged.
+        if bias_backup is not None and current_names != ():
+            raise RuntimeError("no backup bias found and current bias are not unchanged")
         self.network_bias_backup = bias_backup
 
     if current_names != wanted_names:
