@@ -300,16 +300,14 @@ def requirements_met(requirements_file):
             package = m.group(1).strip()
             version_required = (m.group(2) or "").strip()
 
-            if version_required == "":
-                continue
-
             try:
                 version_installed = importlib.metadata.version(package)
             except Exception:
                 return False
 
-            if packaging.version.parse(version_required) != packaging.version.parse(version_installed):
-                return False
+            if version_required != "":
+                if packaging.version.parse(version_required) != packaging.version.parse(version_installed):
+                    return False
 
     return True
 

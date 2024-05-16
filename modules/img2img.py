@@ -22,7 +22,7 @@ def process_batch(p, input, output_dir, inpaint_mask_dir, args, to_scale=False, 
     processing.fix_seed(p)
 
     if isinstance(input, str):
-        batch_images = list(shared.walk_files(input, allowed_extensions=(".png", ".jpg", ".jpeg", ".webp", ".tif", ".tiff")))
+        batch_images = list(shared.walk_image_files(input))
     else:
         batch_images = [os.path.abspath(x.name) for x in input]
 
