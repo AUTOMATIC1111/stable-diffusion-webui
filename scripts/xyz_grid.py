@@ -212,7 +212,7 @@ def list_to_csv_string(data_list):
 
 
 def csv_string_to_list_strip(data_str):
-    return list(map(str.strip, chain.from_iterable(csv.reader(StringIO(data_str)))))
+    return list(map(str.strip, chain.from_iterable(csv.reader(StringIO(data_str), skipinitialspace=True))))
 
 
 class AxisOption:
