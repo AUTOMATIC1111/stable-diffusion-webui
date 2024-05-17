@@ -33,7 +33,7 @@ def sgm_uniform(n, sigma_min, sigma_max, inner_model, device):
     sigs += [0.0]
     return torch.FloatTensor(sigs).to(device)
 
-def get_align_your_steps_sigmas(n, sigma_min, sigma_max, device):
+def get_align_your_steps_sigmas(n, sigma_min, sigma_max, device='cpu'):
     # https://research.nvidia.com/labs/toronto-ai/AlignYourSteps/howto.html
     def loglinear_interp(t_steps, num_steps):
         """
