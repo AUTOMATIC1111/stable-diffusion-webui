@@ -553,8 +553,11 @@ def repair_config(sd_config):
 
     # Do not use checkpoint for inference.
     # This helps prevent extra performance overhead on checking parameters.
-    # The perf overhead is about 100ms/it on 4090.
-    sd_config.model.params.network_config.params.use_checkpoint = False
+    # The perf overhead is about 100ms/it on 4090 for SDXL.
+    if hasattr(sd_config.model.params, "network_config"):
+        sd_config.model.params.network_config.params.use_checkpoint = False
+    if hasattr(sd_config.model.params, "unet_config"):
+        sd_config.model.params.unet_config.params.use_checkpoint = False
 
 
 def rescale_zero_terminal_snr_abar(alphas_cumprod):
