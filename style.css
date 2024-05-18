@@ -807,6 +807,8 @@ table.popup-table .link{
 
 #tab_extensions table{
     border-collapse: collapse;
+    overflow-x: auto;
+    display: block;
 }
 
 #tab_extensions table td, #tab_extensions table th{
