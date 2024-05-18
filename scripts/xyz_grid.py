@@ -140,7 +140,7 @@ def apply_styles(p: StableDiffusionProcessingTxt2Img, x: str, _):
 
 
 def apply_uni_pc_order(p, x, xs):
-    opts.data["uni_pc_order"] = min(x, p.steps - 1)
+    p.override_settings['uni_pc_order'] = min(x, p.steps - 1)
 
 
 def apply_face_restore(p, opt, x):
@@ -400,11 +400,9 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
 class SharedSettingsStackHelper(object):
     def __enter__(self):
         self.vae = opts.sd_vae
-        self.uni_pc_order = opts.uni_pc_order
 
     def __exit__(self, exc_type, exc_value, tb):
         opts.data["sd_vae"] = self.vae
-        opts.data["uni_pc_order"] = self.uni_pc_order
         modules.sd_models.reload_model_weights()
         modules.sd_vae.reload_vae_weights()
 
