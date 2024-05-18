@@ -162,12 +162,14 @@ def apply_override(field, boolean: bool = False):
         if boolean:
             x = True if x.lower() == "true" else False
         p.override_settings[field] = x
+
     return fun
 
 
 def boolean_choice(reverse: bool = False):
     def choice():
         return ["False", "True"] if reverse else ["True", "False"]
+
     return choice
 
 
@@ -572,7 +574,7 @@ class Script(scripts.Script):
                     mc = re_range_count.fullmatch(val)
                     if m is not None:
                         start = int(m.group(1))
-                        end = int(m.group(2))+1
+                        end = int(m.group(2)) + 1
                         step = int(m.group(3)) if m.group(3) is not None else 1
 
                         valslist_ext += list(range(start, end, step))
@@ -725,11 +727,11 @@ class Script(scripts.Script):
             ydim = len(ys) if vary_seeds_y else 1
 
             if vary_seeds_x:
-               pc.seed += ix
+                pc.seed += ix
             if vary_seeds_y:
-               pc.seed += iy * xdim
+                pc.seed += iy * xdim
             if vary_seeds_z:
-               pc.seed += iz * xdim * ydim
+                pc.seed += iz * xdim * ydim
 
             try:
                 res = process_images(pc)
@@ -797,18 +799,18 @@ class Script(scripts.Script):
         z_count = len(zs)
 
         # Set the grid infotexts to the real ones with extra_generation_params (1 main grid + z_count sub-grids)
-        processed.infotexts[:1+z_count] = grid_infotext[:1+z_count]
+        processed.infotexts[:1 + z_count] = grid_infotext[:1 + z_count]
 
         if not include_lone_images:
             # Don't need sub-images anymore, drop from list:
-            processed.images = processed.images[:z_count+1]
+            processed.images = processed.images[:z_count + 1]
 
         if opts.grid_save:
             # Auto-save main and sub-grids:
             grid_count = z_count + 1 if z_count > 1 else 1
             for g in range(grid_count):
                 # TODO: See previous comment about intentional data misalignment.
-                adj_g = g-1 if g > 0 else g
+                adj_g = g - 1 if g > 0 else g
                 images.save_image(processed.images[g], p.outpath_grids, "xyz_grid", info=processed.infotexts[g], extension=opts.grid_format, prompt=processed.all_prompts[adj_g], seed=processed.all_seeds[adj_g], grid=True, p=processed)
                 if not include_sub_grids:  # if not include_sub_grids then skip saving after the first grid
                     break
