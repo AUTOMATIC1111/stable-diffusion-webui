@@ -1,6 +1,5 @@
 import inspect
 from collections import namedtuple
-import numpy as np
 import torch
 from PIL import Image
 from modules import devices, images, sd_vae_approx, sd_samplers, sd_vae_taesd, shared, sd_models
