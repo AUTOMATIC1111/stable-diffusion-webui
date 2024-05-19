@@ -1,5 +1,6 @@
 import inspect
 from collections import namedtuple
+from contextlib import nullcontext
 import torch
 from PIL import Image
 from modules import devices, images, sd_vae_approx, sd_samplers, sd_vae_taesd, shared, sd_models
