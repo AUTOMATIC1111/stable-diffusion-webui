@@ -153,33 +153,41 @@
         </div>
     </div>
     <div class="extra-network-content--container">
-        <div class="extra-network-content extra-network-content--dirs-view styled-scrollbar">
-            {dirs_html}
-        </div>
-        <div class="extra-network-content--tree-and-cards-view resize-handle-row">
-            <div class="extra-network-content extra-network-content--tree-view resize-handle-col"
-                style="{tree_view_style}">
-                <div id='{tabname}_{extra_networks_tabname}_tree_list_loading_splash' class='extra-network-list-splash'>
-                    {tree_list_loading_splash_content}</div>
-                <div id='{tabname}_{extra_networks_tabname}_tree_list_no_data_splash'
-                    class='extra-network-list-splash hidden'>{tree_list_no_data_splash_content}</div>
-                <div id='{tabname}_{extra_networks_tabname}_tree_list_scroll_area'
-                    class='styled-scrollbar clusterize-scroll'>
-                    <div id='{tabname}_{extra_networks_tabname}_tree_list_content_area'
-                        class='extra-network-tree-content clusterize-content'></div>
+        <div class="extra-network-content--main-view resize-grid">
+            <div class="resize-grid--row" style="{dirs_view_row_style}" {dirs_view_row_data_attributes}>
+                <div class="resize-grid--col" style="flex: 1;">
+                    <div class="extra-network-content extra-network-content--dirs-view styled-scrollbar">
+                        {dirs_html}
+                    </div>
                 </div>
             </div>
-            <div class="extra-network-content extra-network-content--card-view extra-network-cards resize-handle-col"
-                style="{card_view_style}">
-                <div id='{tabname}_{extra_networks_tabname}_card_list_loading_splash' class='extra-network-list-splash'>
-                    {card_list_loading_splash_content}</div>
-                <div id='{tabname}_{extra_networks_tabname}_card_list_no_data_splash'
-                    class='extra-network-list-splash hidden'>{card_list_no_data_splash_content}
+            <div class="resize-grid--row" style="{tree_and_card_view_row_style}" {tree_and_card_view_row_data_attributes}>
+                <div class="resize-grid--col extra-network-content extra-network-content--tree-view"
+                    style="{tree_view_style}" {tree_view_data_attributes}>
+                    <div id='{tabname}_{extra_networks_tabname}_tree_list_loading_splash'
+                        class='extra-network-list-splash'>
+                        {tree_list_loading_splash_content}</div>
+                    <div id='{tabname}_{extra_networks_tabname}_tree_list_no_data_splash'
+                        class='extra-network-list-splash hidden'>{tree_list_no_data_splash_content}</div>
+                    <div id='{tabname}_{extra_networks_tabname}_tree_list_scroll_area'
+                        class='styled-scrollbar clusterize-scroll'>
+                        <div id='{tabname}_{extra_networks_tabname}_tree_list_content_area'
+                            class='extra-network-tree-content clusterize-content'></div>
+                    </div>
                 </div>
-                <div id='{tabname}_{extra_networks_tabname}_card_list_scroll_area'
-                    class='styled-scrollbar clusterize-scroll'>
-                    <div id='{tabname}_{extra_networks_tabname}_card_list_content_area'
-                        class='extra-network-card-content clusterize-content'></div>
+                <div class="resize-grid--col extra-network-content extra-network-content--card-view extra-network-cards"
+                    style="{card_view_style}" {card_view_data_attributes}>
+                    <div id='{tabname}_{extra_networks_tabname}_card_list_loading_splash'
+                        class='extra-network-list-splash'>
+                        {card_list_loading_splash_content}</div>
+                    <div id='{tabname}_{extra_networks_tabname}_card_list_no_data_splash'
+                        class='extra-network-list-splash hidden'>{card_list_no_data_splash_content}
+                    </div>
+                    <div id='{tabname}_{extra_networks_tabname}_card_list_scroll_area'
+                        class='styled-scrollbar clusterize-scroll'>
+                        <div id='{tabname}_{extra_networks_tabname}_card_list_content_area'
+                            class='extra-network-card-content clusterize-content'></div>
+                    </div>
                 </div>
             </div>
         </div>

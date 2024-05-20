@@ -842,6 +842,13 @@ class ExtraNetworksPage:
         tree_view_en = shared.opts.extra_networks_tree_view_default_enabled
         card_view_en = shared.opts.extra_networks_card_view_default_enabled
 
+        dirs_view_row_size = shared.opts.extra_networks_dirs_view_default_height
+        tree_view_size = shared.opts.extra_networks_tree_view_default_width
+        if shared.opts.extra_networks_card_width:
+            card_view_size = shared.opts.extra_networks_card_width
+        else:
+            card_view_size = 50
+
         return self.pane_tpl.format(
             **{
                 "tabname": tabname,
@@ -855,8 +862,14 @@ class ExtraNetworksPage:
                 "btn_dirs_view_data_attributes": "data-selected" if dirs_view_en else "",
                 "btn_tree_view_data_attributes": "data-selected" if tree_view_en else "",
                 "btn_card_view_data_attributes": "data-selected" if card_view_en else "",
-                "tree_view_style": f"flex-basis: {shared.opts.extra_networks_tree_view_default_width}px;",
-                "card_view_style": "flex-grow: 1;",
+                "dirs_view_row_style": f"flex: 0 0 {dirs_view_row_size}px;",
+                "tree_and_card_view_row_style": "flex: 1 0 0px;",  # expand to fill
+                "tree_view_style": f"flex: 0 0 {tree_view_size}px;",
+                "card_view_style": f"flex: 1 0 {card_view_size}px;",
+                "dirs_view_row_data_attributes": "data-min-size=\"5vh\"",
+                "tree_and_card_view_row_data_attributes": "data-min-size=\"5vh\"",
+                "tree_view_data_attributes": "data-min-size=\"10vw\"",
+                "card_view_data_attributes": "data-min-size=\"10vw\"",
                 "dirs_html": dirs_html,
                 "card_list_loading_splash_content": card_list_loading_splash_content,
                 "card_list_no_data_splash_content": card_list_no_data_splash_content,

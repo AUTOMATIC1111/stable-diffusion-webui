@@ -665,3 +665,27 @@ function waitForVisible(elem, callback) {
     }).observe(elem);
     if (!callback) return new Promise(resolve => callback = resolve);
 }
+
+function cssRelativeUnitToPx(css_value, target) {
+    // https://stackoverflow.com/a/66569574
+    // doesnt work on `%` unit.
+    target = target || document.body;
+    const units = {
+        px: x => x, // no conversion needed here
+        rem: x => x * parseFloat(getComputedStyle(document.documentElement).fontSize),
+        em: x => x * parseFloat(getComputedStyle(target).fontSize),
+        vw: x => x / 100 * window.innerWidth,
+        vh: x => x / 100 * window.innerHeight,
+    };
+
+    const re = new RegExp(`^([-+]?(?:\\d+(?:\\.\\d+)?))(${Object.keys(units).join('|')})$`, 'i');
+    const matches = css_value.toString().trim().match(re);
+    if (matches) {
+        const value = Number(matches[1]);
+        const unit = matches[2].toLocaleLowerCase();
+        if (unit in units) {
+            return units[unit](value);
+        }
+    }
+    return css_value;
+}

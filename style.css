@@ -1156,6 +1156,8 @@ div.accordions > div.input-accordion.input-accordion-open{
     top: 0.5em;
 }
 
+/* ==== RESIZING EVENT FLAGS ==== */
+
 body.resizing {
     cursor: col-resize !important;
 }
@@ -1164,9 +1166,20 @@ body.resizing * {
     pointer-events: none !important;
 }
 
-body.resizing .resize-handle {
+body.resizing .resize-handle,
+body.resizing .resize-grid--handle {
     pointer-events: initial !important;
 }
+
+body.resizing.resize-grid-col {
+    cursor: col-resize !important;
+}
+
+body.resizing.resize-grid-row {
+    cursor: row-resize !important;
+}
+
+/* ==== RESIZE HANDLE ==== */
 
 .resize-handle {
     position: relative;
@@ -1184,6 +1197,78 @@ body.resizing .resize-handle {
     bottom: 0;
     left: 7.5px;
     border-left: 1px dashed var(--border-color-primary);
+}
+
+/* ==== RESIZE HANDLE GRID ==== */
+.resize-grid {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    /* prevent elements from oversizing the container. */
+    min-width: 0;
+    min-height: 0;
+}
+
+.resize-grid--row {
+	display: flex;
+	flex-direction: row;
+    overflow: hidden;
+    flex-wrap: nowrap;
+    /* prevent elements from oversizing the container. */
+    min-width: 0;
+    min-height: 0;
+}
+
+.resize-grid--col {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    flex-wrap: nowrap;
+    /* prevent elements from oversizing the container. */
+    min-width: 0;
+    min-height: 0;
+}
+
+.resize-grid--handle {
+    position: relative;
+    height: 100%;
+    width: 100%;
+	z-index: 0;
+	background: transparent;
+}
+
+.resize-grid--handle::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+}
+
+.resize-grid--row-handle {
+    cursor: row-resize;
+}
+
+.resize-grid--row-handle::after {
+    left: 0;
+    right: 0;
+    top: 50%;
+	transform: translateY(-50%);
+	border-top: 1px dashed var(--border-color-primary);
+}
+
+.resize-grid--col-handle {
+    cursor: col-resize;
+}
+
+.resize-grid--col-handle::after {
+    top: 0;
+    bottom: 0;
+    left: 50%;
+	transform: translateX(-50%);
+	border-left: 1px dashed var(--border-color-primary);
 }
 
 /* ========================= */
@@ -1246,18 +1331,18 @@ body.resizing .resize-handle {
 }
 
 .extra-network-content--dirs-view {
-    flex: 0 1 min-content;
-    flex-flow: row wrap;
-    max-height: 20%;
-    gap: var(--spacing-sm);
+    display: block;
+    flex: 1;
     overflow: clip auto;
     border: 1px solid var(--block-border-color);
     padding: var(--spacing-md);
 }
 
-.extra-network-content--tree-and-cards-view {
-    flex: 1;
-    flex-direction: row;
+.extra-network-content--dirs-view > button {
+    margin: var(--spacing-xs) !important;
+}
+
+.extra-network-content--main-view {
     min-height: 0; /* prevent children from oversizing this container */
 }
 
@@ -1493,6 +1578,8 @@ body.resizing .resize-handle {
     grid-gap: var(--spacing-sm);
     place-items: center stretch;
     text-align: center;
+    /* prevents height from changing on overflow */
+    min-width: 0;
 }
 
 .tree-list-item:hover {
