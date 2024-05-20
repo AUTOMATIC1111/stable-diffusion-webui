@@ -1,3 +1,5 @@
+/** @format */
+
 // Prevent eslint errors on functions defined in other files.
 /*global
     isNullOrUndefinedThrowError,
@@ -146,7 +148,6 @@ class ResizeGridItem {
             this.min_size = 0;
             this.base_size = 0;
         }
-
         const dims = this.elem.getBoundingClientRect();
         this.base_size =
             this.axis === 0 ? parseInt(dims.height) : parseInt(dims.width);
@@ -375,6 +376,14 @@ class ResizeGridContainer {
             for (let j = 0; j < this.grid[i].length; j++) {
                 this.grid[i][j].render({reset: true});
             }
+            const vis_cols = this.grid[i].filter((x) => x.visible);
+            if (vis_cols.length === 1) {
+                vis_cols[0].render({force_flex_grow: true});
+            }
+        }
+        const vis_rows = this.rows.filter((x) => x.visible);
+        if (vis_rows.length === 1) {
+            vis_rows[0].render({force_flex_grow: true});
         }
     }
 
@@ -523,7 +532,7 @@ class ResizeGridContainer {
         throw new Error(`No space for row. tot: ${tot}, rem: ${rem}`);
     }
 
-    growToFill(item, siblings, item_idx, tot_px, max_px) {
+    growToFill(item, siblings, item_idx, tot_px) {
         /** Expands item along axis until the axis has no remaining space. */
         // Expand the item that was attached via the hidden item's handle first.
         let sibling = siblings.slice(item_idx + 1).find((x) => x.visible);
@@ -553,11 +562,7 @@ class ResizeGridContainer {
         ) {
             sibling.render({force_flex_grow: true});
         } else {
-            const sibling_size = sibling.getSize();
-            if (tot_px + sibling_size > max_px) {
-                tot_px = max_px - sibling_size;
-            }
-            sibling.grow(tot_px);
+            sibling.grow(-1);
         }
     }
 
@@ -661,7 +666,6 @@ class ResizeGridContainer {
             return;
         }
 
-        const max_height = this.elem.getBoundingClientRect().height;
         let tot_px = item.elem.getBoundingClientRect().height;
         item.hide();
         // If no other rows are visible, we don't need to do anything else.
@@ -669,7 +673,7 @@ class ResizeGridContainer {
             return;
         }
 
-        this.growToFill(item, this.rows, row_idx, tot_px, max_height);
+        this.growToFill(item, this.rows, row_idx, tot_px);
     }
 
     hideCol(row_idx, col_idx) {
@@ -688,8 +692,7 @@ class ResizeGridContainer {
             return;
         }
 
-        const max_width = this.elem.getBoundingClientRect().width;
-        let tot_px = item.elem.getBoundingClientRect().width;
+        let tot_px = item.getSize();
         item.hide();
         // If no other cols are visible, hide the containing row.
         if (this.grid[row_idx].every((x) => !x.visible)) {
@@ -697,7 +700,7 @@ class ResizeGridContainer {
             return;
         }
 
-        this.growToFill(item, this.grid[row_idx], col_idx, tot_px, max_width);
+        this.growToFill(item, this.grid[row_idx], col_idx, tot_px);
     }
 
     show({row_idx, col_idx} = {}) {
