@@ -1200,37 +1200,34 @@ body.resizing.resize-grid-row {
 }
 
 /* ==== RESIZE HANDLE GRID ==== */
-.resize-grid {
+
+.resize-grid, .resize-grid--row, .resize-grid--col {
     display: flex;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    gap: 0 !important; /* prevent gap between handle and cells. */
+    /* prevent elements from oversizing the container. */
+    min-width: 0;
+    min-height: 0;
+}
+
+.resize-grid {
     flex-direction: column;
     width: 100%;
     height: 100%;
-    /* prevent elements from oversizing the container. */
-    min-width: 0;
-    min-height: 0;
 }
 
 .resize-grid--row {
-	display: flex;
 	flex-direction: row;
-    overflow: hidden;
-    flex-wrap: nowrap;
-    /* prevent elements from oversizing the container. */
-    min-width: 0;
-    min-height: 0;
 }
 
 .resize-grid--col {
-    position: relative;
-    display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    flex-wrap: nowrap;
-    /* prevent elements from oversizing the container. */
-    min-width: 0;
-    min-height: 0;
+}
+
+.resize-grid--cell {
+    display: block;
+    position: relative;
 }
 
 .resize-grid--handle {
@@ -1316,20 +1313,22 @@ body.resizing.resize-grid-row {
 .extra-network-content {
     position: relative;
     display: flex;
+    flex-direction: column;
     flex-wrap: nowrap;
+    gap: var(--spacing-sm);
+    border: 1px solid var(--block-border-color);
     width: 100%;
     height: 100%;
+    /* prevent children from oversizing this container */
+    min-height: 0;
+    min-width: 0;
 }
 
 .extra-network-content--container {
-    display: flex;
-    flex-wrap: nowrap;
-    width: 100%;
-    height: 100%;
-    flex-direction: column;
-    gap: var(--spacing-sm);
+    border: none;
 }
 
+/* Dirs View needs a different display style. */
 .extra-network-content--dirs-view {
     display: block;
     flex: 1;
@@ -1340,10 +1339,6 @@ body.resizing.resize-grid-row {
 
 .extra-network-content--dirs-view > button {
     margin: var(--spacing-xs) !important;
-}
-
-.extra-network-content--main-view {
-    min-height: 0; /* prevent children from oversizing this container */
 }
 
 .extra-network-content.resize-handle-col {
@@ -1370,16 +1365,6 @@ body.resizing.resize-grid-row {
     display: none;
 }
 */
-
-.extra-network-content--tree-view {
-    display: flex;
-    border: 1px solid var(--block-border-color);
-}
-
-.extra-network-content--card-view {
-    display: flex;
-    border: 1px solid var(--block-border-color);
-}
 
 .extra-network-controls-div {
     margin-left: auto !important;

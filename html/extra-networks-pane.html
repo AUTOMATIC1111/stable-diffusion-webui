@@ -137,6 +137,14 @@
                         <rect x="9" y="9" width="4" height="4" rx="1" />
                     </svg>
                 </button>
+                <button class="extra-network-control extra-network-control--dets-view" title="Enable Card Detail View"
+                    {btn_dets_view_data_attributes}>
+                    <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
+                        fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M 3 3 H 12 M 3 6 H 12 M 3 9 H 12 M 3 12 H 12" />
+                    </svg>
+                </button>
             </div>
         </div>
         <div class="extra-network-controls--container">
@@ -152,18 +160,20 @@
             </div>
         </div>
     </div>
-    <div class="extra-network-content--container">
-        <div class="extra-network-content--main-view resize-grid">
-            <div class="resize-grid--row" style="{dirs_view_row_style}" {dirs_view_row_data_attributes}>
-                <div class="resize-grid--col" style="flex: 1;">
-                    <div class="extra-network-content extra-network-content--dirs-view styled-scrollbar">
-                        {dirs_html}
-                    </div>
+    <div class="extra-network-content extra-network-content--container resize-grid">
+        <div id="{tabname}_{extra_networks_tabname}_dirs_view_row" class="resize-grid--row"
+            style="{dirs_view_row_style}" {dirs_view_row_data_attributes}>
+            <div id="{tabname}_{extra_networks_tabname}_dirs_view_col" class="resize-grid--col">
+                <div class="extra-network-content extra-network-content--dirs-view styled-scrollbar">
+                    {dirs_html}
                 </div>
             </div>
-            <div class="resize-grid--row" style="{tree_and_card_view_row_style}" {tree_and_card_view_row_data_attributes}>
-                <div class="resize-grid--col extra-network-content extra-network-content--tree-view"
-                    style="{tree_view_style}" {tree_view_data_attributes}>
+        </div>
+        <div id="{tabname}_{extra_networks_tabname}_main_row" class="resize-grid--row" style="{main_row_style}"
+            {main_row_data_attributes}>
+            <div id="{tabname}_{extra_networks_tabname}_tree_view_col" class="resize-grid--col"
+                style="{tree_view_col_style}" {tree_view_col_data_attributes}>
+                <div class="extra-network-content extra-network-content--tree-view">
                     <div id='{tabname}_{extra_networks_tabname}_tree_list_loading_splash'
                         class='extra-network-list-splash'>
                         {tree_list_loading_splash_content}</div>
@@ -175,8 +185,10 @@
                             class='extra-network-tree-content clusterize-content'></div>
                     </div>
                 </div>
-                <div class="resize-grid--col extra-network-content extra-network-content--card-view extra-network-cards"
-                    style="{card_view_style}" {card_view_data_attributes}>
+            </div>
+            <div id="{tabname}_{extra_networks_tabname}_card_view_col" class="resize-grid--col"
+                style="{card_view_col_style}" {card_view_col_data_attributes}>
+                <div class="extra-network-content extra-network-content--card-view extra-network-cards">
                     <div id='{tabname}_{extra_networks_tabname}_card_list_loading_splash'
                         class='extra-network-list-splash'>
                         {card_list_loading_splash_content}</div>
@@ -189,6 +201,10 @@
                             class='extra-network-card-content clusterize-content'></div>
                     </div>
                 </div>
+            </div>
+            <div id="{tabname}_{extra_networks_tabname}_dets_view_col" class="resize-grid--col"
+                style="{dets_view_col_style}" {dets_view_col_data_attributes}>
+                <div class="extra-network-content extra-network-content--dets-view"></div>
             </div>
         </div>
     </div>

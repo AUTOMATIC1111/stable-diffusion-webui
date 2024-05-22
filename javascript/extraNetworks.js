@@ -112,6 +112,7 @@ class ExtraNetworksTab {
     dirs_view_en = false;
     tree_view_en = false;
     card_view_en = false;
+    dets_view_en = false;
     card_list_splash_state = null;
     tree_list_splash_state = null;
     directory_filters = {};
@@ -149,6 +150,7 @@ class ExtraNetworksTab {
         this.dirs_view_en = opts.extra_networks_dirs_view_default_enabled;
         this.tree_view_en = opts.extra_networks_tree_view_default_enabled;
         this.card_view_en = opts.extra_networks_card_view_default_enabled;
+        this.dets_view_en = opts.extra_networks_dets_view_default_enabled;
 
         // setup this tab's controls
         this.controls_elem.id = `${this.tabname_full}_controls`;
@@ -195,6 +197,7 @@ class ExtraNetworksTab {
         this.tree_view_en = false;
         this.dirs_view_en = false;
         this.card_view_en = false;
+        this.dets_view_en = false;
         this.directory_filters = {};
         this.list_button_states = {};
         this.resize_grid.destroy();
@@ -357,16 +360,20 @@ class ExtraNetworksTab {
         const btn_dirs_view = this.controls_elem.querySelector(".extra-network-control--dirs-view");
         const btn_tree_view = this.controls_elem.querySelector(".extra-network-control--tree-view");
         const btn_card_view = this.controls_elem.querySelector(".extra-network-control--card-view");
+        const btn_dets_view = this.controls_elem.querySelector(".extra-network-control--dets-view");
         this.dirs_view_en = "selected" in btn_dirs_view.dataset;
         this.tree_view_en = "selected" in btn_tree_view.dataset;
         this.card_view_en = "selected" in btn_card_view.dataset;
+        this.dets_view_en = "selected" in btn_dets_view.dataset;
 
         const div_dirs = this.container_elem.querySelector(".extra-network-content--dirs-view");
         const div_tree = this.container_elem.querySelector(".extra-network-content--tree-view");
         const div_card = this.container_elem.querySelector(".extra-network-content--card-view");
+        const div_dets = this.container_elem.querySelector(".extra-network-content--dets-view");
         this.resize_grid.toggleElem(div_dirs, this.dirs_view_en);
         this.resize_grid.toggleElem(div_tree, this.tree_view_en);
         this.resize_grid.toggleElem(div_card, this.card_view_en);
+        this.resize_grid.toggleElem(div_dets, this.dets_view_en);
 
         await Promise.all([this.setupTreeList(), this.setupCardList()]);
         this.tree_list.enable(this.tree_view_en);
@@ -390,6 +397,31 @@ class ExtraNetworksTab {
         this.refresh_in_progress = false;
     }
 
+    setupResizeGrid() {
+        const set_size_override = (grid_item, size_px) => {
+            // Limit dirs_view max height to the max height of its contents.
+            if (grid_item.elem.id === `${this.tabname_full}_dirs_view_row`) {
+                const elem = grid_item.elem.querySelector(".extra-network-content--dirs-view");
+                if (!isElementLogError(elem)) {
+                    return;
+                }
+                const max_height = elem.scrollHeight + getComputedBorderDims(elem).height;
+                return Math.min(size_px, max_height);
+            }
+        };
+
+        const grid_elem = this.container_elem.querySelector(".resize-grid");
+        this.resize_grid = resizeGridSetup(
+            grid_elem,
+            {
+                id: `${this.tabname_full}_resize_grid`,
+                callbacks: {
+                    set_size_override: set_size_override.bind(this),
+                },
+            },
+        );
+    }
+
     async load(show_prompt, show_neg_prompt) {
         this.movePrompt(show_prompt, show_neg_prompt);
         this.updateSplashState({
@@ -399,16 +431,17 @@ class ExtraNetworksTab {
         this.showControls();
 
         if (isNullOrUndefined(this.resize_grid)) {
-            const elem = this.container_elem.querySelector(".resize-grid");
-            this.resize_grid = resizeGridSetup(elem, {id: `${this.tabname_full}_resize_grid`});
+            this.setupResizeGrid();
         }
 
         const div_dirs = this.container_elem.querySelector(".extra-network-content--dirs-view");
         const div_tree = this.container_elem.querySelector(".extra-network-content--tree-view");
         const div_card = this.container_elem.querySelector(".extra-network-content--card-view");
+        const div_dets = this.container_elem.querySelector(".extra-network-content--dets-view");
         this.resize_grid.toggleElem(div_dirs, this.dirs_view_en);
         this.resize_grid.toggleElem(div_tree, this.tree_view_en);
         this.resize_grid.toggleElem(div_card, this.card_view_en);
+        this.resize_grid.toggleElem(div_dets, this.dets_view_en);
 
         this.tree_list.enable(this.tree_view_en);
         this.card_list.enable(this.card_view_en);
@@ -1238,6 +1271,21 @@ async function extraNetworksControlCardViewOnClick(event) {
     }
 }
 
+function extraNetworksControlDetsViewOnClick(event) {
+    /** Handles `onclick` events for the Card Details View button.
+     *
+     * Toggles the card details view in the extra networks pane.
+     */
+    const btn = event.target.closest(".extra-network-control--dets-view");
+    const controls = btn.closest(".extra-network-controls");
+    const tab = extra_networks_tabs[controls.dataset.tabnameFull];
+    btn.toggleAttribute("data-selected");
+    tab.dets_view_en = "selected" in btn.dataset;
+
+    const div_dets = tab.container_elem.querySelector(".extra-network-content--dets-view");
+    tab.resize_grid.toggleElem(div_dets, tab.dets_view_en);
+}
+
 function extraNetworksControlRefreshOnClick(event) {
     /** Handles `onclick` events for the Refresh Page button.
      *
@@ -1593,6 +1641,7 @@ function extraNetworksSetupEventDelegators() {
         ".extra-network-control--dirs-view": extraNetworksControlDirsViewOnClick,
         ".extra-network-control--tree-view": extraNetworksControlTreeViewOnClick,
         ".extra-network-control--card-view": extraNetworksControlCardViewOnClick,
+        ".extra-network-control--dets-view": extraNetworksControlDetsViewOnClick,
         ".extra-network-control--refresh": extraNetworksControlRefreshOnClick,
     };
 

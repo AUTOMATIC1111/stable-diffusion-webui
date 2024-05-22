@@ -841,6 +841,38 @@ class ExtraNetworksPage:
         dirs_view_en = shared.opts.extra_networks_dirs_view_default_enabled
         tree_view_en = shared.opts.extra_networks_tree_view_default_enabled
         card_view_en = shared.opts.extra_networks_card_view_default_enabled
+        dets_view_en = shared.opts.extra_networks_dets_view_default_enabled
+
+        btn_sort_mode_path_data_attributes = "data-selected" if sort_mode == "path" else ""
+        btn_sort_mode_name_data_attributes = "data-selected" if sort_mode == "name" else ""
+        btn_sort_mode_date_created_data_attributes = "data-selected" if sort_mode == "date_created" else ""
+        btn_sort_mode_date_modified_data_attributes = "data-selected" if sort_mode == "date_modified" else ""
+        btn_sort_dir_ascending_data_attributes = "data-selected" if sort_dir == "ascending" else ""
+        btn_sort_dir_descending_data_attributes = "data-selected" if sort_dir == "descending" else ""
+        btn_dirs_view_data_attributes = "data-selected" if dirs_view_en else ""
+        btn_tree_view_data_attributes = "data-selected" if tree_view_en else ""
+        btn_card_view_data_attributes = "data-selected" if card_view_en else ""
+        btn_dets_view_data_attributes = "data-selected" if dets_view_en else ""
+
+        dirs_view_row_data_attributes = "data-min-size=\"5vh\""
+        if not dirs_view_en:
+            dirs_view_row_data_attributes += ""
+
+        main_row_data_attributes = "data-min-size=\"5vh\""
+        if not tree_view_en and not card_view_en and not dets_view_en:
+            main_row_data_attributes += ""
+
+        tree_view_col_data_attributes = "data-min-size=\"10vw\""
+        if not tree_view_en:
+            tree_view_col_data_attributes += ""
+
+        card_view_col_data_attributes = "data-min-size=\"10vw\""
+        if not card_view_en:
+            card_view_col_data_attributes += ""
+
+        dets_view_col_data_attributes = "data-min-size=\"10vw\""
+        if not dets_view_en:
+            dets_view_col_data_attributes += ""
 
         dirs_view_row_size = shared.opts.extra_networks_dirs_view_default_height
         tree_view_size = shared.opts.extra_networks_tree_view_default_width
@@ -848,34 +880,42 @@ class ExtraNetworksPage:
             card_view_size = shared.opts.extra_networks_card_width
         else:
             card_view_size = 50
+        dets_view_size = shared.opts.extra_networks_dets_view_default_width
+
+        dirs_view_row_style = f"flex: 0 0 {dirs_view_row_size}px;"
+        main_row_style = "flex: 1 0 0px;"  # expand to fill
+        tree_view_col_style = f"flex: 0 0 {tree_view_size}px;"
+        card_view_col_style = f"flex: 1 0 {card_view_size}px;"
+        dets_view_col_style = f"flex: 0 0 {dets_view_size}px;"
 
         return self.pane_tpl.format(
-            **{
-                "tabname": tabname,
-                "extra_networks_tabname": self.extra_networks_tabname,
-                "btn_sort_mode_path_data_attributes": "data-selected" if sort_mode == "path" else "",
-                "btn_sort_mode_name_data_attributes": "data-selected" if sort_mode == "name" else "",
-                "btn_sort_mode_date_created_data_attributes": "data-selected" if sort_mode == "date_created" else "",
-                "btn_sort_mode_date_modified_data_attributes": "data-selected" if sort_mode == "date_modified" else "",
-                "btn_sort_dir_ascending_data_attributes": "data-selected" if sort_dir == "ascending" else "",
-                "btn_sort_dir_descending_data_attributes": "data-selected" if sort_dir == "descending" else "",
-                "btn_dirs_view_data_attributes": "data-selected" if dirs_view_en else "",
-                "btn_tree_view_data_attributes": "data-selected" if tree_view_en else "",
-                "btn_card_view_data_attributes": "data-selected" if card_view_en else "",
-                "dirs_view_row_style": f"flex: 0 0 {dirs_view_row_size}px;",
-                "tree_and_card_view_row_style": "flex: 1 0 0px;",  # expand to fill
-                "tree_view_style": f"flex: 0 0 {tree_view_size}px;",
-                "card_view_style": f"flex: 1 0 {card_view_size}px;",
-                "dirs_view_row_data_attributes": "data-min-size=\"5vh\"",
-                "tree_and_card_view_row_data_attributes": "data-min-size=\"5vh\"",
-                "tree_view_data_attributes": "data-min-size=\"10vw\"",
-                "card_view_data_attributes": "data-min-size=\"10vw\"",
-                "dirs_html": dirs_html,
-                "card_list_loading_splash_content": card_list_loading_splash_content,
-                "card_list_no_data_splash_content": card_list_no_data_splash_content,
-                "tree_list_loading_splash_content": tree_list_loading_splash_content,
-                "tree_list_no_data_splash_content": tree_list_no_data_splash_content,
-            }
+            tabname=tabname,
+            extra_networks_tabname=self.extra_networks_tabname,
+            btn_sort_mode_path_data_attributes=btn_sort_mode_path_data_attributes,
+            btn_sort_mode_name_data_attributes=btn_sort_mode_name_data_attributes,
+            btn_sort_mode_date_created_data_attributes=btn_sort_mode_date_created_data_attributes,
+            btn_sort_mode_date_modified_data_attributes=btn_sort_mode_date_modified_data_attributes,
+            btn_sort_dir_ascending_data_attributes=btn_sort_dir_ascending_data_attributes,
+            btn_sort_dir_descending_data_attributes=btn_sort_dir_descending_data_attributes,
+            btn_dirs_view_data_attributes=btn_dirs_view_data_attributes,
+            btn_tree_view_data_attributes=btn_tree_view_data_attributes,
+            btn_card_view_data_attributes=btn_card_view_data_attributes,
+            btn_dets_view_data_attributes=btn_dets_view_data_attributes,
+            dirs_view_row_style=dirs_view_row_style,
+            main_row_style=main_row_style,
+            tree_view_col_style=tree_view_col_style,
+            card_view_col_style=card_view_col_style,
+            dets_view_col_style=dets_view_col_style,
+            dirs_view_row_data_attributes=dirs_view_row_data_attributes,
+            main_row_data_attributes=main_row_data_attributes,
+            tree_view_col_data_attributes=tree_view_col_data_attributes,
+            card_view_col_data_attributes=card_view_col_data_attributes,
+            dets_view_col_data_attributes=dets_view_col_data_attributes,
+            dirs_html=dirs_html,
+            card_list_loading_splash_content=card_list_loading_splash_content,
+            card_list_no_data_splash_content=card_list_no_data_splash_content,
+            tree_list_loading_splash_content=tree_list_loading_splash_content,
+            tree_list_no_data_splash_content=tree_list_no_data_splash_content,
         )
 
     def create_item(self, name, index=None):

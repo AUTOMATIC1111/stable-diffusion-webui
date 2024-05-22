@@ -123,11 +123,30 @@ class ResizeGridItem {
     handle = null;
     visible = true;
     pad_px = PAD_PX;
-    constructor({id, parent, elem, axis} = {}) {
+    callbacks = {
+        /** Allows user to modify the `size_px` value passed to setSize().
+         *  Default callback just returns null. (no op).
+         *  Args:
+         *      item [ResizeGridItem]: This class instance.
+         *      size_px [int]: The size (in px) to be overridden.
+         *  Returns:
+         *      int: The overridden setSize `size_px` paremeter. If null/undefined,
+         *          then `size_px` does not get modified.
+         */
+         set_size_override: (item, size_px) => { return; },
+    };
+    constructor({id, parent, elem, axis, callbacks} = {}) {
         this.id = isNullOrUndefined(id) ? _gen_id_string() : id;
         this.parent = parent; // the parent class instance
         this.elem = elem;
         this.axis = _axis_to_int(axis);
+
+        // Parse user specified callback overrides.
+        if (isObject(callbacks)) {
+            if (isFunction(callbacks.set_size_override)) {
+                this.callbacks.set_size_override = callbacks.set_size_override;
+            }
+        }
 
         this.is_flex_grow = Boolean(parseInt(this.elem.style.flexGrow));
         this.default_is_flex_grow = this.is_flex_grow;
@@ -227,9 +246,14 @@ class ResizeGridItem {
         return new_size - curr_size;
     }
 
-    setSize(px) {
-        this.elem.style.flexBasis = parseInt(px) + 'px';
-        this.render();
+    setSize(size_px) {
+        const new_size_px = this.callbacks.set_size_override(this, size_px);
+        if (isNumber(new_size_px)) {
+            size_px = new_size_px;
+        }
+        this.elem.style.flexBasis = parseInt(size_px) + 'px';
+        //this.render();
+        return size_px;
     }
 
     getSize() {
@@ -281,10 +305,11 @@ class ResizeGridItem {
 
 class ResizeGridContainer {
     /** Class defining a collection of ResizeGridItem and ResizeGridHandle instances. */
-    constructor({id, parent, elem} = {}) {
+    constructor({id, parent, elem, callbacks} = {}) {
         this.id = isNullOrUndefined(id) ? _gen_id_string() : id;
         this.parent = parent;
         this.elem = elem;
+        this.callbacks = callbacks;
         this.original_css_text = this.elem.style.cssText;
 
         this.grid = [];
@@ -312,6 +337,7 @@ class ResizeGridContainer {
             id: id,
             parent: this,
             elem: elem,
+            callbacks: this.callbacks,
             axis: 0,
         });
         row.genHandle('resize-grid--row-handle');
@@ -327,6 +353,7 @@ class ResizeGridContainer {
             id: id,
             parent: this,
             elem: elem,
+            callbacks: this.callbacks,
             axis: 1,
         });
         col.genHandle('resize-grid--col-handle');
@@ -339,7 +366,8 @@ class ResizeGridContainer {
 
     build() {
         /** Generates rows/cols based on this instance element's content. */
-        let row_elems = Array.from(this.elem.querySelectorAll('.resize-grid--row'));
+        let row_elems = Array.from(this.elem.querySelectorAll(":scope > .resize-grid--row"));
+        
         // If we do not have any rows, then we generate a single row to contain the cols.
         if (!row_elems.length) {
             const elem = document.createElement('div');
@@ -363,6 +391,9 @@ class ResizeGridContainer {
         row_elems.forEach((row_elem, i) => {
             this.addRow(id++, row_elem, i);
             const col_elems = row_elem.querySelectorAll('.resize-grid--col');
+            if (col_elems.length === 1) {
+                col_elems[0].style.flexGrow = 1;
+            }
             col_elems.forEach((col_elem, j) => {
                 this.addCol(id++, col_elem, i, j);
             });
@@ -760,10 +791,11 @@ class ResizeGrid {
     prev_dims = null;
     resize_observer = null;
     resize_observer_timer;
-    constructor(id, elem) {
+    constructor(id, elem, {callbacks}={}) {
         this.id = id;
         this.elem = elem;
         this.elem.dataset.gridId = this.id;
+        this.callbacks = callbacks;
     }
 
     destroy() {
@@ -786,7 +818,11 @@ class ResizeGrid {
             this.container = null;
         }
 
-        this.container = new ResizeGridContainer(this, null, this.elem);
+        this.container = new ResizeGridContainer({
+            parent: this,
+            elem: this.elem,
+            callbacks: this.callbacks,
+        });
         this.container.build();
         this.prev_dims = this.elem.getBoundingClientRect();
         this.setupEvents();
@@ -865,6 +901,12 @@ class ResizeGrid {
 
                 handle.elem.setPointerCapture(event.pointerId);
 
+                // Temporarily set styles for elements. These are cleared on pointerup.
+                // See `onMove()` comments for more info.
+                prev.elem.style.flexGrow = 0;
+                next.elem.style.flexGrow = 1;
+                next.elem.style.flexShrink = 1;
+
                 document.body.classList.add('resizing');
                 if (handle.axis === 0) {
                     document.body.classList.add('resizing-col');
@@ -924,6 +966,14 @@ class ResizeGrid {
                 event.stopPropagation();
 
                 handle.elem.releasePointerCapture(event.pointerId);
+
+                // Set the new flexBasis value for the `next` element then revert
+                // the style changes set in the `pointerup` event.
+                next.elem.style.flexBasis = next.setSize(next.getSize());
+                prev.elem.style.flexGrow = Number(prev.is_flex_grow);
+                next.elem.style.flexGrow = Number(next.is_flex_grow);
+                next.elem.style.flexShrink = 0;
+                
 
                 document.body.classList.remove('resizing');
                 document.body.classList.remove('resizing-col');
@@ -995,39 +1045,25 @@ class ResizeGrid {
         this.resize_observer_timer = null;
     }
 
-    onMove(event, prev, handle, next) {
-        /** Handles pointermove events. */
-        const par_dims = this.elem.getBoundingClientRect();
-        const a_dims = prev.elem.getBoundingClientRect();
-        const b_dims = next.elem.getBoundingClientRect();
-        let pos = handle.axis === 0 ? parseInt(event.y) : parseInt(event.x);
-        pos = Math.min(
-            handle.axis === 0 ? parseInt(par_dims.height) : parseInt(par_dims.width),
-            pos
-        );
-        const a_start =
-            handle.axis === 0 ? parseInt(a_dims.top) : parseInt(a_dims.left);
-        const b_end =
-            handle.axis === 0 ? parseInt(b_dims.bottom) : parseInt(b_dims.right);
-
-        let a = pos - Math.floor(handle.pad_px / 2);
-        let b = pos + Math.floor(handle.pad_px / 2);
-
-        let a_lim = a_start + prev.min_size;
-        let b_lim = b_end - next.min_size;
-
-        if (a < a_lim) {
-            a = a_lim;
-            b = a + handle.pad_px;
-        }
-
-        if (b > b_lim) {
-            b = b_lim;
-            a = b - handle.pad_px;
-        }
-
-        prev.setSize(a - a_start);
-        next.setSize(b_end - b);
+    onMove(event, a, handle, b) {
+        /** Handles pointermove events by calculating and setting new size of elements.
+         *
+         *  While we are dragging the handle, we only manually set size for the
+         *  item before the handle. During this time, the element after the handle
+         *  should have flexGrow=1 and flexShrink=1 so that it can react to the size
+         *  of the element before the handle. This simplifies calculations since we
+         *  only have to do math for one side of handle.
+        */
+        const a_dims = a.elem.getBoundingClientRect();
+        const b_dims = b.elem.getBoundingClientRect();
+        const a_start = Math.ceil(handle.axis === 0 ? a_dims.top : a_dims.left);
+        const b_end = Math.floor(handle.axis === 0 ? b_dims.bottom : b_dims.right);
+        const a_lim = a_start + a.min_size;
+        const b_lim = b_end - b.min_size;
+        const half_pad = Math.floor(handle.pad_px / 2);
+        let pos = parseInt(handle.axis === 0 ? event.y : event.x);
+        pos = Math.min(Math.max(pos, a_lim + half_pad), b_lim - half_pad);
+        a.setSize((pos - half_pad) - a_start);
     }
 
     onResize() {
@@ -1155,13 +1191,13 @@ function resizeGridGetGrid(elem) {
     return grid;
 }
 
-function resizeGridSetup(elem, {id} = {}) {
+function resizeGridSetup(elem, {id, callbacks} = {}) {
     /** Sets up a new ResizeGrid instance for the provided element. */
     isElementThrowError(elem);
     if (!isString(id)) {
         id = _get_unique_id();
     }
-    const grid = new ResizeGrid(id, elem);
+    const grid = new ResizeGrid(id, elem, {callbacks: callbacks});
     grid.setup();
     resize_grids[id] = grid;
     return grid;
