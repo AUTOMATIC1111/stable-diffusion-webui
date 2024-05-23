@@ -862,17 +862,17 @@ class ExtraNetworksPage:
         if not tree_view_en and not card_view_en and not dets_view_en:
             main_row_data_attributes += ""
 
-        tree_view_col_data_attributes = "data-min-size=\"10vw\""
+        tree_view_cell_data_attributes = "data-min-size=\"10vw\""
         if not tree_view_en:
-            tree_view_col_data_attributes += ""
+            tree_view_cell_data_attributes += ""
 
-        card_view_col_data_attributes = "data-min-size=\"10vw\""
+        card_view_cell_data_attributes = "data-min-size=\"10vw\""
         if not card_view_en:
-            card_view_col_data_attributes += ""
+            card_view_cell_data_attributes += ""
 
-        dets_view_col_data_attributes = "data-min-size=\"10vw\""
+        dets_view_cell_data_attributes = "data-min-size=\"10vw\""
         if not dets_view_en:
-            dets_view_col_data_attributes += ""
+            dets_view_cell_data_attributes += ""
 
         dirs_view_row_size = shared.opts.extra_networks_dirs_view_default_height
         tree_view_size = shared.opts.extra_networks_tree_view_default_width
@@ -884,9 +884,9 @@ class ExtraNetworksPage:
 
         dirs_view_row_style = f"flex: 0 0 {dirs_view_row_size}px;"
         main_row_style = "flex: 1 0 0px;"  # expand to fill
-        tree_view_col_style = f"flex: 0 0 {tree_view_size}px;"
-        card_view_col_style = f"flex: 1 0 {card_view_size}px;"
-        dets_view_col_style = f"flex: 0 0 {dets_view_size}px;"
+        tree_view_cell_style = f"flex: 0 0 {tree_view_size}px;"
+        card_view_cell_style = f"flex: 1 0 {card_view_size}px;"
+        dets_view_cell_style = f"flex: 0 0 {dets_view_size}px;"
 
         return self.pane_tpl.format(
             tabname=tabname,
@@ -903,14 +903,14 @@ class ExtraNetworksPage:
             btn_dets_view_data_attributes=btn_dets_view_data_attributes,
             dirs_view_row_style=dirs_view_row_style,
             main_row_style=main_row_style,
-            tree_view_col_style=tree_view_col_style,
-            card_view_col_style=card_view_col_style,
-            dets_view_col_style=dets_view_col_style,
+            tree_view_cell_style=tree_view_cell_style,
+            card_view_cell_style=card_view_cell_style,
+            dets_view_cell_style=dets_view_cell_style,
             dirs_view_row_data_attributes=dirs_view_row_data_attributes,
             main_row_data_attributes=main_row_data_attributes,
-            tree_view_col_data_attributes=tree_view_col_data_attributes,
-            card_view_col_data_attributes=card_view_col_data_attributes,
-            dets_view_col_data_attributes=dets_view_col_data_attributes,
+            tree_view_cell_data_attributes=tree_view_cell_data_attributes,
+            card_view_cell_data_attributes=card_view_cell_data_attributes,
+            dets_view_cell_data_attributes=dets_view_cell_data_attributes,
             dirs_html=dirs_html,
             card_list_loading_splash_content=card_list_loading_splash_content,
             card_list_no_data_splash_content=card_list_no_data_splash_content,

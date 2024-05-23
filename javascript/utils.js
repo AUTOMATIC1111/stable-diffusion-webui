@@ -169,6 +169,25 @@ function querySelectorThrowError(selector) {
     return elem;
 }
 
+const validateArrayType = (arr, type_check_fn) => {
+    /** Validates that a variable is an array with members of a specified type.
+     *  `type_check_fn` must accept array elements as arguments and return whether
+     *  they match the expected type.
+     *  `arr` will be wrapped in an array if it is not already an array.
+     */
+    isNullOrUndefinedThrowError(type_check_fn);
+    if (isNullOrUndefined(arr)) {
+        return [];
+    }
+    if (!Array.isArray(arr) && type_check_fn(arr)) {
+        return [arr];
+    } else if (Array.isArray(arr) && arr.every((x) => type_check_fn(x))) {
+        return arr;
+    } else {
+        throw new Error('Invalid array types:', arr);
+    }
+};
+
 /** Functions for getting dimensions of elements. */
 function getStyle(elem) {
     return window.getComputedStyle ? window.getComputedStyle(elem) : elem.currentStyle;

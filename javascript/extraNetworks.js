@@ -10,6 +10,7 @@
     fetchWithRetryAndBackoff,
     isElementLogError,
     isNumber,
+    getComputedBorderDims,
     waitForKeyInObject,
     isNullOrUndefined,
     debounce,
@@ -370,10 +371,10 @@ class ExtraNetworksTab {
         const div_tree = this.container_elem.querySelector(".extra-network-content--tree-view");
         const div_card = this.container_elem.querySelector(".extra-network-content--card-view");
         const div_dets = this.container_elem.querySelector(".extra-network-content--dets-view");
-        this.resize_grid.toggleElem(div_dirs, this.dirs_view_en);
-        this.resize_grid.toggleElem(div_tree, this.tree_view_en);
-        this.resize_grid.toggleElem(div_card, this.card_view_en);
-        this.resize_grid.toggleElem(div_dets, this.dets_view_en);
+        this.resize_grid.toggle({elem: div_dirs, override: this.dirs_view_en});
+        this.resize_grid.toggle({elem: div_tree, override: this.tree_view_en});
+        this.resize_grid.toggle({elem: div_card, override: this.card_view_en});
+        this.resize_grid.toggle({elem: div_dets, override: this.dets_view_en});
 
         await Promise.all([this.setupTreeList(), this.setupCardList()]);
         this.tree_list.enable(this.tree_view_en);
@@ -438,10 +439,10 @@ class ExtraNetworksTab {
         const div_tree = this.container_elem.querySelector(".extra-network-content--tree-view");
         const div_card = this.container_elem.querySelector(".extra-network-content--card-view");
         const div_dets = this.container_elem.querySelector(".extra-network-content--dets-view");
-        this.resize_grid.toggleElem(div_dirs, this.dirs_view_en);
-        this.resize_grid.toggleElem(div_tree, this.tree_view_en);
-        this.resize_grid.toggleElem(div_card, this.card_view_en);
-        this.resize_grid.toggleElem(div_dets, this.dets_view_en);
+        this.resize_grid.toggle({elem: div_dirs, override: this.dirs_view_en});
+        this.resize_grid.toggle({elem: div_tree, override: this.tree_view_en});
+        this.resize_grid.toggle({elem: div_card, override: this.card_view_en});
+        this.resize_grid.toggle({elem: div_dets, override: this.dets_view_en});
 
         this.tree_list.enable(this.tree_view_en);
         this.card_list.enable(this.card_view_en);
@@ -1218,7 +1219,7 @@ async function extraNetworksControlTreeViewOnClick(event) {
     tab.tree_view_en = "selected" in btn.dataset;
 
     const div_tree = tab.container_elem.querySelector(".extra-network-content--tree-view");
-    tab.resize_grid.toggleElem(div_tree, tab.tree_view_en);
+    tab.resize_grid.toggle({elem: div_tree, override: tab.tree_view_en});
     tab.tree_list.enable(tab.tree_view_en);
 
     // If the tree list hasn't loaded yet, we need to force it to load.
@@ -1243,7 +1244,7 @@ function extraNetworksControlDirsViewOnClick(event) {
     tab.dirs_view_en = "selected" in btn.dataset;
 
     const div_dirs = tab.container_elem.querySelector(".extra-network-content--dirs-view");
-    tab.resize_grid.toggleElem(div_dirs, tab.dirs_view_en);
+    tab.resize_grid.toggle({elem: div_dirs, override: tab.dirs_view_en});
 
     tab.applyListButtonStates();
 }
@@ -1260,7 +1261,7 @@ async function extraNetworksControlCardViewOnClick(event) {
     tab.card_view_en = "selected" in btn.dataset;
 
     const div_card = tab.container_elem.querySelector(".extra-network-content--card-view");
-    tab.resize_grid.toggleElem(div_card, tab.card_view_en);
+    tab.resize_grid.toggle({elem: div_card, override: tab.card_view_en});
     tab.card_list.enable(tab.card_view_en);
 
     // If the tree list hasn't loaded yet, we need to force it to load.
@@ -1283,7 +1284,7 @@ function extraNetworksControlDetsViewOnClick(event) {
     tab.dets_view_en = "selected" in btn.dataset;
 
     const div_dets = tab.container_elem.querySelector(".extra-network-content--dets-view");
-    tab.resize_grid.toggleElem(div_dets, tab.dets_view_en);
+    tab.resize_grid.toggle({elem: div_dets, override: tab.dets_view_en});
 }
 
 function extraNetworksControlRefreshOnClick(event) {

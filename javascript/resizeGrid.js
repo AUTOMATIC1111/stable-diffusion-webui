@@ -1,4 +1,39 @@
-/** @format */
+/** resizeGrid.js
+ *
+ *  This allows generation of a grid of items which are separated by resizable handles.
+ *
+ *  Generation of this grid is inferred from HTML.
+ *  An example can be found in `javascript/resizeGridExample.html`.
+ *  This example will generate a 2x2 grid with 2 rows and 2 cells per row.
+ *  The top right and bottom left cells should fill the majority of their rows.
+ *  Play around with the buttons to show/hide and drag to resize the grid.
+ *
+ *  USAGE:
+ *  Current limitations require that every row and column contain AT LEAST ONE
+ *  child with flexGrow=1. CSS shortcuts are allowed (i.e. flex: 1 0 0px).
+ *
+ *  You CANNOT have rows and columns at the same level. This will throw an error.
+ *
+ *  flexBasis MUST be set for every item that does not have flexGrow=1. flexBasis can be
+ *  set using `px` or any of the following relative units: [vh, vw, rem, em]. These
+ *  units are limited by `utils.js::cssRelativeUnitToPx()`.
+ *
+ *  The value set in flexGrow determines an item's size along its respective axis.
+ *  So if you have a `resize-grid--col` item, then `flexBasis` will determine the item's
+ *  height. `resize-grid--cell` items infer their axis from their parent element.
+ *
+ *  You can also set a `data-min-size` attribute on every row/col/cell. If this attribute
+ *  is not set, then the value set in flexBasis will be the minimum size of the item.
+ *  If you are setting the flexBasis to 0, you MUST specify data-min-size="0px" as well
+ *  otherwise the item's min_size will be set to its rendered size on build.
+ *
+ *  If you do not set any `resize-grid--row` or `resize-grid--col` elements, but only
+ *  set `resize-grid--cell` elements, then the grid will automatically wrap the cells
+ *  in a single row.
+ *
+ *  You can have a grid that only contains one row/col as long as that row/col contains
+ *  at least one item.
+*/
 
 // Prevent eslint errors on functions defined in other files.
 /*global
@@ -6,8 +41,12 @@
     isNullOrUndefinedLogError,
     isNullOrUndefined,
     isString,
+    isStringThrowError,
+    isObject,
+    isFunction,
     cssRelativeUnitToPx,
     isNumber,
+    isNumberThrowError,
     isElementThrowError,
     isElement,
 */
@@ -18,7 +57,7 @@
 const MOVE_TIME_DELAY_MS = 15;
 // Prevents handling element resize events too quickly. Lower values increase
 // computational load and may lead to lag when resizing.
-const RESIZE_DEBOUNCE_TIME_MS = 100;
+const RESIZE_DEBOUNCE_TIME_MS = 50;
 // The timeframe in which a second pointerup event must be fired to be treated
 // as a double click.
 const DBLCLICK_TIME_MS = 500;
@@ -37,6 +76,7 @@ const _gen_id_string = () => {
 };
 
 const _get_unique_id = () => {
+    /** Generates an ID string that does not exist in the `resize_grids` keys. */
     let id = _gen_id_string();
     while (id in Object.keys(resize_grids)) {
         id = _gen_id_string();
@@ -44,29 +84,15 @@ const _get_unique_id = () => {
     return id;
 };
 
-const _parse_array_type = (arr, type_check_fn) => {
-    /** Validates that a variable is an array with members of a specified type.
-     * `type_check_fn` must accept array elements as arguments and return whether
-     * they match the expected type.
-     */
-    isNullOrUndefinedThrowError(type_check_fn);
-    if (isNullOrUndefined(arr)) {
-        return [];
-    }
-    if (!Array.isArray(arr) && type_check_fn(arr)) {
-        return [arr];
-    } else if (Array.isArray(arr) && arr.every((x) => type_check_fn(x))) {
-        return arr;
-    } else {
-        throw new Error('Invalid array types:', arr);
-    }
-};
-
 const _axis_to_int = (axis) => {
     /** Converts an axis to a standardized axis integer.
+     *  Args:
+     *      axis: Integer or string to be parsed.
      *  Returns:
      *      "x" or 0: 0
      *      "y" or 1: 1
+     *  Throws:
+     *      Error if the `axis` input is invalid.
      */
     if (axis === 0 || axis === 'x') {
         return 0;
@@ -78,26 +104,24 @@ const _axis_to_int = (axis) => {
 };
 
 class ResizeGridHandle {
-    /** Class defining the clickable "handle" between two grid items. */
+    /** The clickable "handle" between two ResizeGridItem instances. */
     visible = true;
     id = null; // unique identifier for this instance.
     pad_px = PAD_PX;
-    constructor({id, parent, axis, class_list} = {}) {
+    constructor({id, parent, axis} = {}) {
         this.id = isNullOrUndefined(id) ? _gen_id_string() : id;
         this.parent = parent;
         this.elem = document.createElement('div');
         this.elem.id = id;
-        this.elem.classList.add('resize-grid--handle');
-        _parse_array_type(class_list, isString).forEach((class_name) => {
-            this.elem.classList.add(class_name);
-        });
-
         this.axis = _axis_to_int(axis);
-
+        isNumberThrowError(this.axis);
+        this.elem.classList.add('resize-grid--handle');
         if (this.axis === 0) {
+            this.elem.classList.add("resize-grid--row-handle");
             this.elem.style.minHeight = this.pad_px + 'px';
             this.elem.style.maxHeight = this.pad_px + 'px';
         } else if (this.axis === 1) {
+            this.elem.classList.add("resize-grid--col-handle");
             this.elem.style.minWidth = this.pad_px + 'px';
             this.elem.style.maxWidth = this.pad_px + 'px';
         }
@@ -119,10 +143,37 @@ class ResizeGridHandle {
 }
 
 class ResizeGridItem {
-    /** Class defining the cells in a grid. These can be rows or columns. */
+    /** Grid elements. These can be axes or individual cells.
+     *
+     *  Attributes:
+     *      id (str):
+     *          A unique identifier for this instance and its element.
+     *      parent (ResizeGridAxis,ResizeGrid):
+     *          The container class for this item. Cannot be a base ResizeGridItem.
+     *      elem (Element):
+     *          The DOM element representing this item.
+     *      callbacks (Object):
+     *          Object specifying callbacks for various operations in this class.
+     *      axis (int):
+     *          The axis along which this item lies. 0: row, 1: col.
+     *          This value is inferred from the passed element's class list.
+     *      is_flex_grow (bool):
+     *          Whether this item should auto expand along its axis.
+     *          The actual elem.style.flexGrow may change independent of this variable
+     *          but this variable is used to determine the default flexGrow.
+     *      is_flex_shrink (bool):
+     *          Whether this item should auto shrink along its axis.
+     *          Same behavior as `is_flex_grow`.
+     *      min_size (int):
+     *          The minimum size of the element.
+     *      base_size (int):
+     *          The default size of the element.
+     *      original_css_text (str):
+     *          The elem.style.cssText string that the element had on initialization.
+     *          Used during destruction of this instance to reset the element.
+    */
     handle = null;
     visible = true;
-    pad_px = PAD_PX;
     callbacks = {
         /** Allows user to modify the `size_px` value passed to setSize().
          *  Default callback just returns null. (no op).
@@ -133,13 +184,27 @@ class ResizeGridItem {
          *      int: The overridden setSize `size_px` paremeter. If null/undefined,
          *          then `size_px` does not get modified.
          */
-         set_size_override: (item, size_px) => { return; },
+        set_size_override: (item, size_px) => {
+            return;
+        },
     };
     constructor({id, parent, elem, axis, callbacks} = {}) {
-        this.id = isNullOrUndefined(id) ? _gen_id_string() : id;
-        this.parent = parent; // the parent class instance
+        if (elem.id) {
+            this.id = elem.id;
+        } else {
+            this.id = isNullOrUndefined(id) ? _gen_id_string() : id;
+        }
+        this.parent = parent;
         this.elem = elem;
-        this.axis = _axis_to_int(axis);
+        if (!isNullOrUndefined(axis)) {
+            this.axis = _axis_to_int(axis);
+        } else if (elem.classList.contains("resize-grid--row")) {
+            this.axis = 0;
+        } else if (elem.classList.contains("resize-grid--col")) {
+            this.axis = 1;
+        } else {
+            throw new Error("Unable to infer axis from element:", elem);
+        }
 
         // Parse user specified callback overrides.
         if (isObject(callbacks)) {
@@ -149,48 +214,65 @@ class ResizeGridItem {
         }
 
         this.is_flex_grow = Boolean(parseInt(this.elem.style.flexGrow));
-        this.default_is_flex_grow = this.is_flex_grow;
+        this.is_flex_shrink = Boolean(parseInt(this.elem.style.flexShrink));
         let flex_basis = parseInt(cssRelativeUnitToPx(this.elem.style.flexBasis));
-        // If user specifies data-min-size, then the flexBasis is just used to set
-        // the initial size.
-        if ('minSize' in this.elem.dataset) {
-            this.min_size = parseInt(cssRelativeUnitToPx(this.elem.dataset.minSize));
-            if (isNumber(flex_basis)) {
-                this.base_size = flex_basis;
-            } else {
-                this.base_size = this.min_size;
-            }
-        } else if (isNumber(flex_basis)) {
-            this.min_size = flex_basis;
+        if (isNumber(flex_basis) && flex_basis > 0) {
             this.base_size = flex_basis;
         } else {
-            this.min_size = 0;
-            this.base_size = 0;
+            const dims = this.elem.getBoundingClientRect();
+            this.base_size = parseInt(this.axis === 0 ? dims.height : dims.width);
         }
-        const dims = this.elem.getBoundingClientRect();
-        this.base_size =
-            this.axis === 0 ? parseInt(dims.height) : parseInt(dims.width);
+        this.min_size = this.base_size;
+
+        // If data-min-size is set, use that for the min_size instead.
+        if ("minSize" in this.elem.dataset) {
+            this.min_size = parseInt(cssRelativeUnitToPx(this.elem.dataset.minSize));
+        }
+
         this.elem.dataset.id = this.id;
         this.original_css_text = this.elem.style.cssText;
     }
 
-    render({force_flex_grow, reset} = {}) {
-        /** Sets the element's flex styles. */
+    render({force_flex_grow, force_flex_shrink, reset} = {}) {
+        /** Sets the element's flex styles.
+         *
+         *  If no arguments are passed, then flexGrow is reset to default and the
+         *  flexBasis is set to the current calculated size of the element
+         *  (clamped to min_size).
+         *
+         *  Args:
+         *      force_flex_grow (bool):
+         *          Sets flexGrow=1 and does nothing else.
+         *      force_flex_shrink (bool):
+         *          Sets flexShrink=1 and does nothing else.
+         *      reset (bool):
+         *          Sets flexGrow and flexBasis to the instance defaults.
+        */
+        if (!this.visible) {
+            return;
+        }
+
         force_flex_grow = force_flex_grow === true;
+        force_flex_shrink = force_flex_shrink === true;
         reset = reset === true;
 
-        this.elem.style.flexShrink = 0;
-        if (reset) {
+        const vis_items = this.parent.items.filter(x => x.visible);
+        if (vis_items.length === 1) {
+            force_flex_grow = true;
+            force_flex_shrink = true;
+        }
+
+        if (force_flex_grow || force_flex_shrink) {
+            this.elem.style.flexGrow = force_flex_grow ? 1 : parseInt(this.elem.style.flexGrow);
+            this.elem.style.flexShrink = force_flex_shrink ? 1 : parseInt(this.elem.style.flexShrink);
+        } else if (reset) {
             this.elem.style.flexGrow = Number(this.is_flex_grow);
-            this.elem.style.flexBasis = parseInt(this.base_size) + 'px';
-        } else if (force_flex_grow) {
-            this.elem.style.flexGrow = 1;
+            this.elem.style.flexShrink = Number(this.is_flex_shrink);
+            this.elem.style.flexBasis = this.base_size + 'px';
         } else {
             this.elem.style.flexGrow = Number(this.is_flex_grow);
-            if (!this.is_flex_grow) {
-                this.elem.style.flexBasis =
-                    parseInt(Math.max(this.min_size, this.getSize())) + 'px';
-            }
+            this.elem.style.flexShrink = Number(this.is_flex_shrink);
+            this.elem.style.flexBasis = Math.max(this.min_size, this.getSize()) + 'px';
         }
     }
 
@@ -207,26 +289,60 @@ class ResizeGridItem {
     }
 
     shrink(px, {limit_to_base} = {}) {
-        /** Shrink size along axis by specified pixels. Returns remainder. */
+        /** Shrink size along axis by specified pixels. Returns remainder.
+         *
+         *  Args:
+         *      px (int):
+         *          The number of pixels to shrink by.
+         *          If -1, then the item is shrunk to the `base_size` or `min_size`
+         *          depending on the value of `limit_to_base`.
+         *      limit_to_base (bool):
+         *          Whether to use the `base_size` as the minimum size after shrinking.
+         *          If not specified or false, then `min_size` is used.
+         *
+         *  Returns:
+         *      int: The number of pixels remaining that could not be shrunk.
+        */
+        if (px <= 0) {
+            return 0;
+        }
+
         limit_to_base = limit_to_base === true;
         const target_size = limit_to_base ? this.base_size : this.min_size;
         const curr_size = this.getSize();
 
         if (px === -1) {
-            // shrink to min_size
+            // Shrink to target regardless of the current size.
             this.setSize(target_size);
             return 0;
+        } else if (curr_size <= target_size) {
+            // This can happen if using base_size instead of min_size and the item is
+            // manually resized smaller than base_size. Cannot shrink, make no changes.
+            return px;
         } else if (curr_size - target_size < px) {
+            // Can shrink but not to the requested amount. Return remainder.
             this.setSize(target_size);
             return px - (curr_size - target_size);
         } else {
+            // Can shrink the full requested amount.
             this.setSize(curr_size - px);
             return 0;
         }
     }
 
     grow(px, {only_if_flex} = {}) {
-        /** Grows along axis and returns the amount grown in pixels. */
+        /** Grows along axis and returns the amount grown in pixels.
+         *
+         *  Args:
+         *      px (int):
+         *          The number of pixels to grow by.
+         *          If -1, then the item grows to fill its container.
+         *      only_if_flex (bool):
+         *          If true, then grow is only performed if is_flex_grow=true.
+         *
+         *  Returns:
+         *      int: The number of pixels that the item grew by.
+        */
         only_if_flex = only_if_flex === true;
         if (only_if_flex && !this.is_flex_grow) {
             return 0;
@@ -247,19 +363,36 @@ class ResizeGridItem {
     }
 
     setSize(size_px) {
+        /** Sets the flexBasis value for the item.
+         *
+         *  Prior to setting flexBasis, the `set_size_override` callback is called.
+         *  If this callback returns a valid number, then we use that value instead
+         *  of `size_px` for the new size.
+         *
+         *  Args:
+         *      size_px (int): The new size (in pixels).
+         *
+         *  Returns:
+         *      int: The size that we just set.
+        */
         const new_size_px = this.callbacks.set_size_override(this, size_px);
         if (isNumber(new_size_px)) {
             size_px = new_size_px;
         }
         this.elem.style.flexBasis = parseInt(size_px) + 'px';
-        //this.render();
         return size_px;
     }
 
     getSize() {
-        // If this item is visible, then we can use the computed dimensions.
-        // Otherwise we are forced to use the flexBasis inline style.
+        /** Returns the current size of this item.
+         *
+         *  Returns:
+         *      int: If this item is visible in the DOM, then we return the computed
+         *          dimensions of the element. Otherwise we return the element's
+         *          inline style flexBasis value.
+         */
         if (this.visible) {
+
             const dims = this.elem.getBoundingClientRect();
             return this.axis === 0 ? parseInt(dims.height) : parseInt(dims.width);
         } else {
@@ -267,13 +400,12 @@ class ResizeGridItem {
         }
     }
 
-    genHandle(class_list) {
-        /** Generates a ResizeGridHandle after this item based on the axis. */
+    genHandle() {
+        /** Generates a ResizeGridHandle for this item and returns the new handle. */
         this.handle = new ResizeGridHandle({
             id: `${this.id}_handle`,
             parent: this.parent,
             axis: this.axis,
-            class_list: class_list,
         });
         if (isElement(this.elem.nextElementSibling)) {
             this.elem.parentElement.insertBefore(
@@ -283,13 +415,16 @@ class ResizeGridItem {
         } else {
             this.elem.parentElement.appendChild(this.handle.elem);
         }
+        return this.handle;
     }
 
     show() {
         /** Shows this item and its ResizeGridHandle. */
         this.elem.classList.remove('hidden');
-        // Only show the handle if there is another ResizeGridItem after this one.
-        if (!isNullOrUndefined(this.handle.elem.nextSibling)) {
+        // Only show the handle if it isnt the last visible item along its axis.
+        const siblings = this.parent.items;
+        const sibling = siblings.slice(siblings.indexOf(this) + 1).find(x => x.visible);
+        if (sibling instanceof ResizeGridItem) {
             this.handle.show();
         }
         this.visible = true;
@@ -303,528 +438,391 @@ class ResizeGridItem {
     }
 }
 
-class ResizeGridContainer {
-    /** Class defining a collection of ResizeGridItem and ResizeGridHandle instances. */
-    constructor({id, parent, elem, callbacks} = {}) {
-        this.id = isNullOrUndefined(id) ? _gen_id_string() : id;
-        this.parent = parent;
-        this.elem = elem;
-        this.callbacks = callbacks;
-        this.original_css_text = this.elem.style.cssText;
-
-        this.grid = [];
-        this.rows = [];
-        this.id_map = {};
-        this.added_outer_row = false;
+class ResizeGridAxis extends ResizeGridItem {
+    /** Represents a collection of ResizeGridItems along a single axis.
+     *
+     *  Attributes:
+     *      items (Array[ResizeGridItem]):
+     *          The items contained within this axis.
+     *      item_ids (Object[str, ResizeGridItem]):
+     *          Mapping of item IDs to their ResizeGridItem instance.
+    */
+    constructor(...args) {
+        super(...args);
+        this.items = [];
+        this.item_ids = {};
     }
 
     destroy() {
-        this.rows.forEach((row) => {
-            row.destroy();
-        });
-        this.rows = null;
-        if (this.added_outer_row) {
-            this.elem.innerHTML = this.elem.querySelector(
-                ':scope > .resize-grid--row'
-            ).innerHTML;
-        }
+        this.items.forEach(item => item.destroy());
+        this.items = [];
+        this.item_ids = {};
         super.destroy();
     }
 
-    addRow(id, elem, row_idx) {
-        /** Generates a ResizeGridItem and ResizeGridHandle for a row element. */
-        const row = new ResizeGridItem({
+    addCell(id, elem, idx) {
+        /** Creates a ResizeGridItem along this axis and returns the new item. */
+        const item = new ResizeGridItem({
             id: id,
             parent: this,
             elem: elem,
+            axis: this.axis ^ 1, // Children are along the opposite axis of this.
             callbacks: this.callbacks,
-            axis: 0,
         });
-        row.genHandle('resize-grid--row-handle');
-        row.elem.dataset.row = row_idx;
-        this.rows.push(row);
-        this.id_map[id] = row;
-        return row;
+        item.genHandle();
+        item.elem.dataset.index = idx;
+        this.items.push(item);
+        this.item_ids[id] = item;
+        return item;
     }
 
-    addCol(id, elem, row_idx, col_idx) {
-        /** Generates a ResizeGridItem and ResizeGridHandle for a column element. */
-        const col = new ResizeGridItem({
-            id: id,
-            parent: this,
-            elem: elem,
-            callbacks: this.callbacks,
-            axis: 1,
+    render({force_flex_grow, reset} = {}) {
+        /** Renders all children items and this item. */
+        if (!this.visible) {
+            return;
+        }
+
+        this.items.forEach(item => {
+            item.render({force_flex_grow: force_flex_grow, reset: reset});
         });
-        col.genHandle('resize-grid--col-handle');
-        col.elem.dataset.row = row_idx;
-        col.elem.dataset.col = col_idx;
-        this.grid[row_idx].push(col);
-        this.id_map[id] = col;
-        return col;
+        // If we only have one visible cell, we need to force it to grow to fill axis.
+        const visible_cells = this.items.filter(x => x.visible);
+        if (visible_cells.length === 1) {
+            visible_cells[0].render({force_flex_grow: true});
+        }
+
+        if (!(this instanceof ResizeGrid)) {
+            super.render({force_flex_grow: force_flex_grow, reset: reset});
+        }
+
+        this.updateVisibleHandles();
     }
 
-    build() {
-        /** Generates rows/cols based on this instance element's content. */
-        let row_elems = Array.from(this.elem.querySelectorAll(":scope > .resize-grid--row"));
-        
-        // If we do not have any rows, then we generate a single row to contain the cols.
-        if (!row_elems.length) {
-            const elem = document.createElement('div');
-            elem.classList.add('resize-grid--row');
-            elem.append(...this.elem.children);
-            this.elem.replaceChildren(elem);
-            row_elems = [elem];
-            // track this addition so we can remove it later.
-            this.added_outer_row = true;
+    getById(id) {
+        isStringThrowError(id);
+        if (id in this.item_ids) {
+            return this.item_ids[id];
         }
-
-        // Make sure that if we only have one row, that it fills the container.
-        if (row_elems.length === 1 && !row_elems[0].style.flexBasis) {
-            row_elems[0].style.flexGrow = 1;
-            row_elems[0].style.flexBasis =
-                parseInt(this.elem.getBoundingClientRect().height) + 'px';
-        }
-
-        let id = 0;
-        this.grid = [...Array(row_elems.length)].map((_) => []);
-        row_elems.forEach((row_elem, i) => {
-            this.addRow(id++, row_elem, i);
-            const col_elems = row_elem.querySelectorAll('.resize-grid--col');
-            if (col_elems.length === 1) {
-                col_elems[0].style.flexGrow = 1;
-            }
-            col_elems.forEach((col_elem, j) => {
-                this.addCol(id++, col_elem, i, j);
-            });
-            this.grid[i][this.grid[i].length - 1].handle.hide();
-        });
-        this.rows[this.rows.length - 1].handle.hide();
-
-        // Now that all handles are added, we need to render the flex styles for each item.
-        for (let i = 0; i < this.rows.length; i++) {
-            this.rows[i].render({reset: true});
-            for (let j = 0; j < this.grid[i].length; j++) {
-                this.grid[i][j].render({reset: true});
-            }
-            const vis_cols = this.grid[i].filter((x) => x.visible);
-            if (vis_cols.length === 1) {
-                vis_cols[0].render({force_flex_grow: true});
-            }
-        }
-        const vis_rows = this.rows.filter((x) => x.visible);
-        if (vis_rows.length === 1) {
-            vis_rows[0].render({force_flex_grow: true});
-        }
+        throw new Error(`No matching Cell ID in ResizeGridAxis: ${id}`);
     }
 
     getByElem(elem) {
-        return this.id_map[elem.dataset.id];
+        isElementThrowError(elem);
+        elem = elem.closest(".resize-grid--cell,.resize-grid--col,.resize-grid--row");
+        isElementThrowError(elem);
+        return this.getById(elem.dataset.id);
     }
 
-    getByIdx({row_idx, col_idx} = {}) {
-        /** Returns the ResizeGridItem at the row/col index. */
-        row_idx = parseInt(row_idx);
-        col_idx = parseInt(col_idx);
-        if (
-            (!isNumber(row_idx) && !isNumber(col_idx)) ||
-            (!isNumber(row_idx) && isNumber(col_idx))
-        ) {
-            console.error('Invalid row/col idx:', row_idx, col_idx);
-            return;
+    getByIdx(idx) {
+        isNumberThrowError(idx);
+        const res = this.items[idx];
+        if (!isNullOrUndefined(res)) {
+            return res;
         }
-        if (isNumber(row_idx) && !isNumber(col_idx)) {
-            if (row_idx >= this.rows.length) {
-                console.error(
-                    `row_idx out of range: (${row_idx} > ${this.rows.length})`
-                );
-                return;
-            }
-            return this.rows[row_idx];
+        throw new Error(`Invalid Cell Index in ResizeGridAxis: ${idx}`);
+    }
+
+    getItem({id, idx, elem} = {}) {
+        if (isString(id)) {
+            return this.getById(id);
+        } else if (isNumber(idx)) {
+            return this.getByIdx(idx);
+        } else if (isElement(elem)) {
+            return this.getByElem(elem);
+        } else {
+            // Indicates programmer error.
+            throw new Error("Invalid arguments. Must specify one of [id, idx, elem].");
         }
-        if (isNumber(row_idx) && isNumber(col_idx)) {
-            if (row_idx >= this.grid.length) {
-                console.error(
-                    `row_idx out of range: (${row_idx} > ${this.grid.length})`
-                );
-                return;
-            }
-            if (col_idx >= this.grid[row_idx].length) {
-                console.error(
-                    `col_idx out of range: (${col_idx} > ${this.grid[row_idx].length})`
-                );
-                return;
-            }
-            return this.grid[row_idx][col_idx];
+    }
+
+    getSiblings(handle_elem) {
+        /** Returns the nearest visible ResizeGridItems surrounding a ResizeGridHandle.
+         *
+         *  Args:
+         *      handle_elem (Element): The handle element in the grid to lookup.
+         *
+         *  Returns:
+         *      Object: Keys=(prev, next). Values are ResizeGridItems.
+        */
+        let prev = this.getItem({elem: handle_elem.previousElementSibling});
+        if (!prev.visible) {
+            prev = prev.parent.items.slice(0, this.items.indexOf(prev)).findLast(x => x.visible);
         }
+        let next = this.getItem({elem: handle_elem.nextElementSibling});
+        if (!next.visible) {
+            next = next.parent.items.slice(this.items.indexOf(next) + 1).findLast(x => x.visible);
+        }
+        return {prev: prev, next: next};
     }
 
     updateVisibleHandles() {
         /** Sets the visibility of each ResizeGridHandle based on surrounding items. */
-        const last_vis_rows_idx = this.rows.findLastIndex((x) => x.visible);
-        for (let i = 0; i < this.rows.length; i++) {
-            const last_vis_grid_idx = this.grid[i].findLastIndex((x) => x.visible);
-            for (let j = 0; j < this.grid[i].length; j++) {
-                const item = this.getByIdx({row_idx: i, col_idx: j});
-                if (isNullOrUndefined(item)) {
-                    continue;
-                }
-
-                // Don't show handle if item is last column in row.
-                if (this.grid[i][j].visible && j !== last_vis_grid_idx) {
-                    this.grid[i][j].handle.show();
-                } else {
-                    this.grid[i][j].handle.hide();
-                }
-            }
-
-            const item = this.getByIdx({row_idx: i});
-            if (isNullOrUndefined(item)) {
-                continue;
-            }
-
-            // Don't show handle if item is last row in grid.
-            if (this.rows[i].visible && i !== last_vis_rows_idx) {
-                this.rows[i].handle.show();
+        for (const item of this.items) {
+            if (item.visible) {
+                item.handle.show();
             } else {
-                this.rows[i].handle.hide();
+                item.handle.hide();
             }
+        }
+        const last_vis = this.items[this.items.findLastIndex(x => x.visible)];
+        if (last_vis instanceof ResizeGridItem) {
+            last_vis.handle.hide();
         }
     }
 
-    makeRoomForItem(item, siblings, item_idx, {use_base_size} = {}) {
-        /** Shrinks items along axis until the supplied item can fit. */
+    makeRoomForItem(item, siblings, {use_base_size} = {}) {
+        /** Shrinks items along this axis until the passed item can fit.
+         *
+         *  Args:
+         *      item (ResizeGridItem):
+         *          The item to be added into this axis.
+         *      siblings (Array[ResizeGridItem]):
+         *          An array of ResizeGridItems within the same container as `item`.
+         *      use_base_size (bool):
+         *          Whether to use the `item`'s base_size or current size when inserting.
+         *
+         *  Throws:
+         *      Error: If unable to shrink items along this axis to make room for `item`.
+         */
+        isNullOrUndefinedThrowError(item);
+        const idx = siblings.indexOf(item);
+        isNumberThrowError(idx);
         use_base_size = use_base_size === true;
-        let tot = use_base_size ? item.base_size : item.getSize();
-        // Get the item after this item's handle.
-        let sibling = siblings.slice(item_idx + 1).find((x) => x.visible);
-        if (isNullOrUndefined(sibling)) {
-            // No items after this item. Instead get the item just before this item.
-            sibling = siblings.slice(0, item_idx).findLast((x) => x.visible);
-            isNullOrUndefinedThrowError(sibling); // Indicates programmer error.
-            // Last item so we want to hide its handle.
-            item.handle.hide();
-            // Add previous item handle's size
-            tot += sibling.handle.pad_px;
-        } else {
-            // Need to add handle between this item and next item.
-            item.handle.show();
-            tot += item.handle.pad_px;
-        }
+        // If use_base_size=false, then try to get the item's current size and use that.
+        // Since the item is hidden, this will get the size saved in flexBasis which was
+        // the previously set size.
+        const tot = (use_base_size ? item.base_size : item.getSize()) + item.handle.pad_px;
+        let rem = tot;
 
+        // Get first visible sibling after the item we're trying to add.
+        let sibling = siblings.slice(idx + 1).find(x => x.visible);
         const sibling_idx = siblings.indexOf(sibling);
 
-        let rem = tot;
-        rem = sibling.shrink(rem, {limit_to_base: use_base_size});
+        // Shrink from the sibling first.
+        if (sibling instanceof ResizeGridItem) {
+            rem = sibling.shrink(rem, {limit_to_base: false});
+        }
         if (rem <= 0) {
             return;
         }
-        // Shrink from flexGrow items next starting from the end.
-        if (rem > 0) {
-            const others = siblings.filter(
-                (x) =>
-                    x.visible && x.is_flex_grow && siblings.indexOf(x) !== sibling_idx
-            );
-            for (const other of others.slice().reverse()) {
-                rem = other.shrink(rem, {limit_to_base: use_base_size});
-                if (rem <= 0) {
-                    return;
-                }
-            }
-        }
-        // Now shrink from non-flexGrow items starting from the end.
-        if (rem > 0) {
-            const others = siblings.filter(
-                (x) =>
-                    x.visible && !x.is_flex_grow && siblings.indexOf(x) !== sibling_idx
-            );
-            for (const other of others.slice().reverse()) {
-                rem = other.shrink(rem, {limit_to_base: use_base_size});
-                if (rem <= 0) {
-                    return;
-                }
-            }
-        }
 
-        // Shrink the item itself if we still don't have room.
-        if (rem > 0) {
-            rem = item.shrink(rem, {limit_to_base: use_base_size});
+        // Shrink all other items next, starting from the end.
+        let others = siblings.filter((x, i) => x.visible && i !== idx && i !== sibling_idx);
+        for (const other of others.slice().reverse()) {
+            rem = other.shrink(rem, {limit_to_base: false});
             if (rem <= 0) {
                 return;
             }
         }
 
-        // If still not enough room, try again but use the base sizes.
-        if (rem > 0 && !use_base_size) {
-            this.makeRoomForItem(item, siblings, item_idx, {use_base_size: true});
+        // Finally, shrink from the item itself since it is too big to insert.
+        rem = item.shrink(rem, {limit_to_base: false});
+        if (rem <= 0) {
             return;
         }
-        // If we still couldn't make room, this indicates programmer error.
-        throw new Error(`No space for row. tot: ${tot}, rem: ${rem}`);
+
+        // This indicates a programmer error.
+        throw new Error(`No space for item. tot: ${tot}, rem: ${rem}`);
     }
 
-    growToFill(item, siblings, item_idx, tot_px) {
-        /** Expands item along axis until the axis has no remaining space. */
-        // Expand the item that was attached via the hidden item's handle first.
-        let sibling = siblings.slice(item_idx + 1).find((x) => x.visible);
+    growToFill(item, siblings) {
+        /** Grows an item along an axis to fill its container.
+         *
+         *  Args:
+         *      item (ResizeGridItem):
+         *          The item to grow.
+         *      siblings (Array[ResizeGridItem]):
+         *          An array of ResizeGridItems within the same container as `item`.
+        */
+        const idx = siblings.indexOf(item);
+        isNullOrUndefinedThrowError(item); // Indicates programmer error.
+        let sibling = siblings.slice(idx + 1).find(x => x.visible);
         if (isNullOrUndefined(sibling)) {
-            // Otherwise, expand the previous attached item.
-            sibling = siblings.slice(0, item_idx).findLast((x) => x.visible);
+            sibling = siblings.slice(0, idx).findLast(x => x.visible);
             isNullOrUndefinedThrowError(sibling); // Indicates programmer error.
-        } else {
-            tot_px += item.pad_px;
         }
-        // Hide sibling's handle if sibling is last visible item.
-        if (
-            siblings
-                .slice(siblings.findIndex((x) => x === sibling) + 1)
-                .every((x) => !x.visible)
-        ) {
-            if (sibling.handle.visible) {
-                sibling.handle.hide();
-                tot_px += sibling.pad_px;
-            }
+
+        const sibling_idx = siblings.indexOf(sibling);
+
+        // Hide sibling's handle if sibling is the last visible item.
+        if (siblings.slice(sibling_idx + 1).every(x => !x.visible) && sibling.handle.visible) {
+            sibling.handle.hide();
         }
 
         // If we are growing sibling to fill, then just set flexGrow=1.
-        if (
-            siblings.length <= 2 ||
-            siblings.every((x) => !x.visible && x !== sibling && x !== item)
-        ) {
+        if (siblings.length <= 2 || siblings.every(x => !x.visible && x !== sibling && x !== item)) {
             sibling.render({force_flex_grow: true});
         } else {
             sibling.grow(-1);
         }
     }
 
-    showRow(row_idx, {show_empty_row} = {}) {
-        /** Makes space for the row then shows it. */
-        show_empty_row = show_empty_row === true;
-        row_idx = parseInt(row_idx);
-        const item = this.getByIdx({row_idx: row_idx});
-        isNullOrUndefinedThrowError(item);
+    show({id, idx, elem, item} = {}) {
+        /** Shows an item along this axis.
+         *
+         *  The arguments to this function are used to lookup the item to show.
+        */
+        if (!(item instanceof ResizeGridItem)) {
+            item = this.getItem({id: id, idx: idx, elem: elem});
+        }
 
         if (item.visible) {
             return;
         }
 
-        if (item.axis !== 0) {
-            console.error('Expected row, got col:', item);
-            return;
+        // We are trying to show an item but the container (this) is not visible.
+        // Show the container (this) first so we can show the item.
+        if (item !== this && !this.visible) {
+            // If any parent items are visible, then we need to make room for this item.
+            if (this.parent.items.some(x => x.visible)) {
+                this.makeRoomForItem(this, this.parent.items, {use_base_size: false});
+            }
+            super.show();
+            this.parent.render();
         }
 
-        // If no columns are visible, then we can't show the row.
-        if (this.grid[row_idx].every((x) => !x.visible) && !show_empty_row) {
-            console.error('No visible columns in row. Cannot show.');
-            return;
-        }
-
-        // All rows are hidden. We just show this row and make it fill the container.
-        if (this.rows.every((x) => !x.visible)) {
+        // No items are visible in this container. Show the item and force flexGrow=1.
+        if (this.items.every(x => !x.visible)) {
             item.show();
             item.handle.hide();
             item.render({force_flex_grow: true});
-        } else {
-            this.makeRoomForItem(item, this.rows, row_idx);
-            item.show();
-            if (this.rows.slice(row_idx + 1).every((x) => !x.visible)) {
-                // If this is the last visible row, hide the handle.
-                item.handle.hide();
-            }
-            const prev_item = this.rows.slice(0, row_idx).find((x) => x.visible);
-            if (!isNullOrUndefined(prev_item)) {
-                prev_item.handle.show();
-            }
-            item.render();
-        }
-    }
-
-    showCol(row_idx, col_idx) {
-        /** Makes space for the column then shows it. */
-        row_idx = parseInt(row_idx);
-        col_idx = parseInt(col_idx);
-        const item = this.getByIdx({row_idx: row_idx, col_idx: col_idx});
-        isNullOrUndefinedThrowError(item);
-
-        if (item.visible) {
             return;
         }
 
-        if (item.axis !== 1) {
-            console.error('Expected col, got row:', item);
-            return;
-        }
-
-        // If the row isn't visible, we need to show it before we can show columns.
-        if (!this.rows[row_idx].visible) {
-            this.showRow(row_idx, {show_empty_row: true});
-        }
-
-        // All cols are hidden. We just show this col and make it fill the row.
-        if (this.grid[row_idx].every((x) => !x.visible)) {
-            item.show();
-            item.handle.hide();
-            item.render({force_flex_grow: true});
-        } else {
-            this.makeRoomForItem(item, this.grid[row_idx], col_idx);
-            item.show();
-            if (this.grid[row_idx].slice(col_idx + 1).every((x) => !x.visible)) {
-                // If this is the last visible col, hide the handle.
-                item.handle.hide();
-            }
-            const prev_item = this.grid[row_idx]
-                .slice(0, col_idx)
-                .find((x) => x.visible);
-            if (!isNullOrUndefined(prev_item)) {
-                prev_item.handle.show();
-            }
-            item.render();
-        }
+        // Other items are visible in this container, make room for this item.
+        this.makeRoomForItem(item, this.items, {use_base_size: false});
+        item.show();
+        this.updateVisibleHandles();
     }
 
-    hideRow(row_idx) {
-        /** Hides a row and resizes other rows to fill the gap. */
-        row_idx = parseInt(row_idx);
-        const item = this.getByIdx({row_idx: row_idx});
-        isNullOrUndefinedThrowError(item);
+    hide({id, idx, elem, item} = {}) {
+        /** Hides an item along this axis.
+         *
+         *  The arguments to this function are used to lookup the item to hide.
+        */
+        if (!(item instanceof ResizeGridItem)) {
+            item = this.getItem({id: id, idx: idx, elem: elem});
+        }
 
         if (!item.visible) {
             return;
         }
 
-        if (item.axis !== 0) {
-            console.error('Expected row, got col:', item);
-            return;
-        }
-
-        let tot_px = item.elem.getBoundingClientRect().height;
         item.hide();
-        // If no other rows are visible, we don't need to do anything else.
-        if (this.rows.every((x) => !x.visible)) {
+        // If no other items are visible, hide the container.
+        if (this.items.every(x => !x.visible)) {
+            super.hide();
+            if (this.parent.items.every(x => !x.visible)) {
+                this.parent.render();
+                return;
+            }
+            this.parent.growToFill(this, this.parent.items);
+            this.parent.render();
             return;
         }
 
-        this.growToFill(item, this.rows, row_idx, tot_px);
+        this.growToFill(item, this.items);
     }
 
-    hideCol(row_idx, col_idx) {
-        /** Hides a column and resizes other columns to fill the gap. */
-        row_idx = parseInt(row_idx);
-        col_idx = parseInt(col_idx);
-        const item = this.getByIdx({row_idx: row_idx, col_idx: col_idx});
-        isNullOrUndefinedThrowError(item);
-
-        if (!item.visible) {
-            return;
+    toggle({id, idx, elem, item, override} = {}) {
+        /** Toggles the visibility of an item along this axis.
+         *
+         *  The arguments to this function are used to lookup the item to show.
+         *
+         *  Args:
+         *      override (bool): If specified, this value is used to set visibility.
+        */
+        if (!(item instanceof ResizeGridItem)) {
+            item = this.getItem({id: id, idx: idx, elem: elem});
         }
-
-        if (item.axis !== 1) {
-            console.error('Expected col, got row:', item);
-            return;
-        }
-
-        let tot_px = item.getSize();
-        item.hide();
-        // If no other cols are visible, hide the containing row.
-        if (this.grid[row_idx].every((x) => !x.visible)) {
-            this.hideRow(row_idx);
-            return;
-        }
-
-        this.growToFill(item, this.grid[row_idx], col_idx, tot_px);
-    }
-
-    show({row_idx, col_idx} = {}) {
-        /** Shows a row or column based on the provided row/col indices. */
-        row_idx = parseInt(row_idx);
-        col_idx = parseInt(col_idx);
-        if (isNumber(row_idx) && !isNumber(col_idx)) {
-            this.showRow(row_idx);
-        } else if (isNumber(row_idx) && isNumber(col_idx)) {
-            this.showCol(row_idx, col_idx);
-        } else {
-            throw new Error('Invalid parameters for row/col idx:', row_idx, col_idx);
-        }
-    }
-
-    hide({row_idx, col_idx} = {}) {
-        /** Hides a row or column based on the provided row/col indices. */
-        row_idx = parseInt(row_idx);
-        col_idx = parseInt(col_idx);
-        if (isNumber(row_idx) && !isNumber(col_idx)) {
-            this.hideRow(row_idx);
-        } else if (isNumber(row_idx) && isNumber(col_idx)) {
-            this.hideCol(row_idx, col_idx);
-        } else {
-            throw new Error('Invalid parameters for row/col idx:', row_idx, col_idx);
-        }
-    }
-
-    toggle({row_idx, col_idx, override} = {}) {
-        /** Toggles a row or column's visibility based on the provided row/col indices. */
-        row_idx = parseInt(row_idx);
-        col_idx = parseInt(col_idx);
-        const item = this.getByIdx({row_idx: row_idx, col_idx: col_idx});
-        isNullOrUndefinedThrowError(item);
 
         let new_state = !item.visible;
         if (override === true || override === false) {
             new_state = override;
         }
-
-        if (item.axis === 0) {
-            new_state ? this.showRow(row_idx) : this.hideRow(row_idx);
-        } else {
-            new_state ?
-                this.showCol(row_idx, col_idx) :
-                this.hideCol(row_idx, col_idx);
-        }
+        new_state ? item.parent.show({item: item}) : item.parent.hide({item: item});
     }
 }
 
-class ResizeGrid {
-    /** Class representing a resizable grid. */
+class ResizeGrid extends ResizeGridAxis {
+    /** Class representing a resizable grid.
+     *
+     *  Attributes (the less obvious ones):
+     *      added_outer_div (bool):
+     *          Whether the outermost ResizeGridAxis was added during setup. This is
+     *          used on destruction to revert the container element to its original state.
+     *      prev_dims (Object):
+     *          Generated by elem.getBoundingClientRect(). This tracks the last known
+     *          dimensions of this container element between resize events.
+    */
     event_abort_controller = null;
-    added_outer_row = false;
-    container = null;
+    added_outer_div = false;
     setup_has_run = false;
     prev_dims = null;
     resize_observer = null;
-    resize_observer_timer;
-    constructor(id, elem, {callbacks}={}) {
-        this.id = id;
-        this.elem = elem;
-        this.elem.dataset.gridId = this.id;
-        this.callbacks = callbacks;
+    resize_observer_timer = null;
+    constructor(id, elem, {callbacks} = {}) {
+        const row_elems = Array.from(elem.querySelectorAll(":scope > .resize-grid--row"));
+        const col_elems = Array.from(elem.querySelectorAll(":scope > .resize-grid--col"));
+        let axis = 0;
+        if (row_elems.length && col_elems.length) {
+            throw new Error("Invalid grid. Cannot have rows and cols at same level.");
+        } else if (row_elems.length) {
+            axis = 0;
+        } else if (col_elems.length) {
+            axis = 1;
+        } else {
+            axis = 0;
+        }
+
+        super({
+            id: id,
+            elem: elem,
+            parent: null,
+            axis: axis,
+            callbacks: callbacks,
+        });
     }
 
     destroy() {
         this.destroyEvents();
-        if (!isNullOrUndefined(this.container)) {
-            this.container.destroy();
-            this.container = null;
+        if (this.added_outer_div) {
+            this.elem.innerHTML = this.elem.children[0].innerHTML;
+            this.added_outer_div = false;
         }
+        super.destroy();
         this.setup_has_run = false;
+    }
+
+    destroyEvents() {
+        /** Destroys all event listeners and observers. */
+        // We can simplify removal of event listeners by firing an AbortController
+        // abort signal. Must pass the signal to any event listeners on creation.
+        if (this.event_abort_controller) {
+            this.event_abort_controller.abort();
+        }
+        if (!isNullOrUndefined(this.resize_observer)) {
+            this.resize_observer.disconnect();
+        }
+        clearTimeout(this.resize_observer_timer);
+        this.resize_observer = null;
+        this.resize_observer_timer = null;
     }
 
     setup() {
         /** Fully prepares this instance for use. */
-        if (!this.elem.querySelector('.resize-grid--row,.resize-grid--col')) {
-            throw new Error('Container has no rows or cols.');
+        // We don't want to run setup a second time without having run `destroy()`.
+        if (this.setup_has_run) {
+            // Indicates programmer error.
+            throw new Error("Setup has already run.");
         }
 
-        if (!isNullOrUndefined(this.container)) {
-            this.container.destroy();
-            this.container = null;
+        if (!this.elem.querySelector('.resize-grid--row,.resize-grid--col,.resize-grid--cell')) {
+            throw new Error('Grid has no valid content from which it can build.');
         }
 
-        this.container = new ResizeGridContainer({
-            parent: this,
-            elem: this.elem,
-            callbacks: this.callbacks,
-        });
-        this.container.build();
         this.prev_dims = this.elem.getBoundingClientRect();
+        this.build();
         this.setupEvents();
         this.setup_has_run = true;
     }
@@ -855,46 +853,21 @@ class ResizeGrid {
                     }
                 }
 
-                const elem = event.target.closest('.resize-grid--handle');
-                if (!elem) {
+                const handle_elem = event.target.closest('.resize-grid--handle');
+                if (!isElement(handle_elem)) {
                     return;
                 }
                 // Clicked handles will always be between two elements. If the user
                 // somehow clicks an invisible handle then we have bigger problems.
-                prev = this.container.getByElem(elem.previousElementSibling);
-                if (!prev.visible) {
-                    const row_idx = prev.elem.dataset.row;
-                    const col_idx = prev.elem.dataset.col;
-                    const siblings =
-                        prev.axis === 0 ?
-                            this.container.rows :
-                            this.container.grid[row_idx];
-                    const idx = prev.axis === 0 ? row_idx : col_idx;
-                    prev = siblings.slice(0, idx).findLast((x) => x.visible);
-                }
-                handle = prev.handle;
-                next = this.container.getByElem(elem.nextElementSibling);
-                if (!next.visible) {
-                    const row_idx = next.elem.dataset.row;
-                    const col_idx = next.elem.dataset.col;
-                    const siblings =
-                        next.axis === 0 ?
-                            this.container.rows :
-                            this.container.grid[row_idx];
-                    const idx = next.axis === 0 ? row_idx : col_idx;
-                    next = siblings.slice(idx).find((x) => x.visible);
-                }
-
-                if (
-                    isNullOrUndefinedLogError(prev) ||
-                    isNullOrUndefinedLogError(handle) ||
-                    isNullOrUndefinedLogError(next)
+                const siblings = this.getSiblings(handle_elem);
+                if (!(siblings.prev instanceof ResizeGridItem) ||
+                    !(siblings.next instanceof ResizeGridItem)
                 ) {
-                    prev = null;
-                    handle = null;
-                    next = null;
-                    return;
+                    throw new Error("Failed to find siblings for ResizeGridHandle.");
                 }
+                prev = siblings.prev;
+                handle = prev.handle;
+                next = siblings.next;
 
                 event.preventDefault();
                 event.stopPropagation();
@@ -903,6 +876,8 @@ class ResizeGrid {
 
                 // Temporarily set styles for elements. These are cleared on pointerup.
                 // See `onMove()` comments for more info.
+                prev.setSize(prev.getSize());
+                next.setSize(next.getSize());
                 prev.elem.style.flexGrow = 0;
                 next.elem.style.flexGrow = 1;
                 next.elem.style.flexShrink = 1;
@@ -970,10 +945,8 @@ class ResizeGrid {
                 // Set the new flexBasis value for the `next` element then revert
                 // the style changes set in the `pointerup` event.
                 next.elem.style.flexBasis = next.setSize(next.getSize());
-                prev.elem.style.flexGrow = Number(prev.is_flex_grow);
-                next.elem.style.flexGrow = Number(next.is_flex_grow);
-                next.elem.style.flexShrink = 0;
-                
+                prev.render();
+                next.render();
 
                 document.body.classList.remove('resizing');
                 document.body.classList.remove('resizing-col');
@@ -1030,19 +1003,93 @@ class ResizeGrid {
         this.resize_observer.observe(this.elem);
     }
 
-    destroyEvents() {
-        /** Destroys all event listeners and observers. */
-        // We can simplify removal of event listeners by firing an AbortController
-        // abort signal. Must pass the signal to any event listeners on creation.
-        if (this.event_abort_controller) {
-            this.event_abort_controller.abort();
+    addAxis(id, elem, idx) {
+        /** Creates a ResizeGridAxis instance and returns the new item. */
+        const item = new ResizeGridAxis({
+            id: id,
+            parent: this,
+            elem: elem,
+            axis: this.axis,
+            callbacks: this.callbacks,
+        });
+        item.elem.dataset.index = idx;
+        item.genHandle();
+        this.items.push(item);
+        return item;
+    }
+
+    build() {
+        /** Generates rows/cols based on this instance element's content. */
+        // Flex direction should be opposite of container axis.
+        this.elem.style.flexDirection = this.axis === 0 ? "column" : "row";
+        let axis_elems;
+        if (this.axis === 0) {
+            axis_elems = Array.from(this.elem.querySelectorAll(":scope > .resize-grid--row"));
+        } else {
+            axis_elems = Array.from(this.elem.querySelectorAll(":scope > .resize-grid--col"));
         }
-        if (!isNullOrUndefined(this.resize_observer)) {
-            this.resize_observer.disconnect();
+        if (!axis_elems.length) {
+            // If we don't have any rows/cols, then make a new axis.
+            const elem = document.createElement("div");
+            elem.classList.add("resize-grid--row");
+            elem.append(...this.elem.children);
+            axis_elems = [elem];
+            // track this change so we can undo it on `destroy()`.
+            this.added_outer_div = true;
         }
-        clearTimeout(this.resize_observer_timer);
-        this.resize_observer = null;
-        this.resize_observer_timer = null;
+
+        // If we only have a single row/col then make it fill the container.
+        if (axis_elems.length === 1) {
+            axis_elems[0].style.flexGrow = 1;
+        }
+        let id = 0;
+        axis_elems.forEach((axis_elem, i) => {
+            const axis = this.addAxis(id++, axis_elem, i);
+            axis_elem.querySelectorAll(
+                ":scope > .resize-grid--cell"
+            ).forEach((cell_elem, j) => axis.addCell(id++, cell_elem, j));
+        });
+
+        // Set any rows/cols with only one element to be flexGrow=1 and flexShrink=1
+        // by default. Since they don't have siblings to work around, this makes it so
+        // the user doesn't have to specify these settings in HTML.
+        if (this.items.length === 1) {
+            this.items[0].is_flex_grow = 1;
+            this.items[0].elem.style.flexGrow = 1;
+            this.items[0].is_flex_shrink = 1;
+            this.items[0].elem.style.flexShrink = 1;
+        }
+
+        for (const item of this.items) {
+            if (item.items.length === 1) {
+                item.items[0].is_flex_grow = 1;
+                item.items[0].elem.style.flexGrow = 1;
+                item.items[0].is_flex_shrink = 1;
+                item.items[0].elem.style.flexShrink = 1;
+            }
+        }
+
+        // Render all axes to force them to update flex dims.
+        this.items[this.items.length - 1].handle.hide();
+        this.items.forEach(axis => {
+            axis.items[axis.items.length - 1].handle.hide();
+        });
+        this.render({reset: true});
+        this.buildIdMap(this);
+    }
+
+    buildIdMap(item) {
+        /** Generates a mapping from ID to ResizeGridItem instances.
+         *
+         *  Starts at the passed `item` as a root and recursively builds mapping
+         *  from child items.
+        */
+        if (item instanceof ResizeGridAxis) {
+            this.item_ids[item.id] = item;
+            item.items.forEach(x => this.buildIdMap(x));
+        } else if (item instanceof ResizeGridItem) {
+            this.item_ids[item.id] = item;
+        }
     }
 
     onMove(event, a, handle, b) {
@@ -1079,26 +1126,39 @@ class ResizeGrid {
 
         if (d_w < 0) {
             // Width decrease
-            for (const row of this.container.grid) {
-                let rem = Math.abs(d_w);
-                for (const col of row.slice().reverse()) {
-                    const flex_grow = parseInt(col.elem.style.flexGrow);
-                    rem = col.shrink(rem, {limit_to_base: false});
-                    // Shrink causes flexGrow to be set back to default.
-                    // We want to keep the current flex grow setting so we set it back.
-                    col.render({force_flex_grow: flex_grow === 0 ? false : true});
-                    if (rem <= 0) {
-                        break;
+            for (const item of this.items) {
+                if (this.axis === 0) {
+                    for (const subitem of item.items) {
+                        if (subitem.getSize() > subitem.min_size) {
+                            subitem.elem.style.flexShrink = 1;
+                        } else {
+                            subitem.elem.style.flexShrink = 0;
+                            subitem.elem.style.flexBasis = subitem.min_size + "px";
+                        }
+                    }
+                } else {
+                    if (item.getSize() > item.min_size) {
+                        item.elem.style.flexShrink = 1;
+                    } else {
+                        item.elem.style.flexShrink = 0;
+                        item.elem.style.flexBasis = item.min_size + "px";
                     }
                 }
             }
         } else if (d_w > 0) {
             // width increase
-            for (const row of this.container.grid) {
-                for (const col of row.slice().reverse()) {
-                    const amt = col.grow(-1, {only_if_flex: true});
-                    if (amt === 0) {
-                        break;
+            if (this.axis === 0) {
+                for (const item of this.items) {
+                    let did_grow = false;
+                    let subitem = item.items.findLast(x => x.visible && x.is_flex_grow);
+                    if (subitem instanceof ResizeGridItem) {
+                        did_grow = subitem.grow(-1) === 0;
+                    }
+                    if (!did_grow) {
+                        subitem = item.items.findLast(x => x.visible && !x.is_flex_grow);
+                        if (subitem instanceof ResizeGridItem) {
+                            subitem.grow(-1);
+                        }
                     }
                 }
             }
@@ -1106,84 +1166,55 @@ class ResizeGrid {
 
         if (d_h < 0) {
             // height decrease
-            let rem = Math.abs(d_h);
-            for (const row of this.container.rows.slice().reverse()) {
-                const flex_grow = parseInt(row.elem.style.flexGrow);
-                rem = row.shrink(rem, {limit_to_base: false});
-                // Shrink causes flexGrow to be set back to default.
-                // We want to keep the current flex grow setting so we set it back.
-                row.render({force_flex_grow: flex_grow === 0 ? false : true});
-                if (rem <= 0) {
-                    break;
+            for (const item of this.items) {
+                if (this.axis === 1) {
+                    for (const subitem of item.items) {
+                        if (subitem.getSize() > subitem.min_size) {
+                            subitem.elem.style.flexShrink = 1;
+                        } else {
+                            subitem.elem.style.flexShrink = 0;
+                            subitem.elem.style.flexBasis = subitem.min_size + "px";
+                        }
+                    }
+                } else {
+                    if (item.getSize() > item.min_size) {
+                        item.elem.style.flexShrink = 1;
+                    } else {
+                        item.elem.style.flexShrink = 0;
+                        item.elem.style.flexBasis = item.min_size + "px";
+                    }
                 }
             }
         } else if (d_h > 0) {
             // height increase
-            for (const row of this.container.rows.slice().reverse()) {
-                if (row.grow(-1, {only_if_flex: true}) === 0) {
-                    break;
+            if (this.axis === 1) {
+                let did_grow = false;
+                let item = this.items.findLast(x => x.visible && x.is_flex_grow);
+                if (item instanceof ResizeGridItem) {
+                    did_grow = item.grow(-1) === 0;
+                }
+                if (!did_grow) {
+                    item = this.items.findLast(x => x.visible && !x.is_flex_grow);
+                    if (item instanceof ResizeGridItem) {
+                        item.grow(-1);
+                    }
                 }
             }
         }
 
         this.prev_dims = curr_dims;
     }
-
-    show({row_idx, col_idx} = {}) {
-        /** Show a row or column.
-         * Columns require both the row_idx and col_idx.
-         */
-        this.container.show({row_idx: row_idx, col_idx: col_idx});
-        this.container.updateVisibleHandles();
-    }
-
-    hide({row_idx, col_idx} = {}) {
-        /** Hide a row or column.
-         * Columns require both the row_idx and col_idx.
-         */
-        this.container.hide({row_idx: row_idx, col_idx: col_idx});
-        this.container.updateVisibleHandles();
-    }
-
-    toggle({row_idx, col_idx, override} = {}) {
-        /** Toggle visibility of a row or column.
-         * Columns require both the row_idx and col_idx.
-         */
-        this.container.toggle({
-            row_idx: row_idx,
-            col_idx: col_idx,
-            override: override,
-        });
-        this.container.updateVisibleHandles();
-    }
-
-    toggleElem(elem, override) {
-        /** Toggles the nearest ResizeGridItem to the passed element. */
-        isElementThrowError(elem);
-        let _elem = elem.closest('.resize-grid--col');
-        if (isElement(_elem)) {
-            this.toggle({
-                row_idx: _elem.dataset.row,
-                col_idx: _elem.dataset.col,
-                override: override,
-            });
-        } else {
-            _elem = elem.closest('.resize-grid--row');
-            isElementThrowError(_elem);
-            this.toggle({row_idx: _elem.dataset.row, override: override});
-        }
-    }
 }
 
 function resizeGridGetGrid(elem) {
-    /** Returns the nearest ResizeGrid to the passed element. */
+    /** Returns the nearest ResizeGrid instance to the passed element. */
     // Need to find grid element so we can lookup by its id.
     const grid_elem = elem.closest('.resize-grid');
     if (!isElement(grid_elem)) {
         return null;
     }
     // Now try to get the actual ResizeGrid instance.
-    const grid = resize_grids[grid_elem.dataset.gridId];
+    const grid = resize_grids[grid_elem.dataset.id];
     if (isNullOrUndefined(grid)) {
         return null;
     }

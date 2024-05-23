@@ -163,7 +163,7 @@
     <div class="extra-network-content extra-network-content--container resize-grid">
         <div id="{tabname}_{extra_networks_tabname}_dirs_view_row" class="resize-grid--row"
             style="{dirs_view_row_style}" {dirs_view_row_data_attributes}>
-            <div id="{tabname}_{extra_networks_tabname}_dirs_view_col" class="resize-grid--col">
+            <div id="{tabname}_{extra_networks_tabname}_dirs_view_cell" class="resize-grid--cell" data-min-size="0px" style="flex: 1 1 0px;">
                 <div class="extra-network-content extra-network-content--dirs-view styled-scrollbar">
                     {dirs_html}
                 </div>
@@ -171,8 +171,8 @@
         </div>
         <div id="{tabname}_{extra_networks_tabname}_main_row" class="resize-grid--row" style="{main_row_style}"
             {main_row_data_attributes}>
-            <div id="{tabname}_{extra_networks_tabname}_tree_view_col" class="resize-grid--col"
-                style="{tree_view_col_style}" {tree_view_col_data_attributes}>
+            <div id="{tabname}_{extra_networks_tabname}_tree_view_cell" class="resize-grid--cell"
+                style="{tree_view_cell_style}" {tree_view_cell_data_attributes}>
                 <div class="extra-network-content extra-network-content--tree-view">
                     <div id='{tabname}_{extra_networks_tabname}_tree_list_loading_splash'
                         class='extra-network-list-splash'>
@@ -186,8 +186,8 @@
                     </div>
                 </div>
             </div>
-            <div id="{tabname}_{extra_networks_tabname}_card_view_col" class="resize-grid--col"
-                style="{card_view_col_style}" {card_view_col_data_attributes}>
+            <div id="{tabname}_{extra_networks_tabname}_card_view_cell" class="resize-grid--cell"
+                style="{card_view_cell_style}" {card_view_cell_data_attributes}>
                 <div class="extra-network-content extra-network-content--card-view extra-network-cards">
                     <div id='{tabname}_{extra_networks_tabname}_card_list_loading_splash'
                         class='extra-network-list-splash'>
@@ -202,8 +202,8 @@
                     </div>
                 </div>
             </div>
-            <div id="{tabname}_{extra_networks_tabname}_dets_view_col" class="resize-grid--col"
-                style="{dets_view_col_style}" {dets_view_col_data_attributes}>
+            <div id="{tabname}_{extra_networks_tabname}_dets_view_cell" class="resize-grid--cell"
+                style="{dets_view_cell_style}" {dets_view_cell_data_attributes}>
                 <div class="extra-network-content extra-network-content--dets-view"></div>
             </div>
         </div>

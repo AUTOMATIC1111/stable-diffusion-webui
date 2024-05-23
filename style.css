@@ -1201,7 +1201,7 @@ body.resizing.resize-grid-row {
 
 /* ==== RESIZE HANDLE GRID ==== */
 
-.resize-grid, .resize-grid--row, .resize-grid--col {
+.resize-grid, .resize-grid--row, .resize-grid--col, .resize-grid--cell {
     display: flex;
     flex-wrap: nowrap;
     overflow: hidden;
@@ -1223,11 +1223,6 @@ body.resizing.resize-grid-row {
 
 .resize-grid--col {
     flex-direction: column;
-}
-
-.resize-grid--cell {
-    display: block;
-    position: relative;
 }
 
 .resize-grid--handle {
