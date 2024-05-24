@@ -676,34 +676,24 @@ class ExtraNetworksTab {
         this.applyFilter(this.txt_search_elem.value);
     }
 
-    autoSetTreeWidth() {
-        const row = this.container_elem.querySelector(".resize-handle-row");
-        if (!isElementLogError(row)) {
+    autoSetTreeWidth(handle_elem) {
+        const siblings = this.resize_grid.getSiblings(handle_elem);
+        const tree_item = siblings.prev;
+        // Only process if the prev element is our tree view.
+        if (tree_item.elem !== this.tree_list.scroll_elem.closest(".resize-grid--cell")) {
+            return;
+        }
+        let new_size_px = this.tree_list.getMaxRowWidth();
+        if (!isNumber(new_size_px)) {
             return;
         }
 
-        const left_col = row.firstElementChild;
-        if (!isElementLogError(left_col)) {
-            return;
-        }
-
-        // If the left column is hidden then we don't want to do anything.
-        if (left_col.classList.contains("hidden")) {
-            return;
-        }
-
-        const pad = parseFloat(row.style.gridTemplateColumns.split(" ")[1]);
-        const min_left_col_width = parseFloat(left_col.style.flexBasis.slice(0, -2));
-        // We know that the tree list is the left column. That is the only one we want to resize.
-        let max_width = this.tree_list.getMaxRowWidth();
-        if (!isNumber(max_width)) {
-            return;
-        }
-        // Add the resize handle's padding to the result and default to minLeftColWidth if necessary.
-        max_width = Math.max(max_width + pad, min_left_col_width);
-
-        // Mimicks resizeHandle.js::setLeftColGridTemplate().
-        row.style.gridTemplateColumns = `${max_width}px ${pad}px 1fr`;
+        // Account for border dims on the container.
+        const div_tree = this.tree_list.scroll_elem.closest(".extra-network-content--tree-view");
+        new_size_px += div_tree.offsetWidth - div_tree.clientWidth;
+        // Clamp the value to the min_size.
+        new_size_px = Math.max(tree_item.min_size, new_size_px);
+        tree_item.parent.resizeItem(tree_item, new_size_px);
     }
 
     async clearSelectedButtons({excluded_div_ids} = {}) {
@@ -1612,11 +1602,12 @@ function extraNetworksSetupEventDelegators() {
         dbl_press_time_ms = 0;
     }
 
-    window.addEventListener("resizeHandleDblClick", event => {
-        // See resizeHandle.js::onDoubleClick() for event detail.
+    window.addEventListener("resize_grid_handle_dblclick", event => {
+        // See resizeGrid.js::ResizeGrid.setupEvents() for event detail.
         event.stopPropagation();
         const pane = event.target.closest(".extra-network-pane");
-        extra_networks_tabs[pane.dataset.tabnameFull].autoSetTreeWidth();
+        const handle = event.target.closest(".resize-grid--handle");
+        extra_networks_tabs[pane.dataset.tabnameFull].autoSetTreeWidth(handle);
     });
 
     // Debounce search text input. This way we only search after user is done typing.

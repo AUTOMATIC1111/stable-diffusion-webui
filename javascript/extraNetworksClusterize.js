@@ -343,23 +343,33 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
             let row_width = 0;
             for (let j = 0; j < this.options.cols_in_block; j++) {
                 const child = this.content_elem.children[i + j];
-                const child_style = window.getComputedStyle(child, null);
-                const prev_style = child.style.cssText;
-                const n_cols = child_style.getPropertyValue("grid-template-columns").split(" ").length;
-                child.style.gridTemplateColumns = `repeat(${n_cols}, max-content)`;
-                row_width += child.scrollWidth;
-                // Restore previous style.
-                child.style.cssText = prev_style;
+                // Child first element is the indent div. Just use offset for this
+                // since we do some overlapping with ::after in CSS.
+                row_width += child.children[0].offsetWidth;
+                // Button is second element. We want entire scroll width of this one.
+                // But first we need to allow it to shrink to content.
+                const prev_css_text = child.children[1].cssText;
+                child.children[1].style.flex = "0 1 auto";
+                row_width += child.children[1].scrollWidth;
+                // Add the button label's overflow to the width.
+                const lbl = child.querySelector(".tree-list-item-label");
+                row_width += lbl.scrollWidth - lbl.offsetWidth;
+                // Revert changes to element style.
+                if (!prev_css_text) {
+                    child.children[1].removeAttribute("style");
+                } else {
+                    child.children[1].cssText = prev_css_text;
+                }
             }
-            max_width = Math.max(max_width, row_width);
+            max_width = Math.max(row_width, max_width);
         }
         if (max_width <= 0) {
             return;
         }
 
-        // Adds the scroll element's border and the scrollbar's width to the result.
-        // If scrollbar isn't visible, then only the element border is added.
-        max_width += this.scroll_elem.offsetWidth - this.scroll_elem.clientWidth;
+        // Adds the scroll_elem's scrollbar and padding to the result.
+        // If scrollbar isn't visible, then only the element border/padding is added.
+        max_width += this.scroll_elem.offsetWidth - this.content_elem.offsetWidth;
         return max_width;
     }
 

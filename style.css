@@ -1269,6 +1269,7 @@ body.resizing.resize-grid-row {
     height: 100%;
     /* Use scroll instead of auto so that content size doesn't change when there is no content. */
     overflow: clip scroll;
+    padding: var(--spacing-md) 0 var(--spacing-md) var(--spacing-md);
 }
 
 .clusterize-content {
@@ -1277,7 +1278,6 @@ body.resizing.resize-grid-row {
     /* need to manually set the gap to 0 to fix item dimension calcs. */
     gap: 0;
     counter-reset: clusterize-counter;
-    padding: var(--spacing-md);
 }
 
 .clusterize-extra-row {
@@ -1533,33 +1533,33 @@ body.resizing.resize-grid-row {
 
 /* BUTTON ELEMENTS */
 .tree-list-item {
-    display: grid;
-    grid-auto-rows: 1fr;
-    grid-template-columns: auto 1fr;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    width: 100%;
+    height: calc(var(--button-large-text-size) + (2 * var(--spacing-sm)));
     position: relative;
-    width: 100%;
-    padding: 0;
-    margin: 0;
-    user-select: none;
-    border: none;
-}
-
-/* <button> */
-.tree-list-item button {
-    display: grid;
-    flex: 1;
-    width: 100%;
+    overflow: hidden;
+    z-index: 0;
     padding: 0 !important;
     margin: 0 !important;
+    border: none !important;
     user-select: none;
-    grid-template-rows: min-content;
-    grid-template-areas: "leading-action leading-visual label trailing-visual trailing-action";
-    grid-template-columns: min-content min-content minmax(calc(var(--body-text-size) * 1), auto) min-content min-content;
-    grid-gap: var(--spacing-sm);
-    place-items: center stretch;
-    text-align: center;
-    /* prevents height from changing on overflow */
+}
+
+.tree-list-item > button {
+    display: flex;
+    flex: 1;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: var(--spacing-sm);
+    user-select: none;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
     min-width: 0;
+    text-align: center;
+    place-items: center stretch;
 }
 
 .tree-list-item:hover {
@@ -1568,7 +1568,10 @@ body.resizing.resize-grid-row {
     background: var(--button-secondary-background-fill-hover);
 }
 
-.tree-list-item button > span {
+.tree-list-item > button > span {
+    display: block;
+    flex: 0 0 auto;
+    text-align: center;
     font-size: var(--button-large-text-size);
     color: var(--button-secondary-text-color);
 }
@@ -1632,10 +1635,8 @@ body.resizing.resize-grid-row {
 }
 
 /* Text for button. */
-.tree-list-item-label {
-    position: relative;
-    grid-area: label;
-    padding-left: 0.25em;
+.tree-list-item .tree-list-item-label {
+    flex: 0 1 auto;
     text-align: start;
 }
 
@@ -1649,39 +1650,30 @@ body.resizing.resize-grid-row {
 /* Icon for button. */
 .tree-list-item-visual {
     pointer-events: none;
-    align-items: right;
 }
 
 /* Icon for button when it is before label. */
-.tree-list-item-visual--leading {
-    grid-area: leading-visual;
+.tree-list-item .tree-list-item-visual--leading {
     width: var(--button-large-text-size);
     text-align: right;
 }
 
 /* Icon for button when it is after label. */
 .tree-list-item-visual--trailing {
-    grid-area: trailing-visual;
     width: var(--button-large-text-size);
     text-align: right;
+    margin-left: auto;
 }
 
 /* Dropdown arrow for button. */
-.tree-list-item-action--leading {
-    grid-area: leading-action;
-}
+.tree-list-item-action--leading {}
 
 .tree-list-item--file .tree-list-item-action--leading {
     visibility: hidden;
 }
 
 /* Allow trailing action to overlap previous columns when area is too small. */
-.tree-list-item-action--trailing {
-    z-index: 10;
-    grid-area: 1 / label / 1 / trailing-action;
-    justify-self: end;
-    padding-left: var(--spacing-sm);
-}
+.tree-list-item-action--trailing {}
 
 /* Force background color on hover to hide any overlapped column content. */
 .tree-list-item:hover .tree-list-item-action--trailing {
@@ -1797,13 +1789,6 @@ body.resizing.resize-grid-row {
 .extra-network-dirs-view-button[data-selected] {
     outline: var(--spacing-xs) solid var(--button-primary-border-color);
     outline-offset: calc(-1 * var(--spacing-xs));
-}
-
-.tree-list-item {
-    position: relative;
-    overflow: hidden;
-    z-index: 0;
-    user-select: none;
 }
 
 .tree-list-item:not(.pressed):hover {

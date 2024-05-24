@@ -535,26 +535,6 @@ class ResizeGridAxis extends ResizeGridItem {
         }
     }
 
-    getSiblings(handle_elem) {
-        /** Returns the nearest visible ResizeGridItems surrounding a ResizeGridHandle.
-         *
-         *  Args:
-         *      handle_elem (Element): The handle element in the grid to lookup.
-         *
-         *  Returns:
-         *      Object: Keys=(prev, next). Values are ResizeGridItems.
-        */
-        let prev = this.getItem({elem: handle_elem.previousElementSibling});
-        if (!prev.visible) {
-            prev = prev.parent.items.slice(0, this.items.indexOf(prev)).findLast(x => x.visible);
-        }
-        let next = this.getItem({elem: handle_elem.nextElementSibling});
-        if (!next.visible) {
-            next = next.parent.items.slice(this.items.indexOf(next) + 1).findLast(x => x.visible);
-        }
-        return {prev: prev, next: next};
-    }
-
     updateVisibleHandles() {
         /** Sets the visibility of each ResizeGridHandle based on surrounding items. */
         for (const item of this.items) {
@@ -654,6 +634,78 @@ class ResizeGridAxis extends ResizeGridItem {
             sibling.render({force_flex_grow: true});
         } else {
             sibling.grow(-1);
+        }
+    }
+
+    resizeItem(item, size_px) {
+        // Don't resize invisible items.
+        if (!item.visible) {
+            return;
+        }
+        // Don't resize item if it is the only visible item in the axis.
+        if (this.items.filter(x => x.visible).length === 1) {
+            return;
+        }
+
+        if (size_px < item.min_size) {
+            console.error(`Requested size is too small: ${size_px} < ${item.min_size}`);
+            return;
+        }
+
+        const dims = this.elem.getBoundingClientRect();
+        let max_size = parseInt(this.axis === 0 ? dims.width : dims.height);
+        const vis_siblings = this.items.filter(x => x.visible && x !== item);
+        max_size -= vis_siblings.reduce((acc, obj) => {
+            return acc + obj.min_size + (obj.handle.visible ? obj.handle.pad_px : 0);
+        }, 0);
+
+        if (size_px > max_size) {
+            console.error(`Requested size is too large: ${size_px} > ${max_size}`);
+            return;
+        }
+
+        // Find the direct sibling of this item.
+        const idx = this.items.indexOf(item);
+        isNullOrUndefinedThrowError(item); // Indicates programmer error.
+        // Look after item.
+        let sibling = this.items.slice(idx + 1).find(x => x.visible);
+        if (isNullOrUndefined(sibling)) {
+            // No valid siblings after item, look before item.
+            sibling = this.items.slice(0, idx).findLast(x => x.visible);
+            isNullOrUndefinedThrowError(sibling); // Indicates programmer error.
+        }
+        const sibling_idx = this.items.indexOf(sibling);
+
+        const _make_room = (sibling, others, tot_px) => {
+            let rem = tot_px;
+            // Shrink from the sibling first.
+            rem = sibling.shrink(rem, {limit_to_base: false});
+            if (rem <= 0) {
+                return;
+            }
+
+            // Shrink all other items next, starting from the end.
+            for (const other of others.slice().reverse()) {
+                rem = other.shrink(rem, {limit_to_base: false});
+                if (rem <= 0) {
+                    return;
+                }
+            }
+
+            // This indicates a programmer error.
+            throw new Error(`No space for item. tot: ${tot_px}, rem: ${rem}`);
+        };
+
+        const curr_size = item.getSize();
+        if (size_px < curr_size) { // shrink
+            item.shrink(curr_size - size_px, {limit_to_base: false});
+            sibling.grow(-1);
+        } else if (size_px > curr_size) { // grow
+            const others = this.items.filter((x, i) => {
+                return x.visible && i !== idx && i !== sibling_idx;
+            });
+            _make_room(sibling, others, size_px - curr_size);
+            item.setSize(size_px);
         }
     }
 
@@ -875,6 +927,7 @@ class ResizeGrid extends ResizeGridAxis {
                 handle.elem.setPointerCapture(event.pointerId);
 
                 // Temporarily set styles for elements. These are cleared on pointerup.
+                // Also cleared if dblclick is fired.
                 // See `onMove()` comments for more info.
                 prev.setSize(prev.getSize());
                 next.setSize(next.getSize());
@@ -887,6 +940,34 @@ class ResizeGrid extends ResizeGridAxis {
                     document.body.classList.add('resizing-col');
                 } else {
                     document.body.classList.add('resizing-row');
+                }
+
+                if (!dblclick_timer) {
+                    handle.elem.dataset.awaitDblClick = '';
+                    dblclick_timer = setTimeout(
+                        (elem) => {
+                            dblclick_timer = null;
+                            delete elem.dataset.awaitDblClick;
+                        },
+                        DBLCLICK_TIME_MS,
+                        handle.elem
+                    );
+                } else if ('awaitDblClick' in handle.elem.dataset) {
+                    clearTimeout(dblclick_timer);
+                    dblclick_timer = null;
+                    delete handle.elem.dataset.awaitDblClick;
+                    handle.elem.dispatchEvent(
+                        new CustomEvent('resize_grid_handle_dblclick', {
+                            bubbles: true,
+                            detail: this,
+                        })
+                    );
+                    prev.render();
+                    next.render();
+
+                    prev = null;
+                    handle = null;
+                    next = null;
                 }
             },
             {signal: this.event_abort_controller.signal}
@@ -918,13 +999,9 @@ class ResizeGrid extends ResizeGridAxis {
         window.addEventListener(
             'pointerup',
             (event) => {
-                if (
-                    isNullOrUndefined(prev) ||
-                    isNullOrUndefined(handle) ||
-                    isNullOrUndefined(next)
-                ) {
-                    return;
-                }
+                document.body.classList.remove('resizing');
+                document.body.classList.remove('resizing-col');
+                document.body.classList.remove('resizing-row');
 
                 if (event.target.hasPointerCapture(event.pointerId)) {
                     event.target.releasePointerCapture(event.pointerId);
@@ -933,6 +1010,15 @@ class ResizeGrid extends ResizeGridAxis {
                 if (event.pointerType === 'mouse' && event.button !== 0) {
                     return;
                 }
+
+                if (
+                    isNullOrUndefined(prev) ||
+                    isNullOrUndefined(handle) ||
+                    isNullOrUndefined(next)
+                ) {
+                    return;
+                }
+
                 if (event.pointerType === 'touch') {
                     touch_count--;
                 }
@@ -948,31 +1034,6 @@ class ResizeGrid extends ResizeGridAxis {
                 prev.render();
                 next.render();
 
-                document.body.classList.remove('resizing');
-                document.body.classList.remove('resizing-col');
-                document.body.classList.remove('resizing-row');
-
-                if (!dblclick_timer) {
-                    handle.elem.dataset.awaitDblClick = '';
-                    dblclick_timer = setTimeout(
-                        (elem) => {
-                            dblclick_timer = null;
-                            delete elem.dataset.awaitDblClick;
-                        },
-                        DBLCLICK_TIME_MS,
-                        handle.elem
-                    );
-                } else if ('awaitDblClick' in handle.elem.dataset) {
-                    clearTimeout(dblclick_timer);
-                    dblclick_timer = null;
-                    delete handle.elem.dataset.awaitDblClick;
-                    handle.elem.dispatchEvent(
-                        new CustomEvent('resize_handle_dblclick', {
-                            bubbles: true,
-                            detail: this,
-                        })
-                    );
-                }
                 prev = null;
                 handle = null;
                 next = null;
@@ -1090,6 +1151,26 @@ class ResizeGrid extends ResizeGridAxis {
         } else if (item instanceof ResizeGridItem) {
             this.item_ids[item.id] = item;
         }
+    }
+
+    getSiblings(handle_elem) {
+        /** Returns the nearest visible ResizeGridItems surrounding a ResizeGridHandle.
+         *
+         *  Args:
+         *      handle_elem (Element): The handle element in the grid to lookup.
+         *
+         *  Returns:
+         *      Object: Keys=(prev, next). Values are ResizeGridItems.
+        */
+        let prev = this.getItem({elem: handle_elem.previousElementSibling});
+        if (!prev.visible) {
+            prev = prev.parent.items.slice(0, this.items.indexOf(prev)).findLast(x => x.visible);
+        }
+        let next = this.getItem({elem: handle_elem.nextElementSibling});
+        if (!next.visible) {
+            next = next.parent.items.slice(this.items.indexOf(next) + 1).findLast(x => x.visible);
+        }
+        return {prev: prev, next: next};
     }
 
     onMove(event, a, handle, b) {
