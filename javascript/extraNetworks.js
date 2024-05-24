@@ -461,11 +461,21 @@ class ExtraNetworksTab {
         recurse = recurse === true || recurse === false ? recurse : false;
         this.card_list.addDirectoryFilter(div_id, filter_str, recurse);
         this.directory_filters[div_id] = {filter_str: filter_str, recurse: recurse};
+
+        const btn = this.controls_elem.querySelector(".extra-network-control--clear-filters");
+        isElementThrowError(btn);
+        btn.dataset.selected = "";
     }
 
     removeDirectoryFilter(div_id) {
         this.card_list.removeDirectoryFilter(div_id);
         delete this.directory_filters[div_id];
+
+        if (Object.keys(this.directory_filters).length === 0) {
+            const btn = this.controls_elem.querySelector(".extra-network-control--clear-filters");
+            isElementThrowError(btn);
+            delete btn.dataset.selected;
+        }
     }
 
     clearDirectoryFilters({excluded_div_ids} = {}) {
@@ -1157,6 +1167,8 @@ function extraNetworksControlClearFiltersOnClick(event) {
     tab.clearSelectedButtons();
     tab.clearDirectoryFilters();
     tab.applyDirectoryFilters();
+
+    delete btn.dataset.selected;
 }
 
 function extraNetworksControlSortModeOnClick(event) {
