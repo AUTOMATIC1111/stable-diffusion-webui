@@ -882,174 +882,120 @@ class ResizeGrid extends ResizeGridAxis {
     setupEvents() {
         /** Sets up all event delegators and observers for this instance. */
         this.event_abort_controller = new AbortController();
-        let prev;
-        let handle;
-        let next;
-        let touch_count = 0;
+        let active_pointer_id;
+        let siblings;
         let dblclick_timer;
         let last_move_time;
 
-        window.addEventListener(
-            'pointerdown',
-            (event) => {
-                if (event.target.hasPointerCapture(event.pointerId)) {
-                    event.target.releasePointerCapture(event.pointerId);
-                }
-                if (event.pointerType === 'mouse' && event.button !== 0) {
-                    return;
-                }
-                if (event.pointerType === 'touch') {
-                    touch_count++;
-                    if (touch_count !== 1) {
-                        return;
-                    }
-                }
+        const _on_pointerdown = (event) => {
+            if (!isNullOrUndefined(active_pointer_id) || !event.isPrimary) {
+                return;
+            }
 
-                const handle_elem = event.target.closest('.resize-grid--handle');
-                if (!isElement(handle_elem)) {
-                    return;
-                }
-                // Clicked handles will always be between two elements. If the user
-                // somehow clicks an invisible handle then we have bigger problems.
-                const siblings = this.getSiblings(handle_elem);
-                if (!(siblings.prev instanceof ResizeGridItem) ||
-                    !(siblings.next instanceof ResizeGridItem)
-                ) {
-                    throw new Error("Failed to find siblings for ResizeGridHandle.");
-                }
-                prev = siblings.prev;
-                handle = prev.handle;
-                next = siblings.next;
+            const handle_elem = event.target.closest(".resize-grid--handle");
+            if (!isElement(handle_elem)) {
+                return;
+            }
+            siblings = this.getSiblings(handle_elem);
+            if (!(siblings.prev instanceof ResizeGridItem) ||
+                !(siblings.handle instanceof ResizeGridHandle) ||
+                !(siblings.next instanceof ResizeGridItem)
+            ) {
+                siblings = null;
+                throw new Error(`Failed to find siblings for handle: ${handle_elem}`);
+            }
 
-                event.preventDefault();
-                event.stopPropagation();
+            event.preventDefault();
+            active_pointer_id = event.pointerId;
 
-                handle.elem.setPointerCapture(event.pointerId);
+            // Temporarily set styles for elements. These are cleared on pointerup.
+            // Also cleared if dblclick is fired.
+            // See `onMove()` comments for more info.
+            siblings.prev.setSize(siblings.prev.getSize());
+            siblings.next.setSize(siblings.next.getSize());
+            siblings.prev.elem.style.flexGrow = 0;
+            siblings.next.elem.style.flexGrow = 1;
+            siblings.next.elem.style.flexShrink = 1;
 
-                // Temporarily set styles for elements. These are cleared on pointerup.
-                // Also cleared if dblclick is fired.
-                // See `onMove()` comments for more info.
-                prev.setSize(prev.getSize());
-                next.setSize(next.getSize());
-                prev.elem.style.flexGrow = 0;
-                next.elem.style.flexGrow = 1;
-                next.elem.style.flexShrink = 1;
+            document.body.classList.add('resizing');
+            if (siblings.handle.axis === 0) {
+                document.body.classList.add('resizing-col');
+            } else {
+                document.body.classList.add('resizing-row');
+            }
 
-                document.body.classList.add('resizing');
-                if (handle.axis === 0) {
-                    document.body.classList.add('resizing-col');
-                } else {
-                    document.body.classList.add('resizing-row');
-                }
+            if (!dblclick_timer) {
+                siblings.handle.elem.dataset.awaitDblClick = '';
+                dblclick_timer = setTimeout(
+                    (elem) => {
+                        dblclick_timer = null;
+                        delete elem.dataset.awaitDblClick;
+                    },
+                    DBLCLICK_TIME_MS,
+                    siblings.handle.elem
+                );
+            } else if ('awaitDblClick' in siblings.handle.elem.dataset) {
+                clearTimeout(dblclick_timer);
+                dblclick_timer = null;
+                delete siblings.handle.elem.dataset.awaitDblClick;
+                siblings.handle.elem.dispatchEvent(
+                    new CustomEvent('resize_grid_handle_dblclick', {
+                        bubbles: true,
+                        detail: this,
+                    })
+                );
+                siblings.prev.render();
+                siblings.next.render();
+                siblings = null;
+                active_pointer_id = null;
+                return;
+            }
+        };
 
-                if (!dblclick_timer) {
-                    handle.elem.dataset.awaitDblClick = '';
-                    dblclick_timer = setTimeout(
-                        (elem) => {
-                            dblclick_timer = null;
-                            delete elem.dataset.awaitDblClick;
-                        },
-                        DBLCLICK_TIME_MS,
-                        handle.elem
-                    );
-                } else if ('awaitDblClick' in handle.elem.dataset) {
-                    clearTimeout(dblclick_timer);
-                    dblclick_timer = null;
-                    delete handle.elem.dataset.awaitDblClick;
-                    handle.elem.dispatchEvent(
-                        new CustomEvent('resize_grid_handle_dblclick', {
-                            bubbles: true,
-                            detail: this,
-                        })
-                    );
-                    prev.render();
-                    next.render();
+        const _on_pointermove = (event) => {
+            if (event.pointerId !== active_pointer_id) {
+                return;
+            }
 
-                    prev = null;
-                    handle = null;
-                    next = null;
-                }
-            },
-            {signal: this.event_abort_controller.signal}
-        );
+            if (isNullOrUndefined(siblings)) {
+                return;
+            }
 
-        window.addEventListener(
-            'pointermove',
-            (event) => {
-                if (
-                    isNullOrUndefined(prev) ||
-                    isNullOrUndefined(handle) ||
-                    isNullOrUndefined(next)
-                ) {
-                    return;
-                }
+            event.preventDefault();
 
-                event.preventDefault();
-                event.stopPropagation();
+            const now = new Date().getTime();
+            if (!last_move_time || now - last_move_time > MOVE_TIME_DELAY_MS) {
+                this.onMove(event, siblings.prev, siblings.handle, siblings.next);
+                last_move_time = now;
+            }
+        };
 
-                const now = new Date().getTime();
-                if (!last_move_time || now - last_move_time > MOVE_TIME_DELAY_MS) {
-                    this.onMove(event, prev, handle, next);
-                    last_move_time = now;
-                }
-            },
-            {signal: this.event_abort_controller.signal}
-        );
+        const _on_pointerup = (event) => {
+            if (event.pointerId !== active_pointer_id) {
+                return;
+            }
 
-        window.addEventListener(
-            'pointerup',
-            (event) => {
-                document.body.classList.remove('resizing');
-                document.body.classList.remove('resizing-col');
-                document.body.classList.remove('resizing-row');
+            document.body.classList.remove('resizing', 'resizing-col', 'resizing-row');
 
-                if (event.target.hasPointerCapture(event.pointerId)) {
-                    event.target.releasePointerCapture(event.pointerId);
-                }
+            if (isNullOrUndefined(siblings)) {
+                return;
+            }
 
-                if (event.pointerType === 'mouse' && event.button !== 0) {
-                    return;
-                }
+            event.preventDefault();
 
-                if (
-                    isNullOrUndefined(prev) ||
-                    isNullOrUndefined(handle) ||
-                    isNullOrUndefined(next)
-                ) {
-                    return;
-                }
+            // Set the new flexBasis value for the `next` element then revert
+            // the style changes set in the `pointerup` event.
+            siblings.next.setSize(siblings.next.getSize());
+            siblings.prev.render();
+            siblings.next.render();
+            siblings = null;
+            active_pointer_id = null;
+        };
 
-                if (event.pointerType === 'touch') {
-                    touch_count--;
-                }
-
-                event.preventDefault();
-                event.stopPropagation();
-
-                handle.elem.releasePointerCapture(event.pointerId);
-
-                // Set the new flexBasis value for the `next` element then revert
-                // the style changes set in the `pointerup` event.
-                next.elem.style.flexBasis = next.setSize(next.getSize());
-                prev.render();
-                next.render();
-
-                prev = null;
-                handle = null;
-                next = null;
-            },
-            {signal: this.event_abort_controller.signal}
-        );
-
-        window.addEventListener(
-            'pointerout',
-            (event) => {
-                if (event.pointerType === 'touch') {
-                    touch_count--;
-                }
-            },
-            {signal: this.event_abort_controller.signal}
-        );
+        const event_options = {signal: this.event_abort_controller.signal};
+        window.addEventListener('pointerdown', _on_pointerdown, event_options);
+        window.addEventListener('pointermove', _on_pointermove, event_options);
+        window.addEventListener('pointerup', _on_pointerup, event_options);
 
         this.resize_observer = new ResizeObserver((entries) => {
             for (const entry of entries) {
@@ -1170,7 +1116,7 @@ class ResizeGrid extends ResizeGridAxis {
         if (!next.visible) {
             next = next.parent.items.slice(this.items.indexOf(next) + 1).findLast(x => x.visible);
         }
-        return {prev: prev, next: next};
+        return {prev: prev, handle: prev.handle, next: next};
     }
 
     onMove(event, a, handle, b) {

@@ -1164,6 +1164,7 @@ body.resizing {
 
 body.resizing * {
     pointer-events: none !important;
+    touch-action: none !important;
 }
 
 body.resizing .resize-handle,
@@ -1231,6 +1232,7 @@ body.resizing.resize-grid-row {
     width: 100%;
 	z-index: 0;
 	background: transparent;
+    touch-action: none !important;
 }
 
 .resize-grid--handle::after {
