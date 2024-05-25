@@ -423,9 +423,16 @@ class ResizeGridItem {
         this.elem.classList.remove('hidden');
         // Only show the handle if it isnt the last visible item along its axis.
         const siblings = this.parent.items;
-        const sibling = siblings.slice(siblings.indexOf(this) + 1).find(x => x.visible);
+        let sibling = siblings.slice(siblings.indexOf(this) + 1).find(x => x.visible);
         if (sibling instanceof ResizeGridItem) {
             this.handle.show();
+            sibling.render();
+        } else {
+            sibling = siblings.slice(0, siblings.indexOf(this)).find(x => x.visible);
+            if (sibling instanceof ResizeGridItem) {
+                sibling.handle.show();
+                sibling.render();
+            }
         }
         this.visible = true;
     }
@@ -630,7 +637,8 @@ class ResizeGridAxis extends ResizeGridItem {
         }
 
         // If we are growing sibling to fill, then just set flexGrow=1.
-        if (siblings.length <= 2 || siblings.every(x => !x.visible && x !== sibling && x !== item)) {
+        const others = siblings.filter(x => x !== sibling && x !== item);
+        if (siblings.length <= 2 || others.every(x => !x.visible)) {
             sibling.render({force_flex_grow: true});
         } else {
             sibling.grow(-1);
@@ -772,7 +780,6 @@ class ResizeGridAxis extends ResizeGridItem {
             this.parent.render();
             return;
         }
-
         this.growToFill(item, this.items);
     }
 
@@ -944,6 +951,7 @@ class ResizeGrid extends ResizeGridAxis {
                         detail: this,
                     })
                 );
+                document.body.classList.remove('resizing', 'resizing-col', 'resizing-row');
                 siblings.prev.render();
                 siblings.next.render();
                 siblings = null;
