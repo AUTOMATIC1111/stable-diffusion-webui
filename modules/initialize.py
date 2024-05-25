@@ -8,7 +8,24 @@ from threading import Thread
 from modules.timer import startup_timer
 
 
+def patch__pkg_resources__packaging():
+    """temp patch for setuptools >= 70.0.0"""
+    try:
+        import pkg_resources
+        try:
+            import pkg_resources.packaging
+        except ImportError:
+            try:
+                pkg_resources.packaging = importlib.import_module("pkg_resources.extern.packaging")
+            except ImportError:
+                print("Failed to import pkg_resources.packaging")
+    except ImportError:
+        pass
+
+
 def imports():
+    patch__pkg_resources__packaging()
+
     logging.getLogger("torch.distributed.nn").setLevel(logging.ERROR)  # sshh...
     logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
 
