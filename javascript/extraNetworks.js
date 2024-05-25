@@ -1217,11 +1217,16 @@ async function extraNetworksControlTreeViewOnClick(event) {
     const btn = event.target.closest(".extra-network-control--tree-view");
     const controls = btn.closest(".extra-network-controls");
     const tab = extra_networks_tabs[controls.dataset.tabnameFull];
-    btn.toggleAttribute("data-selected");
-    tab.tree_view_en = "selected" in btn.dataset;
 
     const div_tree = tab.container_elem.querySelector(".extra-network-content--tree-view");
-    tab.resize_grid.toggle({elem: div_tree, override: tab.tree_view_en});
+    try {
+        tab.resize_grid.toggle({elem: div_tree, override: !("selected" in btn.dataset)});
+    } catch (error) {
+        console.warn("Error attempting to enable tree_view:", error);
+        return;
+    }
+    btn.toggleAttribute("data-selected");
+    tab.tree_view_en = "selected" in btn.dataset;
     tab.tree_list.enable(tab.tree_view_en);
 
     // If the tree list hasn't loaded yet, we need to force it to load.
@@ -1242,11 +1247,16 @@ function extraNetworksControlDirsViewOnClick(event) {
     const btn = event.target.closest(".extra-network-control--dirs-view");
     const controls = btn.closest(".extra-network-controls");
     const tab = extra_networks_tabs[controls.dataset.tabnameFull];
-    btn.toggleAttribute("data-selected");
-    tab.dirs_view_en = "selected" in btn.dataset;
 
     const div_dirs = tab.container_elem.querySelector(".extra-network-content--dirs-view");
-    tab.resize_grid.toggle({elem: div_dirs, override: tab.dirs_view_en});
+    try {
+        tab.resize_grid.toggle({elem: div_dirs, override: !("selected" in btn.dataset)});
+    } catch (error) {
+        console.warn("Error attempting to enable dirs_view:", error);
+        return;
+    }
+    btn.toggleAttribute("data-selected");
+    tab.dirs_view_en = "selected" in btn.dataset;
 
     tab.applyListButtonStates();
 }
@@ -1259,11 +1269,16 @@ async function extraNetworksControlCardViewOnClick(event) {
     const btn = event.target.closest(".extra-network-control--card-view");
     const controls = btn.closest(".extra-network-controls");
     const tab = extra_networks_tabs[controls.dataset.tabnameFull];
-    btn.toggleAttribute("data-selected");
-    tab.card_view_en = "selected" in btn.dataset;
 
     const div_card = tab.container_elem.querySelector(".extra-network-content--card-view");
-    tab.resize_grid.toggle({elem: div_card, override: tab.card_view_en});
+    try {
+        tab.resize_grid.toggle({elem: div_card, override: !("selected" in btn.dataset)});
+    } catch (error) {
+        console.warn("Error attempting to enable card_view:", error);
+        return;
+    }
+    btn.toggleAttribute("data-selected");
+    tab.card_view_en = "selected" in btn.dataset;
     tab.card_list.enable(tab.card_view_en);
 
     // If the tree list hasn't loaded yet, we need to force it to load.
@@ -1282,11 +1297,16 @@ function extraNetworksControlDetsViewOnClick(event) {
     const btn = event.target.closest(".extra-network-control--dets-view");
     const controls = btn.closest(".extra-network-controls");
     const tab = extra_networks_tabs[controls.dataset.tabnameFull];
-    btn.toggleAttribute("data-selected");
-    tab.dets_view_en = "selected" in btn.dataset;
 
     const div_dets = tab.container_elem.querySelector(".extra-network-content--dets-view");
-    tab.resize_grid.toggle({elem: div_dets, override: tab.dets_view_en});
+    try {
+        tab.resize_grid.toggle({elem: div_dets, override: !("selected" in btn.dataset)});
+    } catch (error) {
+        console.warn("Error attempting to enable dets_view:", error);
+        return;
+    }
+    btn.toggleAttribute("data-selected");
+    tab.dets_view_en = "selected" in btn.dataset;
 }
 
 function extraNetworksControlRefreshOnClick(event) {
