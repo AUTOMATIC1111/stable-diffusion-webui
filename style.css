@@ -1329,7 +1329,7 @@ body.resizing.resize-grid-row {
 .extra-network-content--dirs-view {
     display: block;
     flex: 1;
-    overflow: clip auto;
+    overflow: clip scroll;
     border: 1px solid var(--block-border-color);
     padding: var(--spacing-md);
 }

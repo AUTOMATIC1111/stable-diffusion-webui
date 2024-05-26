@@ -24,6 +24,18 @@ extra_pages = []
 allowed_dirs = set()
 default_allowed_preview_extensions = ["png", "jpg", "jpeg", "webp", "gif"]
 
+def _process(args):
+    data, keys_sorted = args
+    res = {}
+    for (div_id, card) in data.items():
+        res[div_id] = {
+            **{f"sort_{mode}": keys_sorted[mode].index(div_id) for mode in card.sort_keys.keys()},
+            "rel_parent_dir": card.rel_parent_dir,
+            "search_terms": card.search_terms,
+            "search_only": card.search_only,
+            "visible": not card.search_only,
+        }
+    return res
 
 class ListItem:
     """
@@ -234,6 +246,8 @@ class ExtraNetworksPage:
         self.tree_roots = {}
         self.nodes = {}
         self.lister = util.MassFileLister()
+        self.generating_card_view_data = False
+        self.generating_tree_view_data = False
         # HTML Templates
         self.pane_tpl = shared.html("extra-networks-pane.html")
         self.card_tpl = shared.html("extra-networks-card.html")
@@ -486,6 +500,7 @@ class ExtraNetworksPage:
             }
             Return does not contain the HTML since that is fetched by client.
         """
+        self.generating_card_view_data = True
         res = {}
 
         # Cards require a different sorting method than tree/dirs. We want to present
@@ -556,21 +571,18 @@ class ExtraNetworksPage:
         keys_sorted = {}
         sort_modes = self.cards[next(iter(self.cards))].sort_keys.keys()
         for mode in sort_modes:
-            keys_sorted[mode] = sorted(
-                self.cards.keys(),
-                key=lambda k, sm=mode: shared.natural_sort_key(str(self.cards[k].sort_keys[sm])),
-            )
+            keys_sorted[mode] = {div_id: i for i, div_id in enumerate(sorted(self.cards.keys(), key=lambda k, sm=mode: shared.natural_sort_key(str(self.cards[k].sort_keys[sm]))))}
 
-        # Now that we have sorted, we can create the cards dataset.
-        for div_id, card in self.cards.items():
+        for (div_id, card) in self.cards.items():
             res[div_id] = {
-                **{f"sort_{mode}": keys_sorted[mode].index(div_id) for mode in card.sort_keys.keys()},
+                **{f"sort_{mode}": keys_sorted[mode][div_id] for mode in card.sort_keys.keys()},
                 "rel_parent_dir": card.rel_parent_dir,
                 "search_terms": card.search_terms,
                 "search_only": card.search_only,
                 "visible": not card.search_only,
             }
 
+        self.generating_card_view_data = False
         return res
 
     def generate_tree_view_data(self, tabname: str) -> dict:
@@ -586,6 +598,7 @@ class ExtraNetworksPage:
             }
             Return does not contain the HTML since that is fetched by client.
         """
+        self.generating_tree_view_data = True
         res = {}
         show_files = shared.opts.extra_networks_tree_view_show_files is True
 
@@ -718,6 +731,7 @@ class ExtraNetworksPage:
                 "expanded": tree_item.expanded,
             }
 
+        self.generating_tree_view_data = False
         return res
 
     def create_dirs_view_html(self, tabname: str) -> str:
@@ -1066,7 +1080,9 @@ def init_tree_data(tabname: str = "", extra_networks_tabname: str = "") -> JSONR
     """
     page = get_page_by_name(extra_networks_tabname)
 
-    data = page.generate_tree_view_data(tabname)
+    data = None
+    if not page.generating_tree_view_data:
+        data = page.generate_tree_view_data(tabname)
 
     return JSONResponse({"data": data, "ready": data is not None})
 
@@ -1082,7 +1098,9 @@ def init_card_data(tabname: str = "", extra_networks_tabname: str = "") -> JSONR
     """
     page = get_page_by_name(extra_networks_tabname)
 
-    data = page.generate_card_view_data(tabname)
+    data = None
+    if not page.generating_card_view_data:
+        data = page.generate_card_view_data(tabname)
 
     return JSONResponse({"data": data, "ready": data is not None})
 
