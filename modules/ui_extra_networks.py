@@ -24,19 +24,6 @@ extra_pages = []
 allowed_dirs = set()
 default_allowed_preview_extensions = ["png", "jpg", "jpeg", "webp", "gif"]
 
-def _process(args):
-    data, keys_sorted = args
-    res = {}
-    for (div_id, card) in data.items():
-        res[div_id] = {
-            **{f"sort_{mode}": keys_sorted[mode].index(div_id) for mode in card.sort_keys.keys()},
-            "rel_parent_dir": card.rel_parent_dir,
-            "search_terms": card.search_terms,
-            "search_only": card.search_only,
-            "visible": not card.search_only,
-        }
-    return res
-
 class ListItem:
     """
     Attributes:
@@ -571,9 +558,18 @@ class ExtraNetworksPage:
         keys_sorted = {}
         sort_modes = self.cards[next(iter(self.cards))].sort_keys.keys()
         for mode in sort_modes:
-            keys_sorted[mode] = {div_id: i for i, div_id in enumerate(sorted(self.cards.keys(), key=lambda k, sm=mode: shared.natural_sort_key(str(self.cards[k].sort_keys[sm]))))}
+            keys_sorted[mode] = {
+                div_id: i for i, div_id in enumerate(
+                    sorted(
+                        self.cards.keys(),
+                        key=lambda k, sm=mode: shared.natural_sort_key(
+                            str(self.cards[k].sort_keys[sm])
+                        )
+                    )
+                )
+            }
 
-        for (div_id, card) in self.cards.items():
+        for div_id, card in self.cards.items():
             res[div_id] = {
                 **{f"sort_{mode}": keys_sorted[mode][div_id] for mode in card.sort_keys.keys()},
                 "rel_parent_dir": card.rel_parent_dir,
@@ -614,7 +610,9 @@ class ExtraNetworksPage:
         show_hidden_dirs = shared.opts.extra_networks_show_hidden_directories_buttons
         show_hidden_models = shared.opts.extra_networks_show_hidden_models_in_tree_view
         expand_depth = int(shared.opts.extra_networks_tree_view_expand_depth_default)
-        for node in self.nodes.values():
+        node_keys = list(self.nodes.keys())
+        for div_id in node_keys:
+            node = self.nodes[div_id]
             if node.is_hidden and node.is_dir and not show_hidden_dirs:
                 continue
 
@@ -1364,6 +1362,9 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
     interface.load(fn=pages_html, inputs=[], outputs=list(ui.pages.values()),).then(
         fn=lambda: None,
         _js="setupAllResizeHandles",
+    ).then(
+        fn=lambda: None,
+        _js="extraNetworksSetup",
     )
 
     return ui

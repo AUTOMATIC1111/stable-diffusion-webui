@@ -113,6 +113,7 @@ class ResizeGridHandle {
         this.parent = parent;
         this.elem = document.createElement('div');
         this.elem.id = id;
+        this.elem.dataset.id = id;
         this.axis = _axis_to_int(axis);
         isNumberThrowError(this.axis);
         this.elem.classList.add('resize-grid--handle');
@@ -903,6 +904,11 @@ class ResizeGrid extends ResizeGridAxis {
             if (!isElement(handle_elem)) {
                 return;
             }
+
+            if (handle_elem.closest(".resize-grid").dataset.id !== this.id) {
+                return;
+            }
+
             siblings = this.getSiblings(handle_elem);
             if (!(siblings.prev instanceof ResizeGridItem) ||
                 !(siblings.handle instanceof ResizeGridHandle) ||

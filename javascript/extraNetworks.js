@@ -25,6 +25,7 @@ const EXTRA_NETWORKS_REFRESH_INTERNAL_DEBOUNCE_TIMEOUT_MS = 200;
 const EXTRA_NETWORKS_WAIT_FOR_PAGE_READY_TIMEOUT_MS = 60000;
 const EXTRA_NETWORKS_INIT_DATA_TIMEOUT_MS = 60000;
 const EXTRA_NETWORKS_FETCH_DATA_TIMEOUT_MS = 60000;
+const EXTRA_NETWORKS_SETUP_DEBOUNCE_TIME_MS = 1000;
 
 const re_extranet = /<([^:^>]+:[^:]+):[\d.]+>(.*)/;
 const re_extranet_g = /<([^:^>]+:[^:]+):[\d.]+>/g;
@@ -37,6 +38,8 @@ const extraPageUserMetadataEditors = {};
 const extra_networks_tabs = {};
 var extra_networks_refresh_internal_debounce_timer;
 let extra_networks_curr_options = {};
+let extra_networks_setup_debounce_timer;
+let extra_networks_event_abort_controller;
 
 /** Boolean flags used along with utils.js::waitForBool(). */
 // Set true when we first load the UI options.
@@ -119,6 +122,7 @@ class ExtraNetworksTab {
     directory_filters = {};
     list_button_states = {};
     resize_grid = null;
+    setup_has_run = false;
     constructor({tabname, extra_networks_tabname}) {
         this.tabname = tabname;
         this.extra_networks_tabname = extra_networks_tabname;
@@ -126,6 +130,10 @@ class ExtraNetworksTab {
     }
 
     async setup(pane, controls_div) {
+        if (this.setup_has_run) {
+            this.destroy();
+        }
+
         this.container_elem = pane;
 
         // get page elements
@@ -176,14 +184,23 @@ class ExtraNetworksTab {
         } else {
             this.showControls();
         }
+        this.setup_has_run = true;
     }
 
     destroy() {
         this.unload();
-        this.tree_list.destroy();
-        this.card_list.destroy();
+        if (!isNullOrUndefined(this.tree_list)) {
+            this.tree_list.destroy();
+        }
         this.tree_list = null;
+        if (!isNullOrUndefined(this.card_list)) {
+            this.card_list.destroy();
+        }
         this.card_list = null;
+        if (!isNullOrUndefined(this.resize_grid)) {
+            this.resize_grid.destroy();
+        }
+        this.resize_grid = null;
         this.container_elem = null;
         this.controls_elem = null;
         this.txt_search_elem = null;
@@ -201,8 +218,7 @@ class ExtraNetworksTab {
         this.dets_view_en = false;
         this.directory_filters = {};
         this.list_button_states = {};
-        this.resize_grid.destroy();
-        this.resize_grid = null;
+        this.setup_has_run = false;
     }
 
     async registerPrompt() {
@@ -367,6 +383,11 @@ class ExtraNetworksTab {
         this.card_view_en = "selected" in btn_card_view.dataset;
         this.dets_view_en = "selected" in btn_dets_view.dataset;
 
+        await Promise.all([this.setupTreeList(), this.setupCardList()]);
+        this.tree_list.enable(this.tree_view_en);
+        this.card_list.enable(this.card_view_en);
+        await Promise.all([this.tree_list.load(true), this.card_list.load(true)]);
+
         const div_dirs = this.container_elem.querySelector(".extra-network-content--dirs-view");
         const div_tree = this.container_elem.querySelector(".extra-network-content--tree-view");
         const div_card = this.container_elem.querySelector(".extra-network-content--card-view");
@@ -375,11 +396,6 @@ class ExtraNetworksTab {
         this.resize_grid.toggle({elem: div_tree, override: this.tree_view_en});
         this.resize_grid.toggle({elem: div_card, override: this.card_view_en});
         this.resize_grid.toggle({elem: div_dets, override: this.dets_view_en});
-
-        await Promise.all([this.setupTreeList(), this.setupCardList()]);
-        this.tree_list.enable(this.tree_view_en);
-        this.card_list.enable(this.card_view_en);
-        await Promise.all([this.tree_list.load(true), this.card_list.load(true)]);
 
         // apply the previous sort/filter options
         await this.applyListButtonStates();
@@ -435,6 +451,10 @@ class ExtraNetworksTab {
             this.setupResizeGrid();
         }
 
+        this.tree_list.enable(this.tree_view_en);
+        this.card_list.enable(this.card_view_en);
+        await Promise.all([this.tree_list.load(), this.card_list.load()]);
+
         const div_dirs = this.container_elem.querySelector(".extra-network-content--dirs-view");
         const div_tree = this.container_elem.querySelector(".extra-network-content--tree-view");
         const div_card = this.container_elem.querySelector(".extra-network-content--card-view");
@@ -443,10 +463,6 @@ class ExtraNetworksTab {
         this.resize_grid.toggle({elem: div_tree, override: this.tree_view_en});
         this.resize_grid.toggle({elem: div_card, override: this.card_view_en});
         this.resize_grid.toggle({elem: div_dets, override: this.dets_view_en});
-
-        this.tree_list.enable(this.tree_view_en);
-        this.card_list.enable(this.card_view_en);
-        await Promise.all([this.tree_list.load(), this.card_list.load()]);
     }
 
     unload() {
@@ -1611,6 +1627,10 @@ function extraNetworksSetupEventDelegators() {
      *  which would break references to elements in DOM and thus prevent any event
      *  listeners from firing.
      */
+
+    extra_networks_event_abort_controller = new AbortController();
+    const event_options = {signal: extra_networks_event_abort_controller.signal};
+
     let long_press_timer;
     let long_press_time_ms = opts.extra_networks_long_press_time_ms;
     if (long_press_time_ms < 0) {
@@ -1628,7 +1648,7 @@ function extraNetworksSetupEventDelegators() {
         const pane = event.target.closest(".extra-network-pane");
         const handle = event.target.closest(".resize-grid--handle");
         extra_networks_tabs[pane.dataset.tabnameFull].autoSetTreeWidth(handle);
-    });
+    }, event_options);
 
     // Debounce search text input. This way we only search after user is done typing.
     const search_input_debounce = _debounce(tabname_full => {
@@ -1644,13 +1664,13 @@ function extraNetworksSetupEventDelegators() {
                 search_input_debounce.call(target, tabname_full);
             }
         }
-    });
+    }, event_options);
 
     window.addEventListener("keydown", event => {
         if (event.key === "Escape") {
             closePopup();
         }
-    });
+    }, event_options);
 
     const click_event_map = {
         ".tree-list-item--file": extraNetworksTreeFileOnClick,
@@ -1675,7 +1695,7 @@ function extraNetworksSetupEventDelegators() {
                 handler(event);
             }
         }
-    });
+    }, event_options);
 
     // Order in these maps matters since we may have separate events for both a div
     // and for a child within that div however if the child is clicked then we wouldn't
@@ -1878,7 +1898,7 @@ function extraNetworksSetupEventDelegators() {
                 _on_long_press(event, long_press_res.target, long_press_res.handler);
             }, long_press_time_ms);
         }
-    });
+    }, event_options);
 
     window.addEventListener("pointerup", event => {
         clearTimeout(long_press_timer);
@@ -1920,7 +1940,7 @@ function extraNetworksSetupEventDelegators() {
                 _on_dbl_press(event, dbl_press_res.target, dbl_press_res.handler);
             }
         }
-    });
+    }, event_options);
 
     window.addEventListener("pointerout", event => {
         clearTimeout(long_press_timer);
@@ -1950,7 +1970,7 @@ function extraNetworksSetupEventDelegators() {
             event.stopPropagation();
             delete dbl_press_res.target.dataset.awaitDblClick;
         }
-    });
+    }, event_options);
 
     // Disable the context menu for long press items. On mobile, long press causes
     // context menu to appear which we don't want.
@@ -1960,6 +1980,12 @@ function extraNetworksSetupEventDelegators() {
             return false;
         }
     };
+}
+
+function extraNetworksDestroyEventDelegators() {
+    if (extra_networks_event_abort_controller) {
+        extra_networks_event_abort_controller.abort();
+    }
 }
 
 async function extraNetworksSetupTab(tabname) {
@@ -1986,20 +2012,21 @@ async function extraNetworksSetupTab(tabname) {
 }
 
 async function extraNetworksSetup() {
+    /** Sets up all tabs for extra networks.
+     *
+     *  This function is called from `modules/ui_extra_networks.py::create_ui()`
+     *  when the interface is loaded. We do this instead of running at `onUiLoaded`
+     *  because the interface loads some time after `onUiLoaded` is triggered.
+    */
     await waitForBool(initialUiOptionsLoaded);
-    // FIXME 1s delay added to allow for the rest of the UI to load before we setup
-    // our tabs. This is a workaround to prevent the user from switching tabs too quick
-    // after reloading the UI. If user switches tabs immediately after reloading the webpage
-    // then the tab.load() will run before this setup runs. No clue how this is even possible
-    // since we are waiting for setup to complete before loading so something weird is
-    // happening in the background.
-    setTimeout(async() => {
+    extra_networks_setup_debounce_timer = setTimeout(async() => {
         await Promise.all([
             extraNetworksSetupTab('txt2img'),
             extraNetworksSetupTab('img2img'),
         ]);
         extraNetworksSetupEventDelegators();
-    }, 1000);
+        extra_networks_setup_debounce_timer = null;
+    }, EXTRA_NETWORKS_SETUP_DEBOUNCE_TIME_MS);
 }
 
 window.addEventListener("keydown", (event) => {
@@ -2034,5 +2061,4 @@ window.addEventListener("keyup", (event) => {
     }
 });
 
-onUiLoaded(extraNetworksSetup);
 onOptionsChanged(extraNetworksOnOptionsChanged);

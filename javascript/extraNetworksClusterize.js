@@ -343,6 +343,9 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
             let row_width = 0;
             for (let j = 0; j < this.options.cols_in_block; j++) {
                 const child = this.content_elem.children[i + j];
+                if (!(child.classList.contains("tree-list-item"))) {
+                    continue;
+                }
                 // Child first element is the indent div. Just use offset for this
                 // since we do some overlapping with ::after in CSS.
                 row_width += child.children[0].offsetWidth;
