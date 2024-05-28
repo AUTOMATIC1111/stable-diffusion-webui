@@ -240,6 +240,9 @@ class Options:
 
         item_categories = {}
         for item in self.data_labels.values():
+            if item.section[0] is None:
+                continue
+
             category = categories.mapping.get(item.category_id)
             category = "Uncategorized" if category is None else category.label
             if category not in item_categories:

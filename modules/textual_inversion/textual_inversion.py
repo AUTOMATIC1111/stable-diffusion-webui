@@ -17,7 +17,7 @@ import modules.textual_inversion.dataset
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 
 from modules.textual_inversion.image_embedding import embedding_to_b64, embedding_from_b64, insert_image_data_embed, extract_image_data_embed, caption_image_overlay
-from modules.textual_inversion.logging import save_settings_to_file
+from modules.textual_inversion.saving_settings import save_settings_to_file
 
 
 TextualInversionTemplate = namedtuple("TextualInversionTemplate", ["name", "path"])
@@ -172,7 +172,7 @@ class EmbeddingDatabase:
                 if data:
                     name = data.get('name', name)
                 else:
-                    # if data is None, means this is not an embeding, just a preview image
+                    # if data is None, means this is not an embedding, just a preview image
                     return
         elif ext in ['.BIN', '.PT']:
             data = torch.load(path, map_location="cpu")

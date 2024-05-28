@@ -1,8 +1,10 @@
+setuptools==69.5.1  # temp fix for compatibility with some old packages
 GitPython==3.1.32
 Pillow==9.5.0
 accelerate==0.21.0
 blendmodes==2022
 clean-fid==0.1.35
+diskcache==5.6.3
 einops==0.4.1
 facexlib==0.3.0
 fastapi==0.94.0
@@ -28,3 +30,4 @@ torchdiffeq==0.2.3
 torchsde==0.2.6
 transformers==4.30.2
 httpx==0.24.1
+pillow-avif-plugin==1.4.3

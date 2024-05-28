@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-
+import functools
 import pytz
 import io
 import math
@@ -12,7 +12,9 @@ import re
 import numpy as np
 import piexif
 import piexif.helper
-from PIL import Image, ImageFont, ImageDraw, ImageColor, PngImagePlugin
+from PIL import Image, ImageFont, ImageDraw, ImageColor, PngImagePlugin, ImageOps
+# pillow_avif needs to be imported somewhere in code for it to work
+import pillow_avif # noqa: F401
 import string
 import json
 import hashlib
@@ -321,13 +323,16 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
     return res
 
 
-invalid_filename_chars = '#<>:"/\\|?*\n\r\t'
+if not shared.cmd_opts.unix_filenames_sanitization:
+    invalid_filename_chars = '#<>:"/\\|?*\n\r\t'
+else:
+    invalid_filename_chars = '/'
 invalid_filename_prefix = ' '
 invalid_filename_postfix = ' .'
 re_nonletters = re.compile(r'[\s' + string.punctuation + ']+')
 re_pattern = re.compile(r"(.*?)(?:\[([^\[\]]+)\]|$)")
 re_pattern_arg = re.compile(r"(.*)<([^>]*)>$")
-max_filename_part_length = 128
+max_filename_part_length = shared.cmd_opts.filenames_max_length
 NOTHING_AND_SKIP_PREVIOUS_TEXT = object()
 
 
@@ -344,6 +349,32 @@ def sanitize_filename_part(text, replace_spaces=True):
     return text
 
 
+@functools.cache
+def get_scheduler_str(sampler_name, scheduler_name):
+    """Returns {Scheduler} if the scheduler is applicable to the sampler"""
+    if scheduler_name == 'Automatic':
+        config = sd_samplers.find_sampler_config(sampler_name)
+        scheduler_name = config.options.get('scheduler', 'Automatic')
+    return scheduler_name.capitalize()
+
+
+@functools.cache
+def get_sampler_scheduler_str(sampler_name, scheduler_name):
+    """Returns the '{Sampler} {Scheduler}' if the scheduler is applicable to the sampler"""
+    return f'{sampler_name} {get_scheduler_str(sampler_name, scheduler_name)}'
+
+
+def get_sampler_scheduler(p, sampler):
+    """Returns '{Sampler} {Scheduler}' / '{Scheduler}' / 'NOTHING_AND_SKIP_PREVIOUS_TEXT'"""
+    if hasattr(p, 'scheduler') and hasattr(p, 'sampler_name'):
+        if sampler:
+            sampler_scheduler = get_sampler_scheduler_str(p.sampler_name, p.scheduler)
+        else:
+            sampler_scheduler = get_scheduler_str(p.sampler_name, p.scheduler)
+        return sanitize_filename_part(sampler_scheduler, replace_spaces=False)
+    return NOTHING_AND_SKIP_PREVIOUS_TEXT
+
+
 class FilenameGenerator:
     replacements = {
         'seed': lambda self: self.seed if self.seed is not None else '',
@@ -355,6 +386,8 @@ class FilenameGenerator:
         'height': lambda self: self.image.height,
         'styles': lambda self: self.p and sanitize_filename_part(", ".join([style for style in self.p.styles if not style == "None"]) or "None", replace_spaces=False),
         'sampler': lambda self: self.p and sanitize_filename_part(self.p.sampler_name, replace_spaces=False),
+        'sampler_scheduler': lambda self: self.p and get_sampler_scheduler(self.p, True),
+        'scheduler': lambda self: self.p and get_sampler_scheduler(self.p, False),
         'model_hash': lambda self: getattr(self.p, "sd_model_hash", shared.sd_model.sd_model_hash),
         'model_name': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.name_for_extra, replace_spaces=False),
         'date': lambda self: datetime.datetime.now().strftime('%Y-%m-%d'),
@@ -566,6 +599,16 @@ def save_image_with_geninfo(image, geninfo, filename, extension=None, existing_p
             })
 
             piexif.insert(exif_bytes, filename)
+    elif extension.lower() == '.avif':
+        if opts.enable_pnginfo and geninfo is not None:
+            exif_bytes = piexif.dump({
+                "Exif": {
+                    piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(geninfo or "", encoding="unicode")
+                },
+            })
+
+
+        image.save(filename,format=image_format, exif=exif_bytes)
     elif extension.lower() == ".gif":
         image.save(filename, format=image_format, comment=geninfo)
     else:
@@ -744,7 +787,6 @@ def read_info_from_image(image: Image.Image) -> tuple[str | None, dict]:
             exif_comment = exif_comment.decode('utf8', errors="ignore")
 
         if exif_comment:
-            items['exif comment'] = exif_comment
             geninfo = exif_comment
     elif "comment" in items: # for gif
         geninfo = items["comment"].decode('utf8', errors="ignore")
@@ -770,7 +812,7 @@ def image_data(data):
     import gradio as gr
 
     try:
-        image = Image.open(io.BytesIO(data))
+        image = read(io.BytesIO(data))
         textinfo, _ = read_info_from_image(image)
         return textinfo, None
     except Exception:
@@ -797,3 +839,30 @@ def flatten(img, bgcolor):
 
     return img.convert('RGB')
 
+
+def read(fp, **kwargs):
+    image = Image.open(fp, **kwargs)
+    image = fix_image(image)
+
+    return image
+
+
+def fix_image(image: Image.Image):
+    if image is None:
+        return None
+
+    try:
+        image = ImageOps.exif_transpose(image)
+        image = fix_png_transparency(image)
+    except Exception:
+        pass
+
+    return image
+
+
+def fix_png_transparency(image: Image.Image):
+    if image.mode not in ("RGB", "P") or not isinstance(image.info.get("transparency"), bytes):
+        return image
+
+    image = image.convert("RGBA")
+    return image
