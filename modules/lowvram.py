@@ -1,8 +1,152 @@
+from contextlib import contextmanager, nullcontext
 import torch
-from modules import devices, shared
+from modules import devices, shared, patches
 
 module_in_gpu = None
 cpu = torch.device("cpu")
+
+stream_impl = devices.get_stream_impl()
+stream_wrapper = devices.get_stream_wrapper()
+
+
+use_streamlined_lowvram = torch.cuda.is_available() and not shared.opts.use_non_streamlined_lowvram and stream_impl is not None and stream_wrapper is not None
+
+
+def is_same_device(device1, device2):
+    tensor1_device_type = device1.type
+    tensor2_device_type = device2.type
+    tensor1_device_index = device1.index or 0
+    tensor2_device_index = device2.index or 0
+    return (
+        tensor1_device_type == tensor2_device_type
+        and tensor1_device_index == tensor2_device_index
+    )
+
+class RTTensorMoverPatches:
+    def __init__(self):
+        self.mover_stream = stream_impl(device=devices.device)
+        self.calc_stream = stream_impl(device=devices.device)
+        self.stash = {}
+        self.speed_limit_loop_head = 0
+        self.speed_limit_loop = []
+
+
+        self.linear_original = patches.patch(
+            __name__,
+            torch.nn.functional,
+            "linear",
+            self._wrapper_default(torch.nn.functional.linear),
+        )
+        self.conv2d_original = patches.patch(
+            __name__,
+            torch.nn.functional,
+            "conv2d",
+            self._wrapper_default(torch.nn.functional.conv2d),
+        )
+        self.conv3d_original = patches.patch(
+            __name__,
+            torch.nn.functional,
+            "conv3d",
+            self._wrapper_default(torch.nn.functional.conv3d),
+        )
+        self.group_norm_original = patches.patch(
+            __name__,
+            torch.nn.functional,
+            "group_norm",
+            self._wrapper_group_norm(torch.nn.functional.group_norm),
+        )
+        self.layer_norm_original = patches.patch(
+            __name__,
+            torch.nn.functional,
+            "layer_norm",
+            self._wrapper_layer_norm(torch.nn.functional.layer_norm),
+        )
+
+    @contextmanager
+    def wrap_weight_biases(self, input, weight, bias):
+        if not is_same_device(input.device, devices.device):
+            yield (weight, bias)
+            return
+
+        moved = False
+        before_calc_event, after_calc_event = None, None
+        with stream_wrapper(stream=self.mover_stream):
+            if weight is not None and not is_same_device(weight.device, input.device):
+                weight = weight.to(device=input.device, copy=True, non_blocking=weight.is_pinned())
+                moved = True
+            if bias is not None and not is_same_device(bias.device, input.device):
+                bias = bias.to(device=input.device, copy=True, non_blocking=bias.is_pinned())
+                moved = True
+            before_calc_event = self.mover_stream.record_event()
+
+        if not moved:
+            yield (weight, bias)
+            return
+
+        with stream_wrapper(stream=self.calc_stream):
+            if before_calc_event is not None:
+                self.calc_stream.wait_event(before_calc_event)
+            yield (weight, bias)
+            after_calc_event = self.calc_stream.record_event()
+            self.stash[id(after_calc_event)] = (weight, bias, after_calc_event)
+
+        to_remove = []
+        for k, (_, _, e) in self.stash.items():
+            if e.query():
+                to_remove.append(k)
+
+        for k in to_remove:
+            del self.stash[k]
+
+        if len(self.speed_limit_loop) < shared.opts.lowvram_max_loaded_module:
+            self.speed_limit_loop.extend([None] * (shared.opts.lowvram_max_loaded_module - len(self.speed_limit_loop)))
+
+        self.speed_limit_loop[self.speed_limit_loop_head] = after_calc_event
+        self.speed_limit_loop_head = (self.speed_limit_loop_head + 1) % shared.opts.lowvram_max_loaded_module
+        if self.speed_limit_loop[self.speed_limit_loop_head] is not None:
+            self.mover_stream.wait_event(self.speed_limit_loop[self.speed_limit_loop_head])
+
+    def _wrapper_default(self, original):
+        def wrapper(input, weight, bias=None, *args, **kwargs):
+            with self.wrap_weight_biases(input, weight, bias) as (w, b):
+                return original(input, w, b, *args, **kwargs)
+        return wrapper
+
+    def _wrapper_group_norm(self, original):
+        def wrapper(input, num_groups, weight=None, bias=None, *args, **kwargs):
+            with self.wrap_weight_biases(input, weight, bias) as (w, b):
+                return original(input, num_groups, w, b, *args, **kwargs)
+        return wrapper
+
+    def _wrapper_layer_norm(self, original):
+        def wrapper(input, normalized_shape, weight=None, bias=None, *args, **kwargs):
+            with self.wrap_weight_biases(input, weight, bias) as (w, b):
+                return original(input, normalized_shape, w, b, *args, **kwargs)
+        return wrapper
+
+    def close(self):
+        patches.undo(__name__, torch.nn.functional, "linear")
+        patches.undo(__name__, torch.nn.functional, "conv2d")
+        patches.undo(__name__, torch.nn.functional, "conv3d")
+        patches.undo(__name__, torch.nn.functional, "group_norm")
+        patches.undo(__name__, torch.nn.functional, "layer_norm")
+
+
+rtmover = None
+if use_streamlined_lowvram:
+    rtmover = RTTensorMoverPatches()
+
+
+def calc_wrapper():
+    if rtmover is not None:
+        return stream_wrapper(stream=rtmover.calc_stream)
+    return nullcontext()
+
+
+def calc_sync():
+    if rtmover is not None:
+        return rtmover.calc_stream.synchronize()
+    return nullcontext()
 
 
 def send_everything_to_cpu():
@@ -135,12 +279,22 @@ def setup_for_low_vram(sd_model, use_medvram):
         diff_model.input_blocks, diff_model.middle_block, diff_model.output_blocks, diff_model.time_embed = stored
 
         # install hooks for bits of third model
-        diff_model.time_embed.register_forward_pre_hook(send_me_to_gpu)
-        for block in diff_model.input_blocks:
-            block.register_forward_pre_hook(send_me_to_gpu)
-        diff_model.middle_block.register_forward_pre_hook(send_me_to_gpu)
-        for block in diff_model.output_blocks:
-            block.register_forward_pre_hook(send_me_to_gpu)
+
+        if use_streamlined_lowvram:
+            # put it into pinned memory to achieve data transfer overlap
+            diff_model.time_embed._apply(lambda x: x.pin_memory(device=devices.device))
+            for block in diff_model.input_blocks:
+                block._apply(lambda x: x.pin_memory(device=devices.device))
+            diff_model.middle_block._apply(lambda x: x.pin_memory(device=devices.device))
+            for block in diff_model.output_blocks:
+                block._apply(lambda x: x.pin_memory(device=devices.device))
+        else:
+            diff_model.time_embed.register_forward_pre_hook(send_me_to_gpu)
+            for block in diff_model.input_blocks:
+                block.register_forward_pre_hook(send_me_to_gpu)
+            diff_model.middle_block.register_forward_pre_hook(send_me_to_gpu)
+            for block in diff_model.output_blocks:
+                block.register_forward_pre_hook(send_me_to_gpu)
 
 
 def is_enabled(sd_model):

@@ -445,7 +445,13 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
                     module.fp16_weight = module.weight.data.clone().cpu().half()
                     if module.bias is not None:
                         module.fp16_bias = module.bias.data.clone().cpu().half()
-                module.to(torch.float8_e4m3fn)
+                module.to(torch.float8_e4m3fn)._apply(
+                    lambda x: (
+                        x.pin_memory(device=devices.device)
+                        if not x.is_sparse and x.device.type == "cpu"
+                        else x
+                    )
+                )
         model.first_stage_model = first_stage
         timer.record("apply fp8")
     else:

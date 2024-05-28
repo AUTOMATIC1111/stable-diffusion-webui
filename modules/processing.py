@@ -842,7 +842,9 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
         sd_models.apply_token_merging(p.sd_model, p.get_token_merging_ratio())
 
-        res = process_images_inner(p)
+        with lowvram.calc_wrapper():
+            res = process_images_inner(p)
+        lowvram.calc_sync()
 
     finally:
         sd_models.apply_token_merging(p.sd_model, 0)

@@ -10,7 +10,7 @@ import torch.hub
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 
-from modules import devices, paths, shared, lowvram, modelloader, errors, torch_utils
+from modules import devices, paths, shared, modelloader, errors, torch_utils
 
 blip_image_eval_size = 384
 clip_model_name = 'ViT-L/14'
@@ -186,6 +186,7 @@ class InterrogateModels:
         res = ""
         shared.state.begin(job="interrogate")
         try:
+            from modules import lowvram
             lowvram.send_everything_to_cpu()
             devices.torch_gc()
 
