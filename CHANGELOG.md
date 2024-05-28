@@ -1,3 +1,8 @@
+## 1.9.4
+
+### Bug Fixes:
+*  pin setuptools version to fix the startup error ([#15883](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15883)) 
+
 ## 1.9.3
 
 ### Bug Fixes:
