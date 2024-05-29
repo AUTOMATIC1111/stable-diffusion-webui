@@ -1803,7 +1803,7 @@ body.resizing.resize-grid-row {
     background: var(--button-secondary-background-fill-hover);
 }
 
-.tree-list-item[data-selected] {
+.tree-list-item:not(.tree-list-item--file)[data-selected] {
     background: var(--button-secondary-background-fill);
 }
 

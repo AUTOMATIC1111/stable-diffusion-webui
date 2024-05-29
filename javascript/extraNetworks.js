@@ -1477,14 +1477,6 @@ function extraNetworksCardOnLongPress(event) {
     tab.showDetsView(btn);
 }
 
-function extraNetworksTreeFileOnLongPress(event) {
-    const btn = event.target.closest(".tree-list-item--file");
-    const pane = btn.closest(".extra-network-pane");
-    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
-
-    tab.showDetsView(btn);
-}
-
 function extraNetworksTreeFileOnClick(event) {
     const btn = event.target.closest(".tree-list-item");
     const pane = btn.closest(".extra-network-pane");
@@ -1501,6 +1493,14 @@ function extraNetworksTreeFileOnClick(event) {
         allow_neg: btn.dataset.allowNeg,
         checkpoint_name: checkpoint_name,
     });
+}
+
+function extraNetworksTreeFileOnLongPress(event) {
+    const btn = event.target.closest(".tree-list-item--file");
+    const pane = btn.closest(".extra-network-pane");
+    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
+
+    tab.showDetsView(btn);
 }
 
 // ==== TREE VIEW DIRECTORY ROW CLICK EVENTS ====
@@ -1849,6 +1849,7 @@ function extraNetworksSetupEventDelegators() {
             selector: ".tree-list-item--file",
             negative: ".tree-list-item-action",
             handler: extraNetworksTreeFileOnLongPress,
+            modify_classes: false,
         },
         {
             selector: ".extra-network-dirs-view-button",
@@ -1858,6 +1859,7 @@ function extraNetworksSetupEventDelegators() {
             selector: ".card",
             negative: ".button-row",
             handler: extraNetworksCardOnLongPress,
+            modify_classes: false,
         },
     ];
 
@@ -1881,39 +1883,44 @@ function extraNetworksSetupEventDelegators() {
         },
     ];
 
-    const _on_short_press = (event, elem, handler) => {
+    const _on_short_press = (event, elem, handler, modify_classes) => {
         if (!handler) {
             return;
         }
-        // Toggle
-        if (elem.classList.contains("long-pressed")) {
-            elem.classList.remove("long-pressed");
-            elem.classList.remove("short-pressed");
-            delete elem.dataset.selected;
-        } else {
-            elem.classList.toggle("short-pressed");
-            elem.toggleAttribute("data-selected");
+
+        if (modify_classes !== false) {
+            // Toggle
+            if (elem.classList.contains("long-pressed")) {
+                elem.classList.remove("long-pressed");
+                elem.classList.remove("short-pressed");
+                delete elem.dataset.selected;
+            } else {
+                elem.classList.toggle("short-pressed");
+                elem.toggleAttribute("data-selected");
+            }
         }
 
         elem.dispatchEvent(new Event("shortpress", event));
         handler(event);
     };
 
-    const _on_long_press = (event, elem, handler) => {
+    const _on_long_press = (event, elem, handler, modify_classes) => {
         if (!handler) {
             return;
         }
-        // If long pressed, we deselect.
-        // Else we set as long pressed.
-        if (elem.classList.contains("long-pressed")) {
-            elem.classList.remove("long-pressed");
-            // Don't want to remove selected state if btn was previously short-pressed.
-            if (!elem.classList.contains("short-pressed")) {
-                delete elem.dataset.selected;
+        if (modify_classes !== false) {
+            // If long pressed, we deselect.
+            // Else we set as long pressed.
+            if (elem.classList.contains("long-pressed")) {
+                elem.classList.remove("long-pressed");
+                // Don't want to remove selected state if btn was previously short-pressed.
+                if (!elem.classList.contains("short-pressed")) {
+                    delete elem.dataset.selected;
+                }
+            } else {
+                elem.classList.toggle("long-pressed");
+                elem.dataset.selected = "";
             }
-        } else {
-            elem.classList.toggle("long-pressed");
-            elem.dataset.selected = "";
         }
 
         elem.dispatchEvent(new Event("longpress", event));
@@ -1932,7 +1939,7 @@ function extraNetworksSetupEventDelegators() {
             const elem = event.target.closest(obj.selector);
             const neg = obj.negative ? event.target.closest(obj.negative) : null;
             if (isElement(elem) && !neg) {
-                return {target: elem, handler: obj.handler};
+                return {target: elem, handler: obj.handler, modify_classes: obj.modify_classes};
             }
         }
         return null;
@@ -2002,7 +2009,7 @@ function extraNetworksSetupEventDelegators() {
             long_press_timer = setTimeout(() => {
                 long_press_res.target.classList.remove("pressed");
                 long_press_timer = null;
-                _on_long_press(event, long_press_res.target, long_press_res.handler);
+                _on_long_press(event, long_press_res.target, long_press_res.handler, long_press_res.modify_classes);
             }, long_press_time_ms);
         }
     }, event_options);
@@ -2021,7 +2028,7 @@ function extraNetworksSetupEventDelegators() {
             event.stopPropagation();
             if (short_press_res.target.classList.contains("pressed")) {
                 short_press_res.target.classList.remove("pressed");
-                _on_short_press(event, short_press_res.target, short_press_res.handler);
+                _on_short_press(event, short_press_res.target, short_press_res.handler, short_press_res.modify_classes);
             }
         }
 
