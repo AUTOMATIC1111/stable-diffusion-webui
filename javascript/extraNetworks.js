@@ -1477,16 +1477,18 @@ function extraNetworksCardOnLongPress(event) {
     tab.showDetsView(btn);
 }
 
-function extraNetworksTreeFileOnClick(event) {
-    // Do not select the row if its child button-row is the target of the event.
-    if (event.target.closest(".tree-list-item-action")) {
-        return;
-    }
-
-    const btn = event.target.closest(".tree-list-item");
+function extraNetworksTreeFileOnLongPress(event) {
+    const btn = event.target.closest(".tree-list-item--file");
     const pane = btn.closest(".extra-network-pane");
     const tab = extra_networks_tabs[pane.dataset.tabnameFull];
 
+    tab.showDetsView(btn);
+}
+
+function extraNetworksTreeFileOnClick(event) {
+    const btn = event.target.closest(".tree-list-item");
+    const pane = btn.closest(".extra-network-pane");
+    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
 
     let checkpoint_name;
     if ("isCheckpoint" in btn.dataset) {
@@ -1752,7 +1754,6 @@ function extraNetworksSetupEventDelegators() {
     }, event_options);
 
     const click_event_map = {
-        ".tree-list-item--file": extraNetworksTreeFileOnClick,
         ".copy-path-button": extraNetworksBtnCopyPathOnClick,
         ".edit-button": extraNetworksBtnEditMetadataOnClick,
         ".metadata-button": extraNetworksBtnShowMetadataOnClick,
@@ -1790,6 +1791,11 @@ function extraNetworksSetupEventDelegators() {
             selector: ".tree-list-item--dir",
             negative: ".tree-list-item-action",
             handler: extraNetworksTreeDirectoryOnClick,
+        },
+        {
+            selector: ".tree-list-item--file",
+            negative: ".tree-list-item-action",
+            handler: extraNetworksTreeFileOnClick,
         },
         {
             selector: ".extra-network-dirs-view-button",
@@ -1838,6 +1844,11 @@ function extraNetworksSetupEventDelegators() {
             selector: ".tree-list-item--dir",
             negative: ".tree-list-item-action",
             handler: extraNetworksTreeDirectoryOnLongPress,
+        },
+        {
+            selector: ".tree-list-item--file",
+            negative: ".tree-list-item-action",
+            handler: extraNetworksTreeFileOnLongPress,
         },
         {
             selector: ".extra-network-dirs-view-button",
