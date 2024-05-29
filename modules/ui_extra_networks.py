@@ -1049,6 +1049,9 @@ class ExtraNetworksPage:
         if not description:
             description = ""
 
+        if not shared.opts.extra_networks_card_description_is_html:
+            description = html.escape(description)
+
         model_specific = self.get_model_detail_extra_html(model_name)
 
         return self.model_details_tpl.format(
