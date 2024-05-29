@@ -8,13 +8,14 @@ from base64 import b64decode
 from io import BytesIO
 from pathlib import Path
 from typing import Callable, Optional
+import datetime
 
 import gradio as gr
 from fastapi.exceptions import HTTPException
 from PIL import Image
 from starlette.responses import FileResponse, JSONResponse, Response
 
-from modules import errors, extra_networks, shared, util
+from modules import errors, extra_networks, shared, util, sysinfo
 from modules.images import read_info_from_image, save_image_with_geninfo
 from modules.infotext_utils import image_from_url_text
 from modules.ui_common import OutputPanel
@@ -23,6 +24,7 @@ from modules.ui_extra_networks_user_metadata import UserMetadataEditor
 extra_pages = []
 allowed_dirs = set()
 default_allowed_preview_extensions = ["png", "jpg", "jpeg", "webp", "gif"]
+
 
 class ListItem:
     """
@@ -244,6 +246,7 @@ class ExtraNetworksPage:
         self.btn_edit_metadata_tpl = shared.html("extra-networks-btn-edit-metadata.html")
         self.btn_dirs_view_item_tpl = shared.html("extra-networks-btn-dirs-view-item.html")
         self.btn_chevron_tpl = shared.html("extra-networks-btn-chevron.html")
+        self.model_details_tpl = shared.html("extra-networks-model-details.html")
 
     def clear_data(self) -> None:
         self.is_ready = False
@@ -998,6 +1001,63 @@ class ExtraNetworksPage:
     def create_user_metadata_editor(self, ui, tabname) -> UserMetadataEditor:
         return UserMetadataEditor(ui, tabname, self)
 
+    def get_model_detail_metadata_table(self, model_name: str) -> str:
+        item = self.items.get(model_name, {})
+
+        def _relative_path(path):
+            for parent_path in self.allowed_directories_for_previews():
+                if path_is_parent(parent_path, path):
+                    return os.path.relpath(path, parent_path)
+
+            return os.path.basename(path)
+
+        try:
+            filename = item["filename"]
+            shorthash = item.get("shorthash", None)
+
+            stats = os.stat(filename)
+            params = [
+                ('Filename: ', _relative_path(filename)),
+                ('File size: ', sysinfo.pretty_bytes(stats.st_size)),
+                ('Hash: ', shorthash),
+                ('Modified: ', datetime.datetime.fromtimestamp(stats.st_mtime).strftime('%Y-%m-%d %H:%M')),
+            ]
+        except Exception as exc:
+            errors.display(exc, f"reading info for {model_name}")
+            params = []
+
+        return "".join([f"<tr><th>{tr[0]}</th><td>{tr[1]}</td>" for tr in params])
+
+    def get_model_detail_extra_html(self, _model_name: str) -> str:
+        """Returns extra HTML to add to model details.
+
+        NOTE: This is intended to be subclassed to provide more model-specific info
+        in the model details. Thus the base class just returns an empty string.
+        """
+        return ""
+
+    def gen_model_details_html(self, model_name):
+        tbl_metadata = self.get_model_detail_metadata_table(model_name)
+
+        item = self.items.get(model_name, {})
+        user_metadata = item.get("user_metadata", None)
+        if user_metadata:
+            description = user_metadata.get("description", "")
+        else:
+            description = item.get("description", "")
+
+        if not description:
+            description = ""
+
+        model_specific = self.get_model_detail_extra_html(model_name)
+
+        return self.model_details_tpl.format(
+            name=model_name,
+            description=description,
+            metadata_table=tbl_metadata,
+            model_specific=model_specific,
+        )
+
 
 @functools.cache
 def allowed_preview_extensions_with_extra(extra_extensions=None):
@@ -1197,6 +1257,12 @@ def get_metadata(extra_networks_tabname: str = "", item: str = "") -> JSONRespon
     return JSONResponse({"metadata": json.dumps(metadata, indent=4, ensure_ascii=False)})
 
 
+def get_model_details(extra_networks_tabname: str = "", model_name: str = "") -> JSONResponse:
+    page = get_page_by_name(extra_networks_tabname)
+
+    return JSONResponse({"html": page.gen_model_details_html(model_name)})
+
+
 def get_single_card(
     tabname: str = "",
     extra_networks_tabname: str = "",
@@ -1234,6 +1300,7 @@ def add_pages_to_demo(app):
     app.add_api_route("/sd_extra_networks/fetch-card-data", fetch_card_data, methods=["GET"])
     app.add_api_route("/sd_extra_networks/page-is-ready", page_is_ready, methods=["GET"])
     app.add_api_route("/sd_extra_networks/clear-page-data", clear_page_data, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/get-model-details", get_model_details, methods=["GET"])
 
 
 def quote_js(s):

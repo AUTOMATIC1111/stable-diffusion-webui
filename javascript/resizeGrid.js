@@ -842,6 +842,8 @@ class ResizeGrid extends ResizeGridAxis {
             axis: axis,
             callbacks: callbacks,
         });
+
+        this.elem.id = id;
     }
 
     destroy() {
@@ -1013,7 +1015,7 @@ class ResizeGrid extends ResizeGridAxis {
 
         this.resize_observer = new ResizeObserver((entries) => {
             for (const entry of entries) {
-                if (entry.target.id === this.elem.id) {
+                if (entry.target.id === this.id) {
                     clearTimeout(this.resize_observer_timer);
                     this.resize_observer_timer = setTimeout(() => {
                         this.onResize();
@@ -1157,6 +1159,18 @@ class ResizeGrid extends ResizeGridAxis {
     onResize() {
         /** Resizes grid items on resize observer events. */
         const curr_dims = this.elem.getBoundingClientRect();
+
+        // If height and width are 0, this indicates the element is not visible anymore.
+        // We don't want to do anything if the element isn't visible.
+        if (curr_dims.height === 0 && curr_dims.width === 0) {
+            return;
+        }
+
+        // Do nothing if the dimensions haven't changed.
+        if (JSON.stringify(curr_dims) === JSON.stringify(this.prev_dims)) {
+            return;
+        }
+
         const d_w = curr_dims.width - this.prev_dims.width;
         const d_h = curr_dims.height - this.prev_dims.height;
 

@@ -5,6 +5,7 @@
     ExtraNetworksClusterizeCardList,
     waitForElement,
     isString,
+    isObject,
     isElement,
     isElementThrowError,
     fetchWithRetryAndBackoff,
@@ -395,7 +396,10 @@ class ExtraNetworksTab {
         this.resize_grid.toggle({elem: div_dirs, override: this.dirs_view_en});
         this.resize_grid.toggle({elem: div_tree, override: this.tree_view_en});
         this.resize_grid.toggle({elem: div_card, override: this.card_view_en});
-        this.resize_grid.toggle({elem: div_dets, override: this.dets_view_en});
+        this.resize_grid.toggle({
+            elem: div_dets,
+            override: this.dets_view_en && div_dets.innerHTML !== "",
+        });
 
         // apply the previous sort/filter options
         await this.applyListButtonStates();
@@ -462,7 +466,10 @@ class ExtraNetworksTab {
         this.resize_grid.toggle({elem: div_dirs, override: this.dirs_view_en});
         this.resize_grid.toggle({elem: div_tree, override: this.tree_view_en});
         this.resize_grid.toggle({elem: div_card, override: this.card_view_en});
-        this.resize_grid.toggle({elem: div_dets, override: this.dets_view_en});
+        this.resize_grid.toggle({
+            elem: div_dets,
+            override: this.dets_view_en && div_dets.innerHTML !== "",
+        });
     }
 
     unload() {
@@ -911,6 +918,45 @@ class ExtraNetworksTab {
         }
         this.applyDirectoryFilters();
     }
+
+    showDetsView(source_elem) {
+        const div_dets = this.container_elem.querySelector(".extra-network-content--dets-view");
+
+        const _popup = (msg) => {
+            const elem = document.createElement("pre");
+            elem.classList.add("popup-metadata");
+            elem.textContent = msg;
+            popup(elem);
+        };
+
+        const _clear_details = () => {
+            div_dets.innerHTML = "";
+        };
+
+        const _show_details = (response) => {
+            if (!isObject(response) || !isString(response.html)) {
+                console.warn("Error parsing model details.");
+                div_dets.innerHTML = "Error parsing model details.";
+                return;
+            }
+            div_dets.innerHTML = response.html;
+        };
+
+        _clear_details();
+
+        requestGet(
+            "./sd_extra_networks/get-model-details",
+            {
+                extra_networks_tabname: this.extra_networks_tabname,
+                model_name: source_elem.dataset.name,
+            },
+            (response) => _show_details(response),
+            () => _popup("Error fetching model details."),
+        );
+        if (this.dets_view_en) {
+            this.resize_grid.toggle({elem: div_dets, override: true});
+        }
+    }
 }
 
 function popup(contents) {
@@ -1308,21 +1354,31 @@ async function extraNetworksControlCardViewOnClick(event) {
 function extraNetworksControlDetsViewOnClick(event) {
     /** Handles `onclick` events for the Card Details View button.
      *
-     * Toggles the card details view in the extra networks pane.
+     *  Toggles the card details view in the extra networks pane.
+     *
+     *  This button is unique in that we allow the user to enable/disable it
+     *  regardless of whether we actually show the details view. This is because
+     *  the details view only actually shows when the user has a model selected.
+     *  Otherwise, the view is always hidden.
      */
     const btn = event.target.closest(".extra-network-control--dets-view");
     const controls = btn.closest(".extra-network-controls");
     const tab = extra_networks_tabs[controls.dataset.tabnameFull];
 
+    btn.toggleAttribute("data-selected");
+    tab.dets_view_en = "selected" in btn.dataset;
+
     const div_dets = tab.container_elem.querySelector(".extra-network-content--dets-view");
+
     try {
-        tab.resize_grid.toggle({elem: div_dets, override: !("selected" in btn.dataset)});
+        tab.resize_grid.toggle({
+            elem: div_dets,
+            override: tab.dets_view_en && div_dets.innerHTML !== "",
+        });
     } catch (error) {
         console.warn("Error attempting to enable dets_view:", error);
         return;
     }
-    btn.toggleAttribute("data-selected");
-    tab.dets_view_en = "selected" in btn.dataset;
 }
 
 function extraNetworksControlRefreshOnClick(event) {
@@ -1376,11 +1432,6 @@ function extraNetworksSelectModel({tab, prompt, neg_prompt, allow_neg, checkpoin
 }
 
 function extraNetworksCardOnClick(event) {
-    // Do not select the card if its child button-row is the target of the event.
-    if (event.target.closest(".button-row")) {
-        return;
-    }
-
     const btn = event.target.closest(".card");
     const pane = btn.closest(".extra-network-pane");
     const tab = extra_networks_tabs[pane.dataset.tabnameFull];
@@ -1396,6 +1447,34 @@ function extraNetworksCardOnClick(event) {
         allow_neg: btn.dataset.allowNeg,
         checkpoint_name: checkpoint_name,
     });
+}
+
+function extraNetworksDetsViewCloseOnClick(event) {
+    const btn = event.target.closest(".model-info--close");
+    const pane = btn.closest(".extra-network-pane");
+    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
+
+    const div_dets = tab.container_elem.querySelector(".extra-network-content--dets-view");
+    div_dets.innerHTML = "";
+    tab.resize_grid.toggle({elem: div_dets, override: false});
+}
+
+function extraNetworksDetsViewTagOnClick(event) {
+    const btn = event.target.closest(".model-info--tag");
+    const pane = btn.closest(".extra-network-pane");
+    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
+
+    const tag_name_elem = btn.querySelector(".model-info--tag-name");
+    isElementThrowError(tag_name_elem);
+    extraNetworksUpdatePrompt(tab.active_prompt_elem, tag_name_elem.textContent);
+}
+
+function extraNetworksCardOnLongPress(event) {
+    const btn = event.target.closest(".card");
+    const pane = btn.closest(".extra-network-pane");
+    const tab = extra_networks_tabs[pane.dataset.tabnameFull];
+
+    tab.showDetsView(btn);
 }
 
 function extraNetworksTreeFileOnClick(event) {
@@ -1674,7 +1753,6 @@ function extraNetworksSetupEventDelegators() {
 
     const click_event_map = {
         ".tree-list-item--file": extraNetworksTreeFileOnClick,
-        ".card": extraNetworksCardOnClick,
         ".copy-path-button": extraNetworksBtnCopyPathOnClick,
         ".edit-button": extraNetworksBtnEditMetadataOnClick,
         ".metadata-button": extraNetworksBtnShowMetadataOnClick,
@@ -1717,6 +1795,19 @@ function extraNetworksSetupEventDelegators() {
             selector: ".extra-network-dirs-view-button",
             handler: extraNetworksBtnDirsViewItemOnClick,
         },
+        {
+            selector: ".card",
+            negative: ".button-row",
+            handler: extraNetworksCardOnClick,
+        },
+        {
+            selector: ".model-info--close",
+            handler: extraNetworksDetsViewCloseOnClick,
+        },
+        {
+            selector: ".model-info--tag",
+            handler: extraNetworksDetsViewTagOnClick,
+        }
     ];
 
     const short_ctrl_press_event_map = [
@@ -1751,6 +1842,11 @@ function extraNetworksSetupEventDelegators() {
         {
             selector: ".extra-network-dirs-view-button",
             handler: extraNetworksBtnDirsViewItemOnLongPress,
+        },
+        {
+            selector: ".card",
+            negative: ".button-row",
+            handler: extraNetworksCardOnLongPress,
         },
     ];
 
