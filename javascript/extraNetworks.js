@@ -18,6 +18,7 @@
     waitForBool,
     copyToClipboard,
     resizeGridSetup,
+    convertElementShadowDOM,
 */
 /*eslint no-undef: "error"*/
 
@@ -313,6 +314,11 @@ class ExtraNetworksTab {
             (data) => {
                 if (data && data.html) {
                     this.card_list.updateHtml(elem, data.html);
+                    // If this model's detail is displayed, update it.
+                    const desc_elem = this.container_elem.querySelector(".model-info--name");
+                    if (isElement(desc_elem) && desc_elem.textContent === elem.dataset.name) {
+                        this.showDetsView(elem);
+                    }
                 }
             },
         );
@@ -927,7 +933,10 @@ class ExtraNetworksTab {
                 div_dets.innerHTML = "Error parsing model details.";
                 return;
             }
+
             div_dets.innerHTML = response.html;
+
+            convertElementShadowDOM(div_dets, "[data-parse-as-shadow-dom]");
         };
 
         _clear_details();

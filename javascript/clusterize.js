@@ -466,6 +466,10 @@ class Clusterize {
         } else {
             content_elem.innerHTML = data;
         }
+
+        // Parse items flagged as containing Shadow DOM entries.
+        convertElementShadowDOM(content_elem, "[data-parse-as-shadow-dom]");
+
         return content_elem.innerHTML;
     }
 

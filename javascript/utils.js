@@ -615,6 +615,38 @@ function htmlStringToFragment(s) {
     return document.createRange().createContextualFragment(s);
 }
 
+function convertInnerHtmlToShadowDOM(elem) {
+    /** Inplace conversion of innerHTML of an element into a Shadow DOM.
+     *
+     *  If the innerHTML is not valid HTML then the innerHTML is left unchanged.
+    */
+    const parsed_str = new DOMParser().parseFromString(elem.innerHTML, "text/html").documentElement.textContent;
+    const parsed_elem = htmlStringToElement(parsed_str);
+    if (!isNullOrUndefined(parsed_elem)) {
+        elem.innerHTML = "";
+        const shadow = elem.attachShadow({mode: "open"});
+        shadow.appendChild(parsed_elem);
+    }
+}
+
+function convertElementShadowDOM(elem, selector) {
+    /** Inplace conversion of Shadow DOM of all children matching the passed selector.
+     *
+     *  `selector` defaults to [data-parse-as-shadow-dom] if not a valid string.
+     *
+     *  NOTE: Nested Shadow DOMs are untested but will likely not work.
+    */
+    if (!isString(selector)) {
+        selector = "[data-parse-as-shadow-dom]";
+    }
+
+    let children = Array.from(elem.querySelectorAll(selector));
+    children = children.filter(x => x.innerHTML !== "");
+    for (const child of children) {
+        convertInnerHtmlToShadowDOM(child);
+    }
+}
+
 function toggleCss(key, css, enable) {
     var style = document.getElementById(key);
     if (enable && !style) {

@@ -12,6 +12,7 @@
     isElementLogError,
     keyExistsLogError,
     htmlStringToElement,
+    convertElementShadowDOM,
 */
 /*eslint no-undef: "error"*/
 
@@ -260,6 +261,7 @@ class ExtraNetworksClusterize extends Clusterize {
                 return;
             }
             const parsed_html = htmlStringToElement(new_html);
+            convertElementShadowDOM(parsed_html, "[data-parse-as-shadow-dom]");
 
             // replace the element in DOM with our new element
             elem.replaceWith(parsed_html);

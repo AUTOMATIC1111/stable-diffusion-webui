@@ -442,8 +442,10 @@ class ExtraNetworksPage:
         if shared.opts.extra_networks_card_show_desc:
             description = item.get("description", "") or ""
 
+        description_data_attributes = ""
         if not shared.opts.extra_networks_card_description_is_html:
             description = html.escape(description)
+            description_data_attributes = "data-parse-as-shadow-dom"
 
         data_name = item.get("name", "").strip()
         data_path = os.path.normpath(item.get("filename", "").strip())
@@ -475,6 +477,7 @@ class ExtraNetworksPage:
             background_image=background_image,
             button_row=button_row,
             name=html.escape(item["name"].strip()),
+            description_data_attributes=description_data_attributes,
             description=description,
         )
 
@@ -1055,13 +1058,16 @@ class ExtraNetworksPage:
         if not description:
             description = ""
 
+        description_data_attributes = ""
         if not shared.opts.extra_networks_card_description_is_html:
             description = html.escape(description)
+            description_data_attributes = "data-parse-as-shadow-dom"
 
         model_specific = self.get_model_detail_extra_html(model_name)
 
         return self.model_details_tpl.format(
             name=model_name,
+            description_data_attributes=description_data_attributes,
             description=description,
             metadata_table=tbl_metadata,
             model_specific=model_specific,
