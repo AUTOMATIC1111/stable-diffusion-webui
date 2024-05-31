@@ -624,11 +624,17 @@ class ExtraNetworksPage:
 
             tree_item = TreeListItem(node.id, "")
 
-            if node.depth <= expand_depth:
+            if expand_depth < 0:
                 tree_item.expanded = True
-
-            if node.depth <= expand_depth + 1:
                 tree_item.visible = True
+            else:
+                # Expand directories.
+                if node.depth + 1 <= expand_depth:
+                    tree_item.expanded = True
+
+                # Children of expanded depth need to be visible.
+                if node.depth + 1 <= expand_depth + 1:
+                    tree_item.visible = True
 
             tree_item.node = node
             parent_id = None
