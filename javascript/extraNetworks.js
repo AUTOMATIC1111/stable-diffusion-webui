@@ -389,18 +389,6 @@ class ExtraNetworksTab {
         this.card_list.enable(this.card_view_en);
         await Promise.all([this.tree_list.load(true), this.card_list.load(true)]);
 
-        const div_dirs = this.container_elem.querySelector(".extra-network-content--dirs-view");
-        const div_tree = this.container_elem.querySelector(".extra-network-content--tree-view");
-        const div_card = this.container_elem.querySelector(".extra-network-content--card-view");
-        const div_dets = this.container_elem.querySelector(".extra-network-content--dets-view");
-        this.resize_grid.toggle({elem: div_dirs, override: this.dirs_view_en});
-        this.resize_grid.toggle({elem: div_tree, override: this.tree_view_en});
-        this.resize_grid.toggle({elem: div_card, override: this.card_view_en});
-        this.resize_grid.toggle({
-            elem: div_dets,
-            override: this.dets_view_en && div_dets.innerHTML !== "",
-        });
-
         // apply the previous sort/filter options
         await this.applyListButtonStates();
         this.setSortMode(this.sort_mode_str);
