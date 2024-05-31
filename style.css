@@ -1011,9 +1011,29 @@ footer {
     background-image: url('./file=html/card-no-preview.png')
 }
 
+.card::after {
+    position: absolute;
+    content: "";
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    opacity: 0;
+    background: var(--color-accent-soft);
+    transition: all 0.35s cubic-bezier(0.215, 0.61, 0.355, 1);
+    z-index: 1;
+}
+
+.card.pressed::after {
+    width: 100%;
+    opacity: 0.25;
+    transition: all 0.8s cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
 .extra-network-pane .card:hover{
     box-shadow: 0 0 2px 0.3em rgba(0, 128, 255, 0.35);
 }
+
 
 .extra-network-pane .card .actions .additional{
     display: none;
