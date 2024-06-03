@@ -425,7 +425,7 @@ async function fetchWithRetryAndBackoff(url, data, args = {}) {
      *  Args:
      *      url:                    Primary URL to fetch.
      *      data:                   Data to append to the URL when making the request.
-     *      opts:
+     *      args:
      *          method:             The HTTP request method to use.
      *          timeout_ms:         Max allowed time before this function fails.
      *          fetch_timeout_ms:   Max allowed time for individual `fetch` calls.

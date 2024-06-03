@@ -287,6 +287,8 @@ class ResizeGridItem {
         if (!this.elem.style.cssText) {
             this.elem.removeAttribute('style');
         }
+        delete this.elem.dataset.id;
+        delete this.elem.dataset.index;
     }
 
     shrink(px, {limit_to_base} = {}) {
@@ -817,6 +819,7 @@ class ResizeGrid extends ResizeGridAxis {
     */
     event_abort_controller = null;
     added_outer_div = false;
+    added_elem_id = false;
     setup_has_run = false;
     prev_dims = null;
     resize_observer = null;
@@ -843,7 +846,10 @@ class ResizeGrid extends ResizeGridAxis {
             callbacks: callbacks,
         });
 
-        this.elem.id = id;
+        if (this.elem.id !== id) {
+            this.elem.id = id;
+            this.added_elem_id = true;
+        }
     }
 
     destroy() {
@@ -851,6 +857,10 @@ class ResizeGrid extends ResizeGridAxis {
         if (this.added_outer_div) {
             this.elem.innerHTML = this.elem.children[0].innerHTML;
             this.added_outer_div = false;
+        }
+        if (this.added_elem_id) {
+            this.elem.removeAttribute("id");
+            this.added_elem_id = false;
         }
         super.destroy();
         this.setup_has_run = false;

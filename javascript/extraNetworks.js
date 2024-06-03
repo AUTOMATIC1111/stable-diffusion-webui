@@ -326,6 +326,15 @@ class ExtraNetworksTab {
 
     showControls() {
         this.controls_elem.classList.remove("hidden");
+
+        const btn_dirs_view = this.controls_elem.querySelector(".extra-network-control--dirs-view");
+        const btn_tree_view = this.controls_elem.querySelector(".extra-network-control--tree-view");
+        const btn_card_view = this.controls_elem.querySelector(".extra-network-control--card-view");
+        const btn_dets_view = this.controls_elem.querySelector(".extra-network-control--dets-view");
+        this.dirs_view_en = "selected" in btn_dirs_view.dataset;
+        this.tree_view_en = "selected" in btn_tree_view.dataset;
+        this.card_view_en = "selected" in btn_card_view.dataset;
+        this.dets_view_en = "selected" in btn_dets_view.dataset;
     }
 
     hideControls() {
@@ -381,26 +390,14 @@ class ExtraNetworksTab {
             return;
         }
 
-        const btn_dirs_view = this.controls_elem.querySelector(".extra-network-control--dirs-view");
-        const btn_tree_view = this.controls_elem.querySelector(".extra-network-control--tree-view");
-        const btn_card_view = this.controls_elem.querySelector(".extra-network-control--card-view");
-        const btn_dets_view = this.controls_elem.querySelector(".extra-network-control--dets-view");
-        this.dirs_view_en = "selected" in btn_dirs_view.dataset;
-        this.tree_view_en = "selected" in btn_tree_view.dataset;
-        this.card_view_en = "selected" in btn_card_view.dataset;
-        this.dets_view_en = "selected" in btn_dets_view.dataset;
+        if (!isNullOrUndefined(this.resize_grid)) {
+            this.resize_grid.destroy();
+            this.resize_grid = null;
+        }
 
         await Promise.all([this.setupTreeList(), this.setupCardList()]);
-        this.tree_list.enable(this.tree_view_en);
-        this.card_list.enable(this.card_view_en);
-        await Promise.all([this.tree_list.load(true), this.card_list.load(true)]);
 
-        // apply the previous sort/filter options
-        await this.applyListButtonStates();
-        this.setSortMode(this.sort_mode_str);
-        this.setSortDir(this.sort_dir_str);
-        this.applyDirectoryFilters();
-        this.applyFilter(this.filter_str);
+        await this.load();
     }
 
     async refresh() {
@@ -413,6 +410,11 @@ class ExtraNetworksTab {
     }
 
     setupResizeGrid() {
+        if (!isNullOrUndefined(this.resize_grid) && !(gradioApp().contains(this.resize_grid.elem)) {
+            this.resize_grid.destroy();
+            this.resize_grid = null;
+        }
+
         const set_size_override = (grid_item, size_px) => {
             // Limit dirs_view max height to the max height of its contents.
             if (grid_item.elem.id === `${this.tabname_full}_dirs_view_row`) {
@@ -444,7 +446,6 @@ class ExtraNetworksTab {
             tree_list_state: this.tree_list_splash_state,
         });
         this.showControls();
-
         if (isNullOrUndefined(this.resize_grid)) {
             this.setupResizeGrid();
         }
@@ -464,6 +465,13 @@ class ExtraNetworksTab {
             elem: div_dets,
             override: this.dets_view_en && div_dets.innerHTML !== "",
         });
+
+        // apply the previous sort/filter options
+        await this.applyListButtonStates();
+        this.setSortMode(this.sort_mode_str);
+        this.setSortDir(this.sort_dir_str);
+        this.applyDirectoryFilters();
+        this.applyFilter(this.filter_str);
     }
 
     unload() {
@@ -555,8 +563,8 @@ class ExtraNetworksTab {
 
         const url = "./sd_extra_networks/page-is-ready";
         const payload = {extra_networks_tabname: this.extra_networks_tabname};
-        const opts = {timeout_ms: timeout_ms, response_handler: response_handler};
-        return await fetchWithRetryAndBackoff(url, payload, opts);
+        const args = {timeout_ms: timeout_ms, response_handler: response_handler};
+        return await fetchWithRetryAndBackoff(url, payload, args);
     }
 
     async onInitCardData() {
@@ -584,9 +592,9 @@ class ExtraNetworksTab {
         const url = "./sd_extra_networks/init-card-data";
         const payload = {tabname: this.tabname, extra_networks_tabname: this.extra_networks_tabname};
         const timeout_ms = EXTRA_NETWORKS_INIT_DATA_TIMEOUT_MS;
-        const opts = {timeout_ms: timeout_ms, response_handler: response_handler};
+        const args = {timeout_ms: timeout_ms, response_handler: response_handler};
         try {
-            const response = await fetchWithRetryAndBackoff(url, payload, opts);
+            const response = await fetchWithRetryAndBackoff(url, payload, args);
             if (Object.keys(response.data).length === 0) {
                 this.updateSplashState({card_list_state: "no_data"});
             } else {
@@ -625,9 +633,9 @@ class ExtraNetworksTab {
         const url = "./sd_extra_networks/init-tree-data";
         const payload = {tabname: this.tabname, extra_networks_tabname: this.extra_networks_tabname};
         const timeout_ms = EXTRA_NETWORKS_INIT_DATA_TIMEOUT_MS;
-        const opts = {timeout_ms: timeout_ms, response_handler: response_handler};
+        const args = {timeout_ms: timeout_ms, response_handler: response_handler};
         try {
-            const response = await fetchWithRetryAndBackoff(url, payload, opts);
+            const response = await fetchWithRetryAndBackoff(url, payload, args);
             if (Object.keys(response.data).length === 0) {
                 this.updateSplashState({tree_list_state: "no_data"});
             } else {
@@ -645,9 +653,9 @@ class ExtraNetworksTab {
         const url = "./sd_extra_networks/fetch-card-data";
         const payload = {extra_networks_tabname: this.extra_networks_tabname, div_ids: div_ids};
         const timeout_ms = EXTRA_NETWORKS_FETCH_DATA_TIMEOUT_MS;
-        const opts = {timeout_ms: timeout_ms};
+        const args = {timeout_ms: timeout_ms};
         try {
-            const response = await fetchWithRetryAndBackoff(url, payload, opts);
+            const response = await fetchWithRetryAndBackoff(url, payload, args);
             if (response.missing_div_ids.length) {
                 console.warn(`Failed to fetch multiple div_ids: ${response.missing_div_ids}`);
             }
@@ -668,9 +676,9 @@ class ExtraNetworksTab {
         const url = "./sd_extra_networks/fetch-tree-data";
         const payload = {extra_networks_tabname: this.extra_networks_tabname, div_ids: div_ids};
         const timeout_ms = EXTRA_NETWORKS_FETCH_DATA_TIMEOUT_MS;
-        const opts = {timeout_ms: timeout_ms};
+        const args = {timeout_ms: timeout_ms};
         try {
-            const response = await fetchWithRetryAndBackoff(url, payload, opts);
+            const response = await fetchWithRetryAndBackoff(url, payload, args);
             if (response.missing_div_ids.length) {
                 console.warn(`Failed to fetch multiple div_ids: ${response.missing_div_ids}`);
             }
@@ -1192,12 +1200,11 @@ async function extraNetworksTabSelected(tabname_full, show_prompt, show_neg_prom
     /** called from python when user selects an extra networks tab */
     await waitForKeyInObject({obj: extra_networks_tabs, k: tabname_full});
     for (const [k, v] of Object.entries(extra_networks_tabs)) {
-        if (k === tabname_full) {
-            v.load(show_prompt, show_neg_prompt);
-        } else {
+        if (k !== tabname_full) {
             v.unload();
         }
     }
+    extra_networks_tabs[tabname_full].load(show_prompt, show_neg_prompt);
 }
 
 function extraNetworksControlSearchClearOnClick(event) {
