@@ -27,6 +27,7 @@ function get_uiCurrentTabContent() {
 var uiUpdateCallbacks = [];
 var uiAfterUpdateCallbacks = [];
 var uiLoadedCallbacks = [];
+var uiLoadedReadyCallbacks = [];
 var uiTabChangeCallbacks = [];
 var optionsChangedCallbacks = [];
 var uiAfterUpdateTimeout = null;
@@ -58,6 +59,14 @@ function onAfterUiUpdate(callback) {
  */
 function onUiLoaded(callback) {
     uiLoadedCallbacks.push(callback);
+}
+
+/**
+ * Register callback to be called when the UI is loaded and opts is ready.
+ * The callback receives no arguments.
+ */
+function onUiLoadedReady(callback) {
+    uiLoadedReadyCallbacks.push(callback);
 }
 
 /**
@@ -104,7 +113,8 @@ var executedOnLoaded = false;
 
 document.addEventListener("DOMContentLoaded", function() {
     var mutationObserver = new MutationObserver(function(m) {
-        if (!executedOnLoaded && gradioApp().querySelector('#txt2img_prompt')) {
+        const firstOnLoaded = !executedOnLoaded && gradioApp().querySelector('#txt2img_prompt')
+        if (firstOnLoaded) {
             executedOnLoaded = true;
             executeCallbacks(uiLoadedCallbacks);
         }
@@ -115,6 +125,10 @@ document.addEventListener("DOMContentLoaded", function() {
         if (newTab && (newTab !== uiCurrentTab)) {
             uiCurrentTab = newTab;
             executeCallbacks(uiTabChangeCallbacks);
+        }
+
+        if (firstOnLoaded) {
+            executeCallbacks(uiLoadedReadyCallbacks);
         }
     });
     mutationObserver.observe(gradioApp(), {childList: true, subtree: true});
