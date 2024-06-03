@@ -1444,6 +1444,12 @@ function extraNetworksCardOnClick(event) {
         allow_neg: btn.dataset.allowNeg,
         checkpoint_name: checkpoint_name,
     });
+
+    // Show details view if user setting is "click".
+    const left_click_opt = opts.extra_networks_card_details_click_behavior.toLowerCase().trim();
+    if (left_click_opt === "click") {
+        tab.showDetsView(btn);
+    }
 }
 
 function extraNetworksDetsViewCloseOnClick(event) {
@@ -1467,6 +1473,11 @@ function extraNetworksDetsViewTagOnClick(event) {
 }
 
 function extraNetworksCardOnLongPress(event) {
+    const left_click_opt = opts.extra_networks_card_details_click_behavior.toLowerCase().trim();
+    // Only execute this event if user setting is "long press".
+    if (left_click_opt !== "long press") {
+        return;
+    }
     const btn = event.target.closest(".card");
     const pane = btn.closest(".extra-network-pane");
     const tab = extra_networks_tabs[pane.dataset.tabnameFull];

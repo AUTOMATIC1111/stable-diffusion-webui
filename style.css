@@ -1896,7 +1896,7 @@ body.resizing.resize-grid-row {
 
 .extra-network-content--dets-view {
     padding: var(--block-padding);
-    overflow: clip auto;
+    overflow: auto auto;
 }
 
 .extra-network-content--dets-view-model-info {
