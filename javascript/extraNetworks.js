@@ -80,6 +80,7 @@ class ExtraNetworksError extends Error {
         this.name = this.constructor.name;
     }
 }
+
 class ExtraNetworksPageReadyError extends Error {
     constructor(...args) {
         super(...args);
@@ -410,7 +411,7 @@ class ExtraNetworksTab {
     }
 
     setupResizeGrid() {
-        if (!isNullOrUndefined(this.resize_grid) && !(gradioApp().contains(this.resize_grid.elem)) {
+        if (!isNullOrUndefined(this.resize_grid) && !(gradioApp().contains(this.resize_grid.elem))) {
             this.resize_grid.destroy();
             this.resize_grid = null;
         }
