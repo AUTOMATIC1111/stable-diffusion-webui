@@ -42,6 +42,8 @@ var extra_networks_refresh_internal_debounce_timer;
 let extra_networks_curr_options = {};
 let extra_networks_setup_debounce_timer;
 let extra_networks_event_abort_controller;
+let extra_networks_event_long_press_timer;
+let extra_networks_event_dbl_press_timer;
 
 /** Boolean flags used along with utils.js::waitForBool(). */
 // Set true when we first load the UI options.
@@ -1695,6 +1697,12 @@ function extraNetworksBtnCopyPathOnClick(event) {
 function extraNetworksOnOptionsChanged() {
     initialUiOptionsLoaded.state = true;
 
+    // Settings which require event delegators to be rebuilt.
+    const settings_requiring_event_setup = [
+        "extra_networks_long_press_time_ms",
+        "extra_networks_dbl_press_time_ms",
+    ];
+
     try {
         const keys = Object.keys(opts).filter(k => k.startsWith("extra_networks_"));
         const changes = {};
@@ -1711,6 +1719,11 @@ function extraNetworksOnOptionsChanged() {
                 extra_networks_curr_options[k] = opts[k];
             }
         }
+
+        // If any of the specified settings change, we need to rebuild event delegators.
+        if (settings_requiring_event_setup.some(x => x in changes)) {
+            extraNetworksSetupEventDelegators();
+        }
     } catch (error) {
         console.warn("Error parsing options:", error);
     }
@@ -1725,15 +1738,21 @@ function extraNetworksSetupEventDelegators() {
      *  listeners from firing.
      */
 
+    // Always destroy before attempting to setup delegators. This prevents us
+    // generating duplicate listeners for the same objects.
+    extraNetworksDestroyEventDelegators();
+
     extra_networks_event_abort_controller = new AbortController();
     const event_options = {signal: extra_networks_event_abort_controller.signal};
 
-    let long_press_timer;
     let long_press_time_ms = opts.extra_networks_long_press_time_ms;
     if (long_press_time_ms < 0) {
         long_press_time_ms = 0;
     }
-    let dbl_press_timer;
+    // Set the animation times for the long press animations.
+    gradioApp().style.setProperty("--wipe-transition-time-ms", `${long_press_time_ms}ms`);
+    gradioApp().style.setProperty("--wipe-reset-transition-time-ms", `${parseInt(long_press_time_ms / 2)}ms`);
+
     let dbl_press_time_ms = opts.extra_networks_dbl_press_time_ms;
     if (dbl_press_time_ms < 0) {
         dbl_press_time_ms = 0;
@@ -2001,8 +2020,8 @@ function extraNetworksSetupEventDelegators() {
     };
 
     window.addEventListener("pointerdown", event => {
-        clearTimeout(long_press_timer);
-        long_press_timer = null;
+        clearTimeout(extra_networks_event_long_press_timer);
+        extra_networks_event_long_press_timer = null;
 
         if (event.target.hasPointerCapture(event.pointerId)) {
             event.target.releasePointerCapture(event.pointerId);
@@ -2022,17 +2041,17 @@ function extraNetworksSetupEventDelegators() {
         if (!isNullOrUndefined(long_press_res)) {
             event.stopPropagation();
             long_press_res.target.classList.add("pressed");
-            long_press_timer = setTimeout(() => {
+            extra_networks_event_long_press_timer = setTimeout(() => {
                 long_press_res.target.classList.remove("pressed");
-                long_press_timer = null;
+                extra_networks_event_long_press_timer = null;
                 _on_long_press(event, long_press_res.target, long_press_res.handler, long_press_res.modify_classes);
             }, long_press_time_ms);
         }
     }, event_options);
 
     window.addEventListener("pointerup", event => {
-        clearTimeout(long_press_timer);
-        long_press_timer = null;
+        clearTimeout(extra_networks_event_long_press_timer);
+        extra_networks_event_long_press_timer = null;
 
         // Shortcut to avoid lookup of element if no parent is pressed.
         if (!isElement(event.target.closest(".pressed"))) {
@@ -2056,16 +2075,16 @@ function extraNetworksSetupEventDelegators() {
 
         const dbl_press_res = _get_dbl_press_event_elem(event);
         if (!isNullOrUndefined(dbl_press_res)) {
-            if (isNullOrUndefined(dbl_press_timer)) {
+            if (isNullOrUndefined(extra_networks_event_dbl_press_timer)) {
                 dbl_press_res.target.dataset.awaitDblClick = "";
-                dbl_press_timer = setTimeout(() => {
-                    dbl_press_timer = null;
+                extra_networks_event_dbl_press_timer = setTimeout(() => {
+                    extra_networks_event_dbl_press_timer = null;
                     delete dbl_press_res.target.dataset.awaitDblClick;
                 }, dbl_press_time_ms);
             } else if ("awaitDblClick" in dbl_press_res.target.dataset) {
                 // Only count as dbl click if it is the same element.
-                clearTimeout(dbl_press_timer);
-                dbl_press_timer = null;
+                clearTimeout(extra_networks_event_dbl_press_timer);
+                extra_networks_event_dbl_press_timer = null;
                 delete dbl_press_res.target.dataset.awaitDblClick;
                 _on_dbl_press(event, dbl_press_res.target, dbl_press_res.handler);
             }
@@ -2073,10 +2092,10 @@ function extraNetworksSetupEventDelegators() {
     }, event_options);
 
     window.addEventListener("pointerout", event => {
-        clearTimeout(long_press_timer);
-        long_press_timer = null;
-        clearTimeout(dbl_press_timer);
-        dbl_press_timer = null;
+        clearTimeout(extra_networks_event_long_press_timer);
+        extra_networks_event_long_press_timer = null;
+        clearTimeout(extra_networks_event_dbl_press_timer);
+        extra_networks_event_dbl_press_timer = null;
 
         // Shortcut to avoid lookup of element if no parent is pressed.
         if (!isElement(event.target.closest(".pressed"))) {
@@ -2116,6 +2135,10 @@ function extraNetworksDestroyEventDelegators() {
     if (extra_networks_event_abort_controller) {
         extra_networks_event_abort_controller.abort();
     }
+    clearTimeout(extra_networks_event_long_press_timer);
+    clearTimeout(extra_networks_event_dbl_press_timer);
+    extra_networks_event_long_press_timer = null;
+    extra_networks_event_dbl_press_timer = null;
 }
 
 async function extraNetworksSetupTab(tabname) {

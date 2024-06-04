@@ -1020,14 +1020,14 @@ footer {
     height: 100%;
     opacity: 0;
     background: var(--color-accent-soft);
-    transition: all 0.35s cubic-bezier(0.215, 0.61, 0.355, 1);
+    transition: all var(--wipe-reset-transition-time-ms, 350ms) cubic-bezier(0.215, 0.61, 0.355, 1);
     z-index: 1;
 }
 
 .card.pressed::after {
     width: 100%;
     opacity: 0.25;
-    transition: all 0.8s cubic-bezier(0.215, 0.61, 0.355, 1);
+    transition: all var(--wipe-transition-time-ms, 800ms) cubic-bezier(0.215, 0.61, 0.355, 1);
 }
 
 .extra-network-pane .card:hover{
@@ -1795,7 +1795,7 @@ body.resizing.resize-grid-row {
     left: 0;
     width: 0;
     height: 100%;
-    transition: all 0.35s cubic-bezier(0.215, 0.61, 0.355, 1);
+    transition: all var(--wipe-reset-transition-time-ms, 350ms) cubic-bezier(0.215, 0.61, 0.355, 1);
     z-index: -1;
 }
 
@@ -1809,7 +1809,7 @@ body.resizing.resize-grid-row {
 
 .extra-network-dirs-view-button.pressed::after {
     width: 100%;
-    transition: all 0.8s cubic-bezier(0.215, 0.61, 0.355, 1);
+    transition: all var(--wipe-transition-time-ms, 800ms) cubic-bezier(0.215, 0.61, 0.355, 1);
 }
 
 .extra-network-dirs-view-button[data-selected] {
@@ -1841,13 +1841,13 @@ body.resizing.resize-grid-row {
     width: 0;
     height: 100%;
     background: var(--button-secondary-background-fill-hover);
-    transition: all 0.35s cubic-bezier(0.215, 0.61, 0.355, 1);
+    transition: all var(--wipe-reset-transition-time-ms, 350ms) cubic-bezier(0.215, 0.61, 0.355, 1);
     z-index: -1;
 }
 
 .tree-list-item.pressed::after {
     width: 100%;
-    transition: all 0.8s cubic-bezier(0.215, 0.61, 0.355, 1);
+    transition: all var(--wipe-transition-time-ms, 800ms) cubic-bezier(0.215, 0.61, 0.355, 1);
 }
 
 .tree-list-item.recurse .tree-list-item-action--chevron .chevron-icon-single {
