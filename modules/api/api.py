@@ -6,6 +6,7 @@ import datetime
 import uvicorn
 import ipaddress
 import requests
+from openai import OpenAI
 import gradio as gr
 from threading import Lock
 from io import BytesIO
@@ -15,6 +16,12 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from secrets import compare_digest
+
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from deep_translator import GoogleTranslator
+
 
 import modules.shared as shared
 from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing, errors, restart, shared_items, script_callbacks, infotext_utils, sd_models, sd_schedulers
@@ -208,6 +215,7 @@ class Api:
         self.app = app
         self.queue_lock = queue_lock
         api_middleware(self.app)
+        self.add_api_route("/nlp/v1/nature2prompt", self.nature2prompt, methods=["POST"], response_model=models.Nature2PromptResponse)
         self.add_api_route("/sdapi/v1/txt2img", self.text2imgapi, methods=["POST"], response_model=models.TextToImageResponse)
         self.add_api_route("/sdapi/v1/img2img", self.img2imgapi, methods=["POST"], response_model=models.ImageToImageResponse)
         self.add_api_route("/sdapi/v1/extra-single-image", self.extras_single_image_api, methods=["POST"], response_model=models.ExtrasSingleImageResponse)
@@ -428,6 +436,66 @@ class Api:
                 mentioned_script_args[index] = value
 
         return params
+
+    def extract_nouns(sentence):
+        # 分词
+        words = word_tokenize(sentence)
+    
+        # 词性标注
+        pos_tagged = nltk.pos_tag(words)
+    
+        # 提取名词（NN, NNS, NNP, NNPS）
+        nouns = [word for word, pos in pos_tagged if pos in ['NN', 'NNS', 'NNP', 'NNPS']]
+    
+        return nouns
+
+    async def nature2prompt(self, nature2promptreq: models.Nature2PromptResponse):
+        client = OpenAI(
+            # defaults to os.environ.get("OPENAI_API_KEY")
+            api_key="",
+        )
+
+        input_to_bot = nature2promptreq
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": "现在我需要你提取出几个关键词概括我给你的句子，例如 '海上生明月' 对应 '海上' 和 '明月'。",
+                },
+                # {"role": "assistant",
+                #  "content":" ",},
+                {"role": "user",
+                 "content":input_to_bot,}
+                # {"role": "assistant",
+                #  "content":" ",},
+            ],
+
+            model="gpt-3.5-turbo",
+        )
+        return_to_bot2 = chat_completion.choices[0].message.content
+
+
+        print(return_to_bot2)
+        translated = GoogleTranslator(source='auto', target='en').translate(return_to_bot2)  # output -> Weiter so, du bist großartig
+        print(translated)
+        # 确保你已经安装了nltk库。如果没有安装，请运行以下命令：
+
+
+
+        # 下载nltk资源（仅需运行一次）
+        nltk.download('punkt')
+        nltk.download('averaged_perceptron_tagger')
+        nltk.download('stopwords')
+
+        # 示例句子
+        sentence = translated
+        printnon = ''
+        # 提取名词
+        nouns = self.extract_nouns(sentence)
+        for item in nouns:
+          printnon += (item +", ")
+        print("过滤后的名词词表:",printnon)
+        return models.Nature2PromptResponse(filtered_nouns=printnon)
 
     def text2imgapi(self, txt2imgreq: models.StableDiffusionTxt2ImgProcessingAPI):
         task_id = txt2imgreq.force_task_id or create_task_id("txt2img")

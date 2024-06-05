@@ -131,6 +131,9 @@ StableDiffusionImg2ImgProcessingAPI = PydanticModelGenerator(
     ]
 ).generate_model()
 
+class Nature2PromptResponse(BaseModel):
+    filtered_nouns: str
+
 class TextToImageResponse(BaseModel):
     images: list[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
     parameters: dict
