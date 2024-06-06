@@ -268,6 +268,8 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
 
     for k, v in re_param.findall(lastline):
         try:
+            v = v.strip()
+
             if v.startswith('"') and v.endswith('"'):
                 v = unquote(v)
             elif v.startswith('[') and v.endswith(']'):
@@ -280,11 +282,11 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
                     res[f"{k}-1"] = m.group(1)
                     res[f"{k}-2"] = m.group(2)
                     continue
-                v = v.strip()  # Remove surrounding spaces for non-JSON values
 
-            res[k] = v
         except Exception as e:
             print(f"Error parsing \"{k}: {v}\": {e}")
+
+        res[k] = v
 
     # Extract styles from prompt
     if shared.opts.infotext_styles != "Ignore":
