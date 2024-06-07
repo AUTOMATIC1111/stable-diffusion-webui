@@ -1,4 +1,5 @@
 from modules import launch_utils
+import nltk
 
 args = launch_utils.args
 python = launch_utils.python
@@ -40,6 +41,13 @@ def main():
 
     if args.test_server:
         configure_for_tests()
+
+
+    # 下载nltk资源（仅需运行一次）
+    print("Downloading nltk data...")
+    nltk.download('punkt')
+    nltk.download('averaged_perceptron_tagger')
+    nltk.download('stopwords')
 
     start()
 

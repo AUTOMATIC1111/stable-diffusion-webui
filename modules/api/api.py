@@ -1,15 +1,16 @@
 import base64
 import io
-import os
 import time
 import datetime
 import uvicorn
 import ipaddress
 import requests
-from openai import OpenAI
+import logging
+from openai import AsyncOpenAI
 import gradio as gr
 from threading import Lock
 from io import BytesIO
+from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi import APIRouter, Depends, FastAPI, Request, Response
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.exceptions import HTTPException
@@ -140,67 +141,39 @@ def encode_pil_to_base64(image):
 
 
 def api_middleware(app: FastAPI):
-    rich_available = False
-    try:
-        if os.environ.get('WEBUI_RICH_EXCEPTIONS', None) is not None:
-            import anyio  # importing just so it can be placed on silent list
-            import starlette  # importing just so it can be placed on silent list
-            from rich.console import Console
-            console = Console()
-            rich_available = True
-    except Exception:
-        pass
+    # try:
+    #     if os.environ.get('WEBUI_RICH_EXCEPTIONS', None) is not None:
+    #         import anyio  # importing just so it can be placed on silent list
+    #         import starlette  # importing just so it can be placed on silent list
+    #         from rich.console import Console
+    #         console = Console()
+    #         rich_available = True
+    # except Exception:
+    #     pass
+    class LoggingMiddleware(BaseHTTPMiddleware):
+        async def dispatch(self, req: Request, call_next):
+            ts = time.time()
+            res: Response = await call_next(req)
+            duration = str(round(time.time() - ts, 4))
+            res.headers["X-Process-Time"] = duration
+            endpoint = req.scope.get('path', 'err')
+            if shared.cmd_opts.api_log and endpoint.startswith('/sdapi'):
+                print('API {t} {code} {prot}/{ver} {method} {endpoint} {cli} {duration}'.format(
+                    t=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+                    code=res.status_code,
+                    ver=req.scope.get('http_version', '0.0'),
+                    cli=req.scope.get('client', ('0:0.0.0', 0))[0],
+                    prot=req.scope.get('scheme', 'err'),
+                    method=req.scope.get('method', 'err'),
+                    endpoint=endpoint,
+                    duration=duration,
+                ))
+            return res
 
-    @app.middleware("http")
-    async def log_and_time(req: Request, call_next):
-        ts = time.time()
-        res: Response = await call_next(req)
-        duration = str(round(time.time() - ts, 4))
-        res.headers["X-Process-Time"] = duration
-        endpoint = req.scope.get('path', 'err')
-        if shared.cmd_opts.api_log and endpoint.startswith('/sdapi'):
-            print('API {t} {code} {prot}/{ver} {method} {endpoint} {cli} {duration}'.format(
-                t=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
-                code=res.status_code,
-                ver=req.scope.get('http_version', '0.0'),
-                cli=req.scope.get('client', ('0:0.0.0', 0))[0],
-                prot=req.scope.get('scheme', 'err'),
-                method=req.scope.get('method', 'err'),
-                endpoint=endpoint,
-                duration=duration,
-            ))
-        return res
+    # fastapi 自带了 exception handler
+    # 不再需要自定义
+    app.add_middleware(LoggingMiddleware)
 
-    def handle_exception(request: Request, e: Exception):
-        err = {
-            "error": type(e).__name__,
-            "detail": vars(e).get('detail', ''),
-            "body": vars(e).get('body', ''),
-            "errors": str(e),
-        }
-        if not isinstance(e, HTTPException):  # do not print backtrace on known httpexceptions
-            message = f"API error: {request.method}: {request.url} {err}"
-            if rich_available:
-                print(message)
-                console.print_exception(show_locals=True, max_frames=2, extra_lines=1, suppress=[anyio, starlette], word_wrap=False, width=min([console.width, 200]))
-            else:
-                errors.report(message, exc_info=True)
-        return JSONResponse(status_code=vars(e).get('status_code', 500), content=jsonable_encoder(err))
-
-    @app.middleware("http")
-    async def exception_handling(request: Request, call_next):
-        try:
-            return await call_next(request)
-        except Exception as e:
-            return handle_exception(request, e)
-
-    @app.exception_handler(Exception)
-    async def fastapi_exception_handler(request: Request, e: Exception):
-        return handle_exception(request, e)
-
-    @app.exception_handler(HTTPException)
-    async def http_exception_handler(request: Request, e: HTTPException):
-        return handle_exception(request, e)
 
 
 class Api:
@@ -215,7 +188,6 @@ class Api:
         self.app = app
         self.queue_lock = queue_lock
         api_middleware(self.app)
-        self.add_api_route("/nlp/v1/nature2prompt", self.nature2prompt, methods=["POST"], response_model=models.Nature2PromptResponse)
         self.add_api_route("/sdapi/v1/txt2img", self.text2imgapi, methods=["POST"], response_model=models.TextToImageResponse)
         self.add_api_route("/sdapi/v1/img2img", self.img2imgapi, methods=["POST"], response_model=models.ImageToImageResponse)
         self.add_api_route("/sdapi/v1/extra-single-image", self.extras_single_image_api, methods=["POST"], response_model=models.ExtrasSingleImageResponse)
@@ -252,6 +224,7 @@ class Api:
         self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=models.ScriptsList)
         self.add_api_route("/sdapi/v1/script-info", self.get_script_info, methods=["GET"], response_model=list[models.ScriptInfo])
         self.add_api_route("/sdapi/v1/extensions", self.get_extensions_list, methods=["GET"], response_model=list[models.ExtensionItem])
+        self.add_api_route("/nlp/v1/nature2prompt", self.nature2prompt, methods=["POST"], response_model=models.Nature2PromptResponse)
 
         if shared.cmd_opts.api_server_stop:
             self.add_api_route("/sdapi/v1/server-kill", self.kill_webui, methods=["POST"])
@@ -437,7 +410,7 @@ class Api:
 
         return params
 
-    def extract_nouns(sentence):
+    def extract_nouns(self, sentence):
         # 分词
         words = word_tokenize(sentence)
     
@@ -450,22 +423,21 @@ class Api:
         return nouns
 
     async def nature2prompt(self, nature2promptreq: models.Nature2PromptResponse):
-        client = OpenAI(
-            # defaults to os.environ.get("OPENAI_API_KEY")
-            api_key="",
-        )
+        client = AsyncOpenAI()
+
+        n2p_logger = logging.getLogger(__name__)
 
         input_to_bot = nature2promptreq
-        chat_completion = client.chat.completions.create(
+        chat_completion = await client.chat.completions.create(
             messages=[
                 {
                     "role": "system",
-                    "content": "现在我需要你提取出几个关键词概括我给你的句子，例如 '海上生明月' 对应 '海上' 和 '明月'。",
+                    "content": "现在我需要你提取出几个关键词概括我给你的句子，例如 '海上生明月' 对应 '海上' 和 '明月'。注意，仅返回关键词，不要返回其他内容。",
                 },
                 # {"role": "assistant",
                 #  "content":" ",},
                 {"role": "user",
-                 "content":input_to_bot,}
+                 "content":input_to_bot.filtered_nouns,}
                 # {"role": "assistant",
                 #  "content":" ",},
             ],
@@ -475,20 +447,22 @@ class Api:
         return_to_bot2 = chat_completion.choices[0].message.content
 
 
-        print(return_to_bot2)
+        n2p_logger.info(f"返回: {return_to_bot2}")
         translated = GoogleTranslator(source='auto', target='en').translate(return_to_bot2)  # output -> Weiter so, du bist großartig
-        print(translated)
+        n2p_logger.info(f"翻译后：{translated}")
         # 确保你已经安装了nltk库。如果没有安装，请运行以下命令：
 
 
 
+        # 移动到了 launch.py 脚本中，只需要启动时候调用
         # 下载nltk资源（仅需运行一次）
-        nltk.download('punkt')
-        nltk.download('averaged_perceptron_tagger')
-        nltk.download('stopwords')
+        # nltk.download('punkt')
+        # nltk.download('averaged_perceptron_tagger')
+        # nltk.download('stopwords')
 
         # 示例句子
         sentence = translated
+        n2p_logger.info(f"sentence: {sentence}")
         printnon = ''
         # 提取名词
         nouns = self.extract_nouns(sentence)
