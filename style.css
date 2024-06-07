@@ -456,6 +456,10 @@ div.toprow-compact-tools{
     display: block;
     margin-left: 0;
     width: 10em;
+    max-height: 80vh;
+	overflow-y: auto;
+	top: 0;
+	position: sticky;
 }
 
 #settings > div.tab-nav button{
