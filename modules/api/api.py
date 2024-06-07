@@ -422,7 +422,7 @@ class Api:
     
         return nouns
 
-    async def nature2prompt(self, nature2promptreq: models.Nature2PromptResponse):
+    async def nature2prompt(self, nature2promptreq: models.Nature2PromptRequest):
         client = AsyncOpenAI()
 
         n2p_logger = logging.getLogger(__name__)
@@ -437,7 +437,7 @@ class Api:
                 # {"role": "assistant",
                 #  "content":" ",},
                 {"role": "user",
-                 "content":input_to_bot.filtered_nouns,}
+                 "content":input_to_bot.text,}
                 # {"role": "assistant",
                 #  "content":" ",},
             ],

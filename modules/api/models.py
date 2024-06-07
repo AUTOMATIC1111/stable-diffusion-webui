@@ -131,6 +131,9 @@ StableDiffusionImg2ImgProcessingAPI = PydanticModelGenerator(
     ]
 ).generate_model()
 
+class Nature2PromptRequest(BaseModel):
+    text: str
+
 class Nature2PromptResponse(BaseModel):
     filtered_nouns: str
 
