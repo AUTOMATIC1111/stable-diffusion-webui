@@ -212,9 +212,16 @@ class CFGDenoiser(torch.nn.Module):
         uncond = denoiser_params.text_uncond
         skip_uncond = False
 
-        # alternating uncond allows for higher thresholds without the quality loss normally expected from raising it
-        if self.step % 2 and s_min_uncond > 0 and sigma[0] < s_min_uncond and not is_edit_model:
+        if shared.opts.skip_early_cond != 0. and self.step / self.total_steps <= shared.opts.skip_early_cond:
             skip_uncond = True
+            self.p.extra_generation_params["Skip Early CFG"] = shared.opts.skip_early_cond
+        elif (self.step % 2 or shared.opts.s_min_uncond_all) and s_min_uncond > 0 and sigma[0] < s_min_uncond and not is_edit_model:
+            skip_uncond = True
+            self.p.extra_generation_params["NGMS"] = s_min_uncond
+            if shared.opts.s_min_uncond_all:
+                self.p.extra_generation_params["NGMS all steps"] = shared.opts.s_min_uncond_all
+
+        if skip_uncond:
             x_in = x_in[:-batch_size]
             sigma_in = sigma_in[:-batch_size]
 
