@@ -51,14 +51,7 @@ function modalImageSwitch(offset) {
     var galleryButtons = all_gallery_buttons();
 
     if (galleryButtons.length > 1) {
-        var currentButton = selected_gallery_button();
-
-        var result = -1;
-        galleryButtons.forEach(function(v, i) {
-            if (v == currentButton) {
-                result = i;
-            }
-        });
+        var result = selected_gallery_index();
 
         if (result != -1) {
             var nextButton = galleryButtons[negmod((result + offset), galleryButtons.length)];
