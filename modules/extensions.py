@@ -191,8 +191,9 @@ class Extension:
 
     def check_updates(self):
         repo = Repo(self.path)
+        branch_name = f'{repo.remote().name}/{self.branch}'
         for fetch in repo.remote().fetch(dry_run=True):
-            if self.branch and fetch.name != f'{repo.remote().name}/{self.branch}':
+            if self.branch and fetch.name != branch_name:
                 continue
             if fetch.flags != fetch.HEAD_UPTODATE:
                 self.can_update = True
@@ -200,7 +201,7 @@ class Extension:
                 return
 
         try:
-            origin = repo.rev_parse('origin')
+            origin = repo.rev_parse(branch_name)
             if repo.head.commit != origin:
                 self.can_update = True
                 self.status = "behind HEAD"
@@ -213,8 +214,10 @@ class Extension:
         self.can_update = False
         self.status = "latest"
 
-    def fetch_and_reset_hard(self, commit='origin'):
+    def fetch_and_reset_hard(self, commit=None):
         repo = Repo(self.path)
+        if commit is None:
+            commit = f'{repo.remote().name}/{self.branch}'
         # Fix: `error: Your local changes to the following files would be overwritten by merge`,
         # because WSL2 Docker set 755 file permissions instead of 644, this results to the error.
         repo.git.fetch(all=True)

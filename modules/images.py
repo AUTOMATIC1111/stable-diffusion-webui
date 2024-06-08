@@ -606,9 +606,10 @@ def save_image_with_geninfo(image, geninfo, filename, extension=None, existing_p
                     piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(geninfo or "", encoding="unicode")
                 },
             })
+        else:
+            exif_bytes = None
 
-
-        image.save(filename,format=image_format, exif=exif_bytes)
+        image.save(filename,format=image_format, quality=opts.jpeg_quality, exif=exif_bytes)
     elif extension.lower() == ".gif":
         image.save(filename, format=image_format, comment=geninfo)
     else:
@@ -653,7 +654,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     # WebP and JPG formats have maximum dimension limits of 16383 and 65535 respectively. switch to PNG which has a much higher limit
     if (image.height > 65535 or image.width > 65535) and extension.lower() in ("jpg", "jpeg") or (image.height > 16383 or image.width > 16383) and extension.lower() == "webp":
         print('Image dimensions too large; saving as PNG')
-        extension = ".png"
+        extension = "png"
 
     if save_to_dirs is None:
         save_to_dirs = (grid and opts.grid_save_to_dirs) or (not grid and opts.save_to_dirs and not no_prompt)
@@ -789,7 +790,10 @@ def read_info_from_image(image: Image.Image) -> tuple[str | None, dict]:
         if exif_comment:
             geninfo = exif_comment
     elif "comment" in items: # for gif
-        geninfo = items["comment"].decode('utf8', errors="ignore")
+        if isinstance(items["comment"], bytes):
+            geninfo = items["comment"].decode('utf8', errors="ignore")
+        else:
+            geninfo = items["comment"]
 
     for field in IGNORED_INFO_KEYS:
         items.pop(field, None)

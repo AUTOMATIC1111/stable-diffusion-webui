@@ -1,6 +1,6 @@
 /* temporary fix to load default gradio font in frontend instead of backend */
 
-@import url('/webui-assets/css/sourcesanspro.css');
+@import url('webui-assets/css/sourcesanspro.css');
 
 
 /* temporary fix to hide gradio crop tool until it's fixed https://github.com/gradio-app/gradio/issues/3810 */
@@ -780,9 +780,9 @@ table.popup-table .link{
     position:absolute;
     display:block;
     padding:0px 0;
-    border:2px solid #a55000;
+    border:2px solid var(--primary-800);
     border-radius:8px;
-    box-shadow:1px 1px 2px #CE6400;
+    box-shadow:1px 1px 2px var(--primary-500);
     width: 200px;
 }
 
@@ -799,7 +799,7 @@ table.popup-table .link{
 }
 
 .context-menu-items a:hover{
-    background: #a55000;
+    background: var(--primary-700);
 }
 
 
@@ -807,6 +807,8 @@ table.popup-table .link{
 
 #tab_extensions table{
     border-collapse: collapse;
+    overflow-x: auto;
+    display: block;
 }
 
 #tab_extensions table td, #tab_extensions table th{
@@ -852,6 +854,10 @@ table.popup-table .link{
 #available_extensions .star_count{
     margin-left: auto;
     display: inline-block;
+}
+
+.compact-checkbox-group  div label {
+    padding: 0.1em 0.3em !important;
 }
 
 /* extensions tab table row hover highlight */

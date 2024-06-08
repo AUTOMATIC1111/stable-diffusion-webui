@@ -143,6 +143,14 @@ def assign_network_names_to_compvis_modules(sd_model):
     sd_model.network_layer_mapping = network_layer_mapping
 
 
+class BundledTIHash(str):
+    def __init__(self, hash_str):
+        self.hash = hash_str
+
+    def __str__(self):
+        return self.hash if shared.opts.lora_bundled_ti_to_infotext else ''
+
+
 def load_network(name, network_on_disk):
     net = network.Network(name, network_on_disk)
     net.mtime = os.path.getmtime(network_on_disk.filename)
@@ -229,6 +237,7 @@ def load_network(name, network_on_disk):
     for emb_name, data in bundle_embeddings.items():
         embedding = textual_inversion.create_embedding_from_data(data, emb_name, filename=network_on_disk.filename + "/" + emb_name)
         embedding.loaded = None
+        embedding.shorthash = BundledTIHash(name)
         embeddings[emb_name] = embedding
 
     net.bundle_embeddings = embeddings
@@ -259,6 +268,16 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
                 emb_db.register_embedding_by_name(None, shared.sd_model, emb_name)
 
     loaded_networks.clear()
+
+    unavailable_networks = []
+    for name in names:
+        if name.lower() in forbidden_network_aliases and available_networks.get(name) is None:
+            unavailable_networks.append(name)
+        elif available_network_aliases.get(name) is None:
+            unavailable_networks.append(name)
+
+    if unavailable_networks:
+        update_available_networks_by_names(unavailable_networks)
 
     networks_on_disk = [available_networks.get(name, None) if name.lower() in forbidden_network_aliases else available_network_aliases.get(name, None) for name in names]
     if any(x is None for x in networks_on_disk):
@@ -378,13 +397,18 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
         self.network_weights_backup = weights_backup
 
     bias_backup = getattr(self, "network_bias_backup", None)
-    if bias_backup is None:
+    if bias_backup is None and wanted_names != ():
         if isinstance(self, torch.nn.MultiheadAttention) and self.out_proj.bias is not None:
             bias_backup = self.out_proj.bias.to(devices.cpu, copy=True)
         elif getattr(self, 'bias', None) is not None:
             bias_backup = self.bias.to(devices.cpu, copy=True)
         else:
             bias_backup = None
+
+        # Unlike weight which always has value, some modules don't have bias.
+        # Only report if bias is not None and current bias are not unchanged.
+        if bias_backup is not None and current_names != ():
+            raise RuntimeError("no backup bias found and current bias are not unchanged")
         self.network_bias_backup = bias_backup
 
     if current_names != wanted_names:
@@ -566,22 +590,16 @@ def network_MultiheadAttention_load_state_dict(self, *args, **kwargs):
     return originals.MultiheadAttention_load_state_dict(self, *args, **kwargs)
 
 
-def list_available_networks():
-    available_networks.clear()
-    available_network_aliases.clear()
-    forbidden_network_aliases.clear()
-    available_network_hash_lookup.clear()
-    forbidden_network_aliases.update({"none": 1, "Addams": 1})
-
-    os.makedirs(shared.cmd_opts.lora_dir, exist_ok=True)
-
+def process_network_files(names: list[str] | None = None):
     candidates = list(shared.walk_files(shared.cmd_opts.lora_dir, allowed_extensions=[".pt", ".ckpt", ".safetensors"]))
     candidates += list(shared.walk_files(shared.cmd_opts.lyco_dir_backcompat, allowed_extensions=[".pt", ".ckpt", ".safetensors"]))
     for filename in candidates:
         if os.path.isdir(filename):
             continue
-
         name = os.path.splitext(os.path.basename(filename))[0]
+        # if names is provided, only load networks with names in the list
+        if names and name not in names:
+            continue
         try:
             entry = network.NetworkOnDisk(name, filename)
         except OSError:  # should catch FileNotFoundError and PermissionError etc.
@@ -595,6 +613,22 @@ def list_available_networks():
 
         available_network_aliases[name] = entry
         available_network_aliases[entry.alias] = entry
+
+
+def update_available_networks_by_names(names: list[str]):
+    process_network_files(names)
+
+
+def list_available_networks():
+    available_networks.clear()
+    available_network_aliases.clear()
+    forbidden_network_aliases.clear()
+    available_network_hash_lookup.clear()
+    forbidden_network_aliases.update({"none": 1, "Addams": 1})
+
+    os.makedirs(shared.cmd_opts.lora_dir, exist_ok=True)
+
+    process_network_files()
 
 
 re_network_name = re.compile(r"(.*)\s*\([0-9a-fA-F]+\)")

@@ -8,9 +8,6 @@ var contextMenuInit = function() {
     };
 
     function showContextMenu(event, element, menuEntries) {
-        let posx = event.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
-        let posy = event.clientY + document.body.scrollTop + document.documentElement.scrollTop;
-
         let oldMenu = gradioApp().querySelector('#context-menu');
         if (oldMenu) {
             oldMenu.remove();
@@ -23,10 +20,8 @@ var contextMenuInit = function() {
         contextMenu.style.background = baseStyle.background;
         contextMenu.style.color = baseStyle.color;
         contextMenu.style.fontFamily = baseStyle.fontFamily;
-        contextMenu.style.top = posy + 'px';
-        contextMenu.style.left = posx + 'px';
-
-
+        contextMenu.style.top = event.pageY + 'px';
+        contextMenu.style.left = event.pageX + 'px';
 
         const contextMenuList = document.createElement('ul');
         contextMenuList.className = 'context-menu-items';
@@ -43,21 +38,6 @@ var contextMenuInit = function() {
         });
 
         gradioApp().appendChild(contextMenu);
-
-        let menuWidth = contextMenu.offsetWidth + 4;
-        let menuHeight = contextMenu.offsetHeight + 4;
-
-        let windowWidth = window.innerWidth;
-        let windowHeight = window.innerHeight;
-
-        if ((windowWidth - posx) < menuWidth) {
-            contextMenu.style.left = windowWidth - menuWidth + "px";
-        }
-
-        if ((windowHeight - posy) < menuHeight) {
-            contextMenu.style.top = windowHeight - menuHeight + "px";
-        }
-
     }
 
     function appendContextMenuOption(targetElementSelector, entryName, entryFunction) {
@@ -107,16 +87,23 @@ var contextMenuInit = function() {
                 oldMenu.remove();
             }
         });
-        gradioApp().addEventListener("contextmenu", function(e) {
-            let oldMenu = gradioApp().querySelector('#context-menu');
-            if (oldMenu) {
-                oldMenu.remove();
-            }
-            menuSpecs.forEach(function(v, k) {
-                if (e.composedPath()[0].matches(k)) {
-                    showContextMenu(e, e.composedPath()[0], v);
-                    e.preventDefault();
+        ['contextmenu', 'touchstart'].forEach((eventType) => {
+            gradioApp().addEventListener(eventType, function(e) {
+                let ev = e;
+                if (eventType.startsWith('touch')) {
+                    if (e.touches.length !== 2) return;
+                    ev = e.touches[0];
                 }
+                let oldMenu = gradioApp().querySelector('#context-menu');
+                if (oldMenu) {
+                    oldMenu.remove();
+                }
+                menuSpecs.forEach(function(v, k) {
+                    if (e.composedPath()[0].matches(k)) {
+                        showContextMenu(ev, e.composedPath()[0], v);
+                        e.preventDefault();
+                    }
+                });
             });
         });
         eventListenerApplied = true;

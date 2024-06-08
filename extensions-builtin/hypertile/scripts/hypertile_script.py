@@ -1,6 +1,5 @@
 import hypertile
 from modules import scripts, script_callbacks, shared
-from scripts.hypertile_xyz import add_axis_options
 
 
 class ScriptHypertile(scripts.Script):
@@ -93,7 +92,6 @@ def on_ui_settings():
         "hypertile_max_depth_unet": shared.OptionInfo(3, "Hypertile U-Net max depth", gr.Slider, {"minimum": 0, "maximum": 3, "step": 1}, infotext="Hypertile U-Net max depth").info("larger = more neural network layers affected; minor effect on performance"),
         "hypertile_max_tile_unet": shared.OptionInfo(256, "Hypertile U-Net max tile size", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}, infotext="Hypertile U-Net max tile size").info("larger = worse performance"),
         "hypertile_swap_size_unet": shared.OptionInfo(3, "Hypertile U-Net swap size", gr.Slider, {"minimum": 0, "maximum": 64, "step": 1}, infotext="Hypertile U-Net swap size"),
-
         "hypertile_enable_vae": shared.OptionInfo(False, "Enable Hypertile VAE", infotext="Hypertile VAE").info("minimal change in the generated picture"),
         "hypertile_max_depth_vae": shared.OptionInfo(3, "Hypertile VAE max depth", gr.Slider, {"minimum": 0, "maximum": 3, "step": 1}, infotext="Hypertile VAE max depth"),
         "hypertile_max_tile_vae": shared.OptionInfo(128, "Hypertile VAE max tile size", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}, infotext="Hypertile VAE max tile size"),
@@ -103,6 +101,21 @@ def on_ui_settings():
     for name, opt in options.items():
         opt.section = ('hypertile', "Hypertile")
         shared.opts.add_option(name, opt)
+
+
+def add_axis_options():
+    xyz_grid = [x for x in scripts.scripts_data if x.script_class.__module__ == "xyz_grid.py"][0].module
+    xyz_grid.axis_options.extend([
+        xyz_grid.AxisOption("[Hypertile] Unet First pass Enabled", str, xyz_grid.apply_override('hypertile_enable_unet', boolean=True), choices=xyz_grid.boolean_choice(reverse=True)),
+        xyz_grid.AxisOption("[Hypertile] Unet Second pass Enabled", str, xyz_grid.apply_override('hypertile_enable_unet_secondpass', boolean=True), choices=xyz_grid.boolean_choice(reverse=True)),
+        xyz_grid.AxisOption("[Hypertile] Unet Max Depth", int, xyz_grid.apply_override("hypertile_max_depth_unet"), confirm=xyz_grid.confirm_range(0, 3, '[Hypertile] Unet Max Depth'), choices=lambda: [str(x) for x in range(4)]),
+        xyz_grid.AxisOption("[Hypertile] Unet Max Tile Size", int, xyz_grid.apply_override("hypertile_max_tile_unet"), confirm=xyz_grid.confirm_range(0, 512, '[Hypertile] Unet Max Tile Size')),
+        xyz_grid.AxisOption("[Hypertile] Unet Swap Size", int, xyz_grid.apply_override("hypertile_swap_size_unet"), confirm=xyz_grid.confirm_range(0, 64, '[Hypertile] Unet Swap Size')),
+        xyz_grid.AxisOption("[Hypertile] VAE Enabled", str, xyz_grid.apply_override('hypertile_enable_vae', boolean=True), choices=xyz_grid.boolean_choice(reverse=True)),
+        xyz_grid.AxisOption("[Hypertile] VAE Max Depth", int, xyz_grid.apply_override("hypertile_max_depth_vae"), confirm=xyz_grid.confirm_range(0, 3, '[Hypertile] VAE Max Depth'), choices=lambda: [str(x) for x in range(4)]),
+        xyz_grid.AxisOption("[Hypertile] VAE Max Tile Size", int, xyz_grid.apply_override("hypertile_max_tile_vae"), confirm=xyz_grid.confirm_range(0, 512, '[Hypertile] VAE Max Tile Size')),
+        xyz_grid.AxisOption("[Hypertile] VAE Swap Size", int, xyz_grid.apply_override("hypertile_swap_size_vae"), confirm=xyz_grid.confirm_range(0, 64, '[Hypertile] VAE Swap Size')),
+    ])
 
 
 script_callbacks.on_ui_settings(on_ui_settings)
