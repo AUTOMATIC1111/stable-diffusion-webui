@@ -23,6 +23,7 @@ def load_file_from_url(
     model_dir: str,
     progress: bool = True,
     file_name: str | None = None,
+    hash_prefix: str | None = None,
 ) -> str:
     """Download a file from `url` into `model_dir`, using the file present if possible.
 
@@ -36,11 +37,11 @@ def load_file_from_url(
     if not os.path.exists(cached_file):
         print(f'Downloading: "{url}" to {cached_file}\n')
         from torch.hub import download_url_to_file
-        download_url_to_file(url, cached_file, progress=progress)
+        download_url_to_file(url, cached_file, progress=progress, hash_prefix=hash_prefix)
     return cached_file
 
 
-def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None, download_name=None, ext_blacklist=None) -> list:
+def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None, download_name=None, ext_blacklist=None, hash_prefix=None) -> list:
     """
     A one-and done loader to try finding the desired models in specified directories.
 
@@ -49,6 +50,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
     @param model_path: The location to store/find models in.
     @param command_path: A command-line argument to search for models in first.
     @param ext_filter: An optional list of filename extensions to filter by
+    @param hash_prefix: the expected sha256 of the model_url
     @return: A list of paths containing the desired model(s)
     """
     output = []
@@ -78,7 +80,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
 
         if model_url is not None and len(output) == 0:
             if download_name is not None:
-                output.append(load_file_from_url(model_url, model_dir=places[0], file_name=download_name))
+                output.append(load_file_from_url(model_url, model_dir=places[0], file_name=download_name, hash_prefix=hash_prefix))
             else:
                 output.append(model_url)
 

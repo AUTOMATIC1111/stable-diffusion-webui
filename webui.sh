@@ -210,6 +210,7 @@ then
     if [[ ! -d "${venv_dir}" ]]
     then
         "${python_cmd}" -m venv "${venv_dir}"
+        "${venv_dir}"/bin/python -m pip install --upgrade pip
         first_launch=1
     fi
     # shellcheck source=/dev/null
