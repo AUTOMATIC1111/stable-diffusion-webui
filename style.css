@@ -780,9 +780,9 @@ table.popup-table .link{
     position:absolute;
     display:block;
     padding:0px 0;
-    border:2px solid #a55000;
+    border:2px solid var(--primary-800);
     border-radius:8px;
-    box-shadow:1px 1px 2px #CE6400;
+    box-shadow:1px 1px 2px var(--primary-500);
     width: 200px;
 }
 
@@ -799,7 +799,7 @@ table.popup-table .link{
 }
 
 .context-menu-items a:hover{
-    background: #a55000;
+    background: var(--primary-700);
 }
 
 
