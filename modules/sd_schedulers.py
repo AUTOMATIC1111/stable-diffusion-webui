@@ -4,15 +4,15 @@ import torch
 
 import k_diffusion
 
+import numpy as np
+
+from modules import shared
+
 def to_d(x, sigma, denoised):
     """Converts a denoiser output to a Karras ODE derivative."""
     return (x - denoised) / sigma
 
 k_diffusion.sampling.to_d = to_d
-
-import numpy as np
-
-from modules import shared
 
 @dataclasses.dataclass
 class Scheduler:
