@@ -659,10 +659,11 @@ def get_empty_cond(sd_model):
 
 
 def send_model_to_cpu(m):
-    if m.lowvram:
-        lowvram.send_everything_to_cpu()
-    else:
-        m.to(devices.cpu)
+    if m is not None:
+        if m.lowvram:
+            lowvram.send_everything_to_cpu()
+        else:
+            m.to(devices.cpu)
 
     devices.torch_gc()
 
