@@ -238,11 +238,6 @@ class StableDiffusionProcessing:
             self.styles = []
 
         self.sampler_noise_scheduler_override = None
-        self.s_min_uncond = self.s_min_uncond if self.s_min_uncond is not None else opts.s_min_uncond
-        self.s_churn = self.s_churn if self.s_churn is not None else opts.s_churn
-        self.s_tmin = self.s_tmin if self.s_tmin is not None else opts.s_tmin
-        self.s_tmax = (self.s_tmax if self.s_tmax is not None else opts.s_tmax) or float('inf')
-        self.s_noise = self.s_noise if self.s_noise is not None else opts.s_noise
 
         self.extra_generation_params = self.extra_generation_params or {}
         self.override_settings = self.override_settings or {}
@@ -258,6 +253,13 @@ class StableDiffusionProcessing:
 
         self.cached_uc = StableDiffusionProcessing.cached_uc
         self.cached_c = StableDiffusionProcessing.cached_c
+
+    def fill_fields_from_opts(self):
+        self.s_min_uncond = self.s_min_uncond if self.s_min_uncond is not None else opts.s_min_uncond
+        self.s_churn = self.s_churn if self.s_churn is not None else opts.s_churn
+        self.s_tmin = self.s_tmin if self.s_tmin is not None else opts.s_tmin
+        self.s_tmax = (self.s_tmax if self.s_tmax is not None else opts.s_tmax) or float('inf')
+        self.s_noise = self.s_noise if self.s_noise is not None else opts.s_noise
 
     @property
     def sd_model(self):
@@ -794,7 +796,6 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Token merging ratio hr": None if not enable_hr or token_merging_ratio_hr == 0 else token_merging_ratio_hr,
         "Init image hash": getattr(p, 'init_img_hash', None),
         "RNG": opts.randn_source if opts.randn_source != "GPU" else None,
-        "NGMS": None if p.s_min_uncond == 0 else p.s_min_uncond,
         "Tiling": "True" if p.tiling else None,
         **p.extra_generation_params,
         "Version": program_version() if opts.add_version_to_infotext else None,
@@ -890,6 +891,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     modules.sd_hijack.model_hijack.apply_circular(p.tiling)
     modules.sd_hijack.model_hijack.clear_comments()
 
+    p.fill_fields_from_opts()
     p.setup_prompts()
 
     if isinstance(seed, list):
