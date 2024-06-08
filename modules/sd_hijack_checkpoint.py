@@ -4,16 +4,19 @@ import ldm.modules.attention
 import ldm.modules.diffusionmodules.openaimodel
 
 
+# Setting flag=False so that torch skips checking parameters.
+# parameters checking is expensive in frequent operations.
+
 def BasicTransformerBlock_forward(self, x, context=None):
-    return checkpoint(self._forward, x, context)
+    return checkpoint(self._forward, x, context, flag=False)
 
 
 def AttentionBlock_forward(self, x):
-    return checkpoint(self._forward, x)
+    return checkpoint(self._forward, x, flag=False)
 
 
 def ResBlock_forward(self, x, emb):
-    return checkpoint(self._forward, x, emb)
+    return checkpoint(self._forward, x, emb, flag=False)
 
 
 stored = []
