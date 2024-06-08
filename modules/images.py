@@ -789,7 +789,10 @@ def read_info_from_image(image: Image.Image) -> tuple[str | None, dict]:
         if exif_comment:
             geninfo = exif_comment
     elif "comment" in items: # for gif
-        geninfo = items["comment"].decode('utf8', errors="ignore")
+        if isinstance(items["comment"], bytes):
+            geninfo = items["comment"].decode('utf8', errors="ignore")
+        else:
+            geninfo = items["comment"]
 
     for field in IGNORED_INFO_KEYS:
         items.pop(field, None)
