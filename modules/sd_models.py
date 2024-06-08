@@ -380,6 +380,13 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     model.is_sd2 = not model.is_sdxl and hasattr(model.cond_stage_model, 'model')
     model.is_sd1 = not model.is_sdxl and not model.is_sd2
     model.is_ssd = model.is_sdxl and 'model.diffusion_model.middle_block.1.transformer_blocks.0.attn1.to_q.weight' not in state_dict.keys()
+    # Set is_sdxl_inpaint flag.
+    diffusion_model_input = state_dict.get('diffusion_model.input_blocks.0.0.weight', None)
+    model.is_sdxl_inpaint = (
+        model.is_sdxl and
+        diffusion_model_input is not None and
+        diffusion_model_input.shape[1] == 9
+    )
     if model.is_sdxl:
         sd_models_xl.extend_sdxl(model)
 
@@ -403,6 +410,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         model.float()
         model.alphas_cumprod_original = model.alphas_cumprod
         devices.dtype_unet = torch.float32
+        assert shared.cmd_opts.precision != "half", "Cannot use --precision half with --no-half"
         timer.record("apply float()")
     else:
         vae = model.first_stage_model
@@ -540,7 +548,7 @@ def repair_config(sd_config):
     if hasattr(sd_config.model.params, 'unet_config'):
         if shared.cmd_opts.no_half:
             sd_config.model.params.unet_config.params.use_fp16 = False
-        elif shared.cmd_opts.upcast_sampling:
+        elif shared.cmd_opts.upcast_sampling or shared.cmd_opts.precision == "half":
             sd_config.model.params.unet_config.params.use_fp16 = True
 
     if getattr(sd_config.model.params.first_stage_config.params.ddconfig, "attn_type", None) == "vanilla-xformers" and not shared.xformers_available:
@@ -550,6 +558,14 @@ def repair_config(sd_config):
     if hasattr(sd_config.model.params, "noise_aug_config") and hasattr(sd_config.model.params.noise_aug_config.params, "clip_stats_path"):
         karlo_path = os.path.join(paths.models_path, 'karlo')
         sd_config.model.params.noise_aug_config.params.clip_stats_path = sd_config.model.params.noise_aug_config.params.clip_stats_path.replace("checkpoints/karlo_models", karlo_path)
+
+    # Do not use checkpoint for inference.
+    # This helps prevent extra performance overhead on checking parameters.
+    # The perf overhead is about 100ms/it on 4090 for SDXL.
+    if hasattr(sd_config.model.params, "network_config"):
+        sd_config.model.params.network_config.params.use_checkpoint = False
+    if hasattr(sd_config.model.params, "unet_config"):
+        sd_config.model.params.unet_config.params.use_checkpoint = False
 
 
 def rescale_zero_terminal_snr_abar(alphas_cumprod):
@@ -659,10 +675,11 @@ def get_empty_cond(sd_model):
 
 
 def send_model_to_cpu(m):
-    if m.lowvram:
-        lowvram.send_everything_to_cpu()
-    else:
-        m.to(devices.cpu)
+    if m is not None:
+        if m.lowvram:
+            lowvram.send_everything_to_cpu()
+        else:
+            m.to(devices.cpu)
 
     devices.torch_gc()
 

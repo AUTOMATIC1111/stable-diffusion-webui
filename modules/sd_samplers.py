@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import functools
-
+import logging
 from modules import sd_samplers_kdiffusion, sd_samplers_timesteps, sd_samplers_lcm, shared, sd_samplers_common, sd_schedulers
 
 # imports for functions that previously were here and are used by other modules
@@ -120,6 +120,13 @@ def get_sampler_and_scheduler(sampler_name, scheduler_name):
         found_scheduler = sd_schedulers.schedulers[0]
 
     return sampler.name, found_scheduler.label
+
+
+def fix_p_invalid_sampler_and_scheduler(p):
+    i_sampler_name, i_scheduler = p.sampler_name, p.scheduler
+    p.sampler_name, p.scheduler = get_sampler_and_scheduler(p.sampler_name, p.scheduler)
+    if p.sampler_name != i_sampler_name or i_scheduler != p.scheduler:
+        logging.warning(f'Sampler Scheduler autocorrection: "{i_sampler_name}" -> "{p.sampler_name}", "{i_scheduler}" -> "{p.scheduler}"')
 
 
 set_samplers()
