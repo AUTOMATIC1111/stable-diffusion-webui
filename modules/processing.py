@@ -569,7 +569,7 @@ class Processed:
         self.all_negative_prompts = all_negative_prompts or p.all_negative_prompts or [self.negative_prompt]
         self.all_seeds = all_seeds or p.all_seeds or [self.seed]
         self.all_subseeds = all_subseeds or p.all_subseeds or [self.subseed]
-        self.infotexts = infotexts or [info]
+        self.infotexts = infotexts or [info] * len(images_list)
         self.version = program_version()
 
     def js(self):
