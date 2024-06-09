@@ -115,7 +115,7 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
             if scheduler.need_inner_model:
                 sigmas_kwargs['inner_model'] = self.model_wrap
 
-            sigmas = scheduler.function(n=steps, **sigmas_kwargs, device=shared.device)
+            sigmas = scheduler.function(n=steps, **sigmas_kwargs)
 
         if discard_next_to_last_sigma:
             sigmas = torch.cat([sigmas[:-2], sigmas[-1:]])
