@@ -377,6 +377,7 @@ def get_sampler_scheduler(p, sampler):
 
 class FilenameGenerator:
     replacements = {
+        'basename': lambda self: 'img' if self.basename == '' else self.basename,
         'seed': lambda self: self.seed if self.seed is not None else '',
         'seed_first': lambda self: self.seed if self.p.batch_size == 1 else self.p.all_seeds[0],
         'seed_last': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p.batch_size == 1 else self.p.all_seeds[-1],
@@ -413,12 +414,13 @@ class FilenameGenerator:
     }
     default_time_format = '%Y%m%d%H%M%S'
 
-    def __init__(self, p, seed, prompt, image, zip=False):
+    def __init__(self, p, seed, prompt, image, zip=False, basename=""):
         self.p = p
         self.seed = seed
         self.prompt = prompt
         self.image = image
         self.zip = zip
+        self.basename = basename
 
     def get_vae_filename(self):
         """Get the name of the VAE file."""
@@ -649,7 +651,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         txt_fullfn (`str` or None):
             If a text file is saved for this image, this will be its full path. Otherwise None.
     """
-    namegen = FilenameGenerator(p, seed, prompt, image)
+    namegen = FilenameGenerator(p, seed, prompt, image, zip=False, basename=basename)
 
     # WebP and JPG formats have maximum dimension limits of 16383 and 65535 respectively. switch to PNG which has a much higher limit
     if (image.height > 65535 or image.width > 65535) and extension.lower() in ("jpg", "jpeg") or (image.height > 16383 or image.width > 16383) and extension.lower() == "webp":
