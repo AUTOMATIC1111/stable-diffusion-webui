@@ -386,13 +386,6 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     model.is_sd2 = not model.is_sdxl and hasattr(model.cond_stage_model, 'model')
     model.is_sd1 = not model.is_sdxl and not model.is_sd2
     model.is_ssd = model.is_sdxl and 'model.diffusion_model.middle_block.1.transformer_blocks.0.attn1.to_q.weight' not in state_dict.keys()
-    # Set is_sdxl_inpaint flag.
-    diffusion_model_input = state_dict.get('diffusion_model.input_blocks.0.0.weight', None)
-    model.is_sdxl_inpaint = (
-        model.is_sdxl and
-        diffusion_model_input is not None and
-        diffusion_model_input.shape[1] == 9
-    )
     if model.is_sdxl:
         sd_models_xl.extend_sdxl(model)
 
@@ -407,6 +400,19 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     timer.record("apply weights to model")
 
     del state_dict
+
+    # Set is_sdxl_inpaint flag.
+    # Checks Unet structure to detect inpaint model. The inpaint model's
+    # checkpoint state_dict does not contain the key
+    # 'diffusion_model.input_blocks.0.0.weight'.
+    diffusion_model_input = model.model.state_dict().get(
+        'diffusion_model.input_blocks.0.0.weight'
+    )
+    model.is_sdxl_inpaint = (
+        model.is_sdxl and
+        diffusion_model_input is not None and
+        diffusion_model_input.shape[1] == 9
+    )
 
     if shared.cmd_opts.opt_channelslast:
         model.to(memory_format=torch.channels_last)
