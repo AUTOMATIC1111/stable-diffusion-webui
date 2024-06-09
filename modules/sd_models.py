@@ -402,8 +402,9 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     del state_dict
 
     # Set is_sdxl_inpaint flag.
-    # Perform this check after model initialization to make sure state_dict
-    # structure is already known.
+    # Checks Unet structure to detect inpaint model. The inpaint model's
+    # checkpoint state_dict does not contain the key
+    # 'diffusion_model.input_blocks.0.0.weight'.
     diffusion_model_input = model.model.state_dict().get(
         'diffusion_model.input_blocks.0.0.weight'
     )
