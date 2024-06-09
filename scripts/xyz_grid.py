@@ -209,7 +209,10 @@ def list_to_csv_string(data_list):
 
 
 def csv_string_to_list_strip(data_str):
-    return list(map(str.strip, chain.from_iterable(csv.reader(StringIO(data_str), skipinitialspace=True))))
+    placeholder = "<<<COMMA>>>"
+    data_str = data_str.replace(r"\,", placeholder) # Replace escaped commas with the placeholder
+    values = chain.from_iterable(csv.reader(StringIO(data_str), skipinitialspace=True)))
+    return list(map(lambda s: s.replace(placeholder, ",").strip(), values))
 
 
 class AxisOption:
