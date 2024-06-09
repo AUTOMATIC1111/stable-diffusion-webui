@@ -299,6 +299,7 @@ onAfterUiUpdate(function() {
     var jsdata = textarea.value;
     opts = JSON.parse(jsdata);
 
+    executeCallbacks(optionsAvailableCallbacks); /*global optionsAvailableCallbacks*/
     executeCallbacks(optionsChangedCallbacks); /*global optionsChangedCallbacks*/
 
     Object.defineProperty(textarea, 'value', {
