@@ -1,0 +1,2 @@
+Requirement already satisfied: opencv-python in ./venv/lib/python3.10/site-packages (4.10.0.82)
+Requirement already satisfied: numpy>=1.21.2 in ./venv/lib/python3.10/site-packages (from opencv-python) (1.26.2)
