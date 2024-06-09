@@ -1,5 +1,5 @@
 import torch
-from modules import prompt_parser, devices, sd_samplers_common
+from modules import prompt_parser, sd_samplers_common
 
 from modules.shared import opts, state
 import modules.shared as shared
