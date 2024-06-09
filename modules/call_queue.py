@@ -1,8 +1,9 @@
+import os.path
 from functools import wraps
 import html
 import time
 
-from modules import shared, progress, errors, devices, fifo_lock
+from modules import shared, progress, errors, devices, fifo_lock, profiling
 
 queue_lock = fifo_lock.FIFOLock()
 
@@ -111,8 +112,13 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
         else:
             vram_html = ''
 
+        if shared.opts.profiling_enable and os.path.exists(shared.opts.profiling_filename):
+            profiling_html = f"<p class='profile'> [ <a href='{profiling.webpath()}' download>Profile</a> ] </p>"
+        else:
+            profiling_html = ''
+
         # last item is always HTML
-        res[-1] += f"<div class='performance'><p class='time'>Time taken: <wbr><span class='measurement'>{elapsed_text}</span></p>{vram_html}</div>"
+        res[-1] += f"<div class='performance'><p class='time'>Time taken: <wbr><span class='measurement'>{elapsed_text}</span></p>{vram_html}{profiling_html}</div>"
 
         return tuple(res)
 
