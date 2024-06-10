@@ -54,11 +54,14 @@ def image_grid(imgs, batch_size=1, rows=None):
     params = script_callbacks.ImageGridLoopParams(imgs, cols, rows)
     script_callbacks.image_grid_callback(params)
 
-    w, h = imgs[0].size
-    grid = Image.new('RGB', size=(params.cols * w, params.rows * h), color='black')
+    w, h = map(max, zip(*(img.size for img in imgs)))
+    grid_background_color = ImageColor.getcolor(opts.grid_background_color, 'RGB')
+    grid = Image.new('RGB', size=(params.cols * w, params.rows * h), color=grid_background_color)
 
     for i, img in enumerate(params.imgs):
-        grid.paste(img, box=(i % params.cols * w, i // params.cols * h))
+        img_w, img_h = img.size
+        w_offset, h_offset = 0 if img_w == w else (w - img_w) // 2, 0 if img_h == h else (h - img_h) // 2
+        grid.paste(img, box=(i % params.cols * w + w_offset, i // params.cols * h + h_offset))
 
     return grid
 
