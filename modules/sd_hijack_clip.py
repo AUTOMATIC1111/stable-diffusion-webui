@@ -355,6 +355,8 @@ class FrozenCLIPEmbedderForSDXLWithCustomWords(FrozenCLIPEmbedderWithCustomWords
 
         if self.wrapped.layer == "last":
             z = outputs.last_hidden_state
+        elif opts.sdxl_clip_l_skip is True:
+            z = outputs.hidden_states[-opts.CLIP_stop_at_last_layers]
         else:
             z = outputs.hidden_states[self.wrapped.layer_idx]
 
