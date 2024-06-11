@@ -76,6 +76,28 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
     var dateStart = new Date();
     var wasEverActive = false;
     var parentProgressbar = progressbarContainer.parentNode;
+    var wakeLock = null;
+
+    var requestWakeLock = async function() {
+        if (!opts.prevent_screen_sleep_during_generation) return;
+        try {
+            wakeLock = await navigator.wakeLock.request('screen');
+            console.log('Wake Lock is active.');
+        } catch (err) {
+            console.log('Wake Lock is not supported.');
+        }
+    };
+
+    var releaseWakeLock = async function() {
+        if (!opts.prevent_screen_sleep_during_generation || !wakeLock) return;
+        try {
+            await wakeLock.release();
+            console.log('Wake Lock is released.');
+            wakeLock = null;
+        } catch (err) {
+            console.error('Wake Lock release failed', err);
+        }
+    };
 
     var divProgress = document.createElement('div');
     divProgress.className = 'progressDiv';
@@ -89,6 +111,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
     var livePreview = null;
 
     var removeProgressBar = function() {
+        releaseWakeLock();
         if (!divProgress) return;
 
         setTitle("");
@@ -100,6 +123,8 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
     };
 
     var funProgress = function(id_task) {
+        // Request the wake lock at the start of the progress
+        requestWakeLock();
         request("./internal/progress", {id_task: id_task, live_preview: false}, function(res) {
             if (res.completed) {
                 removeProgressBar();
