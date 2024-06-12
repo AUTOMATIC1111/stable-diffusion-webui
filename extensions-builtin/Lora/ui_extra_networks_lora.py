@@ -18,6 +18,8 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
     def create_item(self, name, index=None, enable_filter=True):
         lora_on_disk = networks.available_networks.get(name)
         if lora_on_disk is None:
+            lora_on_disk = networks.available_network_aliases.get(name)
+        if lora_on_disk is None:
             return
 
         path, ext = os.path.splitext(lora_on_disk.filename)
