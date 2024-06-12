@@ -82,9 +82,8 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
         if (!opts.prevent_screen_sleep_during_generation || wakeLock) return;
         try {
             wakeLock = await navigator.wakeLock.request('screen');
-            console.log('Wake Lock is active.');
         } catch (err) {
-            console.log('Wake Lock is not supported.');
+            console.error('Wake Lock is not supported.');
         }
     };
 
@@ -92,7 +91,6 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
         if (!opts.prevent_screen_sleep_during_generation || !wakeLock) return;
         try {
             await wakeLock.release();
-            console.log('Wake Lock is released.');
             wakeLock = null;
         } catch (err) {
             console.error('Wake Lock release failed', err);
@@ -123,7 +121,6 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
     };
 
     var funProgress = function(id_task) {
-        // Request the wake lock at the start of the progress
         requestWakeLock();
         request("./internal/progress", {id_task: id_task, live_preview: false}, function(res) {
             if (res.completed) {
