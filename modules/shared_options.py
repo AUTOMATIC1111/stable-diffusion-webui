@@ -377,6 +377,7 @@ options_templates.update(options_section(('ui', "Live previews", "ui"), {
     "live_preview_refresh_period": OptionInfo(1000, "Progressbar and preview update period").info("in milliseconds"),
     "live_preview_fast_interrupt": OptionInfo(False, "Return image with chosen live preview method on interrupt").info("makes interrupts faster"),
     "js_live_preview_in_modal_lightbox": OptionInfo(False, "Show Live preview in full page image viewer"),
+    "prevent_screen_sleep_during_generation": OptionInfo(True, "Prevent screen sleep during generation"),
 }))
 
 options_templates.update(options_section(('sampler-params', "Sampler parameters", "sd"), {
