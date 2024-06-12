@@ -79,7 +79,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
     var wakeLock = null;
 
     var requestWakeLock = async function() {
-        if (!opts.prevent_screen_sleep_during_generation) return;
+        if (!opts.prevent_screen_sleep_during_generation || wakeLock) return;
         try {
             wakeLock = await navigator.wakeLock.request('screen');
             console.log('Wake Lock is active.');
