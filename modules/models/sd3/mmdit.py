@@ -6,7 +6,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 from einops import rearrange, repeat
-from other_impls import attention, Mlp
+from modules.models.sd3.other_impls import attention, Mlp
+
 
 class PatchEmbed(nn.Module):
     """ 2D Image to Patch Embedding"""
