@@ -381,7 +381,7 @@ def set_model_type(model, state_dict):
     model.is_sd2 = False
     model.is_sdxl = False
     model.is_ssd = False
-    model.is_ssd3 = False
+    model.is_sd3 = False
 
     if "model.diffusion_model.x_embedder.proj.weight" in state_dict:
         model.is_sd3 = True
