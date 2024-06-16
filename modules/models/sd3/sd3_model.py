@@ -61,9 +61,9 @@ class SD3Cond(torch.nn.Module):
         self.tokenizer = SD3Tokenizer()
 
         with torch.no_grad():
-            self.clip_g = SDXLClipG(CLIPG_CONFIG, device="cpu", dtype=torch.float32)
-            self.clip_l = SDClipModel(layer="hidden", layer_idx=-2, device="cpu", dtype=torch.float32, layer_norm_hidden_state=False, return_projected_pooled=False, textmodel_json_config=CLIPL_CONFIG)
-            self.t5xxl = T5XXLModel(T5_CONFIG, device="cpu", dtype=torch.float32)
+            self.clip_g = SDXLClipG(CLIPG_CONFIG, device="cpu", dtype=devices.dtype)
+            self.clip_l = SDClipModel(layer="hidden", layer_idx=-2, device="cpu", dtype=devices.dtype, layer_norm_hidden_state=False, return_projected_pooled=False, textmodel_json_config=CLIPL_CONFIG)
+            self.t5xxl = T5XXLModel(T5_CONFIG, device="cpu", dtype=devices.dtype)
 
         self.weights_loaded = False
 

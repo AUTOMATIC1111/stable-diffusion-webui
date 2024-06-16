@@ -406,6 +406,7 @@ def set_model_fields(model):
     if not hasattr(model, 'latent_channels'):
         model.latent_channels = 4
 
+
 def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer):
     sd_model_hash = checkpoint_info.calculate_shorthash()
     timer.record("calculate hash")
