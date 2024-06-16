@@ -149,7 +149,8 @@ class SD3Inferencer(torch.nn.Module):
         return contextlib.nullcontext()
 
     def get_learned_conditioning(self, batch: list[str]):
-        return self.cond_stage_model(batch)
+        with devices.without_autocast():
+            return self.cond_stage_model(batch)
 
     def apply_model(self, x, t, cond):
         return self.model.apply_model(x, t, c_crossattn=cond['crossattn'], y=cond['vector'])

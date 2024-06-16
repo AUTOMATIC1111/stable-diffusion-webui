@@ -262,8 +262,7 @@ class SDClipModel(torch.nn.Module, ClipTokenWeightEncoder):
 
     def forward(self, tokens):
         backup_embeds = self.transformer.get_input_embeddings()
-        device = backup_embeds.weight.device
-        tokens = torch.LongTensor(tokens).to(device)
+        tokens = torch.asarray(tokens, dtype=torch.int64, device=backup_embeds.weight.device)
         outputs = self.transformer(tokens, intermediate_output=self.layer_idx, final_layer_norm_intermediate=self.layer_norm_hidden_state)
         self.transformer.set_input_embeddings(backup_embeds)
         if self.layer == "last":
