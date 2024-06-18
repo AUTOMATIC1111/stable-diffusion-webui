@@ -8,7 +8,7 @@ __pycache__
 /venv
 /tmp
 /model.ckpt
-/models/**/*
+# /models/**/*
 /GFPGANv1.3.pth
 /gfpgan/weights/*.pth
 /ui-config.json
