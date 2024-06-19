@@ -47,22 +47,22 @@ def simple_img2img_request(img2img_basic_image_base64):
     }
 
 
-def test_img2img_simple_performed(url_img2img, simple_img2img_request):
-    assert requests.post(url_img2img, json=simple_img2img_request).status_code == 200
+def test_img2img_simple_performed(url_img2img_local, simple_img2img_request_local):
+    assert requests.post(url_img2img_local, json=simple_img2img_request_local).status_code == 200
 
 
-def test_inpainting_masked_performed(url_img2img, simple_img2img_request, mask_basic_image_base64):
-    simple_img2img_request["mask"] = mask_basic_image_base64
-    assert requests.post(url_img2img, json=simple_img2img_request).status_code == 200
+def test_inpainting_masked_performed(url_img2img_local, simple_img2img_request_local, mask_basic_image_base64):
+    simple_img2img_request_local["mask"] = mask_basic_image_base64
+    assert requests.post(url_img2img_local, json=simple_img2img_request_local).status_code == 200
 
 
-def test_inpainting_with_inverted_masked_performed(url_img2img, simple_img2img_request, mask_basic_image_base64):
-    simple_img2img_request["mask"] = mask_basic_image_base64
-    simple_img2img_request["inpainting_mask_invert"] = True
-    assert requests.post(url_img2img, json=simple_img2img_request).status_code == 200
+def test_inpainting_with_inverted_masked_performed(url_img2img_param, simple_img2img_request_local, mask_basic_image_base64):
+    simple_img2img_request_local["mask"] = mask_basic_image_base64
+    simple_img2img_request_local["inpainting_mask_invert"] = True
+    assert requests.post(url_img2img_param, json=simple_img2img_request_local).status_code == 200
 
 
-def test_img2img_sd_upscale_performed(url_img2img, simple_img2img_request):
-    simple_img2img_request["script_name"] = "sd upscale"
-    simple_img2img_request["script_args"] = ["", 8, "Lanczos", 2.0]
-    assert requests.post(url_img2img, json=simple_img2img_request).status_code == 200
+def test_img2img_sd_upscale_performed(url_img2img_local, simple_img2img_request_local):
+    simple_img2img_request_local["script_name"] = "sd upscale"
+    simple_img2img_request_local["script_args"] = ["", 8, "Lanczos", 2.0]
+    assert requests.post(url_img2img_local, json=simple_img2img_request_local).status_code == 200

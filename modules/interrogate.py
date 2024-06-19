@@ -26,20 +26,20 @@ def category_types():
 def download_default_clip_interrogate_categories(content_dir):
     print("Downloading CLIP categories...")
 
-    tmpdir = f"{content_dir}_tmp"
-    category_types = ["artists", "flavors", "mediums", "movements"]
+    tmp_dir = f"{content_dir}_tmp"
+    category_types_local = ["artists", "flavors", "mediums", "movements"]
 
     try:
-        os.makedirs(tmpdir, exist_ok=True)
-        for category_type in category_types:
-            torch.hub.download_url_to_file(f"https://raw.githubusercontent.com/pharmapsychotic/clip-interrogator/main/clip_interrogator/data/{category_type}.txt", os.path.join(tmpdir, f"{category_type}.txt"))
-        os.rename(tmpdir, content_dir)
+        os.makedirs(tmp_dir, exist_ok=True)
+        for category_type in category_types_local:
+            torch.hub.download_url_to_file(f"https://raw.githubusercontent.com/pharmapsychotic/clip-interrogator/main/clip_interrogator/data/{category_type}.txt", os.path.join(tmp_dir, f"{category_type}.txt"))
+        os.rename(tmp_dir, content_dir)
 
     except Exception as e:
         errors.display(e, "downloading default CLIP interrogate categories")
     finally:
-        if os.path.exists(tmpdir):
-            os.removedirs(tmpdir)
+        if os.path.exists(tmp_dir):
+            os.removedirs(tmp_dir)
 
 
 class InterrogateModels:
@@ -60,23 +60,24 @@ class InterrogateModels:
             download_default_clip_interrogate_categories(self.content_dir)
 
         if self.loaded_categories is not None and self.skip_categories == shared.opts.interrogate_clip_skip_categories:
-           return self.loaded_categories
+            return self.loaded_categories
 
         self.loaded_categories = []
 
         if os.path.exists(self.content_dir):
             self.skip_categories = shared.opts.interrogate_clip_skip_categories
-            category_types = []
+            category_names = []
             for filename in Path(self.content_dir).glob('*.txt'):
-                category_types.append(filename.stem)
-                if filename.stem in self.skip_categories:
+                category_name = filename.stem
+                category_names.append(category_name)
+                if category_name in self.skip_categories:
                     continue
-                m = re_topn.search(filename.stem)
+                m = re_topn.search(category_name)
                 topn = 1 if m is None else int(m.group(1))
                 with open(filename, "r", encoding="utf8") as file:
                     lines = [x.strip() for x in file.readlines()]
 
-                self.loaded_categories.append(Category(name=filename.stem, topn=topn, items=lines))
+                self.loaded_categories.append(Category(name=category_name, topn=topn, items=lines))
 
         return self.loaded_categories
 

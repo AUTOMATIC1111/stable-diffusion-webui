@@ -72,7 +72,7 @@ def get_filename(filepath):
 def refresh_vae_list():
     vae_dict.clear()
 
-    paths = [
+    vae_paths = [
         os.path.join(sd_models.model_path, '**/*.vae.ckpt'),
         os.path.join(sd_models.model_path, '**/*.vae.pt'),
         os.path.join(sd_models.model_path, '**/*.vae.safetensors'),
@@ -82,21 +82,21 @@ def refresh_vae_list():
     ]
 
     if shared.cmd_opts.ckpt_dir is not None and os.path.isdir(shared.cmd_opts.ckpt_dir):
-        paths += [
+        vae_paths += [
             os.path.join(shared.cmd_opts.ckpt_dir, '**/*.vae.ckpt'),
             os.path.join(shared.cmd_opts.ckpt_dir, '**/*.vae.pt'),
             os.path.join(shared.cmd_opts.ckpt_dir, '**/*.vae.safetensors'),
         ]
 
     if shared.cmd_opts.vae_dir is not None and os.path.isdir(shared.cmd_opts.vae_dir):
-        paths += [
+        vae_paths += [
             os.path.join(shared.cmd_opts.vae_dir, '**/*.ckpt'),
             os.path.join(shared.cmd_opts.vae_dir, '**/*.pt'),
             os.path.join(shared.cmd_opts.vae_dir, '**/*.safetensors'),
         ]
 
     candidates = []
-    for path in paths:
+    for path in vae_paths:
         candidates += glob.iglob(path, recursive=True)
 
     for filepath in candidates:
@@ -252,8 +252,8 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
     if not sd_model:
         sd_model = shared.sd_model
 
-    checkpoint_info = sd_model.sd_checkpoint_info
-    checkpoint_file = checkpoint_info.filename
+    checkpoint_info_local = sd_model.sd_checkpoint_info
+    checkpoint_file = checkpoint_info_local.filename
 
     if vae_file == unspecified:
         vae_file, vae_source = resolve_vae(checkpoint_file).tuple()

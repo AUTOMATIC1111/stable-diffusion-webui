@@ -107,12 +107,12 @@ ui_reorder_categories_builtin_items = [
 
 
 def ui_reorder_categories():
-    from modules import scripts
+    from modules import scripts_txt2img, scripts_img2img
 
     yield from ui_reorder_categories_builtin_items
 
     sections = {}
-    for script in scripts.scripts_txt2img.scripts + scripts.scripts_img2img.scripts:
+    for script in scripts_txt2img.scripts + scripts_img2img.scripts:
         if isinstance(script.section, str) and script.section not in ui_reorder_categories_builtin_items:
             sections[script.section] = 1
 

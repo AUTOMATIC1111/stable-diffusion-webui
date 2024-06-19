@@ -219,16 +219,16 @@ def set_hypertile_seed(seed: int) -> None:
 
 
 @cache
-def largest_tile_size_available(width: int, height: int) -> int:
+def get_largest_tile_size_available(width: int, height: int) -> int:
     """
     Calculates the largest tile size available for a given width and height
     Tile size is always a power of 2
     """
     gcd = math.gcd(width, height)
-    largest_tile_size_available = 1
-    while gcd % (largest_tile_size_available * 2) == 0:
-        largest_tile_size_available *= 2
-    return largest_tile_size_available
+    tile_size = 1
+    while gcd % (tile_size * 2) == 0:
+        tile_size *= 2
+    return tile_size
 
 
 def iterative_closest_divisors(hw:int, aspect_ratio:float) -> tuple[int, int]:

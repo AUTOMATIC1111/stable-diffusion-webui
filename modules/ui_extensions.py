@@ -561,7 +561,7 @@ def create_ui():
                     extensions_update_list = gr.Text(elem_id="extensions_update_list", visible=False, container=False)
                     refresh = gr.Button(value='Refresh', variant="compact")
 
-                html = ""
+                message = ""
 
                 if shared.cmd_opts.disable_all_extensions or shared.cmd_opts.disable_extra_extensions or shared.opts.disable_all_extensions != "none":
                     if shared.cmd_opts.disable_all_extensions:
@@ -570,10 +570,10 @@ def create_ui():
                         msg = '"Disable all extensions" was set, change it to "none" to load all extensions again'
                     elif shared.cmd_opts.disable_extra_extensions:
                         msg = '"--disable-extra-extensions" was used, remove it to load all extensions again'
-                    html = f'<span style="color: var(--primary-400);">{msg}</span>'
+                    message = f'<span style="color: var(--primary-400);">{msg}</span>'
 
                 with gr.Row():
-                    info = gr.HTML(html)
+                    info = gr.HTML(message)
 
                 with gr.Row(elem_classes="progress-container"):
                     extensions_table = gr.HTML('Loading...', elem_id="extensions_installed_html")

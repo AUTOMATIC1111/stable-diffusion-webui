@@ -41,50 +41,57 @@ def simple_txt2img_request():
 
 
 def test_txt2img_simple_performed(url_txt2img, simple_txt2img_request):
-    assert requests.post(url_txt2img, json=simple_txt2img_request).status_code == 200
+    url_txt2img_local = url_txt2img
+    simple_txt2img_request_local = simple_txt2img_request
+    assert requests.post(url_txt2img_local, json=simple_txt2img_request_local).status_code == 200
 
 
-def test_txt2img_with_negative_prompt_performed(url_txt2img, simple_txt2img_request):
-    simple_txt2img_request["negative_prompt"] = "example negative prompt"
-    assert requests.post(url_txt2img, json=simple_txt2img_request).status_code == 200
+def test_txt2img_with_negative_prompt_performed(url_txt2img_local, simple_txt2img_request):
+    request_data = simple_txt2img_request.copy()
+    request_data["negative_prompt"] = "example negative prompt"
+    assert requests.post(url_txt2img_local, json=request_data).status_code == 200
 
 
-def test_txt2img_with_complex_prompt_performed(url_txt2img, simple_txt2img_request):
-    simple_txt2img_request["prompt"] = "((emphasis)), (emphasis1:1.1), [to:1], [from::2], [from:to:0.3], [alt|alt1]"
-    assert requests.post(url_txt2img, json=simple_txt2img_request).status_code == 200
+def test_txt2img_with_complex_prompt_performed(url_txt2img_local, simple_txt2img_request_local):
+    simple_txt2img_request_local["prompt"] = "((emphasis)), (emphasis1:1.1), [to:1], [from::2], [from:to:0.3], [alt|alt1]"
+    assert requests.post(url_txt2img_local, json=simple_txt2img_request_local).status_code == 200
 
 
-def test_txt2img_not_square_image_performed(url_txt2img, simple_txt2img_request):
-    simple_txt2img_request["height"] = 128
-    assert requests.post(url_txt2img, json=simple_txt2img_request).status_code == 200
+def test_txt2img_not_square_image_performed(url_txt2img_local, simple_txt2img_request):
+    simple_txt2img_request_copy = simple_txt2img_request.copy()
+    simple_txt2img_request_copy["height"] = 128
+    assert requests.post(url_txt2img_local, json=simple_txt2img_request_copy).status_code == 200
 
 
-def test_txt2img_with_hrfix_performed(url_txt2img, simple_txt2img_request):
-    simple_txt2img_request["enable_hr"] = True
-    assert requests.post(url_txt2img, json=simple_txt2img_request).status_code == 200
+def test_txt2img_with_hrfix_performed(url_txt2img_local, simple_txt2img_request):
+    txt2img_request = simple_txt2img_request.copy()
+    txt2img_request["enable_hr"] = True
+    assert requests.post(url_txt2img_local, json=txt2img_request).status_code == 200
 
 
-def test_txt2img_with_tiling_performed(url_txt2img, simple_txt2img_request):
-    simple_txt2img_request["tiling"] = True
-    assert requests.post(url_txt2img, json=simple_txt2img_request).status_code == 200
+def test_txt2img_with_tiling_performed(url_txt2img_local, simple_txt2img_request_local):
+    simple_txt2img_request_local["tiling"] = True
+    assert requests.post(url_txt2img_local, json=simple_txt2img_request_local).status_code == 200
 
 
-def test_txt2img_with_restore_faces_performed(url_txt2img, simple_txt2img_request):
-    simple_txt2img_request["restore_faces"] = True
-    assert requests.post(url_txt2img, json=simple_txt2img_request).status_code == 200
+def test_txt2img_with_restore_faces_performed(url_txt2img_local, simple_txt2img_request_local):
+    simple_txt2img_request_local["restore_faces"] = True
+    assert requests.post(url_txt2img_local, json=simple_txt2img_request_local).status_code == 200
 
 
 @pytest.mark.parametrize("sampler", ["PLMS", "DDIM", "UniPC"])
-def test_txt2img_with_vanilla_sampler_performed(url_txt2img, simple_txt2img_request, sampler):
-    simple_txt2img_request["sampler_index"] = sampler
-    assert requests.post(url_txt2img, json=simple_txt2img_request).status_code == 200
+def test_txt2img_with_vanilla_sampler_performed(url_txt2img_local, simple_txt2img_request_local, sampler):
+    simple_txt2img_request_local["sampler_index"] = sampler
+    assert requests.post(url_txt2img_local, json=simple_txt2img_request_local).status_code == 200
 
 
 def test_txt2img_multiple_batches_performed(url_txt2img, simple_txt2img_request):
-    simple_txt2img_request["n_iter"] = 2
-    assert requests.post(url_txt2img, json=simple_txt2img_request).status_code == 200
+    simple_txt2img_request_copy = simple_txt2img_request.copy()
+    simple_txt2img_request_copy["n_iter"] = 2
+    assert requests.post(url_txt2img, json=simple_txt2img_request_copy).status_code == 200
 
 
-def test_txt2img_batch_performed(url_txt2img, simple_txt2img_request):
-    simple_txt2img_request["batch_size"] = 2
-    assert requests.post(url_txt2img, json=simple_txt2img_request).status_code == 200
+def test_txt2img_batch_performed(url_txt2img_local, simple_txt2img_request):
+    simple_txt2img_request_local = simple_txt2img_request.copy()
+    simple_txt2img_request_local["batch_size"] = 2
+    assert requests.post(url_txt2img_local, json=simple_txt2img_request_local).status_code == 200

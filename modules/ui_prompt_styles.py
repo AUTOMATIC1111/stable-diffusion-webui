@@ -42,9 +42,9 @@ def delete_style(name):
     return '', '', ''
 
 
-def materialize_styles(prompt, negative_prompt, styles):
-    prompt = shared.prompt_styles.apply_styles_to_prompt(prompt, styles)
-    negative_prompt = shared.prompt_styles.apply_negative_styles_to_prompt(negative_prompt, styles)
+def materialize_styles(prompt, negative_prompt, style_dict):
+    prompt = shared.prompt_styles.apply_styles_to_prompt(prompt, style_dict)
+    negative_prompt = shared.prompt_styles.apply_negative_styles_to_prompt(negative_prompt, style_dict)
 
     return [gr.Textbox.update(value=prompt), gr.Textbox.update(value=negative_prompt), gr.Dropdown.update(value=[])]
 

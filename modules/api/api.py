@@ -33,9 +33,9 @@ import piexif.helper
 from contextlib import closing
 from modules.progress import create_task_id, add_task_to_queue, start_task, finish_task, current_task
 
-def script_name_to_index(name, scripts):
+def script_name_to_index(name, script_list):
     try:
-        return [script.title().lower() for script in scripts].index(name.lower())
+        return [script.title().lower() for script in script_list].index(name.lower())
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"Script '{name}' not found") from e
 
@@ -716,11 +716,12 @@ class Api:
         ]
 
     def get_latent_upscale_modes(self):
+        sd_models = [*(shared.latent_upscale_modes or {})]
         return [
             {
-                "name": upscale_mode,
+                "name": mode,
             }
-            for upscale_mode in [*(shared.latent_upscale_modes or {})]
+            for mode in sd_models
         ]
 
     def get_sd_models(self):
@@ -833,7 +834,7 @@ class Api:
             if not apply_optimizations:
                 sd_hijack.undo_optimizations()
             try:
-                hypernetwork, filename = train_hypernetwork(**args)
+                hypernetwork, filename = train_hypernetwork_helper(**args)
             except Exception as e:
                 error = e
             finally:
@@ -847,6 +848,9 @@ class Api:
             return models.TrainResponse(info=f"train embedding error: {exc}")
         finally:
             shared.state.end()
+
+    def train_hypernetwork_helper(**args):
+        return train_hypernetwork(**args)
 
     def get_memory(self):
         try:

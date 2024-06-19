@@ -29,13 +29,13 @@ class EmbeddingDecoder(json.JSONDecoder):
         return d
 
 
-def embedding_to_b64(data):
-    d = json.dumps(data, cls=EmbeddingEncoder)
+def embedding_to_b64(embedding_data):
+    d = json.dumps(embedding_data, cls=EmbeddingEncoder)
     return base64.b64encode(d.encode())
 
 
-def embedding_from_b64(data):
-    d = base64.b64decode(data)
+def embedding_from_b64(data_):
+    d = base64.b64decode(data_)
     return json.loads(d, cls=EmbeddingDecoder)
 
 
@@ -46,7 +46,7 @@ def lcg(m=2**32, a=1664525, c=1013904223, seed=0):
 
 
 def xor_block(block):
-    g = lcg()
+    g = lcg_new()
     randblock = np.array([next(g) for _ in range(np.prod(block.shape))]).astype(np.uint8).reshape(block.shape)
     return np.bitwise_xor(block.astype(np.uint8), randblock & 0x0F)
 
@@ -69,14 +69,14 @@ def style_block(block, sequence):
     return block ^ fg
 
 
-def insert_image_data_embed(image, data):
+def insert_image_data_embed(img, data_param):
     d = 3
-    data_compressed = zlib.compress(json.dumps(data, cls=EmbeddingEncoder).encode(), level=9)
+    data_compressed = zlib.compress(json.dumps(data_param, cls=EmbeddingEncoder).encode(), level=9)
     data_np_ = np.frombuffer(data_compressed, np.uint8).copy()
     data_np_high = data_np_ >> 4
     data_np_low = data_np_ & 0x0F
 
-    h = image.size[1]
+    h = img.size[1]
     next_size = data_np_low.shape[0] + (h-(data_np_low.shape[0] % h))
     next_size = next_size + ((h*d)-(next_size % (h*d)))
 
@@ -86,7 +86,7 @@ def insert_image_data_embed(image, data):
     data_np_high = np.resize(data_np_high, next_size)
     data_np_high = data_np_high.reshape((h, -1, d))
 
-    edge_style = list(data['string_to_param'].values())[0].cpu().detach().numpy().tolist()[0][:1024]
+    edge_style = list(data_param['string_to_param'].values())[0].cpu().detach().numpy().tolist()[0][:1024]
     edge_style = (np.abs(edge_style)/np.max(np.abs(edge_style))*255).astype(np.uint8)
 
     data_np_low = style_block(data_np_low, sequence=edge_style)
@@ -97,10 +97,10 @@ def insert_image_data_embed(image, data):
     im_low = Image.fromarray(data_np_low, mode='RGB')
     im_high = Image.fromarray(data_np_high, mode='RGB')
 
-    background = Image.new('RGB', (image.size[0]+im_low.size[0]+im_high.size[0]+2, image.size[1]), (0, 0, 0))
+    background = Image.new('RGB', (img.size[0]+im_low.size[0]+im_high.size[0]+2, img.size[1]), (0, 0, 0))
     background.paste(im_low, (0, 0))
-    background.paste(image, (im_low.size[0]+1, 0))
-    background.paste(im_high, (im_low.size[0]+1+image.size[0]+1, 0))
+    background.paste(img, (im_low.size[0]+1, 0))
+    background.paste(im_high, (im_low.size[0]+1+img.size[0]+1, 0))
 
     return background
 
@@ -113,12 +113,12 @@ def crop_black(img, tol=0):
     return img[row_start:row_end, col_start:col_end]
 
 
-def extract_image_data_embed(image):
+def extract_image_data_embed(img):
     d = 3
-    outarr = crop_black(np.array(image.convert('RGB').getdata()).reshape(image.size[1], image.size[0], d).astype(np.uint8)) & 0x0F
+    outarr = crop_black(np.array(img.convert('RGB').getdata()).reshape(img.size[1], img.size[0], d).astype(np.uint8)) & 0x0F
     black_cols = np.where(np.sum(outarr, axis=(0, 2)) == 0)
     if black_cols[0].shape[0] < 2:
-        logger.debug(f'{os.path.basename(getattr(image, "filename", "unknown image file"))}: no embedded information found.')
+        logger.debug(f'{os.path.basename(getattr(img, "filename", "unknown image file"))}: no embedded information found.')
         return None
 
     data_block_lower = outarr[:, :black_cols[0].min(), :].astype(np.uint8)
@@ -130,8 +130,8 @@ def extract_image_data_embed(image):
     data_block = (data_block_upper << 4) | (data_block_lower)
     data_block = data_block.flatten().tobytes()
 
-    data = zlib.decompress(data_block)
-    return json.loads(data, cls=EmbeddingDecoder)
+    image_data = zlib.decompress(data_block)
+    return json.loads(image_data, cls=EmbeddingDecoder)
 
 
 def caption_image_overlay(srcimage, title, footerLeft, footerMid, footerRight, textfont=None):
@@ -144,41 +144,41 @@ def caption_image_overlay(srcimage, title, footerLeft, footerMid, footerRight, t
         )
     from math import cos
 
-    image = srcimage.copy()
+    img = srcimage.copy()
     fontsize = 32
     factor = 1.5
-    gradient = Image.new('RGBA', (1, image.size[1]), color=(0, 0, 0, 0))
-    for y in range(image.size[1]):
-        mag = 1-cos(y/image.size[1]*factor)
-        mag = max(mag, 1-cos((image.size[1]-y)/image.size[1]*factor*1.1))
+    gradient = Image.new('RGBA', (1, img.size[1]), color=(0, 0, 0, 0))
+    for y in range(img.size[1]):
+        mag = 1-cos(y/img.size[1]*factor)
+        mag = max(mag, 1-cos((img.size[1]-y)/img.size[1]*factor*1.1))
         gradient.putpixel((0, y), (0, 0, 0, int(mag*255)))
-    image = Image.alpha_composite(image.convert('RGBA'), gradient.resize(image.size))
+    img = Image.alpha_composite(img.convert('RGBA'), gradient.resize(img.size))
 
-    draw = ImageDraw.Draw(image)
+    draw = ImageDraw.Draw(img)
 
     font = get_font(fontsize)
     padding = 10
 
     _, _, w, h = draw.textbbox((0, 0), title, font=font)
-    fontsize = min(int(fontsize * (((image.size[0]*0.75)-(padding*4))/w)), 72)
+    fontsize = min(int(fontsize * (((img.size[0]*0.75)-(padding*4))/w)), 72)
     font = get_font(fontsize)
     _, _, w, h = draw.textbbox((0, 0), title, font=font)
     draw.text((padding, padding), title, anchor='lt', font=font, fill=(255, 255, 255, 230))
 
     _, _, w, h = draw.textbbox((0, 0), footerLeft, font=font)
-    fontsize_left = min(int(fontsize * (((image.size[0]/3)-(padding))/w)), 72)
+    fontsize_left = min(int(fontsize * (((img.size[0]/3)-(padding))/w)), 72)
     _, _, w, h = draw.textbbox((0, 0), footerMid, font=font)
-    fontsize_mid = min(int(fontsize * (((image.size[0]/3)-(padding))/w)), 72)
+    fontsize_mid = min(int(fontsize * (((img.size[0]/3)-(padding))/w)), 72)
     _, _, w, h = draw.textbbox((0, 0), footerRight, font=font)
-    fontsize_right = min(int(fontsize * (((image.size[0]/3)-(padding))/w)), 72)
+    fontsize_right = min(int(fontsize * (((img.size[0]/3)-(padding))/w)), 72)
 
     font = get_font(min(fontsize_left, fontsize_mid, fontsize_right))
 
-    draw.text((padding, image.size[1]-padding),               footerLeft, anchor='ls', font=font, fill=(255, 255, 255, 230))
-    draw.text((image.size[0]/2, image.size[1]-padding),       footerMid, anchor='ms', font=font, fill=(255, 255, 255, 230))
-    draw.text((image.size[0]-padding, image.size[1]-padding), footerRight, anchor='rs', font=font, fill=(255, 255, 255, 230))
+    draw.text((padding, img.size[1]-padding),               footerLeft, anchor='ls', font=font, fill=(255, 255, 255, 230))
+    draw.text((img.size[0]/2, img.size[1]-padding),       footerMid, anchor='ms', font=font, fill=(255, 255, 255, 230))
+    draw.text((img.size[0]-padding, img.size[1]-padding), footerRight, anchor='rs', font=font, fill=(255, 255, 255, 230))
 
-    return image
+    return img
 
 
 if __name__ == '__main__':

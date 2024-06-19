@@ -25,7 +25,7 @@ def create_api(app):
 
 def api_only():
     from fastapi import FastAPI
-    from modules.shared_cmd_options import cmd_opts
+    from modules.shared_cmd_options import cmd_opts as cmd_opts_local
 
     initialize.initialize()
 
@@ -40,15 +40,15 @@ def api_only():
     print(f"Startup time: {startup_timer.summary()}.")
     api.launch(
         server_name=initialize_util.gradio_server_name(),
-        port=cmd_opts.port if cmd_opts.port else 7861,
-        root_path=f"/{cmd_opts.subpath}" if cmd_opts.subpath else ""
+        port=cmd_opts_local.port if cmd_opts_local.port else 7861,
+        root_path=f"/{cmd_opts_local.subpath}" if cmd_opts_local.subpath else ""
     )
 
 
 def webui():
-    from modules.shared_cmd_options import cmd_opts
+    from modules.shared_cmd_options import cmd_opts as local_cmd_opts
 
-    launch_api = cmd_opts.api
+    launch_api = local_cmd_opts.api
     initialize.initialize()
 
     from modules import shared, ui_tempdir, script_callbacks, ui, progress, ui_extra_networks
@@ -64,35 +64,35 @@ def webui():
         shared.demo = ui.create_ui()
         startup_timer.record("create ui")
 
-        if not cmd_opts.no_gradio_queue:
+        if not local_cmd_opts.no_gradio_queue:
             shared.demo.queue(64)
 
         gradio_auth_creds = list(initialize_util.get_gradio_auth_creds()) or None
 
         auto_launch_browser = False
         if os.getenv('SD_WEBUI_RESTARTING') != '1':
-            if shared.opts.auto_launch_browser == "Remote" or cmd_opts.autolaunch:
+            if shared.opts.auto_launch_browser == "Remote" or local_cmd_opts.autolaunch:
                 auto_launch_browser = True
             elif shared.opts.auto_launch_browser == "Local":
-                auto_launch_browser = not cmd_opts.webui_is_non_local
+                auto_launch_browser = not local_cmd_opts.webui_is_non_local
 
         app, local_url, share_url = shared.demo.launch(
-            share=cmd_opts.share,
+            share=local_cmd_opts.share,
             server_name=initialize_util.gradio_server_name(),
-            server_port=cmd_opts.port,
-            ssl_keyfile=cmd_opts.tls_keyfile,
-            ssl_certfile=cmd_opts.tls_certfile,
-            ssl_verify=cmd_opts.disable_tls_verify,
-            debug=cmd_opts.gradio_debug,
+            server_port=local_cmd_opts.port,
+            ssl_keyfile=local_cmd_opts.tls_keyfile,
+            ssl_certfile=local_cmd_opts.tls_certfile,
+            ssl_verify=local_cmd_opts.disable_tls_verify,
+            debug=local_cmd_opts.gradio_debug,
             auth=gradio_auth_creds,
             inbrowser=auto_launch_browser,
             prevent_thread_lock=True,
-            allowed_paths=cmd_opts.gradio_allowed_path,
+            allowed_paths=local_cmd_opts.gradio_allowed_path,
             app_kwargs={
                 "docs_url": "/docs",
                 "redoc_url": "/redoc",
             },
-            root_path=f"/{cmd_opts.subpath}" if cmd_opts.subpath else "",
+            root_path=f"/{local_cmd_opts.subpath}" if local_cmd_opts.subpath else "",
         )
 
         startup_timer.record("gradio launch")

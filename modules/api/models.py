@@ -44,11 +44,11 @@ class PydanticModelGenerator:
     def __init__(
         self,
         model_name: str = None,
-        class_instance = None,
-        additional_fields = None,
+        class_instance=None,
+        additional_fields=None,
     ):
-        def field_type_generator(k, v):
-            field_type = v.annotation
+        def field_type_generator(key, value):
+            field_type = value.annotation
 
             if field_type == 'Image':
                 # images are sent as base64 strings via API
@@ -59,8 +59,8 @@ class PydanticModelGenerator:
         def merge_class_params(class_):
             all_classes = list(filter(lambda x: x is not object, inspect.getmro(class_)))
             parameters = {}
-            for classes in all_classes:
-                parameters = {**parameters, **inspect.signature(classes.__init__).parameters}
+            for class_ in all_classes:
+                parameters = {**parameters, **inspect.signature(class_.__init__).parameters}
             return parameters
 
         self._model_name = model_name
@@ -68,31 +68,32 @@ class PydanticModelGenerator:
 
         self._model_def = [
             ModelDef(
-                field=underscore(k),
-                field_alias=k,
-                field_type=field_type_generator(k, v),
-                field_value=None if isinstance(v.default, property) else v.default
+                field=underscore(key),
+                field_alias=key,
+                field_type=field_type_generator(key, value),
+                field_value=None if isinstance(value.default, property) else value.default
             )
-            for (k,v) in self._class_data.items() if k not in API_NOT_ALLOWED
+            for key, value in self._class_data.items() if key not in API_NOT_ALLOWED
         ]
 
-        for fields in additional_fields:
-            self._model_def.append(ModelDef(
-                field=underscore(fields["key"]),
-                field_alias=fields["key"],
-                field_type=fields["type"],
-                field_value=fields["default"],
-                field_exclude=fields["exclude"] if "exclude" in fields else False))
+        if additional_fields:
+            for field in additional_fields:
+                self._model_def.append(ModelDef(
+                    field=underscore(field["key"]),
+                    field_alias=field["key"],
+                    field_type=field["type"],
+                    field_value=field["default"],
+                    field_exclude=field["exclude"] if "exclude" in field else False))
 
     def generate_model(self):
         """
         Creates a pydantic BaseModel
         from the json and overrides provided at initialization
         """
-        fields = {
+        model_fields = {
             d.field: (d.field_type, Field(default=d.field_value, alias=d.field_alias, exclude=d.field_exclude)) for d in self._model_def
         }
-        DynamicModel = create_model(self._model_name, **fields)
+        DynamicModel = create_model(self._model_name, **model_fields)
         DynamicModel.__config__.allow_population_by_field_name = True
         DynamicModel.__config__.allow_mutation = True
         return DynamicModel
