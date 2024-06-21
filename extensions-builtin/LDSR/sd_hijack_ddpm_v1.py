@@ -572,7 +572,7 @@ class LatentDiffusionV1(DDPMV1):
         :param h: height
         :param w: width
         :return: normalized distance to image border,
-         wtith min distance = 0 at border and max dist = 0.5 at image center
+         with min distance = 0 at border and max dist = 0.5 at image center
         """
         lower_right_corner = torch.tensor([h - 1, w - 1]).view(1, 1, 2)
         arr = self.meshgrid(h, w) / lower_right_corner
