@@ -64,8 +64,8 @@ class RestrictedUnpickler(pickle.Unpickler):
         raise Exception(f"global '{module}/{name}' is forbidden")
 
 
-# Regular expression that accepts 'dirname/version', 'dirname/data.pkl', and 'dirname/data/<number>'
-allowed_zip_names_re = re.compile(r"^([^/]+)/((data/\d+)|version|(data\.pkl))$")
+# Regular expression that accepts 'dirname/version', 'dirname/byteorder', 'dirname/data.pkl', '.data/serialization_id', and 'dirname/data/<number>'
+allowed_zip_names_re = re.compile(r"^([^/]+)/((data/\d+)|version|byteorder|.data/serialization_id|(data\.pkl))$")
 data_pkl_re = re.compile(r"^([^/]+)/data\.pkl$")
 
 def check_zip_filenames(filename, names):

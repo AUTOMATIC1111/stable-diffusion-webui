@@ -438,14 +438,18 @@ class Api:
         self.apply_infotext(txt2imgreq, "txt2img", script_runner=script_runner, mentioned_script_args=infotext_script_args)
 
         selectable_scripts, selectable_script_idx = self.get_selectable_script(txt2imgreq.script_name, script_runner)
+        sampler, scheduler = sd_samplers.get_sampler_and_scheduler(txt2imgreq.sampler_name or txt2imgreq.sampler_index, txt2imgreq.scheduler)
 
         populate = txt2imgreq.copy(update={  # Override __init__ params
-            "sampler_name": validate_sampler_name(txt2imgreq.sampler_name or txt2imgreq.sampler_index),
+            "sampler_name": validate_sampler_name(sampler),
             "do_not_save_samples": not txt2imgreq.save_images,
             "do_not_save_grid": not txt2imgreq.save_images,
         })
         if populate.sampler_name:
             populate.sampler_index = None  # prevent a warning later on
+
+        if not populate.scheduler and scheduler != "Automatic":
+            populate.scheduler = scheduler
 
         args = vars(populate)
         args.pop('script_name', None)
@@ -502,15 +506,19 @@ class Api:
         self.apply_infotext(img2imgreq, "img2img", script_runner=script_runner, mentioned_script_args=infotext_script_args)
 
         selectable_scripts, selectable_script_idx = self.get_selectable_script(img2imgreq.script_name, script_runner)
+        sampler, scheduler = sd_samplers.get_sampler_and_scheduler(img2imgreq.sampler_name or img2imgreq.sampler_index, img2imgreq.scheduler)
 
         populate = img2imgreq.copy(update={  # Override __init__ params
-            "sampler_name": validate_sampler_name(img2imgreq.sampler_name or img2imgreq.sampler_index),
+            "sampler_name": validate_sampler_name(sampler),
             "do_not_save_samples": not img2imgreq.save_images,
             "do_not_save_grid": not img2imgreq.save_images,
             "mask": mask,
         })
         if populate.sampler_name:
             populate.sampler_index = None  # prevent a warning later on
+
+        if not populate.scheduler and scheduler != "Automatic":
+            populate.scheduler = scheduler
 
         args = vars(populate)
         args.pop('include_init_images', None)  # this is meant to be done by "exclude": True in model, but it's for a reason that I cannot determine.

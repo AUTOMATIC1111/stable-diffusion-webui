@@ -1,7 +1,7 @@
 import torch
 import inspect
 import k_diffusion.sampling
-from modules import sd_samplers_common, sd_samplers_extra, sd_samplers_cfg_denoiser, sd_schedulers
+from modules import sd_samplers_common, sd_samplers_extra, sd_samplers_cfg_denoiser, sd_schedulers, devices
 from modules.sd_samplers_cfg_denoiser import CFGDenoiser  # noqa: F401
 from modules.script_callbacks import ExtraNoiseParams, extra_noise_callback
 
@@ -115,7 +115,7 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
             if scheduler.need_inner_model:
                 sigmas_kwargs['inner_model'] = self.model_wrap
 
-            sigmas = scheduler.function(n=steps, **sigmas_kwargs, device=shared.device)
+            sigmas = scheduler.function(n=steps, **sigmas_kwargs, device=devices.cpu)
 
         if discard_next_to_last_sigma:
             sigmas = torch.cat([sigmas[:-2], sigmas[-1:]])

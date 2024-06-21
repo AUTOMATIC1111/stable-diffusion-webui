@@ -56,6 +56,15 @@ function eventHasFiles(e) {
     return false;
 }
 
+function isURL(url) {
+    try {
+        const _ = new URL(url);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 function dragDropTargetIsPrompt(target) {
     if (target?.placeholder && target?.placeholder.indexOf("Prompt") >= 0) return true;
     if (target?.parentNode?.parentNode?.className?.indexOf("prompt") > 0) return true;
@@ -77,7 +86,7 @@ window.document.addEventListener('dragover', e => {
 window.document.addEventListener('drop', async e => {
     const target = e.composedPath()[0];
     const url = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
-    if (!eventHasFiles(e) && !url) return;
+    if (!eventHasFiles(e) && !isURL(url)) return;
 
     if (dragDropTargetIsPrompt(target)) {
         e.stopPropagation();

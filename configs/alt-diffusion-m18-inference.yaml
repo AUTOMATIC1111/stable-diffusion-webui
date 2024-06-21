@@ -41,7 +41,7 @@ model:
         use_linear_in_transformer: True
         transformer_depth: 1
         context_dim: 1024
-        use_checkpoint: True
+        use_checkpoint: False
         legacy: False
 
     first_stage_config:

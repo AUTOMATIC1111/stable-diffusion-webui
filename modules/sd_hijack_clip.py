@@ -353,7 +353,9 @@ class FrozenCLIPEmbedderForSDXLWithCustomWords(FrozenCLIPEmbedderWithCustomWords
     def encode_with_transformers(self, tokens):
         outputs = self.wrapped.transformer(input_ids=tokens, output_hidden_states=self.wrapped.layer == "hidden")
 
-        if self.wrapped.layer == "last":
+        if opts.sdxl_clip_l_skip is True:
+            z = outputs.hidden_states[-opts.CLIP_stop_at_last_layers]
+        elif self.wrapped.layer == "last":
             z = outputs.last_hidden_state
         else:
             z = outputs.hidden_states[self.wrapped.layer_idx]
