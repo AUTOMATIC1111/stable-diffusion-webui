@@ -1063,7 +1063,11 @@ class ExtraNetworksPage:
             description = html.escape(description)
             description_data_attributes = "data-parse-as-shadow-dom"
 
-        model_specific = self.get_model_detail_extra_html(model_name)
+        try:
+            model_specific = self.get_model_detail_extra_html(model_name)
+        except Exception as exc:
+            print(f"Error getting model specific details for {model_name}: {exc}")
+            model_specific = ""
 
         return self.model_details_tpl.format(
             name=model_name,

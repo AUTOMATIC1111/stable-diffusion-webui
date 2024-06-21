@@ -959,7 +959,10 @@ class ExtraNetworksTab {
                 model_name: source_elem.dataset.name,
             },
             (response) => _show_details(response),
-            () => _popup("Error fetching model details."),
+            () => {
+                console.warn(`Error fetching model details for ${source_elem.dataset.name}`);
+                div_dets.innerHTML = `Error fetching model details for ${source_elem.dataset.name}`;
+            },
         );
         if (this.dets_view_en) {
             this.resize_grid.toggle({elem: div_dets, override: true});

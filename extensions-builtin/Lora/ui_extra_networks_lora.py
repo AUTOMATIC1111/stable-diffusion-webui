@@ -186,10 +186,13 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
 
         tags = build_tags(metadata)
         if tags is None or len(tags) == 0:
+            res += "<h3>Model Tags</h3>"
+            res += "<div class='model-info--tags'>Metadata contains no tags</div>"
             return res
 
         min_tag = min(int(x[1]) for x in tags)
         max_tag = max(int(x[1]) for x in tags)
+
         cmap = mpl.colormaps["coolwarm"]
 
         def _clamp(x: float, min_val: float, max_val: float) -> float:
@@ -202,20 +205,31 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
         for (tag_name, tag_count) in tags:
             # Normalize tag count
             tag_count = int(tag_count)
-            cmap_idx = math.floor((tag_count - min_tag) / (max_tag - min_tag) * (cmap.N - 1))
+            if min_tag == max_tag:  # Prevent DivideByZero error.
+                cmap_idx = cmap.N // 2
+            else:
+                cmap_idx = math.floor(
+                    (tag_count - min_tag) / (max_tag - min_tag) * (cmap.N - 1)
+                )
+
+            # Get the bg color based on tag count and a contrasting fg color.
             base_color = cmap(cmap_idx)
             base_color = [_clamp(x, 0, 1) for x in base_color]
             base_fg_color = _get_fg_color(*base_color[:3])
+            # Now get a slightly darker background for the tag count bg color.
             h, lum, s = colorsys.rgb_to_hls(*base_color[:3])
             lum = max(min(lum * 0.7, 1.0), 0.0)
             dark_color = colorsys.hls_to_rgb(h, lum, s)
             dark_color = [_clamp(x, 0, 1) for x in dark_color]
             dark_fg_color = _get_fg_color(*dark_color[:3])
+            # Convert the colors to a hex string.
             base_color = mpl.colors.rgb2hex(base_color)
             dark_color = mpl.colors.rgb2hex(dark_color)
-            tag_style = f"background: {mpl.colors.rgb2hex(base_color)};"
+            # Finally, generate the HTML for this tag.
+            tag_style = f"background: {base_color};"
             name_style = f"color: {base_fg_color};"
             count_style = f"background: {dark_color}; color: {dark_fg_color};"
+
             tag_elems.append((
                 f"<span class='model-info--tag' style='{tag_style}'>"
                 f"<span class='model-info--tag-name' style='{name_style}'>{tag_name}</span>"
