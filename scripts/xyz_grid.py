@@ -382,7 +382,6 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
         processed_result.all_seeds.insert(i, processed_result.all_seeds[start_index])
         processed_result.infotexts.insert(i, processed_result.infotexts[start_index])
 
-    # sub_grid_size = processed_result.images[0].size
     z_grid = images.image_grid(processed_result.images[:z_count], rows=1)
     z_sub_grid_max_w, z_sub_grid_max_h = map(max, zip(*(img.size for img in processed_result.images[:z_count])))
     if draw_legend:
