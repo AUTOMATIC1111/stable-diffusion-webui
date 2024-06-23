@@ -31,7 +31,7 @@ def is_using_v_parameterization_for_sd2(state_dict):
 
     import ldm.modules.diffusionmodules.openaimodel
 
-    device = devices.cpu
+    device = devices.device
 
     with sd_disable_initialization.DisableInitialization():
         unet = ldm.modules.diffusionmodules.openaimodel.UNetModel(
