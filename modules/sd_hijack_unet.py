@@ -138,11 +138,15 @@ CondFunc('ldm.models.diffusion.ddpm.LatentDiffusion.decode_first_stage', first_s
 CondFunc('ldm.models.diffusion.ddpm.LatentDiffusion.encode_first_stage', first_stage_sub, first_stage_cond)
 CondFunc('ldm.models.diffusion.ddpm.LatentDiffusion.get_first_stage_encoding', lambda orig_func, *args, **kwargs: orig_func(*args, **kwargs).float(), first_stage_cond)
 
+# Always make sure inputs to unet are in correct dtype
 CondFunc('ldm.models.diffusion.ddpm.LatentDiffusion.apply_model', apply_model)
 CondFunc('sgm.modules.diffusionmodules.wrappers.OpenAIWrapper.forward', apply_model)
 
 
 def timestep_embedding_cast_result(orig_func, timesteps, *args, **kwargs):
+    if not devices.unet_needs_upcast:
+        return orig_func(timesteps, *args, **kwargs)
+
     if devices.unet_needs_upcast and timesteps.dtype == torch.int64:
         dtype = torch.float32
     else:
