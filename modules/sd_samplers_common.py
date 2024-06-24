@@ -163,7 +163,7 @@ def apply_refiner(cfg_denoiser, sigma=None):
     else:
         # torch.max(sigma) only to handle rare case where we might have different sigmas in the same batch
         try:
-            timestep = torch.argmin(torch.abs(cfg_denoiser.inner_model.sigmas - torch.max(sigma)))
+            timestep = torch.argmin(torch.abs(cfg_denoiser.inner_model.sigmas.to(sigma.device) - torch.max(sigma)))
         except AttributeError:  # for samplers that don't use sigmas (DDIM) sigma is actually the timestep
             timestep = torch.max(sigma).to(dtype=int)
         completed_ratio = (999 - timestep) / 1000
