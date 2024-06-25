@@ -111,8 +111,11 @@ class Clusterize {
 
         this.#fixElementReferences();
 
+        // We use margins to control the scrollbar's size and float our content.
+        this.content_elem.style.marginTop = "0px";
+        this.content_elem.style.marginBottom = "0px";
+
         await this.#insertToDOM();
-        this.scroll_elem.scrollTop = this.state.scroll_top;
 
         this.#setupEvent("scroll", this.scroll_elem, this.#on_scroll_bound);
         this.#setupElementObservers();
@@ -174,7 +177,6 @@ class Clusterize {
         }
 
         await this.#insertToDOM();
-        this.scroll_elem.scrollTop = this.state.scroll_top;
     }
 
     getRowsAmount() {
@@ -337,7 +339,8 @@ class Clusterize {
         this.config.cluster_height = this.options.blocks_in_cluster * this.config.block_height;
         this.config.cluster_width = this.config.block_width;
 
-        this.config.max_rows = Math.ceil(this.config.max_items / this.config.cols_in_block, 10);
+        this.config.max_rows = Math.ceil(this.config.max_items / this.config.cols_in_block);
+        this.config.max_clusters = Math.ceil(this.config.max_rows / this.config.rows_in_cluster);
 
         return prev_config !== JSON.stringify(this.config);
     }
@@ -360,8 +363,7 @@ class Clusterize {
         this.state.scroll_top = this.scroll_elem.scrollTop;
         const cluster_divider = this.config.cluster_height - this.config.block_height;
         const current_cluster = Math.floor(this.state.scroll_top / cluster_divider);
-        const max_cluster = Math.floor((this.config.max_rows * this.config.item_height) / cluster_divider);
-        return Math.min(current_cluster, max_cluster);
+        return Math.min(current_cluster, this.config.max_clusters - 1);
     }
 
     async #generate() {
@@ -428,21 +430,26 @@ class Clusterize {
         const layout = [];
 
         if (this_cluster_content_changed || top_offset_changed) {
-            if (data.top_offset) {
-                this.options.keep_parity && layout.push(this.#renderExtraTag("keep-parity"));
-                layout.push(this.#renderExtraTag("top-space", data.top_offset));
+            if (this.options.callbacks.clusterWillChange) {
+                this.options.callbacks.clusterWillChange();
             }
-            
-            layout.push(this_cluster_rows);
-            data.bottom_offset && layout.push(this.#renderExtraTag("bottom-space", data.bottom_offset));
-            this.options.callbacks.clusterWillChange && this.options.callbacks.clusterWillChange();
+
+            if (data.top_offset && this.options.keep_parity) {
+                layout.push(this.#renderExtraTag("keep-parity"));
+            }
+            layout.push(this_cluster_rows)
             this.#html(layout.join(""));
-            this.options.content_tag === "ol" && this.content_elem.setAttribute("start", data.rows_above);
+            if (this.options.content_tag === "ol") {
+                this.content_elem.setAttribute("start", data.rows_above);
+            }
             this.content_elem.style["counter-increment"] = `clusterize-counter ${data.rows_above - 1}`;
-            this.options.callbacks.clusterChanged && this.options.callbacks.clusterChanged();
-        } else if (only_bottom_offset_changed) {
-            this.content_elem.lastElementChild.style.height = `${data.bottom_offset}px`;
+            if (this.options.callbacks.clusterChanged) {
+                this.options.callbacks.clusterChanged();
+            }
         }
+        // Update the margins to fix scrollbar position.
+        this.content_elem.style.marginTop = `${data.top_offset}px`;
+        this.content_elem.style.marginBottom = `${data.bottom_offset}px`;
     }
 
     #html(data) {
@@ -461,7 +468,9 @@ class Clusterize {
             `${clusterize_prefix}extra-row`,
             `${clusterize_prefix}${class_name}`,
         ].join(" ");
-        height && (tag.style.height = `${height}px`);
+        if (isNumber(height)) {
+            tag.style.height = `${height}px`;
+        }
         return tag.outerHTML;
     }
 

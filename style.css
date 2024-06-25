@@ -1301,15 +1301,21 @@ body.resizing.resize-grid-row {
     height: 100%;
     /* Use scroll instead of auto so that content size doesn't change when there is no content. */
     overflow: clip scroll;
-    padding: var(--spacing-md) 0 var(--spacing-md) var(--spacing-md);
 }
 
 .clusterize-content {
+    display: flex;
     flex: 1;
+    flex-wrap: wrap;
+    flex-direction: row;
     outline: 0;
     /* need to manually set the gap to 0 to fix item dimension calcs. */
     gap: 0;
     counter-reset: clusterize-counter;
+}
+
+.clusterize-content .card {
+    margin: var(--spacing-md);
 }
 
 .clusterize-extra-row {
