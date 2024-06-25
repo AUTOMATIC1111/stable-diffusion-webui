@@ -73,7 +73,7 @@ class ExtraNetworksClusterize extends Clusterize {
     }
 
     async setup() {
-        if (this.setup_has_run || !this.enabled) {
+        if (this.state.setup_has_run || !this.state.enabled) {
             return;
         }
 
@@ -85,7 +85,7 @@ class ExtraNetworksClusterize extends Clusterize {
 
         await this.reinitData();
 
-        if (this.enabled) {
+        if (this.state.enabled) {
             await super.setup();
         }
     }
@@ -112,12 +112,12 @@ class ExtraNetworksClusterize extends Clusterize {
     }
 
     async load(force_init_data) {
-        if (!this.enabled) {
+        if (!this.state.enabled) {
             return;
         }
 
         this.initial_load = true;
-        if (!this.setup_has_run) {
+        if (!this.state.setup_has_run) {
             await this.setup();
         } else if (force_init_data) {
             await this.reinitData();
@@ -331,7 +331,7 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
 
     getMaxRowWidth() {
         /** Calculates the width of the widest row in the list. */
-        if (!this.enabled) {
+        if (!this.state.enabled) {
             // Inactive list is not displayed on screen. Can't calculate size.
             return;
         }
@@ -341,9 +341,9 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
         }
 
         let max_width = 0;
-        for (let i = 0; i < this.content_elem.children.length; i += this.options.cols_in_block) {
+        for (let i = 0; i < this.content_elem.children.length; i += this.config.cols_in_block) {
             let row_width = 0;
-            for (let j = 0; j < this.options.cols_in_block; j++) {
+            for (let j = 0; j < this.config.cols_in_block; j++) {
                 const child = this.content_elem.children[i + j];
                 if (!(child.classList.contains("tree-list-item"))) {
                     continue;
@@ -496,7 +496,7 @@ class ExtraNetworksClusterizeTreeList extends ExtraNetworksClusterize {
     }
 
     async fetchData(idx_start, idx_end) {
-        if (!this.enabled) {
+        if (!this.state.enabled) {
             return [];
         }
 
@@ -582,7 +582,7 @@ class ExtraNetworksClusterizeCardList extends ExtraNetworksClusterize {
     }
 
     async fetchData(idx_start, idx_end) {
-        if (!this.enabled) {
+        if (!this.state.enabled) {
             return [];
         }
 
