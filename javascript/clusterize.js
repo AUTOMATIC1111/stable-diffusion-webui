@@ -363,7 +363,7 @@ class Clusterize {
         this.state.scroll_top = this.scroll_elem.scrollTop;
         const cluster_divider = this.config.cluster_height - this.config.block_height;
         const current_cluster = Math.floor(this.state.scroll_top / cluster_divider);
-        return Math.min(current_cluster, this.config.max_clusters - 1);
+        return Math.min(current_cluster, this.config.max_clusters);
     }
 
     async #generate() {
