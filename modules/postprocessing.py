@@ -51,7 +51,7 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
         shared.state.textinfo = name
         shared.state.skipped = False
 
-        if shared.state.interrupted:
+        if shared.state.interrupted or shared.state.stopping_generation:
             break
 
         if isinstance(image_placeholder, str):
