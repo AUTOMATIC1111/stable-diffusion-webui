@@ -17,10 +17,10 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
         if extras_mode == 1:
             for img in image_folder:
                 if isinstance(img, Image.Image):
-                    image = img
+                    image = images.fix_image(img)
                     fn = ''
                 else:
-                    image = Image.open(os.path.abspath(img.name))
+                    image = images.read(os.path.abspath(img.name))
                     fn = os.path.splitext(img.orig_name)[0]
                 yield image, fn
         elif extras_mode == 2:
@@ -56,17 +56,19 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
 
         if isinstance(image_placeholder, str):
             try:
-                image_data = Image.open(image_placeholder)
+                image_data = images.read(image_placeholder)
             except Exception:
                 continue
         else:
             image_data = image_placeholder
 
+        image_data = image_data if image_data.mode in ("RGBA", "RGB") else image_data.convert("RGB")
+
         parameters, existing_pnginfo = images.read_info_from_image(image_data)
         if parameters:
             existing_pnginfo["parameters"] = parameters
 
-        initial_pp = scripts_postprocessing.PostprocessedImage(image_data.convert("RGB"))
+        initial_pp = scripts_postprocessing.PostprocessedImage(image_data)
 
         scripts.scripts_postproc.run(initial_pp, args)
 
@@ -122,8 +124,6 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
             if extras_mode != 2 or show_extras_results:
                 outputs.append(pp.image)
 
-        image_data.close()
-
     devices.torch_gc()
     shared.state.end()
     return outputs, ui_common.plaintext_to_html(infotext), ''
@@ -133,13 +133,15 @@ def run_postprocessing_webui(id_task, *args, **kwargs):
     return run_postprocessing(*args, **kwargs)
 
 
-def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility, upscale_first: bool, save_output: bool = True):
+def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility, upscale_first: bool, save_output: bool = True, max_side_length: int = 0):
     """old handler for API"""
 
     args = scripts.scripts_postproc.create_args_for_run({
         "Upscale": {
+            "upscale_enabled": True,
             "upscale_mode": resize_mode,
             "upscale_by": upscaling_resize,
+            "max_side_length": max_side_length,
             "upscale_to_width": upscaling_resize_w,
             "upscale_to_height": upscaling_resize_h,
             "upscale_crop": upscaling_crop,

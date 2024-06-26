@@ -16,7 +16,7 @@ from skimage import exposure
 from typing import Any
 
 import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram, infotext_utils, extra_networks, sd_vae_approx, scripts, sd_samplers_common, sd_unet, errors, rng
+from modules import devices, prompt_parser, masking, sd_samplers, lowvram, infotext_utils, extra_networks, sd_vae_approx, scripts, sd_samplers_common, sd_unet, errors, rng, profiling
 from modules.rng import slerp # noqa: F401
 from modules.sd_hijack import model_hijack
 from modules.sd_samplers_common import images_tensor_to_samples, decode_first_stage, approximation_indexes
@@ -115,20 +115,17 @@ def txt2img_image_conditioning(sd_model, x, width, height):
         return x.new_zeros(x.shape[0], 2*sd_model.noise_augmentor.time_embed.dim, dtype=x.dtype, device=x.device)
 
     else:
-        sd = sd_model.model.state_dict()
-        diffusion_model_input = sd.get('diffusion_model.input_blocks.0.0.weight', None)
-        if diffusion_model_input is not None:
-            if diffusion_model_input.shape[1] == 9:
-                # The "masked-image" in this case will just be all 0.5 since the entire image is masked.
-                image_conditioning = torch.ones(x.shape[0], 3, height, width, device=x.device) * 0.5
-                image_conditioning = images_tensor_to_samples(image_conditioning,
-                                                              approximation_indexes.get(opts.sd_vae_encode_method))
+        if sd_model.is_sdxl_inpaint:
+            # The "masked-image" in this case will just be all 0.5 since the entire image is masked.
+            image_conditioning = torch.ones(x.shape[0], 3, height, width, device=x.device) * 0.5
+            image_conditioning = images_tensor_to_samples(image_conditioning,
+                                                            approximation_indexes.get(opts.sd_vae_encode_method))
 
-                # Add the fake full 1s mask to the first dimension.
-                image_conditioning = torch.nn.functional.pad(image_conditioning, (0, 0, 0, 0, 1, 0), value=1.0)
-                image_conditioning = image_conditioning.to(x.dtype)
+            # Add the fake full 1s mask to the first dimension.
+            image_conditioning = torch.nn.functional.pad(image_conditioning, (0, 0, 0, 0, 1, 0), value=1.0)
+            image_conditioning = image_conditioning.to(x.dtype)
 
-                return image_conditioning
+            return image_conditioning
 
         # Dummy zero conditioning if we're not using inpainting or unclip models.
         # Still takes up a bit of memory, but no encoder call.
@@ -152,6 +149,7 @@ class StableDiffusionProcessing:
     seed_resize_from_w: int = -1
     seed_enable_extras: bool = True
     sampler_name: str = None
+    scheduler: str = None
     batch_size: int = 1
     n_iter: int = 1
     steps: int = 50
@@ -237,11 +235,6 @@ class StableDiffusionProcessing:
             self.styles = []
 
         self.sampler_noise_scheduler_override = None
-        self.s_min_uncond = self.s_min_uncond if self.s_min_uncond is not None else opts.s_min_uncond
-        self.s_churn = self.s_churn if self.s_churn is not None else opts.s_churn
-        self.s_tmin = self.s_tmin if self.s_tmin is not None else opts.s_tmin
-        self.s_tmax = (self.s_tmax if self.s_tmax is not None else opts.s_tmax) or float('inf')
-        self.s_noise = self.s_noise if self.s_noise is not None else opts.s_noise
 
         self.extra_generation_params = self.extra_generation_params or {}
         self.override_settings = self.override_settings or {}
@@ -257,6 +250,13 @@ class StableDiffusionProcessing:
 
         self.cached_uc = StableDiffusionProcessing.cached_uc
         self.cached_c = StableDiffusionProcessing.cached_c
+
+    def fill_fields_from_opts(self):
+        self.s_min_uncond = self.s_min_uncond if self.s_min_uncond is not None else opts.s_min_uncond
+        self.s_churn = self.s_churn if self.s_churn is not None else opts.s_churn
+        self.s_tmin = self.s_tmin if self.s_tmin is not None else opts.s_tmin
+        self.s_tmax = (self.s_tmax if self.s_tmax is not None else opts.s_tmax) or float('inf')
+        self.s_noise = self.s_noise if self.s_noise is not None else opts.s_noise
 
     @property
     def sd_model(self):
@@ -389,11 +389,8 @@ class StableDiffusionProcessing:
         if self.sampler.conditioning_key == "crossattn-adm":
             return self.unclip_image_conditioning(source_image)
 
-        sd = self.sampler.model_wrap.inner_model.model.state_dict()
-        diffusion_model_input = sd.get('diffusion_model.input_blocks.0.0.weight', None)
-        if diffusion_model_input is not None:
-            if diffusion_model_input.shape[1] == 9:
-                return self.inpainting_image_conditioning(source_image, latent_image, image_mask=image_mask)
+        if self.sampler.model_wrap.inner_model.is_sdxl_inpaint:
+            return self.inpainting_image_conditioning(source_image, latent_image, image_mask=image_mask)
 
         # Dummy zero conditioning if we're not using inpainting or depth model.
         return latent_image.new_zeros(latent_image.shape[0], 5, 1, 1)
@@ -568,7 +565,7 @@ class Processed:
         self.all_negative_prompts = all_negative_prompts or p.all_negative_prompts or [self.negative_prompt]
         self.all_seeds = all_seeds or p.all_seeds or [self.seed]
         self.all_subseeds = all_subseeds or p.all_subseeds or [self.subseed]
-        self.infotexts = infotexts or [info]
+        self.infotexts = infotexts or [info] * len(images_list)
         self.version = program_version()
 
     def js(self):
@@ -607,7 +604,7 @@ class Processed:
             "version": self.version,
         }
 
-        return json.dumps(obj)
+        return json.dumps(obj, default=lambda o: None)
 
     def infotext(self, p: StableDiffusionProcessing, index):
         return create_infotext(p, self.all_prompts, self.all_seeds, self.all_subseeds, comments=[], position_in_batch=index % self.batch_size, iteration=index // self.batch_size)
@@ -627,6 +624,9 @@ class DecodedSamples(list):
 
 def decode_latent_batch(model, batch, target_device=None, check_for_nans=False):
     samples = DecodedSamples()
+
+    if check_for_nans:
+        devices.test_for_nans(batch, "unet")
 
     for i in range(batch.shape[0]):
         sample = decode_first_stage(model, batch[i:i + 1])[0]
@@ -703,7 +703,53 @@ def program_version():
 
 
 def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0, use_main_prompt=False, index=None, all_negative_prompts=None):
-    if index is None:
+    """
+    this function is used to generate the infotext that is stored in the generated images, it's contains the parameters that are required to generate the imagee
+    Args:
+        p: StableDiffusionProcessing
+        all_prompts: list[str]
+        all_seeds: list[int]
+        all_subseeds: list[int]
+        comments: list[str]
+        iteration: int
+        position_in_batch: int
+        use_main_prompt: bool
+        index: int
+        all_negative_prompts: list[str]
+
+    Returns: str
+
+    Extra generation params
+    p.extra_generation_params dictionary allows for additional parameters to be added to the infotext
+    this can be use by the base webui or extensions.
+    To add a new entry, add a new key value pair, the dictionary key will be used as the key of the parameter in the infotext
+    the value generation_params can be defined as:
+        - str | None
+        - List[str|None]
+        - callable func(**kwargs) -> str | None
+
+    When defined as a string, it will be used as without extra processing; this is this most common use case.
+
+    Defining as a list allows for parameter that changes across images in the job, for example, the 'Seed' parameter.
+    The list should have the same length as the total number of images in the entire job.
+
+    Defining as a callable function allows parameter cannot be generated earlier or when extra logic is required.
+    For example 'Hires prompt', due to reasons the hr_prompt might be changed by process in the pipeline or extensions
+    and may vary across different images, defining as a static string or list would not work.
+
+    The function takes locals() as **kwargs, as such will have access to variables like 'p' and 'index'.
+    the base signature of the function should be:
+        func(**kwargs) -> str | None
+    optionally it can have additional arguments that will be used in the function:
+        func(p, index, **kwargs) -> str | None
+    note: for better future compatibility even though this function will have access to all variables in the locals(),
+        it is recommended to only use the arguments present in the function signature of create_infotext.
+    For actual implementation examples, see StableDiffusionProcessingTxt2Img.init > get_hr_prompt.
+    """
+
+    if use_main_prompt:
+        index = 0
+    elif index is None:
         index = position_in_batch + iteration * p.batch_size
 
     if all_negative_prompts is None:
@@ -714,6 +760,9 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
     token_merging_ratio = p.get_token_merging_ratio()
     token_merging_ratio_hr = p.get_token_merging_ratio(for_hr=True)
 
+    prompt_text = p.main_prompt if use_main_prompt else all_prompts[index]
+    negative_prompt = p.main_negative_prompt if use_main_prompt else all_negative_prompts[index]
+
     uses_ensd = opts.eta_noise_seed_delta != 0
     if uses_ensd:
         uses_ensd = sd_samplers_common.is_sampler_using_eta_noise_seed_delta(p)
@@ -721,6 +770,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
     generation_params = {
         "Steps": p.steps,
         "Sampler": p.sampler_name,
+        "Schedule type": p.scheduler,
         "CFG scale": p.cfg_scale,
         "Image CFG scale": getattr(p, 'image_cfg_scale', None),
         "Seed": p.all_seeds[0] if use_main_prompt else all_seeds[index],
@@ -743,17 +793,25 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Token merging ratio hr": None if not enable_hr or token_merging_ratio_hr == 0 else token_merging_ratio_hr,
         "Init image hash": getattr(p, 'init_img_hash', None),
         "RNG": opts.randn_source if opts.randn_source != "GPU" else None,
-        "NGMS": None if p.s_min_uncond == 0 else p.s_min_uncond,
         "Tiling": "True" if p.tiling else None,
         **p.extra_generation_params,
         "Version": program_version() if opts.add_version_to_infotext else None,
         "User": p.user if opts.add_user_name_to_info else None,
     }
 
+    for key, value in generation_params.items():
+        try:
+            if isinstance(value, list):
+                generation_params[key] = value[index]
+            elif callable(value):
+                generation_params[key] = value(**locals())
+        except Exception:
+            errors.report(f'Error creating infotext for key "{key}"', exc_info=True)
+            generation_params[key] = None
+
     generation_params_text = ", ".join([k if k == v else f'{k}: {infotext_utils.quote(v)}' for k, v in generation_params.items() if v is not None])
 
-    prompt_text = p.main_prompt if use_main_prompt else all_prompts[index]
-    negative_prompt_text = f"\nNegative prompt: {p.main_negative_prompt if use_main_prompt else all_negative_prompts[index]}" if all_negative_prompts[index] else ""
+    negative_prompt_text = f"\nNegative prompt: {negative_prompt}" if negative_prompt else ""
 
     return f"{prompt_text}{negative_prompt_text}\n{generation_params_text}".strip()
 
@@ -782,7 +840,11 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
         sd_models.apply_token_merging(p.sd_model, p.get_token_merging_ratio())
 
-        res = process_images_inner(p)
+        # backwards compatibility, fix sampler and scheduler if invalid
+        sd_samplers.fix_p_invalid_sampler_and_scheduler(p)
+
+        with profiling.Profiler():
+            res = process_images_inner(p)
 
     finally:
         sd_models.apply_token_merging(p.sd_model, 0)
@@ -830,6 +892,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     modules.sd_hijack.model_hijack.apply_circular(p.tiling)
     modules.sd_hijack.model_hijack.clear_comments()
 
+    p.fill_fields_from_opts()
     p.setup_prompts()
 
     if isinstance(seed, list):
@@ -896,21 +959,21 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if p.scripts is not None:
                 p.scripts.process_batch(p, batch_number=n, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds)
 
+            p.setup_conds()
+
+            p.extra_generation_params.update(model_hijack.extra_generation_params)
+
             # params.txt should be saved after scripts.process_batch, since the
             # infotext could be modified by that callback
             # Example: a wildcard processed by process_batch sets an extra model
             # strength, which is saved as "Model Strength: 1.0" in the infotext
-            if n == 0:
+            if n == 0 and not cmd_opts.no_prompt_history:
                 with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
                     processed = Processed(p, [])
                     file.write(processed.infotext(p, 0))
 
-            p.setup_conds()
-
             for comment in model_hijack.comments:
                 p.comment(comment)
-
-            p.extra_generation_params.update(model_hijack.extra_generation_params)
 
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
@@ -928,6 +991,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if getattr(samples_ddim, 'already_decoded', False):
                 x_samples_ddim = samples_ddim
             else:
+                devices.test_for_nans(samples_ddim, "unet")
+
                 if opts.sd_vae_decode_method != 'Full':
                     p.extra_generation_params['VAE Decoder'] = opts.sd_vae_decode_method
                 x_samples_ddim = decode_latent_batch(p.sd_model, samples_ddim, target_device=devices.cpu, check_for_nans=True)
@@ -1106,6 +1171,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     hr_resize_y: int = 0
     hr_checkpoint_name: str = None
     hr_sampler_name: str = None
+    hr_scheduler: str = None
     hr_prompt: str = ''
     hr_negative_prompt: str = ''
     force_task_id: str = None
@@ -1194,11 +1260,21 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             if self.hr_sampler_name is not None and self.hr_sampler_name != self.sampler_name:
                 self.extra_generation_params["Hires sampler"] = self.hr_sampler_name
 
-            if tuple(self.hr_prompt) != tuple(self.prompt):
-                self.extra_generation_params["Hires prompt"] = self.hr_prompt
+            def get_hr_prompt(p, index, prompt_text, **kwargs):
+                hr_prompt = p.all_hr_prompts[index]
+                return hr_prompt if hr_prompt != prompt_text else None
 
-            if tuple(self.hr_negative_prompt) != tuple(self.negative_prompt):
-                self.extra_generation_params["Hires negative prompt"] = self.hr_negative_prompt
+            def get_hr_negative_prompt(p, index, negative_prompt, **kwargs):
+                hr_negative_prompt = p.all_hr_negative_prompts[index]
+                return hr_negative_prompt if hr_negative_prompt != negative_prompt else None
+
+            self.extra_generation_params["Hires prompt"] = get_hr_prompt
+            self.extra_generation_params["Hires negative prompt"] = get_hr_negative_prompt
+
+            self.extra_generation_params["Hires schedule type"] = None  # to be set in sd_samplers_kdiffusion.py
+
+            if self.hr_scheduler is None:
+                self.hr_scheduler = self.scheduler
 
             self.latent_scale_mode = shared.latent_upscale_modes.get(self.hr_upscaler, None) if self.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "nearest")
             if self.enable_hr and self.latent_scale_mode is None:
@@ -1254,6 +1330,15 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             # here we generate an image normally
 
             x = self.rng.next()
+            if self.scripts is not None:
+                self.scripts.process_before_every_sampling(
+                    p=self,
+                    x=x,
+                    noise=x,
+                    c=conditioning,
+                    uc=unconditional_conditioning
+                )
+
             samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x))
             del x
 
@@ -1354,6 +1439,13 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         if self.scripts is not None:
             self.scripts.before_hr(self)
+            self.scripts.process_before_every_sampling(
+                p=self,
+                x=samples,
+                noise=noise,
+                c=self.hr_c,
+                uc=self.hr_uc,
+            )
 
         samples = self.sampler.sample_img2img(self, samples, noise, self.hr_c, self.hr_uc, steps=self.hr_second_pass_steps or self.steps, image_conditioning=image_conditioning)
 
@@ -1540,16 +1632,23 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             if self.inpaint_full_res:
                 self.mask_for_overlay = image_mask
                 mask = image_mask.convert('L')
-                crop_region = masking.get_crop_region(mask, self.inpaint_full_res_padding)
-                crop_region = masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
-                x1, y1, x2, y2 = crop_region
-
-                mask = mask.crop(crop_region)
-                image_mask = images.resize_image(2, mask, self.width, self.height)
-                self.paste_to = (x1, y1, x2-x1, y2-y1)
-
-                self.extra_generation_params["Inpaint area"] = "Only masked"
-                self.extra_generation_params["Masked area padding"] = self.inpaint_full_res_padding
+                crop_region = masking.get_crop_region_v2(mask, self.inpaint_full_res_padding)
+                if crop_region:
+                    crop_region = masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
+                    x1, y1, x2, y2 = crop_region
+                    mask = mask.crop(crop_region)
+                    image_mask = images.resize_image(2, mask, self.width, self.height)
+                    self.paste_to = (x1, y1, x2-x1, y2-y1)
+                    self.extra_generation_params["Inpaint area"] = "Only masked"
+                    self.extra_generation_params["Masked area padding"] = self.inpaint_full_res_padding
+                else:
+                    crop_region = None
+                    image_mask = None
+                    self.mask_for_overlay = None
+                    self.inpaint_full_res = False
+                    massage = 'Unable to perform "Inpaint Only mask" because mask is blank, switch to img2img mode.'
+                    model_hijack.comments.append(massage)
+                    logging.info(massage)
             else:
                 image_mask = images.resize_image(self.resize_mode, image_mask, self.width, self.height)
                 np_mask = np.array(image_mask)
@@ -1577,6 +1676,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 image = images.resize_image(self.resize_mode, image, self.width, self.height)
 
             if image_mask is not None:
+                if self.mask_for_overlay.size != (image.width, image.height):
+                    self.mask_for_overlay = images.resize_image(self.resize_mode, self.mask_for_overlay, image.width, image.height)
                 image_masked = Image.new('RGBa', (image.width, image.height))
                 image_masked.paste(image.convert("RGBA").convert("RGBa"), mask=ImageOps.invert(self.mask_for_overlay.convert('L')))
 
@@ -1658,6 +1759,14 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             self.extra_generation_params["Noise multiplier"] = self.initial_noise_multiplier
             x *= self.initial_noise_multiplier
 
+        if self.scripts is not None:
+            self.scripts.process_before_every_sampling(
+                p=self,
+                x=self.init_latent,
+                noise=x,
+                c=conditioning,
+                uc=unconditional_conditioning
+            )
         samples = self.sampler.sample_img2img(self, self.init_latent, x, conditioning, unconditional_conditioning, image_conditioning=self.image_conditioning)
 
         if self.mask is not None:

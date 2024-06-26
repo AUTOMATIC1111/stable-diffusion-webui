@@ -3,13 +3,10 @@ import dataclasses
 import json
 import html
 import os
-import platform
-import sys
 
 import gradio as gr
-import subprocess as sp
 
-from modules import call_queue, shared, ui_tempdir
+from modules import call_queue, shared, ui_tempdir, util
 from modules.infotext_utils import image_from_url_text
 import modules.images
 from modules.ui_components import ToolButton
@@ -105,7 +102,7 @@ def save_files(js_data, images, do_make_zip, index):
     logfile_path = os.path.join(shared.opts.outdir_save, "log.csv")
 
     # NOTE: ensure csv integrity when fields are added by
-    # updating headers and padding with delimeters where needed
+    # updating headers and padding with delimiters where needed
     if os.path.exists(logfile_path):
         update_logfile(logfile_path, fields)
 
@@ -176,31 +173,7 @@ def create_output_panel(tabname, outdir, toprow=None):
         except Exception:
             pass
 
-        if not os.path.exists(f):
-            msg = f'Folder "{f}" does not exist. After you create an image, the folder will be created.'
-            print(msg)
-            gr.Info(msg)
-            return
-        elif not os.path.isdir(f):
-            msg = f"""
-WARNING
-An open_folder request was made with an argument that is not a folder.
-This could be an error or a malicious attempt to run code on your computer.
-Requested path was: {f}
-"""
-            print(msg, file=sys.stderr)
-            gr.Warning(msg)
-            return
-
-        path = os.path.normpath(f)
-        if platform.system() == "Windows":
-            os.startfile(path)
-        elif platform.system() == "Darwin":
-            sp.Popen(["open", path])
-        elif "microsoft-standard-WSL2" in platform.uname().release:
-            sp.Popen(["wsl-open", path])
-        else:
-            sp.Popen(["xdg-open", path])
+        util.open_folder(f)
 
     with gr.Column(elem_id=f"{tabname}_results"):
         if toprow:

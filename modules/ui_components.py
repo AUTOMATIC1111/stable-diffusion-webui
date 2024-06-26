@@ -88,7 +88,7 @@ class DropdownEditable(FormComponent, gr.Dropdown):
 class InputAccordion(gr.Checkbox):
     """A gr.Accordion that can be used as an input - returns True if open, False if closed.
 
-    Actaully just a hidden checkbox, but creates an accordion that follows and is followed by the state of the checkbox.
+    Actually just a hidden checkbox, but creates an accordion that follows and is followed by the state of the checkbox.
     """
 
     global_index = 0

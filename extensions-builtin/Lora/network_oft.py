@@ -36,13 +36,6 @@ class NetworkModuleOFT(network.NetworkModule):
             # self.alpha is unused
             self.dim = self.oft_blocks.shape[1] # (num_blocks, block_size, block_size)
 
-        # LyCORIS BOFT
-        if self.oft_blocks.dim() == 4:
-            self.is_boft = True
-        self.rescale = weights.w.get('rescale', None)
-        if self.rescale is not None:
-            self.rescale = self.rescale.reshape(-1, *[1]*(self.org_module[0].weight.dim() - 1))
-
         is_linear = type(self.sd_module) in [torch.nn.Linear, torch.nn.modules.linear.NonDynamicallyQuantizableLinear]
         is_conv = type(self.sd_module) in [torch.nn.Conv2d]
         is_other_linear = type(self.sd_module) in [torch.nn.MultiheadAttention] # unsupported
@@ -53,6 +46,13 @@ class NetworkModuleOFT(network.NetworkModule):
             self.out_dim = self.sd_module.out_channels
         elif is_other_linear:
             self.out_dim = self.sd_module.embed_dim
+
+        # LyCORIS BOFT
+        if self.oft_blocks.dim() == 4:
+            self.is_boft = True
+        self.rescale = weights.w.get('rescale', None)
+        if self.rescale is not None and not is_other_linear:
+            self.rescale = self.rescale.reshape(-1, *[1]*(self.org_module[0].weight.dim() - 1))
 
         self.num_blocks = self.dim
         self.block_size = self.out_dim // self.dim

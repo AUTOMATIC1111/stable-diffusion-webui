@@ -147,7 +147,7 @@ class ExtrasBaseRequest(BaseModel):
     gfpgan_visibility: float = Field(default=0, title="GFPGAN Visibility", ge=0, le=1, allow_inf_nan=False, description="Sets the visibility of GFPGAN, values should be between 0 and 1.")
     codeformer_visibility: float = Field(default=0, title="CodeFormer Visibility", ge=0, le=1, allow_inf_nan=False, description="Sets the visibility of CodeFormer, values should be between 0 and 1.")
     codeformer_weight: float = Field(default=0, title="CodeFormer Weight", ge=0, le=1, allow_inf_nan=False, description="Sets the weight of CodeFormer, values should be between 0 and 1.")
-    upscaling_resize: float = Field(default=2, title="Upscaling Factor", ge=1, le=8, description="By how much to upscale the image, only used when resize_mode=0.")
+    upscaling_resize: float = Field(default=2, title="Upscaling Factor", gt=0, description="By how much to upscale the image, only used when resize_mode=0.")
     upscaling_resize_w: int = Field(default=512, title="Target Width", ge=1, description="Target width for the upscaler to hit. Only used when resize_mode=1.")
     upscaling_resize_h: int = Field(default=512, title="Target Height", ge=1, description="Target height for the upscaler to hit. Only used when resize_mode=1.")
     upscaling_crop: bool = Field(default=True, title="Crop to fit", description="Should the upscaler crop the image to fit in the chosen size?")
@@ -234,6 +234,13 @@ class SamplerItem(BaseModel):
     name: str = Field(title="Name")
     aliases: list[str] = Field(title="Aliases")
     options: dict[str, str] = Field(title="Options")
+
+class SchedulerItem(BaseModel):
+    name: str = Field(title="Name")
+    label: str = Field(title="Label")
+    aliases: Optional[list[str]] = Field(title="Aliases")
+    default_rho: Optional[float] = Field(title="Default Rho")
+    need_inner_model: Optional[bool] = Field(title="Needs Inner Model")
 
 class UpscalerItem(BaseModel):
     name: str = Field(title="Name")

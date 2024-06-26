@@ -71,10 +71,10 @@
     "training_enable_tensorboard": false,
     "training_tensorboard_save_images": false,
     "training_tensorboard_flush_every": 120,
-    "sd_model_checkpoint": "helloyoung25d_V15jvae.safetensors [d3b025bd3f]",
+    "sd_model_checkpoint": "helloyoung25d_V15jvae.safetensors",
     "sd_checkpoint_cache": 0,
     "sd_vae_checkpoint_cache": 0,
-    "sd_vae": "vae-ft-mse-840000-ema-pruned.ckpt",
+    "sd_vae": "None",
     "sd_vae_as_default": true,
     "sd_unet": "Automatic",
     "inpainting_mask_weight": 1.0,
@@ -186,17 +186,7 @@
     "postprocessing_enable_in_main_ui": [],
     "postprocessing_operation_order": [],
     "upscaling_max_images_in_cache": 5,
-    "disabled_extensions": [
-        "PBRemTools",
-        "multi-subject-render",
-        "sd-civitai-browser-plus",
-        "sd-webui-animatediff",
-        "sd-webui-infinite-image-browsing",
-        "sd_civitai_extension",
-        "stable-diffusion-webui-rembg",
-        "stable-diffusion-webui-two-shot",
-        "zulu571"
-    ],
+    "disabled_extensions": [],
     "disable_all_extensions": "none",
     "restore_config_state_file": "",
     "sd_checkpoint_hash": "d3b025bd3ffaa9f76a60e5936396029045d00367f247ac221b8ae3470eb6675e",
@@ -474,5 +464,6 @@
     "insert_sub_14": false,
     "controlnet_disable_photopea_edit": false,
     "controlnet_photopea_warning": true,
-    "controlnet_clip_detector_on_cpu": false
+    "controlnet_clip_detector_on_cpu": false,
+    "controlnet_control_type_dropdown": false
 }

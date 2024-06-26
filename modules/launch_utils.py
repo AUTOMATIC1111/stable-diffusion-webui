@@ -55,7 +55,7 @@ and delete current Python and "venv" folder in WebUI's directory.
 
 You can download 3.10 Python from here: https://www.python.org/downloads/release/python-3106/
 
-{"Alternatively, use a binary release of WebUI: https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases" if is_windows else ""}
+{"Alternatively, use a binary release of WebUI: https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases/tag/v1.0.0-pre" if is_windows else ""}
 
 Use --skip-python-version-check to suppress this warning.
 """)
@@ -76,7 +76,7 @@ def git_tag():
     except Exception:
         try:
 
-            changelog_md = os.path.join(os.path.dirname(os.path.dirname(__file__)), "CHANGELOG.md")
+            changelog_md = os.path.join(script_path, "CHANGELOG.md")
             with open(changelog_md, "r", encoding="utf-8") as file:
                 line = next((line.strip() for line in file if line.strip()), "<none>")
                 line = line.replace("## ", "")
@@ -231,7 +231,7 @@ def run_extension_installer(extension_dir):
 
     try:
         env = os.environ.copy()
-        env['PYTHONPATH'] = f"{os.path.abspath('.')}{os.pathsep}{env.get('PYTHONPATH', '')}"
+        env['PYTHONPATH'] = f"{script_path}{os.pathsep}{env.get('PYTHONPATH', '')}"
 
         stdout = run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {extension_dir}", custom_env=env).strip()
         if stdout:

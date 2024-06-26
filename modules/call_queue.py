@@ -1,8 +1,9 @@
+import os.path
 from functools import wraps
 import html
 import time
 
-from modules import shared, progress, errors, devices, fifo_lock
+from modules import shared, progress, errors, devices, fifo_lock, profiling
 
 queue_lock = fifo_lock.FIFOLock()
 
@@ -100,8 +101,8 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
             sys_pct = sys_peak/max(sys_total, 1) * 100
 
             toltip_a = "Active: peak amount of video memory used during generation (excluding cached data)"
-            toltip_r = "Reserved: total amout of video memory allocated by the Torch library "
-            toltip_sys = "System: peak amout of video memory allocated by all running programs, out of total capacity"
+            toltip_r = "Reserved: total amount of video memory allocated by the Torch library "
+            toltip_sys = "System: peak amount of video memory allocated by all running programs, out of total capacity"
 
             text_a = f"<abbr title='{toltip_a}'>A</abbr>: <span class='measurement'>{active_peak/1024:.2f} GB</span>"
             text_r = f"<abbr title='{toltip_r}'>R</abbr>: <span class='measurement'>{reserved_peak/1024:.2f} GB</span>"
@@ -111,8 +112,13 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
         else:
             vram_html = ''
 
+        if shared.opts.profiling_enable and os.path.exists(shared.opts.profiling_filename):
+            profiling_html = f"<p class='profile'> [ <a href='{profiling.webpath()}' download>Profile</a> ] </p>"
+        else:
+            profiling_html = ''
+
         # last item is always HTML
-        res[-1] += f"<div class='performance'><p class='time'>Time taken: <wbr><span class='measurement'>{elapsed_text}</span></p>{vram_html}</div>"
+        res[-1] += f"<div class='performance'><p class='time'>Time taken: <wbr><span class='measurement'>{elapsed_text}</span></p>{vram_html}{profiling_html}</div>"
 
         return tuple(res)
 

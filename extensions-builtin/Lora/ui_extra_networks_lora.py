@@ -31,7 +31,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
             "name": name,
             "filename": lora_on_disk.filename,
             "shorthash": lora_on_disk.shorthash,
-            "preview": self.find_preview(path),
+            "preview": self.find_preview(path) or self.find_embedded_preview(path, name, lora_on_disk.metadata),
             "description": self.find_description(path),
             "search_terms": search_terms,
             "local_preview": f"{path}.{shared.opts.samples_format}",
@@ -60,7 +60,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
         else:
             sd_version = lora_on_disk.sd_version
 
-        if shared.opts.lora_show_all or not enable_filter:
+        if shared.opts.lora_show_all or not enable_filter or not shared.sd_model:
             pass
         elif sd_version == network.SdVersion.Unknown:
             model_version = network.SdVersion.SDXL if shared.sd_model.is_sdxl else network.SdVersion.SD2 if shared.sd_model.is_sd2 else network.SdVersion.SD1

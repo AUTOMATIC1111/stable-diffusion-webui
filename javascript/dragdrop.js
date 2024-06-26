@@ -56,6 +56,15 @@ function eventHasFiles(e) {
     return false;
 }
 
+function isURL(url) {
+    try {
+        const _ = new URL(url);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 function dragDropTargetIsPrompt(target) {
     if (target?.placeholder && target?.placeholder.indexOf("Prompt") >= 0) return true;
     if (target?.parentNode?.parentNode?.className?.indexOf("prompt") > 0) return true;
@@ -74,22 +83,39 @@ window.document.addEventListener('dragover', e => {
     e.dataTransfer.dropEffect = 'copy';
 });
 
-window.document.addEventListener('drop', e => {
+window.document.addEventListener('drop', async e => {
     const target = e.composedPath()[0];
-    if (!eventHasFiles(e)) return;
+    const url = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
+    if (!eventHasFiles(e) && !isURL(url)) return;
 
     if (dragDropTargetIsPrompt(target)) {
         e.stopPropagation();
         e.preventDefault();
 
-        let prompt_target = get_tab_index('tabs') == 1 ? "img2img_prompt_image" : "txt2img_prompt_image";
+        const isImg2img = get_tab_index('tabs') == 1;
+        let prompt_image_target = isImg2img ? "img2img_prompt_image" : "txt2img_prompt_image";
 
-        const imgParent = gradioApp().getElementById(prompt_target);
+        const imgParent = gradioApp().getElementById(prompt_image_target);
         const files = e.dataTransfer.files;
         const fileInput = imgParent.querySelector('input[type="file"]');
-        if (fileInput) {
+        if (eventHasFiles(e) && fileInput) {
             fileInput.files = files;
             fileInput.dispatchEvent(new Event('change'));
+        } else if (url) {
+            try {
+                const request = await fetch(url);
+                if (!request.ok) {
+                    console.error('Error fetching URL:', url, request.status);
+                    return;
+                }
+                const data = new DataTransfer();
+                data.items.add(new File([await request.blob()], 'image.png'));
+                fileInput.files = data.files;
+                fileInput.dispatchEvent(new Event('change'));
+            } catch (error) {
+                console.error('Error fetching URL:', url, error);
+                return;
+            }
         }
     }
 

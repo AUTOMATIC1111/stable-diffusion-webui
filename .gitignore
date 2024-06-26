@@ -34,3 +34,5 @@ notification.mp3
 /.coverage*
 /test/test_outputs
 extensions/
+/cache
+trace.json

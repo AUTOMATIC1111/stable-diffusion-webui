@@ -13,8 +13,8 @@ def get_learned_conditioning(self: sgm.models.diffusion.DiffusionEngine, batch: 
     for embedder in self.conditioner.embedders:
         embedder.ucg_rate = 0.0
 
-    width = getattr(batch, 'width', 1024)
-    height = getattr(batch, 'height', 1024)
+    width = getattr(batch, 'width', 1024) or 1024
+    height = getattr(batch, 'height', 1024) or 1024
     is_negative_prompt = getattr(batch, 'is_negative_prompt', False)
     aesthetic_score = shared.opts.sdxl_refiner_low_aesthetic_score if is_negative_prompt else shared.opts.sdxl_refiner_high_aesthetic_score
 
@@ -35,11 +35,10 @@ def get_learned_conditioning(self: sgm.models.diffusion.DiffusionEngine, batch: 
 
 
 def apply_model(self: sgm.models.diffusion.DiffusionEngine, x, t, cond):
-    sd = self.model.state_dict()
-    diffusion_model_input = sd.get('diffusion_model.input_blocks.0.0.weight', None)
-    if diffusion_model_input is not None:
-        if diffusion_model_input.shape[1] == 9:
-            x = torch.cat([x] + cond['c_concat'], dim=1)
+    """WARNING: This function is called once per denoising iteration. DO NOT add
+    expensive functionc calls such as `model.state_dict`. """
+    if self.is_sdxl_inpaint:
+        x = torch.cat([x] + cond['c_concat'], dim=1)
 
     return self.model(x, t, cond)
 
