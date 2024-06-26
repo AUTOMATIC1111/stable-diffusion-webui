@@ -722,7 +722,12 @@ def get_empty_cond(sd_model):
         d = sd_model.get_learned_conditioning([""])
         return d['crossattn']
     else:
-        return sd_model.cond_stage_model([""])
+        d = sd_model.cond_stage_model([""])
+
+        if isinstance(d, dict):
+            d = d['crossattn']
+
+        return d
 
 
 def send_model_to_cpu(m):
