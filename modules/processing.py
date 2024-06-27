@@ -799,9 +799,11 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "User": p.user if opts.add_user_name_to_info else None,
     }
 
+    # Only apply the index to the specified field to avoid causing other plugins to fail to save list values.
+    list_index_fields = ["Hires prompt", "Hires negative prompt", "Styles array"]
     for key, value in generation_params.items():
         try:
-            if isinstance(value, list):
+            if key in list_index_fields and isinstance(value, list):
                 generation_params[key] = value[index]
             elif callable(value):
                 generation_params[key] = value(**locals())
