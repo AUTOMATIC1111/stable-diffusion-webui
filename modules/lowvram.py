@@ -107,7 +107,7 @@ def setup_for_low_vram(sd_model, use_medvram):
         setattr(obj, field, module)
 
     # register hooks for those the first three models
-    if hasattr(sd_model.cond_stage_model, "medvram_modules"):
+    if hasattr(sd_model, "cond_stage_model") and hasattr(sd_model.cond_stage_model, "medvram_modules"):
         for module in sd_model.cond_stage_model.medvram_modules():
             if isinstance(module, ModuleWithParent):
                 parent = module.parent
@@ -135,9 +135,9 @@ def setup_for_low_vram(sd_model, use_medvram):
     sd_model.first_stage_model.register_forward_pre_hook(send_me_to_gpu)
     sd_model.first_stage_model.encode = first_stage_model_encode_wrap
     sd_model.first_stage_model.decode = first_stage_model_decode_wrap
-    if hasattr(sd_model, 'depth_model'):
+    if getattr(sd_model, 'depth_model', None) is not None:
         sd_model.depth_model.register_forward_pre_hook(send_me_to_gpu)
-    if hasattr(sd_model, 'embedder'):
+    if getattr(sd_model, 'embedder', None) is not None:
         sd_model.embedder.register_forward_pre_hook(send_me_to_gpu)
 
     if use_medvram:
