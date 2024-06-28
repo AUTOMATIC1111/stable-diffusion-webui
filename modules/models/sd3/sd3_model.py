@@ -75,3 +75,6 @@ class SD3Inferencer(torch.nn.Module):
 
     def add_noise_to_latent(self, x, noise, amount):
         return x * (1 - amount) + noise * amount
+
+    def fix_dimensions(self, width, height):
+        return width // 16 * 16, height // 16 * 16

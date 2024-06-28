@@ -884,6 +884,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         if p.refiner_checkpoint_info is None:
             raise Exception(f'Could not find checkpoint with name {p.refiner_checkpoint}')
 
+    if hasattr(shared.sd_model, 'fix_dimensions'):
+        p.width, p.height = shared.sd_model.fix_dimensions(p.width, p.height)
+
     p.sd_model_name = shared.sd_model.sd_checkpoint_info.name_for_extra
     p.sd_model_hash = shared.sd_model.sd_model_hash
     p.sd_vae_name = sd_vae.get_loaded_vae_name()
