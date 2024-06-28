@@ -177,12 +177,13 @@ class SD3Cond(torch.nn.Module):
         self.weights_loaded = False
 
     def forward(self, prompts: list[str]):
-        lg_out, vector_out = self.model_lg(prompts)
+        with devices.without_autocast():
+            lg_out, vector_out = self.model_lg(prompts)
 
-        token_count = lg_out.shape[1]
+            token_count = lg_out.shape[1]
 
-        t5_out = self.model_t5(prompts, token_count=token_count)
-        lgt_out = torch.cat([lg_out, t5_out], dim=-2)
+            t5_out = self.model_t5(prompts, token_count=token_count)
+            lgt_out = torch.cat([lg_out, t5_out], dim=-2)
 
         return {
             'crossattn': lgt_out,

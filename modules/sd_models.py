@@ -718,16 +718,15 @@ def get_empty_cond(sd_model):
     p = processing.StableDiffusionProcessingTxt2Img()
     extra_networks.activate(p, {})
 
-    if hasattr(sd_model, 'conditioner'):
+    if hasattr(sd_model, 'get_learned_conditioning'):
         d = sd_model.get_learned_conditioning([""])
-        return d['crossattn']
     else:
         d = sd_model.cond_stage_model([""])
 
-        if isinstance(d, dict):
-            d = d['crossattn']
+    if isinstance(d, dict):
+        d = d['crossattn']
 
-        return d
+    return d
 
 
 def send_model_to_cpu(m):
