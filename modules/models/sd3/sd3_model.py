@@ -73,3 +73,6 @@ class SD3Inferencer(torch.nn.Module):
             (self, 'cond_stage_model'),
             (self, 'model'),
         ]
+
+    def add_noise_to_latent(self, x, noise, amount):
+        return x * (1 - amount) + noise * amount

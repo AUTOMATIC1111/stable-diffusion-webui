@@ -133,7 +133,10 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
         sigmas = self.get_sigmas(p, steps)
         sigma_sched = sigmas[steps - t_enc - 1:]
 
-        xi = x + noise * sigma_sched[0]
+        if hasattr(shared.sd_model, 'add_noise_to_latent'):
+            xi = shared.sd_model.add_noise_to_latent(x, noise, sigma_sched[0])
+        else:
+            xi = x + noise * sigma_sched[0]
 
         if opts.img2img_extra_noise > 0:
             p.extra_generation_params["Extra noise"] = opts.img2img_extra_noise
