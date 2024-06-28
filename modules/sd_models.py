@@ -434,8 +434,14 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         # cache newly loaded model
         checkpoints_loaded[checkpoint_info] = state_dict.copy()
 
+    if hasattr(model, "before_load_weights"):
+        model.before_load_weights(state_dict)
+
     model.load_state_dict(state_dict, strict=False)
     timer.record("apply weights to model")
+
+    if hasattr(model, "after_load_weights"):
+        model.after_load_weights(state_dict)
 
     del state_dict
 
@@ -837,9 +843,6 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
 
     with sd_disable_initialization.LoadStateDictOnMeta(state_dict, device=model_target_device(sd_model), weight_dtype_conversion=weight_dtype_conversion):
         load_model_weights(sd_model, checkpoint_info, state_dict, timer)
-
-    if hasattr(sd_model, "after_load_weights"):
-        sd_model.after_load_weights()
 
     timer.record("load weights from state dict")
 
