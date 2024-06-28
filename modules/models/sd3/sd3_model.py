@@ -61,6 +61,9 @@ class SD3Inferencer(torch.nn.Module):
         latent = self.first_stage_model.encode(image)
         return self.latent_format.process_in(latent)
 
+    def get_first_stage_encoding(self, x):
+        return x
+
     def create_denoiser(self):
         return SD3Denoiser(self, self.model.model_sampling.sigmas)
 
