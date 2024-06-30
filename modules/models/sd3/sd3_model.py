@@ -73,7 +73,7 @@ class SD3Inferencer(torch.nn.Module):
     def medvram_fields(self):
         return [
             (self, 'first_stage_model'),
-            (self, 'cond_stage_model'),
+            (self, 'text_encoders'),
             (self, 'model'),
         ]
 
