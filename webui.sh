@@ -217,6 +217,8 @@ then
     if [[ -f "${venv_dir}"/bin/activate ]]
     then
         source "${venv_dir}"/bin/activate
+        # ensure use of python from venv
+        python_cmd="${venv_dir}"/bin/python
     else
         printf "\n%s\n" "${delimiter}"
         printf "\e[1m\e[31mERROR: Cannot activate python venv, aborting...\e[0m"
