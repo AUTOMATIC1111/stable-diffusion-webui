@@ -33,4 +33,6 @@ pyenv shell 3.10.13
 Ensure there is a Python3.10 installation and it is pointed at in webui-user.sh.
 ```
 sudo ./webui.sh
+sudo pm2 start webui.sh
 ```
+sudo pm2 stop webui

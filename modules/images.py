@@ -22,6 +22,7 @@ import hashlib
 from modules import sd_samplers, shared, script_callbacks, errors
 from modules.paths_internal import roboto_ttf_file
 from modules.shared import opts
+from modules.processing import StableDiffusionProcessing
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
@@ -621,6 +622,35 @@ def save_image_with_geninfo(image, geninfo, filename, extension=None, existing_p
         image.save(filename, format=image_format, quality=opts.jpeg_quality)
 
 
+def trim_info(info: str, main_prompt: str = "") -> str:
+    """
+    Removes global character identifiers found in original prompt from labels.
+
+    E.g. If a character train image was made with the prompts: “man, tall, muscular, right-facing, suit”
+    The corresponding lora train labels should be “Bob, right-facing, suit” 
+    In other words, we want “tall” and “muscular” to be part of “Bob” - they should not be their own tags because tags are variable 
+    """
+    global_labels = main_prompt.split(",")
+    local_labels = info.split(',')
+
+    # exclude all global labels except the first, which is the character name by convention
+    labels_to_exclude = set(global_labels[1:]) if len(global_labels > 0) else set()
+
+    # iterate through local labels and remove excluded ones
+    # Note: we iterate instead of doing set difference to preserve label order.
+    new_labels = []
+    for label in local_labels:
+        if label not in labels_to_exclude:
+            new_labels.append(label)
+
+    # join labels back into comma-separated list
+    return ",".join(new_labels)
+
+
+
+
+
+
 def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None):
     """Save an image.
 
@@ -709,6 +739,9 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     fullfn = params.filename
     info = params.pnginfo.get(pnginfo_section_name, None)
 
+    # Remove global and non-variable labels from the image info
+    info = trim_info(info, p.main_prompt)
+    
     def _atomically_save_image(image_to_save, filename_without_extension, extension):
         """
         save image with .tmp extension to avoid race condition when another process detects new image in the directory
