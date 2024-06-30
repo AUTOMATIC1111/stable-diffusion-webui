@@ -325,7 +325,10 @@ class StableDiffusionModelHijack:
         if self.clip is None:
             return "-", "-"
 
-        _, token_count = self.clip.process_texts([text])
+        if hasattr(self.clip, 'get_token_count'):
+            token_count = self.clip.get_token_count(text)
+        else:
+            _, token_count = self.clip.process_texts([text])
 
         return token_count, self.clip.get_target_prompt_token_count(token_count)
 

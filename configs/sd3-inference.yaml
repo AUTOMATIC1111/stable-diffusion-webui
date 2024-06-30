@@ -1,0 +1,5 @@
+model:
+  target: modules.models.sd3.sd3_model.SD3Inferencer
+  params:
+    shift: 3
+    state_dict: null
