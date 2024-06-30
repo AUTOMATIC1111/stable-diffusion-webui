@@ -103,7 +103,6 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
             if opts.sigma_min != 0 and opts.sigma_min != m_sigma_min:
                 sigmas_kwargs['sigma_min'] = opts.sigma_min
                 p.extra_generation_params["Schedule min sigma"] = opts.sigma_min
-
             if opts.sigma_max != 0 and opts.sigma_max != m_sigma_max:
                 sigmas_kwargs['sigma_max'] = opts.sigma_max
                 p.extra_generation_params["Schedule max sigma"] = opts.sigma_max
@@ -115,7 +114,17 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
             if scheduler.need_inner_model:
                 sigmas_kwargs['inner_model'] = self.model_wrap
 
-            sigmas = scheduler.function(n=steps, **sigmas_kwargs, device=devices.cpu)
+            # Add steps and device to sigmas_kwargs
+            sigmas_kwargs['n'] = steps
+            sigmas_kwargs['device'] = shared.device
+
+            # Get the function parameters
+            func_params = inspect.signature(scheduler.function).parameters
+
+            # Filter sigmas_kwargs to only include parameters that the function accepts
+            filtered_kwargs = {k: v for k, v in sigmas_kwargs.items() if k in func_params}
+
+            sigmas = scheduler.function(**filtered_kwargs)
 
         if discard_next_to_last_sigma:
             sigmas = torch.cat([sigmas[:-2], sigmas[-1:]])
