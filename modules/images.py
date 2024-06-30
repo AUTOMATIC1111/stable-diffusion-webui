@@ -629,12 +629,16 @@ def trim_info(info: str, main_prompt: str = "") -> str:
     E.g. If a character train image was made with the prompts: “man, tall, muscular, right-facing, suit”
     The corresponding lora train labels should be “Bob, right-facing, suit” 
     In other words, we want “tall” and “muscular” to be part of “Bob” - they should not be their own tags because tags are variable 
+
+    Note: the global labels do NOT include the character's name - we want to keep this! The character's name is prepended
+    to the local labels when writing to the firestore database, so we do not need to worry about them here.
+
     """
     global_labels = main_prompt.split(",")
     local_labels = info.split(',')
 
-    # exclude all global labels except the first, which is the character name by convention
-    labels_to_exclude = set(global_labels[1:]) if len(global_labels > 0) else set()
+    # exclude all global labels
+    labels_to_exclude = set(global_labels)
 
     # iterate through local labels and remove excluded ones
     # Note: we iterate instead of doing set difference to preserve label order.
