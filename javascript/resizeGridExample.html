@@ -1,0 +1,178 @@
+<html>
+
+<head>
+    <style>
+        body {
+            background: #333333;
+            margin: 50px;
+        }
+
+        .my-content {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #cell_0_0 {
+            background: #ffb3ba;
+        }
+
+        #cell_0_1 {
+            background: #ffdfba;
+        }
+
+        #cell_1_0 {
+            background: #baffc9;
+        }
+
+        #cell_1_1 {
+            background: #bae1ff;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        body.resizing {
+            cursor: col-resize !important;
+        }
+
+        body.resizing * {
+            pointer-events: none !important;
+        }
+
+        body.resizing .resize-grid--handle {
+            pointer-events: initial !important;
+        }
+
+        body.resizing.resize-grid-col {
+            cursor: col-resize !important;
+        }
+
+        body.resizing.resize-grid-row {
+            cursor: row-resize !important;
+        }
+
+        .container {
+            position: relative;
+            display: flex;
+            width: 50vw;
+            height: 70vh;
+            overflow: hidden;
+            border: 1px solid white;
+            padding: 10px;
+            min-width: 0;
+            min-height: 0;
+            resize: both;
+        }
+
+        .resize-grid,
+        .resize-grid--row,
+        .resize-grid--col,
+        .resize-grid--cell {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow: hidden;
+            gap: 0 !important;
+            min-width: 0;
+            min-height: 0;
+        }
+
+        .resize-grid {
+            width: 100%;
+            height: 100%;
+        }
+
+        .resize-grid--row {
+            flex-direction: row;
+        }
+
+        .resize-grid--col {
+            flex-direction: column;
+        }
+
+        .resize-grid--handle {
+            position: relative;
+            height: 100%;
+            width: 100%;
+            z-index: 0;
+            background: transparent;
+        }
+
+        .resize-grid--handle::after {
+            content: "";
+            position: absolute;
+            z-index: -1;
+        }
+
+        .resize-grid--row-handle {
+            cursor: row-resize;
+        }
+
+        .resize-grid--row-handle::after {
+            left: 0;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            border-top: 1px dashed white;
+        }
+
+        .resize-grid--col-handle {
+            cursor: col-resize;
+        }
+
+        .resize-grid--col-handle::after {
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 1px dashed white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="resize-grid">
+            <div class="resize-grid--row" style="flex: 1 0 50px;" data-min-size="25px">
+                <div class="resize-grid--cell" style="flex: 0 0 50px;" data-min-size="25px">
+                    <div id="cell_0_0" class="my-content">0</div>
+                </div>
+                <div class="resize-grid--cell" style="flex: 1 0 50px;" data-min-size="25px">
+                    <div id="cell_0_1" class="my-content">1</div>
+                </div>
+            </div>
+            <div class="resize-grid--row" style="flex: 0 0 50px;" data-min-size="25px">
+                <div class="resize-grid--cell" style="flex: 1 0 50px;" data-min-size="25px">
+                    <div id="cell_1_0" class="my-content">2</div>
+                </div>
+                <div class="resize-grid--cell" style="flex: 0 0 50px;" data-min-size="25px">
+                    <div id="cell_1_1" class="my-content">3</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <button class="toggle-button" data-grid-elem-id="cell_0_0">HIDE cell_0_0</button>
+    <button class="toggle-button" data-grid-elem-id="cell_0_1">HIDE cell_0_1</button>
+    <button class="toggle-button" data-grid-elem-id="cell_1_0">HIDE cell_1_0</button>
+    <button class="toggle-button" data-grid-elem-id="cell_1_1">HIDE cell_1_1</button>
+    <script type="text/javascript" src="utils.js"></script>
+    <script type="text/javascript" src="resizeGrid.js"></script>
+    <script type="text/javascript">
+        const grid_elem = document.querySelector(".resize-grid");
+        const grid = resizeGridSetup(grid_elem);
+        const btns = document.querySelectorAll(".toggle-button");
+        btns.forEach(btn => {
+            btn.addEventListener("click", onToggleButton);
+        });
+        function onToggleButton(event) {
+            const btn = event.target.closest("button");
+            const id = btn.dataset.gridElemId;
+            const grid_elem = document.querySelector(`#${id}`);
+            grid.toggle({ elem: grid_elem });
+            btn.textContent = btn.textContent === `HIDE ${id}` ? `SHOW ${id}` : `HIDE ${id}`;
+        }
+    </script>
+</body>
+
+</html>
