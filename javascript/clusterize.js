@@ -105,7 +105,7 @@ class Clusterize {
     }
 
     async setup() {
-        if (this.setup_has_run || !this.state.enabled) {
+        if (this.state.setup_has_run || !this.state.enabled) {
             return;
         }
 
@@ -121,11 +121,11 @@ class Clusterize {
         this.#setupElementObservers();
         this.#setupResizeObservers();
 
-        this.setup_has_run = true;
+        this.state.setup_has_run = true;
     }
 
     clear() {
-        if (!this.setup_has_run || !this.state.enabled) {
+        if (!this.state.setup_has_run || !this.state.enabled) {
             return;
         }
 
@@ -139,11 +139,11 @@ class Clusterize {
 
         this.#html(this.#generateEmptyRow().join(""));
         
-        this.setup_has_run = false;
+        this.state.setup_has_run = false;
     }
 
     async refresh(force) {
-        if (!this.setup_has_run || !this.state.enabled) {
+        if (!this.state.setup_has_run || !this.state.enabled) {
             return;
         }
 
@@ -165,7 +165,7 @@ class Clusterize {
     }
 
     async update() {
-        if (!this.setup_has_run || !this.state.enabled) {
+        if (!this.state.setup_has_run || !this.state.enabled) {
             return;
         }
 
@@ -194,7 +194,7 @@ class Clusterize {
          *
          *  Returns whether the number of max items changed.
          */
-        if (!this.setup_has_run || !this.state.enabled) {
+        if (!this.state.setup_has_run || !this.state.enabled) {
             this.config.max_items = max_items;
             return this.config.max_items !== max_items;
         }
@@ -234,7 +234,7 @@ class Clusterize {
     }
 
     async sortData() {
-        if (!this.setup_has_run || !this.state.enabled) {
+        if (!this.state.setup_has_run || !this.state.enabled) {
             return;
         }
 
@@ -251,7 +251,7 @@ class Clusterize {
     }
 
     async filterData() {
-        if (!this.setup_has_run || !this.state.enabled) {
+        if (!this.state.setup_has_run || !this.state.enabled) {
             return;
         }
 
