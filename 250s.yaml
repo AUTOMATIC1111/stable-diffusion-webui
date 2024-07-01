@@ -1,0 +1,9 @@
+version: '1.0'
+services:
+  webui:
+    image: automatic1111/stable-diffusion-webui
+    ports:
+      - "7860:7860"
+    volumes:
+      - ./models:/models
+
