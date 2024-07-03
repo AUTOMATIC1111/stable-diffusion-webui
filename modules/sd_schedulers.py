@@ -76,6 +76,14 @@ def kl_optimal(n, sigma_min, sigma_max, device):
     sigmas = torch.tan(step_indices / n * alpha_min + (1.0 - step_indices / n) * alpha_max)
     return sigmas
 
+def simple_scheduler(n, sigma_min, sigma_max, inner_model, device):
+    sigs = []
+    ss = len(inner_model.sigmas) / n
+    for x in range(n):
+        sigs += [float(inner_model.sigmas[-(1 + int(x * ss))])]
+    sigs += [0.0]
+    return torch.FloatTensor(sigs).to(device)
+
 
 schedulers = [
     Scheduler('automatic', 'Automatic', None),
@@ -86,6 +94,7 @@ schedulers = [
     Scheduler('sgm_uniform', 'SGM Uniform', sgm_uniform, need_inner_model=True, aliases=["SGMUniform"]),
     Scheduler('kl_optimal', 'KL Optimal', kl_optimal),
     Scheduler('align_your_steps', 'Align Your Steps', get_align_your_steps_sigmas),
+    Scheduler('simple', 'Simple', simple_scheduler, need_inner_model=True),
 ]
 
 schedulers_map = {**{x.name: x for x in schedulers}, **{x.label: x for x in schedulers}}
