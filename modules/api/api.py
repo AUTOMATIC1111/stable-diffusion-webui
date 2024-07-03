@@ -43,7 +43,7 @@ def script_name_to_index(name, scripts):
 def validate_sampler_name(name):
     config = sd_samplers.all_samplers_map.get(name, None)
     if config is None:
-        raise HTTPException(status_code=404, detail="Sampler not found")
+        raise HTTPException(status_code=400, detail="Sampler not found")
 
     return name
 
