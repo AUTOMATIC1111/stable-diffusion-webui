@@ -41,6 +41,8 @@ def css_html():
     if os.path.exists(user_css):
         head += stylesheet(user_css)
 
+    head += '<style> html { background-color: #121212; }</style>'
+
     return head
 
 
