@@ -194,7 +194,7 @@ class UserMetadataEditor:
     def setup_ui(self, gallery):
         self.button_replace_preview.click(
             fn=self.save_preview,
-            _js="function(x, y, z){return [selected_gallery_index(), y, z]}",
+            _js=f"function(x, y, z){{return [selected_gallery_index_id('{self.tabname + '_gallery_container'}'), y, z]}}",
             inputs=[self.edit_name_input, gallery, self.edit_name_input],
             outputs=[self.html_preview, self.html_status]
         ).then(
