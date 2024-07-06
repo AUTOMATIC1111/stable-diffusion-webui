@@ -23,6 +23,8 @@ config_inpainting = os.path.join(sd_configs_path, "v1-inpainting-inference.yaml"
 config_instruct_pix2pix = os.path.join(sd_configs_path, "instruct-pix2pix.yaml")
 config_alt_diffusion = os.path.join(sd_configs_path, "alt-diffusion-inference.yaml")
 config_alt_diffusion_m18 = os.path.join(sd_configs_path, "alt-diffusion-m18-inference.yaml")
+config_sd3 = os.path.join(sd_configs_path, "sd3-inference.yaml")
+
 
 def is_using_v_parameterization_for_sd2(state_dict):
     """
@@ -71,11 +73,15 @@ def guess_model_config_from_state_dict(sd, filename):
     diffusion_model_input = sd.get('model.diffusion_model.input_blocks.0.0.weight', None)
     sd2_variations_weight = sd.get('embedder.model.ln_final.weight', None)
 
+    if "model.diffusion_model.x_embedder.proj.weight" in sd:
+        return config_sd3
+
     if sd.get('conditioner.embedders.1.model.ln_final.weight', None) is not None:
         if diffusion_model_input.shape[1] == 9:
             return config_sdxl_inpainting
         else:
             return config_sdxl
+
     if sd.get('conditioner.embedders.0.model.ln_final.weight', None) is not None:
         return config_sdxl_refiner
     elif sd.get('depth_model.model.pretrained.act_postprocess3.0.project.0.bias', None) is not None:
@@ -98,7 +104,6 @@ def guess_model_config_from_state_dict(sd, filename):
             return config_inpainting
         if diffusion_model_input.shape[1] == 8:
             return config_instruct_pix2pix
-
 
     if sd.get('cond_stage_model.roberta.embeddings.word_embeddings.weight', None) is not None:
         if sd.get('cond_stage_model.transformation.weight').size()[0] == 1024:
