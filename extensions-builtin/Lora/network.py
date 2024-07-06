@@ -204,10 +204,12 @@ class NetworkModule:
         if ex_bias is not None:
             ex_bias = ex_bias * self.multiplier()
 
+        updown = updown * self.calc_scale()
+
         if self.dora_scale is not None:
             updown = self.apply_weight_decompose(updown, orig_weight)
 
-        return updown * self.calc_scale() * self.multiplier(), ex_bias
+        return updown * self.multiplier(), ex_bias
 
     def calc_updown(self, target):
         raise NotImplementedError()
