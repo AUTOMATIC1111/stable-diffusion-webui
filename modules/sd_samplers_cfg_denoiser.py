@@ -58,6 +58,9 @@ class CFGDenoiser(torch.nn.Module):
         self.model_wrap = None
         self.p = None
 
+        self.cond_scale_miltiplier = 1.0
+
+        self.need_last_noise_uncond = False
         self.last_noise_uncond = None
 
         # NOTE: masking before denoising can cause the original latents to be oversmoothed
@@ -161,8 +164,6 @@ class CFGDenoiser(torch.nn.Module):
         # at self.image_cfg_scale == 1.0 produced results for edit model are the same as with normal sampling,
         # so is_edit_model is set to False to support AND composition.
         is_edit_model = shared.sd_model.cond_stage_key == "edit" and self.image_cfg_scale is not None and self.image_cfg_scale != 1.0
-
-        is_cfg_pp = 'CFG++' in self.sampler.config.name
 
         conds_list, tensor = prompt_parser.reconstruct_multicond_batch(cond, self.step)
         uncond = prompt_parser.reconstruct_cond_batch(uncond, self.step)
@@ -277,18 +278,15 @@ class CFGDenoiser(torch.nn.Module):
         denoised_params = CFGDenoisedParams(x_out, state.sampling_step, state.sampling_steps, self.inner_model)
         cfg_denoised_callback(denoised_params)
 
-        if is_cfg_pp:
-            self.last_noise_uncond = x_out[-uncond.shape[0]:]
-            self.last_noise_uncond = torch.clone(self.last_noise_uncond)
+        if self.need_last_noise_uncond:
+            self.last_noise_uncond = torch.clone(x_out[-uncond.shape[0]:])
 
         if is_edit_model:
-            denoised = self.combine_denoised_for_edit_model(x_out, cond_scale)
+            denoised = self.combine_denoised_for_edit_model(x_out, cond_scale * self.cond_scale_miltiplier)
         elif skip_uncond:
             denoised = self.combine_denoised(x_out, conds_list, uncond, 1.0)
-        elif is_cfg_pp:
-            denoised = self.combine_denoised(x_out, conds_list, uncond, cond_scale/12.5) # CFG++ scale of (0, 1) maps to (1.0, 12.5)
         else:
-            denoised = self.combine_denoised(x_out, conds_list, uncond, cond_scale)
+            denoised = self.combine_denoised(x_out, conds_list, uncond, cond_scale * self.cond_scale_miltiplier)
 
         # Blend in the original latents (after)
         if not self.mask_before_denoising and self.mask is not None:

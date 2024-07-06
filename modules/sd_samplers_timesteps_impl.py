@@ -52,6 +52,9 @@ def ddim_cfgpp(model, x, timesteps, extra_args=None, callback=None, disable=None
     sqrt_one_minus_alphas = torch.sqrt(1 - alphas)
     sigmas = eta * np.sqrt((1 - alphas_prev.cpu().numpy()) / (1 - alphas.cpu()) * (1 - alphas.cpu() / alphas_prev.cpu().numpy()))
 
+    model.cond_scale_miltiplier = 1 / 12.5
+    model.need_last_noise_uncond = True
+
     extra_args = {} if extra_args is None else extra_args
     s_in = x.new_ones((x.shape[0]))
     s_x = x.new_ones((x.shape[0], 1, 1, 1))
