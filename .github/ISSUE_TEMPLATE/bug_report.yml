@@ -91,7 +91,7 @@ body:
     id: logs
     attributes:
       label: Console logs
-      description: Please provide **full** cmd/terminal logs from the moment you started UI to the end of it, after the bug occured. If it's very long, provide a link to pastebin or similar service.
+      description: Please provide **full** cmd/terminal logs from the moment you started UI to the end of it, after the bug occurred. If it's very long, provide a link to pastebin or similar service.
       render: Shell
     validations:
       required: true
