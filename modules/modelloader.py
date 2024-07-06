@@ -139,6 +139,27 @@ def load_upscalers():
         key=lambda x: x.name.lower() if not isinstance(x.scaler, (UpscalerNone, UpscalerLanczos, UpscalerNearest)) else ""
     )
 
+# None: not loaded, False: failed to load, True: loaded
+_spandrel_extra_init_state = None
+
+
+def _init_spandrel_extra_archs() -> None:
+    """
+    Try to initialize `spandrel_extra_archs` (exactly once).
+    """
+    global _spandrel_extra_init_state
+    if _spandrel_extra_init_state is not None:
+        return
+
+    try:
+        import spandrel
+        import spandrel_extra_arches
+        spandrel.MAIN_REGISTRY.add(*spandrel_extra_arches.EXTRA_REGISTRY)
+        _spandrel_extra_init_state = True
+    except Exception:
+        logger.warning("Failed to load spandrel_extra_arches", exc_info=True)
+        _spandrel_extra_init_state = False
+
 
 def load_spandrel_model(
     path: str | os.PathLike,
@@ -148,11 +169,16 @@ def load_spandrel_model(
     dtype: str | torch.dtype | None = None,
     expected_architecture: str | None = None,
 ) -> spandrel.ModelDescriptor:
+    global _spandrel_extra_init_state
+
     import spandrel
+    _init_spandrel_extra_archs()
+
     model_descriptor = spandrel.ModelLoader(device=device).load_from_file(str(path))
-    if expected_architecture and model_descriptor.architecture != expected_architecture:
+    arch = model_descriptor.architecture
+    if expected_architecture and arch.name != expected_architecture:
         logger.warning(
-            f"Model {path!r} is not a {expected_architecture!r} model (got {model_descriptor.architecture!r})",
+            f"Model {path!r} is not a {expected_architecture!r} model (got {arch.name!r})",
         )
     half = False
     if prefer_half:
@@ -166,6 +192,6 @@ def load_spandrel_model(
     model_descriptor.model.eval()
     logger.debug(
         "Loaded %s from %s (device=%s, half=%s, dtype=%s)",
-        model_descriptor, path, device, half, dtype,
+        arch, path, device, half, dtype,
     )
     return model_descriptor

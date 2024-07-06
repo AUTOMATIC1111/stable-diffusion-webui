@@ -24,7 +24,8 @@ pytorch_lightning==1.9.4
 resize-right==0.0.2
 safetensors==0.4.2
 scikit-image==0.21.0
-spandrel==0.1.6
+spandrel==0.3.4
+spandrel-extra-arches==0.1.1
 tomesd==0.1.3
 torch
 torchdiffeq==0.2.3
