@@ -268,7 +268,7 @@ def test_for_nans(x, where):
 @lru_cache
 def first_time_calculation():
     """
-    just do any calculation with pytorch layers - the first time this is done it allocaltes about 700MB of memory and
+    just do any calculation with pytorch layers - the first time this is done it allocates about 700MB of memory and
     spends about 2.7 seconds doing that, at least with NVidia.
     """
 

@@ -372,7 +372,7 @@ class Api:
             return {}
 
         possible_fields = infotext_utils.paste_fields[tabname]["fields"]
-        set_fields = request.model_dump(exclude_unset=True) if hasattr(request, "request") else request.dict(exclude_unset=True)  # pydantic v1/v2 have differenrt names for this
+        set_fields = request.model_dump(exclude_unset=True) if hasattr(request, "request") else request.dict(exclude_unset=True)  # pydantic v1/v2 have different names for this
         params = infotext_utils.parse_generation_parameters(request.infotext)
 
         def get_field_value(field, params):
