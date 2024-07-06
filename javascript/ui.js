@@ -26,6 +26,14 @@ function selected_gallery_index() {
     return all_gallery_buttons().findIndex(elem => elem.classList.contains('selected'));
 }
 
+function gallery_container_buttons(gallery_container) {
+    return gradioApp().querySelectorAll(`#${gallery_container} .thumbnail-item.thumbnail-small`);
+}
+
+function selected_gallery_index_id(gallery_container) {
+    return Array.from(gallery_container_buttons(gallery_container)).findIndex(elem => elem.classList.contains('selected'));
+}
+
 function extract_image_from_gallery(gallery) {
     if (gallery.length == 0) {
         return [null];
