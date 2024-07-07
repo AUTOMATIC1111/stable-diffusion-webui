@@ -1,6 +1,5 @@
 import os
 import re
-import filetype
 
 from modules import shared
 from modules.paths_internal import script_path, cwd
@@ -54,6 +53,7 @@ def walk_files(path, allowed_extensions=None, allowed_mime=None):
                         file_allowed = True
 
                 if allowed_mime is not None:
+                    import filetype
                     if filetype.guess(filepath).mime.startswith(allowed_mime):
                         file_allowed = True
             else:
