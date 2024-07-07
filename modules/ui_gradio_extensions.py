@@ -41,6 +41,11 @@ def css_html():
     if os.path.exists(user_css):
         head += stylesheet(user_css)
 
+    from modules.shared_gradio_themes import resolve_var
+    light = resolve_var('background_fill_primary')
+    dark = resolve_var('background_fill_primary_dark')
+    head += f'<style>html {{ background-color: {light}; }} @media (prefers-color-scheme: dark) {{ html {{background-color:  {dark}; }} }}</style>'
+
     return head
 
 
