@@ -403,6 +403,10 @@ def prepare_environment():
         run_pip("install ngrok", "ngrok")
         startup_timer.record("install ngrok")
 
+    if not is_installed('filetype') and args.use_mime_file_filtering_for_batch_from_dir:
+        run_pip("install filetype")
+        startup_timer.record("install filetype")
+
     os.makedirs(os.path.join(script_path, dir_repos), exist_ok=True)
 
     git_clone(assets_repo, repo_dir('stable-diffusion-webui-assets'), "assets", assets_commit_hash)
