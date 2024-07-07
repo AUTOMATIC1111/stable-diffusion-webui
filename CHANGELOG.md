@@ -25,6 +25,7 @@
 * Add option to enable clip skip for clip L on SDXL ([#15992](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15992))
 * Option to prevent screen sleep during generation ([#16001](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16001))
 * ToggleLivePriview button in image viewer ([#16065](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16065))
+* Remove ui flashing on reloading and fast scrollong ([#16153](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16153))
 
 ### Extensions and API:
 * Add process_before_every_sampling hook ([#15984](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15984))
