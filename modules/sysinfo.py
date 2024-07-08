@@ -173,7 +173,7 @@ def get_info_from_repo_path(path):
     return {
         'name': os.path.basename(path),
         'path': path,
-        'version': run_git(path, 'rev-parse', 'HEAD'),
+        'commit': run_git(path, 'rev-parse', 'HEAD'),
         'branch': run_git(path, 'branch', '--show-current'),
         'remote': run_git(path, 'remote', 'get-url', 'origin')
     }
@@ -186,7 +186,7 @@ def get_extensions(*, enabled, fallback_disabled_extensions=None):
                 return {
                     "name": x.name,
                     "path": x.path,
-                    "version": x.version,
+                    "commit": x.commit_hash,
                     "branch": x.branch,
                     "remote": x.remote,
                 }
