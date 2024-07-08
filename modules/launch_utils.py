@@ -9,6 +9,7 @@ import importlib.util
 import importlib.metadata
 import platform
 import json
+import shlex
 from functools import lru_cache
 
 from modules import cmd_args, errors
@@ -461,7 +462,7 @@ def configure_for_tests():
 
 
 def start():
-    print(f"Launching {'API server' if '--nowebui' in sys.argv else 'Web UI'} with arguments: {' '.join(sys.argv[1:])}")
+    print(f"Launching {'API server' if '--nowebui' in sys.argv else 'Web UI'} with arguments: {shlex.join(sys.argv[1:])}")
     import webui
     if '--nowebui' in sys.argv:
         webui.api_only()
