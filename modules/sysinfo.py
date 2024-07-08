@@ -5,7 +5,6 @@ import sys
 import platform
 import hashlib
 import pkg_resources
-import psutil
 import re
 
 import launch
@@ -69,9 +68,27 @@ def check(x):
     return h.hexdigest() == m.group(1)
 
 
-def get_dict():
-    ram = psutil.virtual_memory()
+def get_cpu_info():
+    cpu_info = {"model": platform.processor()}
+    try:
+        import psutil
+        cpu_info["count logical"] = psutil.cpu_count(logical=True)
+        cpu_info["count physical"] = psutil.cpu_count(logical=False)
+    except Exception as e:
+        cpu_info["error"] = str(e)
+    return cpu_info
 
+
+def get_ram_info():
+    try:
+        import psutil
+        ram = psutil.virtual_memory()
+        return {x: pretty_bytes(getattr(ram, x, 0)) for x in ["total", "used", "free", "active", "inactive", "buffers", "cached", "shared"] if getattr(ram, x, 0) != 0}
+    except Exception as e:
+        return str(e)
+
+
+def get_dict():
     res = {
         "Platform": platform.platform(),
         "Python": platform.python_version(),
@@ -84,14 +101,8 @@ def get_dict():
         "Commandline": get_argv(),
         "Torch env info": get_torch_sysinfo(),
         "Exceptions": errors.get_exceptions(),
-        "CPU": {
-            "model": platform.processor(),
-            "count logical": psutil.cpu_count(logical=True),
-            "count physical": psutil.cpu_count(logical=False),
-        },
-        "RAM": {
-            x: pretty_bytes(getattr(ram, x, 0)) for x in ["total", "used", "free", "active", "inactive", "buffers", "cached", "shared"] if getattr(ram, x, 0) != 0
-        },
+        "CPU": get_cpu_info(),
+        "RAM": get_ram_info(),
         "Extensions": get_extensions(enabled=True),
         "Inactive extensions": get_extensions(enabled=False),
         "Environment": get_environment(),
@@ -122,6 +133,7 @@ def get_argv():
         res.append(v)
 
     return res
+
 
 re_newline = re.compile(r"\r*\n")
 
