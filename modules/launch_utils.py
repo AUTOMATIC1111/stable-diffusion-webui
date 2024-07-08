@@ -85,6 +85,14 @@ def git_tag():
             return "<none>"
 
 
+@lru_cache()
+def git_status():
+    try:
+        return subprocess.check_output([git, "-C", script_path, "status"], shell=False, encoding='utf8').strip()
+    except Exception as e:
+        return str(e)
+
+
 def run(command, desc=None, errdesc=None, custom_env=None, live: bool = default_command_live) -> str:
     if desc is not None:
         print(desc)

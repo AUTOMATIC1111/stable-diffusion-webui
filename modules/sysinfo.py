@@ -1,13 +1,12 @@
 import json
 import os
 import sys
-
+import subprocess
 import platform
 import hashlib
 import re
 
-import launch
-from modules import paths_internal, timer, shared, extensions, errors
+from modules import paths_internal, timer, shared, extensions, errors, launch_utils
 
 checksum_token = "DontStealMyGamePlz__WINNERS_DONT_USE_DRUGS__DONT_COPY_THAT_FLOPPY"
 environment_whitelist = {
@@ -89,7 +88,6 @@ def get_ram_info():
 
 def get_packages():
     try:
-        import subprocess
         return subprocess.check_output([sys.executable, '-m', 'pip', 'freeze', '--all']).decode("utf8").splitlines()
     except Exception as pip_error:
         try:
@@ -104,8 +102,9 @@ def get_dict():
     res = {
         "Platform": platform.platform(),
         "Python": platform.python_version(),
-        "Version": launch.git_tag(),
-        "Commit": launch.commit_hash(),
+        "Version": launch_utils.git_tag(),
+        "Commit": launch_utils.commit_hash(),
+        "Git status": launch_utils.git_status(),
         "Script path": paths_internal.script_path,
         "Data path": paths_internal.data_path,
         "Extensions dir": paths_internal.extensions_dir,
