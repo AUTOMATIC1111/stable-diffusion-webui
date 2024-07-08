@@ -7,7 +7,7 @@ import hashlib
 import re
 from pathlib import Path
 
-from modules import paths_internal, timer, shared, extensions, errors, launch_utils
+from modules import paths_internal, timer, shared_cmd_options, errors, launch_utils
 
 checksum_token = "DontStealMyGamePlz__WINNERS_DONT_USE_DRUGS__DONT_COPY_THAT_FLOPPY"
 environment_whitelist = {
@@ -135,11 +135,11 @@ def get_argv():
     res = []
 
     for v in sys.argv:
-        if shared.cmd_opts.gradio_auth and shared.cmd_opts.gradio_auth == v:
+        if shared_cmd_options.cmd_opts.gradio_auth and shared_cmd_options.cmd_opts.gradio_auth == v:
             res.append("<hidden>")
             continue
 
-        if shared.cmd_opts.api_auth and shared.cmd_opts.api_auth == v:
+        if shared_cmd_options.cmd_opts.api_auth and shared_cmd_options.cmd_opts.api_auth == v:
             res.append("<hidden>")
             continue
 
@@ -181,6 +181,7 @@ def get_info_from_repo_path(path: Path):
 
 def get_extensions(*, enabled, fallback_disabled_extensions=None):
     try:
+        from modules import extensions
         if extensions.extensions:
             def to_json(x: extensions.Extension):
                 return {
@@ -199,10 +200,11 @@ def get_extensions(*, enabled, fallback_disabled_extensions=None):
 
 def get_config():
     try:
+        from modules import shared
         return shared.opts.data
     except Exception as _:
         try:
-            with open(shared.cmd_opts.ui_settings_file, 'r') as f:
+            with open(shared_cmd_options.cmd_opts.ui_settings_file, 'r') as f:
                 return json.load(f)
         except Exception as e:
             return str(e)
