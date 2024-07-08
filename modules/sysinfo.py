@@ -106,7 +106,7 @@ def get_dict():
         "Python": platform.python_version(),
         "Version": launch_utils.git_tag(),
         "Commit": launch_utils.commit_hash(),
-        "Git status": launch_utils.git_status(),
+        "Git status": git_status(paths_internal.script_path),
         "Script path": paths_internal.script_path,
         "Data path": paths_internal.data_path,
         "Extensions dir": paths_internal.extensions_dir,
@@ -166,6 +166,11 @@ def run_git(path, *args):
         return subprocess.check_output([launch_utils.git, '-C', path, *args], shell=False, encoding='utf8').strip()
     except Exception as e:
         return str(e)
+
+
+def git_status(path):
+    if (Path(path) / '.git').is_dir():
+        return run_git(paths_internal.script_path, 'status')
 
 
 def get_info_from_repo_path(path: Path):
