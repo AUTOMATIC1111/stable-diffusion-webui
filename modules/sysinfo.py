@@ -5,6 +5,7 @@ import subprocess
 import platform
 import hashlib
 import re
+from pathlib import Path
 
 from modules import paths_internal, timer, shared, extensions, errors, launch_utils
 
@@ -162,20 +163,19 @@ def get_torch_sysinfo():
 
 def run_git(path, *args):
     try:
-        if os.path.isdir(os.path.join(path, '.git')):
-            return subprocess.check_output([launch_utils.git, '-C', path, *args], shell=False, encoding='utf8').strip()
-        return None
+        return subprocess.check_output([launch_utils.git, '-C', path, *args], shell=False, encoding='utf8').strip()
     except Exception as e:
         return str(e)
 
 
-def get_info_from_repo_path(path):
+def get_info_from_repo_path(path: Path):
+    is_repo = (path / '.git').is_dir()
     return {
-        'name': os.path.basename(path),
-        'path': path,
-        'commit': run_git(path, 'rev-parse', 'HEAD'),
-        'branch': run_git(path, 'branch', '--show-current'),
-        'remote': run_git(path, 'remote', 'get-url', 'origin')
+        'name': path.name,
+        'path': str(path),
+        'commit': run_git(path, 'rev-parse', 'HEAD') if is_repo else None,
+        'branch': run_git(path, 'branch', '--show-current') if is_repo else None,
+        'remote': run_git(path, 'remote', 'get-url', 'origin') if is_repo else None,
     }
 
 
@@ -192,14 +192,7 @@ def get_extensions(*, enabled, fallback_disabled_extensions=None):
                 }
             return [to_json(x) for x in extensions.extensions if not x.is_builtin and x.enabled == enabled]
         else:
-            extensions_list = []
-            for extension_dirname in sorted(os.listdir(paths_internal.extensions_dir)):
-                path = os.path.join(paths_internal.extensions_dir, extension_dirname)
-                if enabled == (extension_dirname in fallback_disabled_extensions):
-                    continue
-                if os.path.isdir(path):
-                    extensions_list.append(get_info_from_repo_path(path))
-            return extensions_list
+            return [get_info_from_repo_path(d) for d in Path(paths_internal.extensions_dir).iterdir() if d.is_dir() and enabled != (str(d.name) in fallback_disabled_extensions)]
     except Exception as e:
         return str(e)
 
