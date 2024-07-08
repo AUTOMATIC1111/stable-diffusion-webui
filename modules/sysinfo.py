@@ -179,5 +179,9 @@ def get_extensions(*, enabled):
 def get_config():
     try:
         return shared.opts.data
-    except Exception as e:
-        return str(e)
+    except Exception as _:
+        try:
+            with open(shared.cmd_opts.ui_settings_file, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            return str(e)
