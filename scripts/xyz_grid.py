@@ -118,11 +118,10 @@ def apply_size(p, x: str, xs) -> None:
 
 
 def find_vae(name: str):
-    match name := name.lower().strip():
-        case 'auto', 'automatic':
-            return 'Automatic'
-        case 'none':
-            return 'None'
+    if name := name.strip().lower() in ('auto', 'automatic'):
+        return 'Automatic'
+    elif name == 'none':
+        return 'None'
     return next((k for k in modules.sd_vae.vae_dict if k.lower() == name), print(f'No VAE found for {name}; using Automatic') or 'Automatic')
 
 
