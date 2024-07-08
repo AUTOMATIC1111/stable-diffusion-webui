@@ -99,6 +99,7 @@ def get_packages():
 
 
 def get_dict():
+    config = get_config()
     res = {
         "Platform": platform.platform(),
         "Python": platform.python_version(),
@@ -114,10 +115,10 @@ def get_dict():
         "Exceptions": errors.get_exceptions(),
         "CPU": get_cpu_info(),
         "RAM": get_ram_info(),
-        "Extensions": get_extensions(enabled=True),
-        "Inactive extensions": get_extensions(enabled=False),
+        "Extensions": get_extensions(enabled=True, fallback_disabled_extensions=config.get('disabled_extensions', [])),
+        "Inactive extensions": get_extensions(enabled=False, fallback_disabled_extensions=config.get('disabled_extensions', [])),
         "Environment": get_environment(),
-        "Config": get_config(),
+        "Config": config,
         "Startup": timer.startup_record,
         "Packages": get_packages(),
     }
@@ -159,19 +160,46 @@ def get_torch_sysinfo():
         return str(e)
 
 
-def get_extensions(*, enabled):
-
+def run_git(path, *args):
     try:
-        def to_json(x: extensions.Extension):
-            return {
-                "name": x.name,
-                "path": x.path,
-                "version": x.version,
-                "branch": x.branch,
-                "remote": x.remote,
-            }
+        if os.path.isdir(os.path.join(path, '.git')):
+            return subprocess.check_output([launch_utils.git, '-C', path, *args], shell=False, encoding='utf8').strip()
+        return None
+    except Exception as e:
+        return str(e)
 
-        return [to_json(x) for x in extensions.extensions if not x.is_builtin and x.enabled == enabled]
+
+def get_info_from_repo_path(path):
+    return {
+        'name': os.path.basename(path),
+        'path': path,
+        'version': run_git(path, 'rev-parse', 'HEAD'),
+        'branch': run_git(path, 'branch', '--show-current'),
+        'remote': run_git(path, 'remote', 'get-url', 'origin')
+    }
+
+
+def get_extensions(*, enabled, fallback_disabled_extensions=None):
+    try:
+        if extensions.extensions:
+            def to_json(x: extensions.Extension):
+                return {
+                    "name": x.name,
+                    "path": x.path,
+                    "version": x.version,
+                    "branch": x.branch,
+                    "remote": x.remote,
+                }
+            return [to_json(x) for x in extensions.extensions if not x.is_builtin and x.enabled == enabled]
+        else:
+            extensions_list = []
+            for extension_dirname in sorted(os.listdir(paths_internal.extensions_dir)):
+                path = os.path.join(paths_internal.extensions_dir, extension_dirname)
+                if enabled == (extension_dirname in fallback_disabled_extensions):
+                    continue
+                if os.path.isdir(path):
+                    extensions_list.append(get_info_from_repo_path(path))
+            return extensions_list
     except Exception as e:
         return str(e)
 
