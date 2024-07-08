@@ -4,7 +4,6 @@ import sys
 
 import platform
 import hashlib
-import pkg_resources
 import re
 
 import launch
@@ -88,6 +87,19 @@ def get_ram_info():
         return str(e)
 
 
+def get_packages():
+    try:
+        import subprocess
+        return subprocess.check_output([sys.executable, '-m', 'pip', 'freeze', '--all']).decode("utf8").splitlines()
+    except Exception as pip_error:
+        try:
+            import importlib.metadata
+            packages = importlib.metadata.distributions()
+            return sorted([f"{package.metadata['Name']}=={package.version}" for package in packages])
+        except Exception as e2:
+            return {'error pip': pip_error, 'error importlib': str(e2)}
+
+
 def get_dict():
     res = {
         "Platform": platform.platform(),
@@ -108,7 +120,7 @@ def get_dict():
         "Environment": get_environment(),
         "Config": get_config(),
         "Startup": timer.startup_record,
-        "Packages": sorted([f"{pkg.key}=={pkg.version}" for pkg in pkg_resources.working_set]),
+        "Packages": get_packages(),
     }
 
     return res
