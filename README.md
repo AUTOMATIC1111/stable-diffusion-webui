@@ -139,8 +139,11 @@ sudo apt install python3.11
 sudo pacman -S yay
 yay -S python311 # do not confuse with python3.11 package
 
-# Then set up env variable in launch script (only for 3.11)
+# Only for 3.11
+# Then set up env variable in launch script
 export python_cmd="python3.11"
+# or in webui-user.sh
+python_cmd="python3.11"
 ```
 2. Navigate to the directory you would like the webui to be installed and execute the following command:
 ```bash
