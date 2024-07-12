@@ -228,7 +228,7 @@ def create_output_panel(tabname, outdir, toprow=None):
                         )
 
                     save.click(
-                        fn=call_queue.wrap_gradio_call(save_files),
+                        fn=call_queue.wrap_gradio_call_no_job(save_files),
                         _js="(x, y, z, w) => [x, y, false, selected_gallery_index()]",
                         inputs=[
                             res.generation_info,
@@ -244,7 +244,7 @@ def create_output_panel(tabname, outdir, toprow=None):
                     )
 
                     save_zip.click(
-                        fn=call_queue.wrap_gradio_call(save_files),
+                        fn=call_queue.wrap_gradio_call_no_job(save_files),
                         _js="(x, y, z, w) => [x, y, true, selected_gallery_index()]",
                         inputs=[
                             res.generation_info,
