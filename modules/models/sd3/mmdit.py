@@ -175,6 +175,9 @@ class VectorEmbedder(nn.Module):
 #################################################################################
 
 
+class QkvLinear(torch.nn.Linear):
+    pass
+
 def split_qkv(qkv, head_dim):
     qkv = qkv.reshape(qkv.shape[0], qkv.shape[1], 3, -1, head_dim).movedim(2, 0)
     return qkv[0], qkv[1], qkv[2]
@@ -202,7 +205,7 @@ class SelfAttention(nn.Module):
         self.num_heads = num_heads
         self.head_dim = dim // num_heads
 
-        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias, dtype=dtype, device=device)
+        self.qkv = QkvLinear(dim, dim * 3, bias=qkv_bias, dtype=dtype, device=device)
         if not pre_only:
             self.proj = nn.Linear(dim, dim, dtype=dtype, device=device)
         assert attn_mode in self.ATTENTION_MODES
