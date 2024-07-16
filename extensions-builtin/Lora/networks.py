@@ -398,7 +398,7 @@ def network_restore_weights_from_backup(self: Union[torch.nn.Conv2d, torch.nn.Li
     if weights_backup is not None:
         if isinstance(self, torch.nn.MultiheadAttention):
             restore_weights_backup(self, 'in_proj_weight', weights_backup[0])
-            restore_weights_backup(self.out_proj, 'weight', weights_backup[0])
+            restore_weights_backup(self.out_proj, 'weight', weights_backup[1])
         else:
             restore_weights_backup(self, 'weight', weights_backup)
 
@@ -437,7 +437,7 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
     bias_backup = getattr(self, "network_bias_backup", None)
     if bias_backup is None and wanted_names != ():
         if isinstance(self, torch.nn.MultiheadAttention) and self.out_proj.bias is not None:
-            bias_backup = store_weights_backup(self.out_proj)
+            bias_backup = store_weights_backup(self.out_proj.bias)
         elif getattr(self, 'bias', None) is not None:
             bias_backup = store_weights_backup(self.bias)
         else:
