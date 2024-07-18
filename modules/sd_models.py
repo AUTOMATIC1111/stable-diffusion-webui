@@ -800,7 +800,7 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
             already_loaded = loaded_model
             continue
 
-        if len(model_data.loaded_sd_models) > shared.opts.sd_checkpoints_limit > 0:
+        if len(model_data.loaded_sd_models) + 1 > shared.opts.sd_checkpoints_limit > 0:
             print(f"Unloading model {len(model_data.loaded_sd_models)} over the limit of {shared.opts.sd_checkpoints_limit}: {loaded_model.sd_checkpoint_info.title}")
             del model_data.loaded_sd_models[i]
             send_model_to_trash(loaded_model)
