@@ -48,6 +48,7 @@ echo Warning: Failed to upgrade PIP version
 
 :activate_venv
 set PYTHON="%VENV_DIR%\Scripts\Python.exe"
+call "%VENV_DIR%\Scripts\activate.bat"
 echo venv %PYTHON%
 
 :skip_venv
