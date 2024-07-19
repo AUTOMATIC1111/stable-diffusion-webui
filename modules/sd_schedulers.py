@@ -118,8 +118,8 @@ def ddim_scheduler(n, sigma_min, sigma_max, inner_model, device):
 
 def beta_scheduler(n, sigma_min, sigma_max, inner_model, device):
     # From "Beta Sampling is All You Need" [arXiv:2407.12173] (Lee et. al, 2024) """
-    alpha = 0.6
-    beta = 0.6
+    alpha = shared.opts.beta_dist_alpha
+    beta = shared.opts.beta_dist_beta
     timesteps = 1 - np.linspace(0, 1, n)
     timesteps = [stats.beta.ppf(x, alpha, beta) for x in timesteps]
     sigmas = [sigma_min + (x * (sigma_max-sigma_min)) for x in timesteps]
