@@ -122,9 +122,9 @@ def beta_scheduler(n, sigma_min, sigma_max, inner_model, device):
     beta = 0.6
     timesteps = 1 - np.linspace(0, 1, n)
     timesteps = [stats.beta.ppf(x, alpha, beta) for x in timesteps]
-    sigmas = [sigma_min + ((x)*(sigma_max-sigma_min)) for x in timesteps] + [0.0]
-    sigmas = torch.FloatTensor(sigmas).to(device)
-    return sigmas
+    sigmas = [sigma_min + (x * (sigma_max-sigma_min)) for x in timesteps]
+    sigmas += [0.0]
+    return torch.FloatTensor(sigmas).to(device)
 
 
 schedulers = [
