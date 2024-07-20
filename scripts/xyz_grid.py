@@ -259,6 +259,8 @@ axis_options = [
     AxisOption("Schedule min sigma", float, apply_override("sigma_min")),
     AxisOption("Schedule max sigma", float, apply_override("sigma_max")),
     AxisOption("Schedule rho", float, apply_override("rho")),
+    AxisOption("Beta schedule alpha", float, apply_override("beta_dist_alpha")),
+    AxisOption("Beta schedule beta", float, apply_override("beta_dist_beta")),
     AxisOption("Eta", float, apply_field("eta")),
     AxisOption("Clip skip", int, apply_override('CLIP_stop_at_last_layers')),
     AxisOption("Denoising", float, apply_field("denoising_strength")),
