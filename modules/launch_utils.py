@@ -446,7 +446,6 @@ def prepare_environment():
         exit(0)
 
 
-
 def configure_for_tests():
     if "--api" not in sys.argv:
         sys.argv.append("--api")

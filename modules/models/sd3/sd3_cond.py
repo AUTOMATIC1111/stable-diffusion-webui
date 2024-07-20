@@ -40,6 +40,7 @@ CLIPG_CONFIG = {
     "intermediate_size": 5120,
     "num_attention_heads": 20,
     "num_hidden_layers": 32,
+    "textual_inversion_key": "clip_g",
 }
 
 T5_URL = "https://huggingface.co/AUTOMATIC/stable-diffusion-3-medium-text-encoders/resolve/main/t5xxl_fp16.safetensors"
@@ -204,7 +205,10 @@ class SD3Cond(torch.nn.Module):
                 self.t5xxl.transformer.load_state_dict(SafetensorsMapping(file), strict=False)
 
     def encode_embedding_init_text(self, init_text, nvpt):
-        return torch.tensor([[0]], device=devices.device) # XXX
+        return self.model_lg.encode_embedding_init_text(init_text, nvpt)
+
+    def tokenize(self, texts):
+        return self.model_lg.tokenize(texts)
 
     def medvram_modules(self):
         return [self.clip_g, self.clip_l, self.t5xxl]

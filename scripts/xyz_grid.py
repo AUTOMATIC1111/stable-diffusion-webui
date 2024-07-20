@@ -118,7 +118,7 @@ def apply_size(p, x: str, xs) -> None:
 
 
 def find_vae(name: str):
-    if name := name.strip().lower() in ('auto', 'automatic'):
+    if (name := name.strip().lower()) in ('auto', 'automatic'):
         return 'Automatic'
     elif name == 'none':
         return 'None'
@@ -259,6 +259,8 @@ axis_options = [
     AxisOption("Schedule min sigma", float, apply_override("sigma_min")),
     AxisOption("Schedule max sigma", float, apply_override("sigma_max")),
     AxisOption("Schedule rho", float, apply_override("rho")),
+    AxisOption("Beta schedule alpha", float, apply_override("beta_dist_alpha")),
+    AxisOption("Beta schedule beta", float, apply_override("beta_dist_beta")),
     AxisOption("Eta", float, apply_field("eta")),
     AxisOption("Clip skip", int, apply_override('CLIP_stop_at_last_layers')),
     AxisOption("Denoising", float, apply_field("denoising_strength")),

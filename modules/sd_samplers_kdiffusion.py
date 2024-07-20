@@ -120,6 +120,10 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
             if scheduler.need_inner_model:
                 sigmas_kwargs['inner_model'] = self.model_wrap
 
+            if scheduler.label == 'Beta':
+                p.extra_generation_params["Beta schedule alpha"] = opts.beta_dist_alpha
+                p.extra_generation_params["Beta schedule beta"] = opts.beta_dist_beta
+
             sigmas = scheduler.function(n=steps, **sigmas_kwargs, device=devices.cpu)
 
         if discard_next_to_last_sigma:
