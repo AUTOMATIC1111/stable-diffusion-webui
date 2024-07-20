@@ -67,6 +67,7 @@ class BaseModel(torch.nn.Module):
         }
         self.diffusion_model = MMDiT(input_size=None, pos_embed_scaling_factor=None, pos_embed_offset=None, pos_embed_max_size=pos_embed_max_size, patch_size=patch_size, in_channels=16, depth=depth, num_patches=num_patches, adm_in_channels=adm_in_channels, context_embedder_config=context_embedder_config, device=device, dtype=dtype)
         self.model_sampling = ModelSamplingDiscreteFlow(shift=shift)
+        self.depth = depth
 
     def apply_model(self, x, sigma, c_crossattn=None, y=None):
         dtype = self.get_dtype()
