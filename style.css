@@ -1422,9 +1422,15 @@ body.resizing.resize-grid-row {
     text-align: center;
     color: var(--input-placeholder-color);
     padding: 0;
-    margin: 0;
+    margin: var(--spacing-sm) 0;
     border-bottom: var(--input-border-width) solid var(--input-placeholder-color);
     line-height: var(--text-sm);
+}
+
+@media (pointer: fine) {
+  .extra-network-controls--header {
+    display: none;
+  }
 }
 
 .extra-network-controls--buttons {
