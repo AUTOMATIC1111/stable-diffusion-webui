@@ -151,6 +151,8 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
 
         upscaled_image = self.upscale(pp.image, pp.info, upscaler1, upscale_mode, upscale_by, max_side_length, upscale_to_width, upscale_to_height, upscale_crop)
         pp.info["Postprocess upscaler"] = upscaler1.name
+        if shared.opts.use_upscaler_name_as_suffix:
+            pp.nametags.append(upscaler_1_name)
 
         if upscaler2 and upscaler_2_visibility > 0:
             second_upscale = self.upscale(pp.image, pp.info, upscaler2, upscale_mode, upscale_by, max_side_length, upscale_to_width, upscale_to_height, upscale_crop)
@@ -159,6 +161,8 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
             upscaled_image = Image.blend(upscaled_image, second_upscale, upscaler_2_visibility)
 
             pp.info["Postprocess upscaler 2"] = upscaler2.name
+            if shared.opts.use_upscaler_name_as_suffix:
+                pp.nametags.append(f'{upscaler_2_name} {upscaler_2_visibility}')
 
         pp.image = upscaled_image
 
