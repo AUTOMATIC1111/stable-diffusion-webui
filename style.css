@@ -1407,7 +1407,6 @@ body.resizing.resize-grid-row {
     display: flex;
     flex-wrap: wrap;
     flex-direction: row;
-    margin-bottom: var(--spacing-sm);
 }
 
 .extra-network-controls--container {
@@ -1456,7 +1455,6 @@ body.resizing.resize-grid-row {
     height: var(--text-xxl);
     color: var(--input-placeholder-color);
     background: transparent;
-    margin: var(--spacing-sm);
 }
 
 .extra-network-control:hover {
@@ -1499,8 +1497,8 @@ body.resizing.resize-grid-row {
 .extra-network-control--search-icon {
     user-select: none;
     color: var(--input-placeholder-color);
-    width: var(--input-text-size);
-    height: var(--input-text-size);
+    width: var(--text-lg);
+    height: var(--text-lg);
     margin-left: var(--input-padding);
 }
 
@@ -1509,8 +1507,8 @@ body.resizing.resize-grid-row {
     user-select: none;
     cursor: pointer;
     color: var(--input-placeholder-color);
-    width: var(--input-text-size);
-    height: var(--input-text-size);
+    width: var(--text-md);
+    height: var(--text-md);
 }
 
 /* <input> text in container. */
@@ -1520,8 +1518,8 @@ body.resizing.resize-grid-row {
     background: transparent;
     font-weight: var(--input-text-weight);
     font-size: var(--input-text-size);
-    line-height: var(--line-sm);
-    padding: var(--input-padding) var(--spacing-sm) var(--input-padding) var(--spacing-sm);
+    line-height: 0;
+    padding: var(--spacing-md) 0;
     margin: 0;
     border: none;
     outline: none;
@@ -1541,7 +1539,7 @@ body.resizing.resize-grid-row {
     cursor: pointer;
     align-self: stretch;
     /* forces button to fill vertical */
-    padding: var(--input-padding);
+    padding: var(--spacing-lg);
 }
 
 .extra-network-control--search .extra-network-control--search-clear:hover {
