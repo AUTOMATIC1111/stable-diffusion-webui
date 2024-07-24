@@ -67,7 +67,7 @@ def uncrop(image, dest_size, paste_loc):
     base_image = Image.new('RGBA', dest_size)
     factor_x = w // image.size[0]
     factor_y = h // image.size[1]
-    image = images.resize_image(1, image, w, h)
+    image = images.resize_image(1, image, w, h, preserve_colors=True)
     paste_x = max(x - factor_x, 0)
     paste_y = max(y - factor_y, 0)
     base_image.paste(image, (paste_x, paste_y))
@@ -1683,7 +1683,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             image = images.flatten(img, opts.img2img_background_color)
 
             if crop_region is None and self.resize_mode != 3:
-                image = images.resize_image(self.resize_mode, image, self.width, self.height)
+                image = images.resize_image(self.resize_mode, image, self.width, self.height, preserve_colors=True)
 
             if image_mask is not None:
                 if self.mask_for_overlay.size != (image.width, image.height):
@@ -1696,7 +1696,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             # crop_region is not None if we are doing inpaint full res
             if crop_region is not None:
                 image = image.crop(crop_region)
-                image = images.resize_image(2, image, self.width, self.height)
+                image = images.resize_image(2, image, self.width, self.height, preserve_colors=True)
 
             if image_mask is not None:
                 if self.inpainting_fill != 1:
