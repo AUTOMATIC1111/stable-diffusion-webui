@@ -78,6 +78,43 @@ def expand_crop_region(crop_region, processing_width, processing_height, image_w
     return x1, y1, x2, y2
 
 
+def expand_too_small_crop_region(crop_region, processing_width, processing_height, image_width, image_height):
+    """expands crop region to not have width and height smaller then processing_width and processing_height"""
+
+    x1, y1, x2, y2 = crop_region
+
+    desired_w = processing_width
+    diff_w = desired_w - (x2 - x1)
+    if diff_w > 0:
+        diff_w_l = diff_w // 2
+        diff_w_r = diff_w - diff_w_l
+        x1 -= diff_w_l
+        x2 += diff_w_r
+        if x1 < 0:
+            x2 -= x1
+            x1 -= x1
+        if x2 >= image_width:
+            x2 = image_width
+
+    desired_h = processing_height
+    diff_h = desired_h - (y2 - y1)
+    if diff_h > 0:
+        diff_h_u = diff_h // 2
+        diff_h_d = diff_h - diff_h_u
+        y1 -= diff_h_u
+        y2 += diff_h_d
+        if y1 < 0:
+            y2 -= y1
+            y1 -= y1
+        if y2 >= image_height:
+            y2 = image_height
+
+    if diff_h > 0 or diff_w > 0:
+        print("Crop region was smaller then resolution and has been corrected")
+
+    return x1, y1, x2, y2
+
+
 def fix_crop_region_integer_scale(crop_region, processing_width, processing_height, image_width, image_height):
     """expands crop region get_crop_region() to avoid non-integer scaling artifacts (different pixels size) after applying overlay"""
 
