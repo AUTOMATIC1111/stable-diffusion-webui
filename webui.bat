@@ -13,16 +13,16 @@ set ERROR_REPORTING=FALSE
 
 mkdir tmp 2>NUL
 
-%PYTHON% -c "" >tmp/stdout.txt 2>tmp/stderr.txt
+call %PYTHON% -c "" >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :check_pip
 echo Couldn't launch python
 goto :show_stdout_stderr
 
 :check_pip
-%PYTHON% -mpip --help >tmp/stdout.txt 2>tmp/stderr.txt
+call %PYTHON% -mpip --help >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :start_venv
 if "%PIP_INSTALLER_LOCATION%" == "" goto :show_stdout_stderr
-%PYTHON% "%PIP_INSTALLER_LOCATION%" >tmp/stdout.txt 2>tmp/stderr.txt
+call %PYTHON% "%PIP_INSTALLER_LOCATION%" >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :start_venv
 echo Couldn't install pip
 goto :show_stdout_stderr
@@ -61,7 +61,7 @@ set ACCELERATE="%VENV_DIR%\Scripts\accelerate.exe"
 if EXIST %ACCELERATE% goto :accelerate_launch
 
 :launch
-%PYTHON% launch.py %*
+call %PYTHON% launch.py %*
 if EXIST tmp/restart goto :skip_venv
 pause
 exit /b
