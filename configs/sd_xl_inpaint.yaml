@@ -21,7 +21,7 @@ model:
       params:
         adm_in_channels: 2816
         num_classes: sequential
-        use_checkpoint: True
+        use_checkpoint: False
         in_channels: 9
         out_channels: 4
         model_channels: 320

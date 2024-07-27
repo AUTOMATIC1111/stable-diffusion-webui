@@ -6,6 +6,8 @@ function closeModal() {
 function showModal(event) {
     const source = event.target || event.srcElement;
     const modalImage = gradioApp().getElementById("modalImage");
+    const modalToggleLivePreviewBtn = gradioApp().getElementById("modal_toggle_live_preview");
+    modalToggleLivePreviewBtn.innerHTML = opts.js_live_preview_in_modal_lightbox ? "&#x1F5C7;" : "&#x1F5C6;";
     const lb = gradioApp().getElementById("lightboxModal");
     modalImage.src = source.src;
     if (modalImage.style.display === 'none') {
@@ -51,14 +53,7 @@ function modalImageSwitch(offset) {
     var galleryButtons = all_gallery_buttons();
 
     if (galleryButtons.length > 1) {
-        var currentButton = selected_gallery_button();
-
-        var result = -1;
-        galleryButtons.forEach(function(v, i) {
-            if (v == currentButton) {
-                result = i;
-            }
-        });
+        var result = selected_gallery_index();
 
         if (result != -1) {
             var nextButton = galleryButtons[negmod((result + offset), galleryButtons.length)];
@@ -159,6 +154,13 @@ function modalZoomToggle(event) {
     event.stopPropagation();
 }
 
+function modalLivePreviewToggle(event) {
+    const modalToggleLivePreview = gradioApp().getElementById("modal_toggle_live_preview");
+    opts.js_live_preview_in_modal_lightbox = !opts.js_live_preview_in_modal_lightbox;
+    modalToggleLivePreview.innerHTML = opts.js_live_preview_in_modal_lightbox ? "&#x1F5C7;" : "&#x1F5C6;";
+    event.stopPropagation();
+}
+
 function modalTileImageToggle(event) {
     const modalImage = gradioApp().getElementById("modalImage");
     const modal = gradioApp().getElementById("lightboxModal");
@@ -215,6 +217,14 @@ document.addEventListener("DOMContentLoaded", function() {
     modalSave.addEventListener("click", modalSaveImage, true);
     modalSave.title = "Save Image(s)";
     modalControls.appendChild(modalSave);
+
+    const modalToggleLivePreview = document.createElement('span');
+    modalToggleLivePreview.className = 'modalToggleLivePreview cursor';
+    modalToggleLivePreview.id = "modal_toggle_live_preview";
+    modalToggleLivePreview.innerHTML = "&#x1F5C6;";
+    modalToggleLivePreview.onclick = modalLivePreviewToggle;
+    modalToggleLivePreview.title = "Toggle live preview";
+    modalControls.appendChild(modalToggleLivePreview);
 
     const modalClose = document.createElement('span');
     modalClose.className = 'modalClose cursor';

@@ -162,7 +162,7 @@ class State:
             errors.record_exception()
 
     def assign_current_image(self, image):
-        if shared.opts.live_previews_image_format == 'jpeg' and image.mode == 'RGBA':
+        if shared.opts.live_previews_image_format == 'jpeg' and image.mode in ('RGBA', 'P'):
             image = image.convert('RGB')
         self.current_image = image
         self.id_live_preview += 1

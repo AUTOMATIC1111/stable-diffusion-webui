@@ -9,6 +9,7 @@ import importlib.util
 import importlib.metadata
 import platform
 import json
+import shlex
 from functools import lru_cache
 
 from modules import cmd_args, errors
@@ -76,7 +77,7 @@ def git_tag():
     except Exception:
         try:
 
-            changelog_md = os.path.join(os.path.dirname(os.path.dirname(__file__)), "CHANGELOG.md")
+            changelog_md = os.path.join(script_path, "CHANGELOG.md")
             with open(changelog_md, "r", encoding="utf-8") as file:
                 line = next((line.strip() for line in file if line.strip()), "<none>")
                 line = line.replace("## ", "")
@@ -231,7 +232,7 @@ def run_extension_installer(extension_dir):
 
     try:
         env = os.environ.copy()
-        env['PYTHONPATH'] = f"{os.path.abspath('.')}{os.pathsep}{env.get('PYTHONPATH', '')}"
+        env['PYTHONPATH'] = f"{script_path}{os.pathsep}{env.get('PYTHONPATH', '')}"
 
         stdout = run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {extension_dir}", custom_env=env).strip()
         if stdout:
@@ -445,7 +446,6 @@ def prepare_environment():
         exit(0)
 
 
-
 def configure_for_tests():
     if "--api" not in sys.argv:
         sys.argv.append("--api")
@@ -461,7 +461,7 @@ def configure_for_tests():
 
 
 def start():
-    print(f"Launching {'API server' if '--nowebui' in sys.argv else 'Web UI'} with arguments: {' '.join(sys.argv[1:])}")
+    print(f"Launching {'API server' if '--nowebui' in sys.argv else 'Web UI'} with arguments: {shlex.join(sys.argv[1:])}")
     import webui
     if '--nowebui' in sys.argv:
         webui.api_only()

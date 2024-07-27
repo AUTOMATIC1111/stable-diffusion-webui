@@ -114,6 +114,9 @@ errors.run(enable_tf32, "Enabling TF32")
 
 cpu: torch.device = torch.device("cpu")
 fp8: bool = False
+# Force fp16 for all models in inference. No casting during inference.
+# This flag is controlled by "--precision half" command line arg.
+force_fp16: bool = False
 device: torch.device = None
 device_interrogate: torch.device = None
 device_gfpgan: torch.device = None
@@ -127,6 +130,8 @@ unet_needs_upcast = False
 
 
 def cond_cast_unet(input):
+    if force_fp16:
+        return input.to(torch.float16)
     return input.to(dtype_unet) if unet_needs_upcast else input
 
 
@@ -206,6 +211,11 @@ def autocast(disable=False):
     if disable:
         return contextlib.nullcontext()
 
+    if force_fp16:
+        # No casting during inference if force_fp16 is enabled.
+        # All tensor dtype conversion happens before inference.
+        return contextlib.nullcontext()
+
     if fp8 and device==cpu:
         return torch.autocast("cpu", dtype=torch.bfloat16, enabled=True)
 
@@ -233,22 +243,22 @@ def test_for_nans(x, where):
     if shared.cmd_opts.disable_nan_check:
         return
 
-    if not torch.all(torch.isnan(x)).item():
+    if not torch.isnan(x[(0, ) * len(x.shape)]):
         return
 
     if where == "unet":
-        message = "A tensor with all NaNs was produced in Unet."
+        message = "A tensor with NaNs was produced in Unet."
 
         if not shared.cmd_opts.no_half:
             message += " This could be either because there's not enough precision to represent the picture, or because your video card does not support half type. Try setting the \"Upcast cross attention layer to float32\" option in Settings > Stable Diffusion or using the --no-half commandline argument to fix this."
 
     elif where == "vae":
-        message = "A tensor with all NaNs was produced in VAE."
+        message = "A tensor with NaNs was produced in VAE."
 
         if not shared.cmd_opts.no_half and not shared.cmd_opts.no_half_vae:
             message += " This could be because there's not enough precision to represent the picture. Try adding --no-half-vae commandline argument to fix this."
     else:
-        message = "A tensor with all NaNs was produced."
+        message = "A tensor with NaNs was produced."
 
     message += " Use --disable-nan-check commandline argument to disable this check."
 
@@ -258,7 +268,7 @@ def test_for_nans(x, where):
 @lru_cache
 def first_time_calculation():
     """
-    just do any calculation with pytorch layers - the first time this is done it allocaltes about 700MB of memory and
+    just do any calculation with pytorch layers - the first time this is done it allocates about 700MB of memory and
     spends about 2.7 seconds doing that, at least with NVidia.
     """
 
@@ -269,3 +279,17 @@ def first_time_calculation():
     x = torch.zeros((1, 1, 3, 3)).to(device, dtype)
     conv2d = torch.nn.Conv2d(1, 1, (3, 3)).to(device, dtype)
     conv2d(x)
+
+
+def force_model_fp16():
+    """
+    ldm and sgm has modules.diffusionmodules.util.GroupNorm32.forward, which
+    force conversion of input to float32. If force_fp16 is enabled, we need to
+    prevent this casting.
+    """
+    assert force_fp16
+    import sgm.modules.diffusionmodules.util as sgm_util
+    import ldm.modules.diffusionmodules.util as ldm_util
+    sgm_util.GroupNorm32 = torch.nn.GroupNorm
+    ldm_util.GroupNorm32 = torch.nn.GroupNorm
+    print("ldm/sgm GroupNorm32 replaced with normal torch.nn.GroupNorm due to `--precision half`.")

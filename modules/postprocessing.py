@@ -51,7 +51,7 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
         shared.state.textinfo = name
         shared.state.skipped = False
 
-        if shared.state.interrupted:
+        if shared.state.interrupted or shared.state.stopping_generation:
             break
 
         if isinstance(image_placeholder, str):
@@ -62,11 +62,13 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
         else:
             image_data = image_placeholder
 
+        image_data = image_data if image_data.mode in ("RGBA", "RGB") else image_data.convert("RGB")
+
         parameters, existing_pnginfo = images.read_info_from_image(image_data)
         if parameters:
             existing_pnginfo["parameters"] = parameters
 
-        initial_pp = scripts_postprocessing.PostprocessedImage(image_data if image_data.mode in ("RGBA", "RGB") else image_data.convert("RGB"))
+        initial_pp = scripts_postprocessing.PostprocessedImage(image_data)
 
         scripts.scripts_postproc.run(initial_pp, args)
 

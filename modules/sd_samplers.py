@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import functools
-
+import logging
 from modules import sd_samplers_kdiffusion, sd_samplers_timesteps, sd_samplers_lcm, shared, sd_samplers_common, sd_schedulers
 
 # imports for functions that previously were here and are used by other modules
@@ -98,7 +98,7 @@ def get_hr_scheduler_from_infotext(d: dict):
 
 
 @functools.cache
-def get_sampler_and_scheduler(sampler_name, scheduler_name):
+def get_sampler_and_scheduler(sampler_name, scheduler_name, *, convert_automatic=True):
     default_sampler = samplers[0]
     found_scheduler = sd_schedulers.schedulers_map.get(scheduler_name, sd_schedulers.schedulers[0])
 
@@ -116,10 +116,17 @@ def get_sampler_and_scheduler(sampler_name, scheduler_name):
     sampler = all_samplers_map.get(name, default_sampler)
 
     # revert back to Automatic if it's the default scheduler for the selected sampler
-    if sampler.options.get('scheduler', None) == found_scheduler.name:
+    if convert_automatic and sampler.options.get('scheduler', None) == found_scheduler.name:
         found_scheduler = sd_schedulers.schedulers[0]
 
     return sampler.name, found_scheduler.label
+
+
+def fix_p_invalid_sampler_and_scheduler(p):
+    i_sampler_name, i_scheduler = p.sampler_name, p.scheduler
+    p.sampler_name, p.scheduler = get_sampler_and_scheduler(p.sampler_name, p.scheduler, convert_automatic=False)
+    if p.sampler_name != i_sampler_name or i_scheduler != p.scheduler:
+        logging.warning(f'Sampler Scheduler autocorrection: "{i_sampler_name}" -> "{p.sampler_name}", "{i_scheduler}" -> "{p.scheduler}"')
 
 
 set_samplers()

@@ -31,6 +31,14 @@ def initialize():
     devices.dtype_vae = torch.float32 if cmd_opts.no_half or cmd_opts.no_half_vae else torch.float16
     devices.dtype_inference = torch.float32 if cmd_opts.precision == 'full' else devices.dtype
 
+    if cmd_opts.precision == "half":
+        msg = "--no-half and --no-half-vae conflict with --precision half"
+        assert devices.dtype == torch.float16, msg
+        assert devices.dtype_vae == torch.float16, msg
+        assert devices.dtype_inference == torch.float16, msg
+        devices.force_fp16 = True
+        devices.force_model_fp16()
+
     shared.device = devices.device
     shared.weight_load_location = None if cmd_opts.lowram else "cpu"
 
