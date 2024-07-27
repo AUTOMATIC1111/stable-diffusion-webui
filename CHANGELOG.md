@@ -1,3 +1,9 @@
+## 1.10.1
+
+### Bug Fixes:
+* fix image upscale on cpu ([#16275](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16275))
+
+
 ## 1.10.0
 
 ### Features:
