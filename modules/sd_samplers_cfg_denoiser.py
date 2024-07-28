@@ -217,7 +217,7 @@ class CFGDenoiser(torch.nn.Module):
         uncond = denoiser_params.text_uncond
         skip_uncond = False
 
-        if skip_early_cond is not None and skip_early_cond > 0 and self.step / self.total_steps <= skip_early_cond:
+        if skip_early_cond is not None and skip_early_cond > 0 and (1.0 + self.step) / self.total_steps <= skip_early_cond:
             skip_uncond = True
             self.p.extra_generation_params["Skip Early CFG"] = skip_early_cond
         elif (self.step % 2 or shared.opts.s_min_uncond_all) and s_min_uncond > 0 and sigma[0] < s_min_uncond and not is_edit_model:
