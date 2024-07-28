@@ -167,6 +167,7 @@ class StableDiffusionProcessing:
     denoising_strength: float = None
     ddim_discretize: str = None
     s_min_uncond: float = None
+    skip_early_cond: float = None
     s_churn: float = None
     s_tmax: float = None
     s_tmin: float = None
@@ -253,6 +254,7 @@ class StableDiffusionProcessing:
 
     def fill_fields_from_opts(self):
         self.s_min_uncond = self.s_min_uncond if self.s_min_uncond is not None else opts.s_min_uncond
+        self.skip_early_cond = self.skip_early_cond if self.skip_early_cond is not None else opts.skip_early_cond
         self.s_churn = self.s_churn if self.s_churn is not None else opts.s_churn
         self.s_tmin = self.s_tmin if self.s_tmin is not None else opts.s_tmin
         self.s_tmax = (self.s_tmax if self.s_tmax is not None else opts.s_tmax) or float('inf')
@@ -554,6 +556,7 @@ class Processed:
         self.s_tmax = p.s_tmax
         self.s_noise = p.s_noise
         self.s_min_uncond = p.s_min_uncond
+        self.skip_early_cond = p.skip_early_cond
         self.sampler_noise_scheduler_override = p.sampler_noise_scheduler_override
         self.prompt = self.prompt if not isinstance(self.prompt, list) else self.prompt[0]
         self.negative_prompt = self.negative_prompt if not isinstance(self.negative_prompt, list) else self.negative_prompt[0]
