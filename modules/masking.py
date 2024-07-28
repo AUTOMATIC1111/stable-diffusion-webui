@@ -90,6 +90,10 @@ def expand_too_small_crop_region(crop_region, processing_width, processing_heigh
         diff_w_r = diff_w - diff_w_l
         x1 -= diff_w_l
         x2 += diff_w_r
+        if x2 >= image_width:
+            diff = x2 - image_width
+            x2 -= diff
+            x1 -= diff
         if x1 < 0:
             x2 -= x1
             x1 -= x1
@@ -103,6 +107,10 @@ def expand_too_small_crop_region(crop_region, processing_width, processing_heigh
         diff_h_d = diff_h - diff_h_u
         y1 -= diff_h_u
         y2 += diff_h_d
+        if y2 >= image_height:
+            diff = y2 - image_height
+            y2 -= diff
+            y1 -= diff
         if y1 < 0:
             y2 -= y1
             y1 -= y1
@@ -129,6 +137,10 @@ def fix_crop_region_integer_scale(crop_region, processing_width, processing_heig
     diff_w_r = diff_w - diff_w_l
     x1 -= diff_w_l
     x2 += diff_w_r
+    if x2 >= image_width:
+        diff = x2 - image_width
+        x2 -= diff
+        x1 -= diff
     if x1 < 0:
         x2 -= x1
         x1 -= x1
@@ -141,6 +153,10 @@ def fix_crop_region_integer_scale(crop_region, processing_width, processing_heig
     diff_h_d = diff_h - diff_h_u
     y1 -= diff_h_u
     y2 += diff_h_d
+    if y2 >= image_height:
+        diff = y2 - image_height
+        y2 -= diff
+        y1 -= diff
     if y1 < 0:
         y2 -= y1
         y1 -= y1
