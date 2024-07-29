@@ -89,6 +89,9 @@ def send_gradio_gallery_to_image(x):
         return None
     return image_from_url_text(x[0])
 
+def create_sampler_and_steps_selection(choices, tabname):
+    return scripts.scripts_txt2img.script('Sampler').steps, scripts.scripts_txt2img.script('Sampler').sampler_name
+
 
 def calc_resolution_hires(enable, width, height, hr_scale, hr_resize_x, hr_resize_y):
     if not enable:
