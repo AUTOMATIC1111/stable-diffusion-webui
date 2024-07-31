@@ -51,6 +51,16 @@ class UpscalerDAT(Upscaler):
                         model_dir=self.model_download_path,
                         hash_prefix=scaler.sha256,
                     )
+
+                    if os.path.getsize(scaler.local_data_path) < 200:
+                        # Re-download if the file is too small, probably an LFS pointer
+                        scaler.local_data_path = modelloader.load_file_from_url(
+                            scaler.data_path,
+                            model_dir=self.model_download_path,
+                            hash_prefix=scaler.sha256,
+                            re_download=True,
+                        )
+
                 if not os.path.exists(scaler.local_data_path):
                     raise FileNotFoundError(f"DAT data missing: {scaler.local_data_path}")
                 return scaler
