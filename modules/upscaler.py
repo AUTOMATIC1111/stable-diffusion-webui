@@ -59,10 +59,8 @@ class Upscaler:
 
         # Attempt a cheap resize of the source image, if it falls below the fixed scaling size of the upscaling model.
         # We resize the image by the smallest amount necessary for the fixed scaling to meet the target dimensions.
-        
         prescale_threshold = modules.shared.opts.upscaler_fast_prescale_threshold
         if prescale_threshold > 1 and self.name and self.name not in ["Nearest", "Lanczos"]:
-            
             # Get the matching upscaler
             upscaler_data = next((x for x in self.scalers if x.data_path == selected_model), None)
 
