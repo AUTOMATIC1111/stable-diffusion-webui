@@ -119,10 +119,6 @@ class ScriptPostprocessingRunner:
         for script_data in scripts_data:
             script: ScriptPostprocessing = script_data.script_class()
             script.filename = script_data.path
-
-            if script.name == "Simple Upscale":
-                continue
-
             self.scripts.append(script)
 
     def create_script_ui(self, script, inputs):
@@ -144,6 +140,7 @@ class ScriptPostprocessingRunner:
 
         scripts_order = shared.opts.postprocessing_operation_order
         scripts_filter_out = set(shared.opts.postprocessing_disable_in_extras)
+        scripts_filter_out.add("Simple Upscale")
 
         def script_score(name):
             for i, possible_match in enumerate(scripts_order):
