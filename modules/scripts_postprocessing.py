@@ -59,6 +59,10 @@ class ScriptPostprocessing:
     args_from = None
     args_to = None
 
+    # define if the script should be used only in extras or main UI
+    extra_only = None
+    main_ui_only = None
+
     order = 1000
     """scripts will be ordred by this value in postprocessing UI"""
 
@@ -140,7 +144,6 @@ class ScriptPostprocessingRunner:
 
         scripts_order = shared.opts.postprocessing_operation_order
         scripts_filter_out = set(shared.opts.postprocessing_disable_in_extras)
-        scripts_filter_out.add("Simple Upscale")
 
         def script_score(name):
             for i, possible_match in enumerate(scripts_order):
@@ -149,7 +152,7 @@ class ScriptPostprocessingRunner:
 
             return len(self.scripts)
 
-        filtered_scripts = [script for script in self.scripts if script.name not in scripts_filter_out]
+        filtered_scripts = [script for script in self.scripts if script.name not in scripts_filter_out and not script.main_ui_only]
         script_scores = {script.name: (script_score(script.name), script.order, script.name, original_index) for original_index, script in enumerate(filtered_scripts)}
 
         return sorted(filtered_scripts, key=lambda x: script_scores[x.name])
