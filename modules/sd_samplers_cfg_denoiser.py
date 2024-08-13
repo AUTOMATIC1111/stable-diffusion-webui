@@ -58,6 +58,11 @@ class CFGDenoiser(torch.nn.Module):
         self.model_wrap = None
         self.p = None
 
+        self.cond_scale_miltiplier = 1.0
+
+        self.need_last_noise_uncond = False
+        self.last_noise_uncond = None
+
         # NOTE: masking before denoising can cause the original latents to be oversmoothed
         # as the original latents do not have noise
         self.mask_before_denoising = False
@@ -273,12 +278,15 @@ class CFGDenoiser(torch.nn.Module):
         denoised_params = CFGDenoisedParams(x_out, state.sampling_step, state.sampling_steps, self.inner_model)
         cfg_denoised_callback(denoised_params)
 
+        if self.need_last_noise_uncond:
+            self.last_noise_uncond = torch.clone(x_out[-uncond.shape[0]:])
+
         if is_edit_model:
-            denoised = self.combine_denoised_for_edit_model(x_out, cond_scale)
+            denoised = self.combine_denoised_for_edit_model(x_out, cond_scale * self.cond_scale_miltiplier)
         elif skip_uncond:
             denoised = self.combine_denoised(x_out, conds_list, uncond, 1.0)
         else:
-            denoised = self.combine_denoised(x_out, conds_list, uncond, cond_scale)
+            denoised = self.combine_denoised(x_out, conds_list, uncond, cond_scale * self.cond_scale_miltiplier)
 
         # Blend in the original latents (after)
         if not self.mask_before_denoising and self.mask is not None:

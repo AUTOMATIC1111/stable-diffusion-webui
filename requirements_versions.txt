@@ -18,12 +18,14 @@ numpy==1.26.2
 omegaconf==2.2.3
 open-clip-torch==2.20.0
 piexif==1.1.3
+protobuf==3.20.0
 psutil==5.9.5
 pytorch_lightning==1.9.4
 resize-right==0.0.2
 safetensors==0.4.2
 scikit-image==0.21.0
-spandrel==0.1.6
+spandrel==0.3.4
+spandrel-extra-arches==0.1.1
 tomesd==0.1.3
 torch
 torchdiffeq==0.2.3

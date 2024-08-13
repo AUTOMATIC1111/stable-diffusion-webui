@@ -2,6 +2,7 @@ __pycache__
 *.ckpt
 *.safetensors
 *.pth
+.DS_Store
 /ESRGAN/*
 /SwinIR/*
 /repositories
@@ -40,3 +41,4 @@ notification.mp3
 /test/test_outputs
 /cache
 trace.json
+/sysinfo-????-??-??-??-??.json

@@ -53,8 +53,13 @@ class CFGDenoiserKDiffusion(sd_samplers_cfg_denoiser.CFGDenoiser):
     @property
     def inner_model(self):
         if self.model_wrap is None:
-            denoiser = k_diffusion.external.CompVisVDenoiser if shared.sd_model.parameterization == "v" else k_diffusion.external.CompVisDenoiser
-            self.model_wrap = denoiser(shared.sd_model, quantize=shared.opts.enable_quantization)
+            denoiser_constructor = getattr(shared.sd_model, 'create_denoiser', None)
+
+            if denoiser_constructor is not None:
+                self.model_wrap = denoiser_constructor()
+            else:
+                denoiser = k_diffusion.external.CompVisVDenoiser if shared.sd_model.parameterization == "v" else k_diffusion.external.CompVisDenoiser
+                self.model_wrap = denoiser(shared.sd_model, quantize=shared.opts.enable_quantization)
 
         return self.model_wrap
 
@@ -115,12 +120,16 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
             if scheduler.need_inner_model:
                 sigmas_kwargs['inner_model'] = self.model_wrap
 
+            if scheduler.label == 'Beta':
+                p.extra_generation_params["Beta schedule alpha"] = opts.beta_dist_alpha
+                p.extra_generation_params["Beta schedule beta"] = opts.beta_dist_beta
+
             sigmas = scheduler.function(n=steps, **sigmas_kwargs, device=devices.cpu)
 
         if discard_next_to_last_sigma:
             sigmas = torch.cat([sigmas[:-2], sigmas[-1:]])
 
-        return sigmas
+        return sigmas.cpu()
 
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
         steps, t_enc = sd_samplers_common.setup_img2img_steps(p, steps)
@@ -128,7 +137,10 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
         sigmas = self.get_sigmas(p, steps)
         sigma_sched = sigmas[steps - t_enc - 1:]
 
-        xi = x + noise * sigma_sched[0]
+        if hasattr(shared.sd_model, 'add_noise_to_latent'):
+            xi = shared.sd_model.add_noise_to_latent(x, noise, sigma_sched[0])
+        else:
+            xi = x + noise * sigma_sched[0]
 
         if opts.img2img_extra_noise > 0:
             p.extra_generation_params["Extra noise"] = opts.img2img_extra_noise

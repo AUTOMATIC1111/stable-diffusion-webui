@@ -1,3 +1,120 @@
+## 1.10.1
+
+### Bug Fixes:
+* fix image upscale on cpu ([#16275](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16275))
+
+
+## 1.10.0
+
+### Features:
+* A lot of performance improvements (see below in Performance section)
+* Stable Diffusion 3 support ([#16030](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16030), [#16164](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16164), [#16212](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16212))
+  * Recommended Euler sampler; DDIM and other timestamp samplers currently not supported
+  * T5 text model is disabled by default, enable it in settings
+* New schedulers:
+  * Align Your Steps ([#15751](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15751))
+  * KL Optimal ([#15608](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15608))
+  * Normal ([#16149](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16149))
+  * DDIM ([#16149](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16149))
+  * Simple ([#16142](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16142))
+  * Beta ([#16235](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16235))
+* New sampler: DDIM CFG++ ([#16035](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16035))
+
+### Minor:
+* Option to skip CFG on early steps ([#15607](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15607))
+* Add --models-dir option ([#15742](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15742))
+* Allow mobile users to open context menu by using two fingers press ([#15682](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15682))
+* Infotext: add Lora name as TI hashes for bundled Textual Inversion ([#15679](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15679))
+* Check model's hash after downloading it to prevent corruped downloads ([#15602](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15602))
+* More extension tag filtering options ([#15627](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15627))
+* When saving AVIF, use JPEG's quality setting ([#15610](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15610))
+* Add filename pattern: `[basename]` ([#15978](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15978))
+* Add option to enable clip skip for clip L on SDXL ([#15992](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15992))
+* Option to prevent screen sleep during generation ([#16001](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16001))
+* ToggleLivePriview button in image viewer ([#16065](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16065))
+* Remove ui flashing on reloading and fast scrollong ([#16153](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16153))
+* option to disable save button log.csv ([#16242](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16242))
+
+### Extensions and API:
+* Add process_before_every_sampling hook ([#15984](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15984))
+* Return HTTP 400 instead of 404 on invalid sampler error ([#16140](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16140))
+
+### Performance:
+* [Performance 1/6] use_checkpoint = False ([#15803](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15803))
+* [Performance 2/6] Replace einops.rearrange with torch native ops ([#15804](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15804))
+* [Performance 4/6] Precompute is_sdxl_inpaint flag ([#15806](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15806))
+* [Performance 5/6] Prevent unnecessary extra networks bias backup ([#15816](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15816))
+* [Performance 6/6] Add --precision half option to avoid casting during inference ([#15820](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15820))
+* [Performance] LDM optimization patches ([#15824](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15824))
+* [Performance] Keep sigmas on CPU ([#15823](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15823))
+* Check for nans in unet only once, after all steps have been completed
+* Added pption to run torch profiler for image generation
+
+### Bug Fixes:
+* Fix for grids without comprehensive infotexts ([#15958](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15958))
+* feat: lora partial update precede full update ([#15943](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15943))
+* Fix bug where file extension had an extra '.' under some circumstances ([#15893](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15893))
+* Fix corrupt model initial load loop ([#15600](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15600))
+* Allow old sampler names in API ([#15656](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15656))
+* more old sampler scheduler compatibility ([#15681](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15681))
+* Fix Hypertile xyz ([#15831](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15831))
+* XYZ CSV skipinitialspace ([#15832](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15832))
+* fix soft inpainting on mps and xpu, torch_utils.float64 ([#15815](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15815))
+* fix extention update when not on main branch ([#15797](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15797))
+* update pickle safe filenames
+* use relative path for webui-assets css ([#15757](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15757))
+* When creating a virtual environment, upgrade pip in webui.bat/webui.sh ([#15750](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15750))
+* Fix AttributeError ([#15738](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15738))
+* use script_path for webui root in launch_utils ([#15705](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15705))
+* fix extra batch mode P Transparency ([#15664](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15664))
+* use gradio theme colors in css ([#15680](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15680))
+* Fix dragging text within prompt input ([#15657](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15657))
+* Add correct mimetype for .mjs files ([#15654](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15654))
+* QOL Items - handle metadata issues more cleanly for SD models, Loras and embeddings ([#15632](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15632))
+* replace wsl-open with wslpath and explorer.exe ([#15968](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15968))
+* Fix SDXL Inpaint ([#15976](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15976))
+* multi size grid ([#15988](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15988))
+* fix Replace preview ([#16118](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16118))
+* Possible fix of wrong scale in weight decomposition ([#16151](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16151))
+* Ensure use of python from venv on Mac and Linux ([#16116](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16116))
+* Prioritize python3.10 over python3 if both are available on Linux and Mac (with fallback) ([#16092](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16092))
+* stoping generation extras ([#16085](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16085))
+* Fix SD2 loading ([#16078](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16078), [#16079](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16079))
+* fix infotext Lora hashes for hires fix different lora ([#16062](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16062))
+* Fix sampler scheduler autocorrection warning ([#16054](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16054))
+* fix ui flashing on reloading and fast scrollong ([#16153](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16153))
+* fix upscale logic ([#16239](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16239))
+* [bug] do not break progressbar on non-job actions (add wrap_gradio_call_no_job) ([#16202](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16202))
+* fix OSError: cannot write mode P as JPEG ([#16194](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16194))
+
+### Other:
+* fix changelog #15883 -> #15882 ([#15907](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15907))
+* ReloadUI backgroundColor --background-fill-primary ([#15864](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15864))
+* Use different torch versions for Intel and ARM Macs ([#15851](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15851))
+* XYZ override rework ([#15836](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15836))
+* scroll extensions table on overflow ([#15830](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15830))
+* img2img batch upload method ([#15817](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15817))
+* chore: sync v1.8.0 packages according to changelog ([#15783](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15783))
+* Add AVIF MIME type support to mimetype definitions ([#15739](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15739))
+* Update imageviewer.js ([#15730](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15730))
+* no-referrer ([#15641](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15641))
+* .gitignore trace.json ([#15980](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15980))
+* Bump spandrel to 0.3.4 ([#16144](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16144))
+* Defunct --max-batch-count ([#16119](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16119))
+* docs: update bug_report.yml ([#16102](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16102))
+* Maintaining Project Compatibility for Python 3.9 Users Without Upgrade Requirements. ([#16088](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16088), [#16169](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16169), [#16192](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16192))
+* Update torch for ARM Macs to 2.3.1 ([#16059](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16059))
+* remove deprecated setting dont_fix_second_order_samplers_schedule ([#16061](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16061))
+* chore: fix typos ([#16060](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16060))
+* shlex.join launch args in console log ([#16170](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16170))
+* activate venv .bat ([#16231](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16231))
+* add ids to the resize tabs in img2img ([#16218](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16218))
+* update installation guide linux ([#16178](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16178))
+* Robust sysinfo ([#16173](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16173))
+* do not send image size on paste inpaint ([#16180](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16180))
+* Fix noisy DS_Store files for MacOS ([#16166](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16166))
+
+
 ## 1.9.4
 
 ### Bug Fixes:

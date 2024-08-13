@@ -48,6 +48,22 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 
 def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
     @wraps(func)
+    def f(*args, **kwargs):
+        try:
+            res = func(*args, **kwargs)
+        finally:
+            shared.state.skipped = False
+            shared.state.interrupted = False
+            shared.state.stopping_generation = False
+            shared.state.job_count = 0
+            shared.state.job = ""
+        return res
+
+    return wrap_gradio_call_no_job(f, extra_outputs, add_stats)
+
+
+def wrap_gradio_call_no_job(func, extra_outputs=None, add_stats=False):
+    @wraps(func)
     def f(*args, extra_outputs_array=extra_outputs, **kwargs):
         run_memmon = shared.opts.memmon_poll_rate > 0 and not shared.mem_mon.disabled and add_stats
         if run_memmon:
@@ -66,9 +82,6 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
                 arg_str += f" (Argument list truncated at {max_debug_str_len}/{len(arg_str)} characters)"
             errors.report(f"{message}\n{arg_str}", exc_info=True)
 
-            shared.state.job = ""
-            shared.state.job_count = 0
-
             if extra_outputs_array is None:
                 extra_outputs_array = [None, '']
 
@@ -76,11 +89,6 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
             res = extra_outputs_array + [f"<div class='error'>{html.escape(error_message)}</div>"]
 
         devices.torch_gc()
-
-        shared.state.skipped = False
-        shared.state.interrupted = False
-        shared.state.stopping_generation = False
-        shared.state.job_count = 0
 
         if not add_stats:
             return tuple(res)
@@ -123,3 +131,4 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
         return tuple(res)
 
     return f
+

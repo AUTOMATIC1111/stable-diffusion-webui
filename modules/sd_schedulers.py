@@ -2,6 +2,7 @@ import dataclasses
 import torch
 import k_diffusion
 import numpy as np
+from scipy import stats
 
 from modules import shared
 
@@ -77,6 +78,55 @@ def kl_optimal(n, sigma_min, sigma_max, device):
     return sigmas
 
 
+def simple_scheduler(n, sigma_min, sigma_max, inner_model, device):
+    sigs = []
+    ss = len(inner_model.sigmas) / n
+    for x in range(n):
+        sigs += [float(inner_model.sigmas[-(1 + int(x * ss))])]
+    sigs += [0.0]
+    return torch.FloatTensor(sigs).to(device)
+
+
+def normal_scheduler(n, sigma_min, sigma_max, inner_model, device, sgm=False, floor=False):
+    start = inner_model.sigma_to_t(torch.tensor(sigma_max))
+    end = inner_model.sigma_to_t(torch.tensor(sigma_min))
+
+    if sgm:
+        timesteps = torch.linspace(start, end, n + 1)[:-1]
+    else:
+        timesteps = torch.linspace(start, end, n)
+
+    sigs = []
+    for x in range(len(timesteps)):
+        ts = timesteps[x]
+        sigs.append(inner_model.t_to_sigma(ts))
+    sigs += [0.0]
+    return torch.FloatTensor(sigs).to(device)
+
+
+def ddim_scheduler(n, sigma_min, sigma_max, inner_model, device):
+    sigs = []
+    ss = max(len(inner_model.sigmas) // n, 1)
+    x = 1
+    while x < len(inner_model.sigmas):
+        sigs += [float(inner_model.sigmas[x])]
+        x += ss
+    sigs = sigs[::-1]
+    sigs += [0.0]
+    return torch.FloatTensor(sigs).to(device)
+
+
+def beta_scheduler(n, sigma_min, sigma_max, inner_model, device):
+    # From "Beta Sampling is All You Need" [arXiv:2407.12173] (Lee et. al, 2024) """
+    alpha = shared.opts.beta_dist_alpha
+    beta = shared.opts.beta_dist_beta
+    timesteps = 1 - np.linspace(0, 1, n)
+    timesteps = [stats.beta.ppf(x, alpha, beta) for x in timesteps]
+    sigmas = [sigma_min + (x * (sigma_max-sigma_min)) for x in timesteps]
+    sigmas += [0.0]
+    return torch.FloatTensor(sigmas).to(device)
+
+
 schedulers = [
     Scheduler('automatic', 'Automatic', None),
     Scheduler('uniform', 'Uniform', uniform, need_inner_model=True),
@@ -86,6 +136,10 @@ schedulers = [
     Scheduler('sgm_uniform', 'SGM Uniform', sgm_uniform, need_inner_model=True, aliases=["SGMUniform"]),
     Scheduler('kl_optimal', 'KL Optimal', kl_optimal),
     Scheduler('align_your_steps', 'Align Your Steps', get_align_your_steps_sigmas),
+    Scheduler('simple', 'Simple', simple_scheduler, need_inner_model=True),
+    Scheduler('normal', 'Normal', normal_scheduler, need_inner_model=True),
+    Scheduler('ddim', 'DDIM', ddim_scheduler, need_inner_model=True),
+    Scheduler('beta', 'Beta', beta_scheduler, need_inner_model=True),
 ]
 
 schedulers_map = {**{x.name: x for x in schedulers}, **{x.label: x for x in schedulers}}
