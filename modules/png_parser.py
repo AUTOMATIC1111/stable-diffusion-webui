@@ -13,11 +13,10 @@ class PngParser:
     def parse_pnginfo(self, pnginfo_string):
         try:
             # separate positive, negative, and parameters
-            tlen = len(pnginfo_string)
             m = PngParser.re_top_level.search(pnginfo_string)
             if m is None:
                 return False
-            
+
             self.positive = m.group(1)
             self.negative = m.group(2)
             self.parameters = m.group(3)
@@ -35,9 +34,9 @@ class PngParser:
             self.settings = PngParser.re_parameters.findall(self.parameters)
             if self.settings is None:
                 return False
-        except:
+        except Exception:
             return False
-        
+
         return True
 
     @classmethod

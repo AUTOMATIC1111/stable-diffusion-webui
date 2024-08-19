@@ -214,7 +214,7 @@ function uiElementInSight(el) {
 }
 
 function uiCopyElementText(el) {
-    text = el.innerText
+    var text = el.innerText
     if (text.startsWith('"')) {
         text = text.substring(1, text.length-1).replace('\\n', '\n')
     }

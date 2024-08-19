@@ -37,7 +37,7 @@ def run_pnginfo(image):
             if parser.settings is None:
                 info += f"{plaintext_to_html(str(parser.parameters))}"
             else:
-                info += f"<p>"
+                info += "<p>"
                 first = True
                 for setting in parser.settings:
                     if first:
@@ -45,14 +45,12 @@ def run_pnginfo(image):
                     else:
                         info += ", "
                     info += pnginfo_format_setting(str(setting[0]), str(setting[1])+str(setting[2]))
-                info += f"</p>"
-            
+                info += "</p>"
+
             if parser.extra is not None:
                 info += f"{plaintext_to_html(str(parser.extra))}"
 
-            info += f"""
-</div>\n
-"""
+            info += "</div>\n"
     else:
         items = {**{'parameters': geninfo}, **items}
 
