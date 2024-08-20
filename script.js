@@ -216,7 +216,7 @@ function uiElementInSight(el) {
 function uiCopyElementText(el) {
     var text = el.innerText
     if (text.startsWith('"')) {
-        text = text.substring(1, text.length-1).replace('\\n', '\n')
+        text = text.substring(1, text.length-1).replaceAll('\\n', '\n')
     }
     
     navigator.clipboard.writeText(text)
