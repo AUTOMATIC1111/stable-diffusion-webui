@@ -214,12 +214,12 @@ function uiElementInSight(el) {
 }
 
 function uiCopyElementText(el) {
-    var text = el.innerText
+    var text = el.innerText;
     if (text.startsWith('"')) {
-        text = text.substring(1, text.length-1).replaceAll('\\n', '\n')
+        text = text.substring(1, text.length - 1).replaceAll('\\n', '\n');
     }
-    
-    navigator.clipboard.writeText(text)
+
+    navigator.clipboard.writeText(text);
 
     el.classList.remove('animate');
     setTimeout(() => {
