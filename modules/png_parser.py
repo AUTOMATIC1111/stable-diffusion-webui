@@ -2,6 +2,7 @@ import re
 
 class PngParser:
     re_top_level = None
+    re_top_level2 = None
     re_extra_newline = None
     re_parameters = None
 
@@ -15,11 +16,18 @@ class PngParser:
             # separate positive, negative, and parameters
             m = PngParser.re_top_level.search(pnginfo_string)
             if m is None:
-                return False
+                m = PngParser.re_top_level2.search(pnginfo_string)
+                if m is None:
+                    return False
+                else:
+                    self.positive = m.group(1)
+                    self.negative = None
+                    self.parameters = m.group(2)
+            else:
+                self.positive = m.group(1)
+                self.negative = m.group(2)
+                self.parameters = m.group(3)
 
-            self.positive = m.group(1)
-            self.negative = m.group(2)
-            self.parameters = m.group(3)
             self.extra = None
             self.settings = None
 
@@ -43,5 +51,7 @@ class PngParser:
     def init_re(cls):
         if cls.re_top_level is None:
             cls.re_top_level = re.compile(r'^(?P<positive>(?:.|\n)*)\nNegative prompt: (?P<negative>(?:.|\n)*)\n(?=Steps: )(?P<parameters>(?:.|\n)*)$')
+            cls.re_top_level2 = re.compile(r'^(?P<positive>(?:.|\n)*)\nSteps: (?P<parameters>(?:.|\n)*)$')
+#            cls.re_top_level2 = re.compile(r'^(?P<positive>(?:.|\n)*)\n(?=Steps: )(?P<parameters>(?:.|\n)*)$')
             cls.re_extra_newline = re.compile(r'\n(?=(?:[^"]*"[^"]*")*[^"]*$)')
             cls.re_parameters = re.compile(r'\s*(?P<param>[^:,]+):\s*(?P<quote>")?(?P<value>(?(2)(?:.)*?(?:(?<!\\)")|.*?))(?:\s*,\s*|$)')

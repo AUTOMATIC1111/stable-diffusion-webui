@@ -12,10 +12,16 @@ from modules.ui_common import plaintext_to_html
 import gradio as gr
 import safetensors.torch
 
+def pnginfo_format_string(plain_text):
+    content = "<br>\n".join(html.escape(x) for x in str(plain_text).split('\n'))
+    return content
 
 def pnginfo_format_setting(name, value):
     cls_name = 'geninfo-setting-string' if value.startswith('"') else 'geninfo-setting-value'
     return f"<span class='geninfo-setting-name'>{html.escape(name)}:</span> <span class='{cls_name}' onclick='uiCopyElementText(this)'>{html.escape(value)}</span>"
+
+def pnginfo_format_quicklink(name):
+    return f"<span class='geninfo-quick-link' onclick='uiCopyPngInfo(this, \"{name}\")'>[{html.escape(name)}]</span>"
 
 def run_pnginfo(image):
     if image is None:
@@ -28,16 +34,23 @@ def run_pnginfo(image):
     if parser.valid:
             info += f"""
 <div class='pnginfo-page'>
-<p><b>parameters</b></p>
-{plaintext_to_html(str(parser.positive))}
+<p><b>parameters</b><br>
+{pnginfo_format_quicklink("All")}&nbsp;{pnginfo_format_quicklink("Positive")}"""
+            if parser.negative is not None:
+                info += f'&nbsp;{pnginfo_format_quicklink("Negative")}'
+            info += f"""&nbsp;{pnginfo_format_quicklink("Settings")}
+</p>
+<p id='pnginfo-positive'>{pnginfo_format_string(parser.positive)}</p>"""
+            if parser.negative is not None:
+                 info += f"""
 <p>
-<span class='geninfo-setting-name'>Negative prompt:</span><br>{html.escape(str(parser.negative))}
+<span class='geninfo-setting-name'>Negative prompt:</span><br><span id='pnginfo-negative'>{pnginfo_format_string(parser.negative)}</span>
 </p>
 """
             if parser.settings is None:
                 info += f"{plaintext_to_html(str(parser.parameters))}"
             else:
-                info += "<p>"
+                info += "<p id='pnginfo-settings'>"
                 first = True
                 for setting in parser.settings:
                     if first:
@@ -48,7 +61,7 @@ def run_pnginfo(image):
                 info += "</p>"
 
             if parser.extra is not None:
-                info += f"{plaintext_to_html(str(parser.extra))}"
+                info += f"<p>{pnginfo_format_string(parser.extra)}</p>"
 
             info += "</div>\n"
     else:

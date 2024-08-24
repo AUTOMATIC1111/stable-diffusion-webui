@@ -1709,6 +1709,15 @@ body.resizing .resize-handle {
     background-color: var(--pnginfo-string-hover);
 }
 
+.pnginfo-page p span.geninfo-quick-link {
+    color: var(--pnginfo-string-color);
+    cursor: pointer;
+}
+
+.pnginfo-page p span.geninfo-quick-link:hover {
+    background-color: var(--pnginfo-string-hover);
+}
+
 /* PngInfo animations */
 @keyframes copyAnimationSettingValue {
     0% {
@@ -1738,6 +1747,11 @@ span.geninfo-setting-value.animate {
 }
 
 span.geninfo-setting-string.animate {
+    -webkit-animation: copyAnimationSettingString 1s 1;
+    animation: copyAnimationSettingString 1s 1;
+}
+
+span.geninfo-quick-link.animate {
     -webkit-animation: copyAnimationSettingString 1s 1;
     animation: copyAnimationSettingString 1s 1;
 }
