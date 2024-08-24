@@ -229,8 +229,9 @@ function uiCopyElementText(el) {
 
 function uiCopyRawText(elid) {
     var el = document.getElementById(elid);
-    if (el==null)
+    if (el == null) {
         return null;
+    }
 
     return el.innerText;
 }
@@ -238,23 +239,26 @@ function uiCopyRawText(elid) {
 function uiCopyPngInfo(el, mode) {
     var text = null;
 
-    if (mode=="Positive")
+    if (mode == "Positive") {
         text = uiCopyRawText("pnginfo-positive");
-    else if (mode=="Negative")
+    }
+    else if (mode == "Negative") {
         text = uiCopyRawText("pnginfo-negative");
-    else if (mode=="Settings")
+    }
+    else if (mode == "Settings") {
         text = uiCopyRawText("pnginfo-settings");
-    else if (mode=="All") {
+    }
+    else if (mode == "All") {
         text = "";
         var t2 = uiCopyRawText("pnginfo-positive");
-        if (t2!=null)
+        if (t2 != null)
             text += t2;
         t2 = uiCopyRawText("pnginfo-negative");
-        if (t2!=null)
-            text += "\nNegative prompt:"+t2;
+        if (t2 != null)
+            text += "\nNegative prompt:" + t2;
         t2 = uiCopyRawText("pnginfo-settings");
-        if (t2!=null)
-            text += "\n"+t2;
+        if (t2 != null)
+            text += "\n" + t2;
         if (text == "")
             text = null;
     }
