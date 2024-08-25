@@ -245,13 +245,13 @@ function uiCopyRawText(elid) {
 function uiCopyPngInfo(el, mode) {
     var text = null;
 
-    if (mode == "Positive") {
+    if (mode == "Prompt") {
         text = uiCopyRawText("pnginfo-positive");
     } else if (mode == "Negative") {
         text = uiCopyRawText("pnginfo-negative");
     } else if (mode == "Settings") {
         text = uiCopyRawText("pnginfo-settings");
-    } else if (mode == "All") {
+    } else if (mode == "Copy") {
         text = "";
         var t2 = uiCopyRawText("pnginfo-positive");
         if (t2 != null) {

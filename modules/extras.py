@@ -35,7 +35,7 @@ def run_pnginfo(image):
             info += f"""
 <div class='pnginfo-page'>
 <p><b>parameters</b><br>
-{pnginfo_format_quicklink("All")}&nbsp;{pnginfo_format_quicklink("Positive")}"""
+{pnginfo_format_quicklink("Copy")}&nbsp;{pnginfo_format_quicklink("Prompt")}"""
             if parser.negative is not None:
                 info += f'&nbsp;{pnginfo_format_quicklink("Negative")}'
             info += f"""&nbsp;{pnginfo_format_quicklink("Settings")}
