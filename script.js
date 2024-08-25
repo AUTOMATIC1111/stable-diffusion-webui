@@ -213,6 +213,16 @@ function uiElementInSight(el) {
     return isOnScreen;
 }
 
+function uiCopyElementAnimate(el) {
+    el.classList.remove('animate');
+    setTimeout(() => {
+        el.classList.add('animate');
+    }, 0);
+    setTimeout(() => {
+        el.classList.remove('animate');
+    }, 1100);
+}
+
 function uiCopyElementText(el) {
     var text = el.innerText;
     if (text.startsWith('"')) {
@@ -220,11 +230,7 @@ function uiCopyElementText(el) {
     }
 
     navigator.clipboard.writeText(text);
-
-    el.classList.remove('animate');
-    setTimeout(() => {
-        el.classList.add('animate');
-    }, 0);
+    uiCopyElementAnimate(el);
 }
 
 function uiCopyRawText(elid) {
@@ -266,10 +272,6 @@ function uiCopyPngInfo(el, mode) {
 
     if (text != null) {
         navigator.clipboard.writeText(text);
-
-        el.classList.remove('animate');
-        setTimeout(() => {
-            el.classList.add('animate');
-        }, 0);
+        uiCopyElementAnimate(el);
     }
 }
