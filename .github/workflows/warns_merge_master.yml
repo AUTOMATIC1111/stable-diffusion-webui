@@ -1,19 +1,20 @@
-name: Pull requests can't target master branch
 
-"on":
+
+name: Warn Against Merging to Master
+
+on:
   pull_request:
-    types:
-      - opened
-      - synchronize
-      - reopened
     branches:
       - master
 
 jobs:
-  check:
+  prevent-master-merge:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Warning marge into master
-        run: |
-          echo -e "::warning::This pull request directly merge into \"master\" branch, normally development happens on \"dev\" branch."
-          exit 1
+    - name: Check Pull Request Target
+      run: |
+        echo "Warning: You are trying to merge into the master branch."
+        exit 1
+
+          
