@@ -3,7 +3,7 @@ function gradioApp() {
     const elems = document.getElementsByTagName('gradio-app');
     const elem = elems.length === 0 ? document : elems[0];
 
-    // Override getElementById to ensure compatibility with shadow DOM
+// Override getElementById to ensure compatibility with shadow DOM
     if (elem !== document) {
         elem.getElementById = function(id) {
             return document.getElementById(id);
