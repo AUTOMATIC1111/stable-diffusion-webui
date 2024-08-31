@@ -419,7 +419,7 @@ class Script(scripts.Script):
     def ui(self, is_img2img):
         _axis_options = copy(axis_options)
         if opts.xyz_plot_sort_alphabetical:
-            _axis_options.sort(key=lambda x: (x.label != "Nothing", x.label)) # Sort by label, but keep "Nothing" first
+            _axis_options.sort(key=lambda x: (x.label != "Nothing", x.label.lower())) # Sort by label, but keep "Nothing" first
 
         self.current_axis_options = [x for x in _axis_options if type(x) == AxisOption or x.is_img2img == is_img2img]
 
