@@ -322,6 +322,7 @@ options_templates.update(options_section(('ui_alternatives', "UI alternatives", 
     "txt2img_settings_accordion": OptionInfo(False, "Settings in txt2img hidden under Accordion").needs_reload_ui(),
     "img2img_settings_accordion": OptionInfo(False, "Settings in img2img hidden under Accordion").needs_reload_ui(),
     "interrupt_after_current": OptionInfo(True, "Don't Interrupt in the middle").info("when using Interrupt button, if generating more than one image, stop after the generation of an image has finished, instead of immediately"),
+    "xyz_plot_sort_alphabetical": OptionInfo(True, "Sort XYZ plot options alphabetically").needs_reload_ui(),
 }))
 
 options_templates.update(options_section(('ui', "User interface", "ui"), {
