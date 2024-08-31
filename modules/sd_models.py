@@ -33,6 +33,7 @@ class ModelType(enum.Enum):
     SDXL = 3
     SSD = 4
     SD3 = 5
+    FLUX1 = 6
 
 
 def replace_key(d, key, new_key, value):
@@ -369,7 +370,7 @@ def check_fp8(model):
         enable_fp8 = False
     elif shared.opts.fp8_storage == "Enable":
         enable_fp8 = True
-    elif getattr(model, "is_sdxl", False) and shared.opts.fp8_storage == "Enable for SDXL":
+    elif any(getattr(model, attr, False) for attr in ("is_sdxl", "is_flux1")) and shared.opts.fp8_storage == "Enable for SDXL":
         enable_fp8 = True
     else:
         enable_fp8 = False
@@ -382,10 +383,14 @@ def set_model_type(model, state_dict):
     model.is_sdxl = False
     model.is_ssd = False
     model.is_sd3 = False
+    model.is_flux1 = False
 
     if "model.diffusion_model.x_embedder.proj.weight" in state_dict:
         model.is_sd3 = True
         model.model_type = ModelType.SD3
+    elif "model.diffusion_model.double_blocks.0.img_attn.norm.key_norm.scale" in state_dict:
+        model.is_flux1 = True
+        model.model_type = ModelType.FLUX1
     elif hasattr(model, 'conditioner'):
         model.is_sdxl = True
 
@@ -773,6 +778,9 @@ sd1_clip_weight = 'cond_stage_model.transformer.text_model.embeddings.token_embe
 sd2_clip_weight = 'cond_stage_model.model.transformer.resblocks.0.attn.in_proj_weight'
 sdxl_clip_weight = 'conditioner.embedders.1.model.ln_final.weight'
 sdxl_refiner_clip_weight = 'conditioner.embedders.0.model.ln_final.weight'
+clip_l_clip_weight = 'text_encoders.clip_l.transformer.text_model.final_layer_norm.weight'
+clip_g_clip_weight = 'text_encoders.clip_g.transformer.text_model.final_layer_norm.weight'
+t5xxl_clip_weight = 'text_encoders.t5xxl.transformer.encoder.final_layer_norm.weight'
 
 
 class SdModelData:
@@ -905,7 +913,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, checkpoint_
 
     if not checkpoint_config:
         checkpoint_config = sd_models_config.find_checkpoint_config(state_dict, checkpoint_info)
-    clip_is_included_into_sd = any(x for x in [sd1_clip_weight, sd2_clip_weight, sdxl_clip_weight, sdxl_refiner_clip_weight] if x in state_dict)
+    clip_is_included_into_sd = any(x for x in [sd1_clip_weight, sd2_clip_weight, sdxl_clip_weight, sdxl_refiner_clip_weight, clip_l_clip_weight, clip_g_clip_weight ] if x in state_dict)
 
     timer.record("find config")
 
