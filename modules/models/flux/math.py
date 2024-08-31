@@ -22,7 +22,7 @@ def rope(pos: Tensor, dim: int, theta: int) -> Tensor:
     return out.float()
 
 
-def apply_rope(xq: Tensor, xk: Tensor, freqs_cis: Tensor) -> tuple[Tensor, Tensor]:
+def apply_rope(xq: Tensor, xk: Tensor, freqs_cis: Tensor):
     xq_ = xq.float().reshape(*xq.shape[:-1], -1, 1, 2)
     xk_ = xk.float().reshape(*xk.shape[:-1], -1, 1, 2)
     xq_out = freqs_cis[..., 0] * xq_[..., 0] + freqs_cis[..., 1] * xq_[..., 1]
