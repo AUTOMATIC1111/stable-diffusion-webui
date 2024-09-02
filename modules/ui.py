@@ -8,7 +8,6 @@ from contextlib import ExitStack
 
 import gradio as gr
 import gradio.utils
-from gradio.components.image_editor import Brush
 from PIL import Image, PngImagePlugin  # noqa: F401
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
@@ -542,15 +541,15 @@ def create_ui():
                                 add_copy_image_controls('img2img', init_img)
 
                             with gr.TabItem('Sketch', id='img2img_sketch', elem_id="img2img_img2img_sketch_tab") as tab_sketch:
-                                sketch = gr.ImageEditor(label="Image for img2img", elem_id="img2img_sketch", show_label=False, interactive=True, type="pil", image_mode="RGBA", brush=Brush(default_color=opts.img2img_sketch_default_brush_color))
+                                sketch = gr.ImageEditor(label="Image for img2img", elem_id="img2img_sketch", show_label=False, interactive=True, type="pil", image_mode="RGBA", brush=gr.Brush(default_color=opts.img2img_sketch_default_brush_color))
                                 add_copy_image_controls('sketch', sketch)
 
                             with gr.TabItem('Inpaint', id='inpaint', elem_id="img2img_inpaint_tab") as tab_inpaint:
-                                init_img_with_mask = gr.ImageEditor(label="Image for inpainting with mask", show_label=False, elem_id="img2maskimg", brush=Brush(colors=[opts.img2img_inpaint_mask_brush_color], color_mode="fixed"), interactive=True, type="pil", image_mode="RGBA")
+                                init_img_with_mask = gr.ImageEditor(label="Image for inpainting with mask", show_label=False, elem_id="img2maskimg", brush=gr.Brush(colors=[opts.img2img_inpaint_mask_brush_color], color_mode="fixed"), interactive=True, type="pil", image_mode="RGBA")
                                 add_copy_image_controls('inpaint', init_img_with_mask)
 
                             with gr.TabItem('Inpaint sketch', id='inpaint_sketch', elem_id="img2img_inpaint_sketch_tab") as tab_inpaint_color:
-                                inpaint_color_sketch = gr.ImageEditor(label="Color sketch inpainting", show_label=False, elem_id="inpaint_sketch", brush=Brush(default_color=opts.img2img_inpaint_sketch_default_brush_color), interactive=True, type="pil", image_mode="RGBA")
+                                inpaint_color_sketch = gr.ImageEditor(label="Color sketch inpainting", show_label=False, elem_id="inpaint_sketch", brush=gr.Brush(default_color=opts.img2img_inpaint_sketch_default_brush_color), interactive=True, type="pil", image_mode="RGBA")
                                 add_copy_image_controls('inpaint_sketch', inpaint_color_sketch)
 
                             with gr.TabItem('Inpaint upload', id='inpaint_upload', elem_id="img2img_inpaint_upload_tab") as tab_inpaint_upload:
