@@ -181,12 +181,16 @@ class EmbeddingDatabase:
         else:
             return
 
-        embedding = create_embedding_from_data(data, name, filename=filename, filepath=path)
+        if data is not None:
+            embedding = create_embedding_from_data(data, name, filename=filename, filepath=path)
 
-        if self.expected_shape == -1 or self.expected_shape == embedding.shape:
-            self.register_embedding(embedding, shared.sd_model)
+            if self.expected_shape == -1 or self.expected_shape == embedding.shape:
+                self.register_embedding(embedding, shared.sd_model)
+            else:
+                self.skipped_embeddings[name] = embedding
         else:
-            self.skipped_embeddings[name] = embedding
+            print(f"Unable to load Textual inversion embedding due to data issue: '{name}'.")
+
 
     def load_from_dir(self, embdir):
         if not os.path.isdir(embdir.path):

@@ -21,10 +21,12 @@ re_comma = re.compile(r" *, *")
 def build_tags(metadata):
     tags = {}
 
-    for _, tags_dict in metadata.get("ss_tag_frequency", {}).items():
-        for tag, tag_count in tags_dict.items():
-            tag = tag.strip()
-            tags[tag] = tags.get(tag, 0) + int(tag_count)
+    ss_tag_frequency = metadata.get("ss_tag_frequency", {})
+    if ss_tag_frequency is not None and hasattr(ss_tag_frequency, 'items'):
+        for _, tags_dict in ss_tag_frequency.items():
+            for tag, tag_count in tags_dict.items():
+                tag = tag.strip()
+                tags[tag] = tags.get(tag, 0) + int(tag_count)
 
     if tags and is_non_comma_tagset(tags):
         new_tags = {}

@@ -29,6 +29,7 @@ var uiAfterUpdateCallbacks = [];
 var uiLoadedCallbacks = [];
 var uiTabChangeCallbacks = [];
 var optionsChangedCallbacks = [];
+var optionsAvailableCallbacks = [];
 var uiAfterUpdateTimeout = null;
 var uiCurrentTab = null;
 
@@ -75,6 +76,20 @@ function onUiTabChange(callback) {
  */
 function onOptionsChanged(callback) {
     optionsChangedCallbacks.push(callback);
+}
+
+/**
+ * Register callback to be called when the options (in opts global variable) are available.
+ * The callback receives no arguments.
+ * If you register the callback after the options are available, it's just immediately called.
+ */
+function onOptionsAvailable(callback) {
+    if (Object.keys(opts).length != 0) {
+        callback();
+        return;
+    }
+
+    optionsAvailableCallbacks.push(callback);
 }
 
 function executeCallbacks(queue, arg) {

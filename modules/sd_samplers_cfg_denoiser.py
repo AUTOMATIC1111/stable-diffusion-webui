@@ -1,5 +1,5 @@
 import torch
-from modules import prompt_parser, devices, sd_samplers_common
+from modules import prompt_parser, sd_samplers_common
 
 from modules.shared import opts, state
 import modules.shared as shared
@@ -57,6 +57,11 @@ class CFGDenoiser(torch.nn.Module):
         self.sampler = sampler
         self.model_wrap = None
         self.p = None
+
+        self.cond_scale_miltiplier = 1.0
+
+        self.need_last_noise_uncond = False
+        self.last_noise_uncond = None
 
         # NOTE: masking before denoising can cause the original latents to be oversmoothed
         # as the original latents do not have noise
@@ -212,9 +217,16 @@ class CFGDenoiser(torch.nn.Module):
         uncond = denoiser_params.text_uncond
         skip_uncond = False
 
-        # alternating uncond allows for higher thresholds without the quality loss normally expected from raising it
-        if self.step % 2 and s_min_uncond > 0 and sigma[0] < s_min_uncond and not is_edit_model:
+        if shared.opts.skip_early_cond != 0. and self.step / self.total_steps <= shared.opts.skip_early_cond:
             skip_uncond = True
+            self.p.extra_generation_params["Skip Early CFG"] = shared.opts.skip_early_cond
+        elif (self.step % 2 or shared.opts.s_min_uncond_all) and s_min_uncond > 0 and sigma[0] < s_min_uncond and not is_edit_model:
+            skip_uncond = True
+            self.p.extra_generation_params["NGMS"] = s_min_uncond
+            if shared.opts.s_min_uncond_all:
+                self.p.extra_generation_params["NGMS all steps"] = shared.opts.s_min_uncond_all
+
+        if skip_uncond:
             x_in = x_in[:-batch_size]
             sigma_in = sigma_in[:-batch_size]
 
@@ -266,14 +278,15 @@ class CFGDenoiser(torch.nn.Module):
         denoised_params = CFGDenoisedParams(x_out, state.sampling_step, state.sampling_steps, self.inner_model)
         cfg_denoised_callback(denoised_params)
 
-        devices.test_for_nans(x_out, "unet")
+        if self.need_last_noise_uncond:
+            self.last_noise_uncond = torch.clone(x_out[-uncond.shape[0]:])
 
         if is_edit_model:
-            denoised = self.combine_denoised_for_edit_model(x_out, cond_scale)
+            denoised = self.combine_denoised_for_edit_model(x_out, cond_scale * self.cond_scale_miltiplier)
         elif skip_uncond:
             denoised = self.combine_denoised(x_out, conds_list, uncond, 1.0)
         else:
-            denoised = self.combine_denoised(x_out, conds_list, uncond, cond_scale)
+            denoised = self.combine_denoised(x_out, conds_list, uncond, cond_scale * self.cond_scale_miltiplier)
 
         # Blend in the original latents (after)
         if not self.mask_before_denoising and self.mask is not None:

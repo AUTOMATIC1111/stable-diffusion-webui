@@ -1,7 +1,7 @@
 import gradio as gr
 
 from modules import ui_common, shared, script_callbacks, scripts, sd_models, sysinfo, timer, shared_items
-from modules.call_queue import wrap_gradio_call
+from modules.call_queue import wrap_gradio_call_no_job
 from modules.options import options_section
 from modules.shared import opts
 from modules.ui_components import FormRow
@@ -295,7 +295,7 @@ class UiSettings:
 
     def add_functionality(self, demo):
         self.submit.click(
-            fn=wrap_gradio_call(lambda *args: self.run_settings(*args), extra_outputs=[gr.update()]),
+            fn=wrap_gradio_call_no_job(lambda *args: self.run_settings(*args), extra_outputs=[gr.update()]),
             inputs=self.components,
             outputs=[self.text_settings, self.result],
         )

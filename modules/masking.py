@@ -16,7 +16,7 @@ def get_crop_region_v2(mask, pad=0):
     mask = mask if isinstance(mask, Image.Image) else Image.fromarray(mask)
     if box := mask.getbbox():
         x1, y1, x2, y2 = box
-        return max(x1 - pad, 0), max(y1 - pad, 0), min(x2 + pad, mask.size[0]), min(y2 + pad, mask.size[1]) if pad else box
+        return (max(x1 - pad, 0), max(y1 - pad, 0), min(x2 + pad, mask.size[0]), min(y2 + pad, mask.size[1])) if pad else box
 
 
 def get_crop_region(mask, pad=0):

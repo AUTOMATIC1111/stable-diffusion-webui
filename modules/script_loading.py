@@ -2,20 +2,17 @@ import os
 import importlib.util
 
 from modules import errors
-import sys
 
 
 loaded_scripts = {}
 
 
 def load_module(path):
-    module_name, _ = os.path.splitext(os.path.basename(path))
-    full_module_name = "scripts." + module_name
-    module_spec = importlib.util.spec_from_file_location(full_module_name, path)
+    module_spec = importlib.util.spec_from_file_location(os.path.basename(path), path)
     module = importlib.util.module_from_spec(module_spec)
     module_spec.loader.exec_module(module)
+
     loaded_scripts[path] = module
-    sys.modules[full_module_name] = module
     return module
 
 
