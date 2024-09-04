@@ -195,6 +195,9 @@ options_templates.update(options_section(('sdxl', "Stable Diffusion XL", "sd"), 
 options_templates.update(options_section(('sd3', "Stable Diffusion 3", "sd"), {
     "sd3_enable_t5": OptionInfo(False, "Enable T5").info("load T5 text encoder; increases VRAM use by a lot, potentially improving quality of generation; requires model reload to apply"),
 }))
+options_templates.update(options_section(('flux', "Stable Diffusion FLUX", "sd"), {
+    "flux_enable_t5": OptionInfo(False, "Enable T5").info("load T5 text encoder; increases VRAM use by a lot, potentially improving quality of generation; requires model reload to apply"),
+}))
 
 options_templates.update(options_section(('vae', "VAE", "sd"), {
     "sd_vae_explanation": OptionHTML("""
