@@ -82,13 +82,17 @@ class QKNorm(torch.nn.Module):
         return q.to(v), k.to(v)
 
 
+class QkvLinear(torch.nn.Linear):
+    pass
+
+
 class SelfAttention(nn.Module):
     def __init__(self, dim: int, num_heads: int = 8, qkv_bias: bool = False, dtype=None, device=None):
         super().__init__()
         self.num_heads = num_heads
         head_dim = dim // num_heads
 
-        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias, dtype=dtype, device=device)
+        self.qkv = QkvLinear(dim, dim * 3, bias=qkv_bias, dtype=dtype, device=device)
         self.norm = QKNorm(head_dim, dtype=dtype, device=device)
         self.proj = nn.Linear(dim, dim, dtype=dtype, device=device)
 
@@ -217,7 +221,7 @@ class SingleStreamBlock(nn.Module):
 
         self.mlp_hidden_dim = int(hidden_size * mlp_ratio)
         # qkv and mlp_in
-        self.linear1 = nn.Linear(hidden_size, hidden_size * 3 + self.mlp_hidden_dim, dtype=dtype, device=device)
+        self.linear1 = QkvLinear(hidden_size, hidden_size * 3 + self.mlp_hidden_dim, dtype=dtype, device=device)
         # proj and mlp_out
         self.linear2 = nn.Linear(hidden_size + self.mlp_hidden_dim, hidden_size, dtype=dtype, device=device)
 
