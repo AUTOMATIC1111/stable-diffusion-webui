@@ -377,6 +377,8 @@ def store_weights_backup(weight):
     if weight is None:
         return None
 
+    if shared.opts.lora_without_backup_weight:
+        return True
     return weight.to(devices.cpu, copy=True)
 
 
@@ -393,6 +395,9 @@ def network_restore_weights_from_backup(self: Union[torch.nn.Conv2d, torch.nn.Li
     bias_backup = getattr(self, "network_bias_backup", None)
 
     if weights_backup is None and bias_backup is None:
+        return
+
+    if weights_backup is True or weights_backup == (True, True): # fake backup
         return
 
     if weights_backup is not None:
@@ -539,7 +544,12 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
             logging.debug(f"Network {net.name} layer {network_layer_name}: couldn't find supported operation")
             extra_network_lora.errors[net.name] = extra_network_lora.errors.get(net.name, 0) + 1
 
-        self.network_current_names = wanted_names
+
+        if weights_backup is True or weights_backup == (True, True): # fake backup
+            self.network_weights_backup = None
+            self.network_bias_backup = None
+        else:
+            self.network_current_names = wanted_names
 
 
 def network_forward(org_module, input, original_forward):
