@@ -270,7 +270,8 @@ class FLUX1Inferencer(torch.nn.Module):
         with torch.no_grad():
             self.model = BaseModel(state_dict=state_dict, prefix=diffusion_model_prefix, device="cpu", dtype=devices.dtype)
             self.first_stage_model = SDVAE(device="cpu", dtype=devices.dtype_vae)
-            self.first_stage_model.dtype = self.model.diffusion_model.dtype
+            self.first_stage_model.dtype = devices.dtype_vae
+            self.vae = self.first_stage_model # real vae
 
         self.alphas_cumprod = 1 / (self.model.model_sampling.sigmas ** 2 + 1)
 

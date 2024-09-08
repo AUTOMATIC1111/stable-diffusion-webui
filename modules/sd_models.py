@@ -952,6 +952,8 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, checkpoint_
     else:
         weight_dtype_conversion = {
             'first_stage_model': None,
+            'text_encoders': None,
+            'vae': None,
             'alphas_cumprod': None,
             '': torch.float16 if loadable_unet_dtype in (torch.float16, torch.float32, torch.bfloat16) else None,
         }
