@@ -980,7 +980,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, checkpoint_
 
     timer.record("scripts callbacks")
 
-    with devices.autocast(), torch.no_grad():
+    with devices.autocast(target_dtype=devices.dtype_inference), torch.no_grad():
         sd_model.cond_stage_model_empty_prompt = get_empty_cond(sd_model)
 
     timer.record("calculate empty prompt")

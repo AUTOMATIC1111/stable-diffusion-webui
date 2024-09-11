@@ -484,7 +484,7 @@ class StableDiffusionProcessing:
 
         cache = caches[0]
 
-        with devices.autocast():
+        with devices.autocast(target_dtype=devices.dtype_inference):
             cache[1] = function(shared.sd_model, required_prompts, steps, hires_steps, shared.opts.use_old_scheduling)
 
         cache[0] = cached_params
@@ -1436,7 +1436,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             with devices.autocast():
                 extra_networks.activate(self, self.hr_extra_network_data)
 
-        with devices.autocast():
+        with devices.autocast(target_dtype=devices.dtype_inference):
             self.calculate_hr_conds()
 
         sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio(for_hr=True))
