@@ -1,0 +1,48 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main # Trigger on push to main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+
+      - name: Set up SSH Agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.MOONLITE_AWS_EC2_SSH_KEY }}
+
+      - name: SSH into EC2 and deploy the app
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.MOONLITE_AWS_EC2_SSH_USER }}@${{ secrets.MOONLITE_AWS_EC2_SSH_HOST }} << 'EOF'
+            cd /apps/stable-diffusion-webui
+            git pull origin master
+            conda activate myenv
+
+            # Navigate to the models folder and download required files
+            cd models
+            # Example: Downloading a model file (adjust the URL)
+            if [ ! -f model_file_name ]; then
+              wget https://huggingface.co/stabilityai/stable-diffusion-2/resolve/main/768-v-ema.safetensors
+            fi
+
+            # Navigate to the extensions folder and clone repos
+            cd ../extensions
+            if [ ! -d your-extension-folder ]; then
+              git clone https://github.com/deforum-art/sd-webui-deforum
+              git clone https://github.com/Mikubill/sd-webui-controlnet
+            fi
+
+            # Return to the main project directory
+            cd ..
+            
+            # Run the application
+            nohup python launch.py --listen --api &
+            exit
+          EOF
