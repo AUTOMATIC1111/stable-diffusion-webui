@@ -397,7 +397,7 @@ def network_restore_weights_from_backup(self: Union[torch.nn.Conv2d, torch.nn.Li
     if weights_backup is None and bias_backup is None:
         return
 
-    if weights_backup is True or weights_backup == (True, True): # fake backup
+    if shared.opts.lora_without_backup_weight:
         return
 
     if weights_backup is not None:
@@ -567,7 +567,7 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
             extra_network_lora.errors[net.name] = extra_network_lora.errors.get(net.name, 0) + 1
 
 
-        if weights_backup is True or weights_backup == (True, True): # fake backup
+        if shared.opts.lora_without_backup_weight:
             self.network_weights_backup = None
             self.network_bias_backup = None
         else:
