@@ -54,7 +54,7 @@ def samples_to_images_tensor(sample, approximation=None, model=None):
     else:
         if model is None:
             model = shared.sd_model
-        with torch.no_grad(), devices.manual_cast(devices.dtype_vae): # fixes an issue with unstable VAEs that are flaky even in fp32
+        with torch.no_grad(), devices.without_autocast(): # fixes an issue with unstable VAEs that are flaky even in fp32
             x_sample = model.decode_first_stage(sample.to(model.first_stage_model.dtype))
 
     return x_sample
