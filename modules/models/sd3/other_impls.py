@@ -449,7 +449,7 @@ class T5Attention(torch.nn.Module):
         else:
             mask = None
 
-        out = attention(q, k * ((k.shape[-1] / self.num_heads) ** 0.5), v, self.num_heads, mask.to(x.dtype) if mask is not None else None)
+        out = attention(q, k * ((k.shape[-1] / self.num_heads) ** 0.5), v, self.num_heads, mask.to(q.dtype) if mask is not None else None)
 
         return self.o(out), past_bias
 
@@ -486,15 +486,17 @@ class T5Stack(torch.nn.Module):
         self.block = torch.nn.ModuleList([T5Block(model_dim, inner_dim, ff_dim, num_heads, relative_attention_bias=(i == 0), dtype=dtype, device=device) for i in range(num_layers)])
         self.final_layer_norm = T5LayerNorm(model_dim, dtype=dtype, device=device)
 
-    def forward(self, input_ids, intermediate_output=None, final_layer_norm_intermediate=True):
+    def forward(self, x, intermediate_output=None, final_layer_norm_intermediate=True):
         intermediate = None
-        x = self.embed_tokens(input_ids).to(torch.float32)  # needs float32 or else T5 returns all zeroes
+        #x = self.embed_tokens(input_ids).to(torch.float32)  # needs float32 or else T5 returns all zeroes
+        # some T5XXL do not embed_token. use shared token instead like comfy
         past_bias = None
         for i, layer in enumerate(self.block):
             x, past_bias = layer(x, past_bias)
             if i == intermediate_output:
                 intermediate = x.clone()
         x = self.final_layer_norm(x)
+        x = torch.nan_to_num(x)
         if intermediate is not None and final_layer_norm_intermediate:
             intermediate = self.final_layer_norm(intermediate)
         return x, intermediate
@@ -505,13 +507,18 @@ class T5(torch.nn.Module):
         super().__init__()
         self.num_layers = config_dict["num_layers"]
         self.encoder = T5Stack(self.num_layers, config_dict["d_model"], config_dict["d_model"], config_dict["d_ff"], config_dict["num_heads"], config_dict["vocab_size"], dtype, device)
+        self.shared = torch.nn.Embedding(config_dict["vocab_size"], config_dict["d_model"])
         self.dtype = dtype
 
     def get_input_embeddings(self):
-        return self.encoder.embed_tokens
+        #return self.encoder.embed_tokens
+        return self.shared
 
     def set_input_embeddings(self, embeddings):
-        self.encoder.embed_tokens = embeddings
+        #self.encoder.embed_tokens = embeddings
+        self.shared = embeddings
 
-    def forward(self, *args, **kwargs):
-        return self.encoder(*args, **kwargs)
+    def forward(self, input_ids, *args, **kwargs):
+        x = self.shared(input_ids).float()
+        x = torch.nan_to_num(x)
+        return self.encoder(x, *args, **kwargs)
