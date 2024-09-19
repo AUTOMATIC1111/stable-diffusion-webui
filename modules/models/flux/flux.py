@@ -360,4 +360,4 @@ class FLUX1Inferencer(torch.nn.Module):
             yield f"transformer.single_transformer_blocks.{i}.proj_mlp",  f"diffusion_model_single_blocks_{i}_linear1_mlp_proj"
 
             yield f"transformer.single_transformer_blocks.{i}.proj_out", f"diffusion_model_single_blocks_{i}_linear2"
-            yield f"transformer.single_transformer_blocks.{i}.morm.linear", f"diffusion_model_single_blocks_{i}_modulation_lin"
+            yield f"transformer.single_transformer_blocks.{i}.norm.linear", f"diffusion_model_single_blocks_{i}_modulation_lin"
