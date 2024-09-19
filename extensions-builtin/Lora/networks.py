@@ -183,8 +183,12 @@ def load_network(name, network_on_disk):
     for key_network, weight in sd.items():
 
         if diffusers_weight_map:
-            key_network_without_network_parts, network_name, network_weight = key_network.rsplit(".", 2)
-            network_part = network_name + '.' + network_weight
+            if key_network.startswith("lora_unet"):
+                key_network_without_network_parts, _, network_part = key_network.partition(".")
+                key_network_without_network_parts = key_network_without_network_parts.replace("lora_unet", "diffusion_model")
+            else:
+                key_network_without_network_parts, network_name, network_weight = key_network.rsplit(".", 2)
+                network_part = network_name + '.' + network_weight
         else:
             key_network_without_network_parts, _, network_part = key_network.partition(".")
 
