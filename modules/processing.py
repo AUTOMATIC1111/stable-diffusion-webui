@@ -1147,6 +1147,11 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     if p.scripts is not None:
         p.scripts.postprocess(p, res)
 
+
+    if lowvram.is_enabled(shared.sd_model):
+        # for interrupted case
+        lowvram.send_everything_to_cpu()
+
     return res
 
 
