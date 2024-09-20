@@ -140,7 +140,7 @@ class Sd3T5(torch.nn.Module):
         return tokens, multipliers
 
     def forward(self, texts, *, token_count):
-        if not self.t5xxl or not shared.opts.sd3_enable_t5:
+        if not self.t5xxl:
             return torch.zeros((len(texts), token_count, 4096), device=devices.device, dtype=devices.dtype)
 
         tokens_batch = []
