@@ -116,6 +116,58 @@ def ddim_scheduler(n, sigma_min, sigma_max, inner_model, device):
     return torch.FloatTensor(sigs).to(device)
 
 
+def karras_exponential_scheduler(n, sigma_min, sigma_max, device, blend_factor=0.3, sharpen_factor=0.9):
+    # Optional: Adjust sigma_max to fine-tune the range of noise levels
+    # Example: Increase by 10%; modify the multiplier as needed (e.g., 1.1 for 10% increase)
+    sigma_max = sigma_max * 1.1  # Adjust this multiplier as needed, e.g., 1.1 for a 10% increase
+      # Initialize sigmas to None to avoid UnboundLocalError in case of failure during assignment
+    sigmas_karras, sigmas_exponential = None, None
+    try:
+         # Generate sigma schedules using Karras and Exponential methods
+        # These functions are from the k_diffusion module and are crucial for generating the noise schedule
+        sigmas_karras = k_diffusion.sampling.get_sigmas_karras(n=n, sigma_min=sigma_min, sigma_max=sigma_max, device=device)
+        sigmas_exponential = k_diffusion.sampling.get_sigmas_exponential(n=n, sigma_min=sigma_min, sigma_max=sigma_max, device=device)
+
+        # Print the lengths of the generated sequences for debugging purposes
+        #print(f"Length before resampling: Karras - {len(sigmas_karras)}, Exponential - {len(sigmas_exponential)}")
+
+        # Check if lengths are different; resample if necessary to match lengths
+        if len(sigmas_karras) != len(sigmas_exponential):
+            # Resample both sigmas to match the longer sequence length; ensures consistent blending
+            max_length = max(len(sigmas_karras), len(sigmas_exponential))
+            sigmas_karras = resample_sigmas(sigmas_karras, max_length, device)
+            sigmas_exponential = resample_sigmas(sigmas_exponential, max_length, device)
+
+    except Exception as e:
+        # Handle errors during sigma generation; assign fallback empty tensors if an error occurs
+        print(f"Error generating sigmas: {e}")
+        sigmas_karras = torch.zeros(n).to(device)
+        sigmas_exponential = torch.zeros(n).to(device)
+
+    # Ensure sigmas have been assigned correctly; raise an error if not
+    if sigmas_karras is None or sigmas_exponential is None:
+        raise ValueError("Failed to generate or assign sigmas correctly.")
+
+    # Create a linear tensor from 0 to 1 to represent progress over the length of sigmas
+    progress = torch.linspace(0, 1, len(sigmas_karras)).to(device)
+    # Calculate a dynamic blend factor that decreases from blend_factor to 0
+    dynamic_blend_factor = (1 - progress) * blend_factor
+    # Blend the Karras and Exponential sigmas based on the dynamic blend factor
+    sigs = (sigmas_karras * (1 - dynamic_blend_factor) + sigmas_exponential * dynamic_blend_factor)
+
+   # Trim the blended sigmas if they exceed the required number of steps
+    if len(sigs) > n:
+        sigs = sigs[:n]
+
+    # Apply sharpening to sigmas below a certain threshold to enhance sharpness
+    # Modify sharpen_factor to adjust sharpening intensity
+    sharpen_mask = torch.where(sigs < sigma_min * 1.5, sharpen_factor, 1.0).to(device)
+    sigs = sigs * sharpen_mask
+
+    # Return the final blended and adjusted sigmas on the specified device
+    return sigs.to(device)
+    
+
 def beta_scheduler(n, sigma_min, sigma_max, inner_model, device):
     # From "Beta Sampling is All You Need" [arXiv:2407.12173] (Lee et. al, 2024) """
     alpha = shared.opts.beta_dist_alpha
@@ -140,6 +192,8 @@ schedulers = [
     Scheduler('normal', 'Normal', normal_scheduler, need_inner_model=True),
     Scheduler('ddim', 'DDIM', ddim_scheduler, need_inner_model=True),
     Scheduler('beta', 'Beta', beta_scheduler, need_inner_model=True),
+    Scheduler('karras_exponential', 'Karras Exponential', karras_exponential_scheduler),
+   
 ]
 
 schedulers_map = {**{x.name: x for x in schedulers}, **{x.label: x for x in schedulers}}
