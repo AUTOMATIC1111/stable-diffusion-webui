@@ -176,7 +176,7 @@ class LoadStateDictOnMeta(ReplaceHelper):
         def load_from_state_dict(original, module, state_dict, prefix, *args, **kwargs):
             used_param_keys = []
 
-            if type(module) in (torch.nn.Linear, torch.nn.Conv2d, torch.nn.GroupNorm, torch.nn.LayerNorm,):
+            if isinstance(module, (torch.nn.Linear, torch.nn.Conv2d, torch.nn.GroupNorm, torch.nn.LayerNorm)):
                 # HACK add assign=True to local_metadata for some cases
                 args[0]['assign_to_params_buffers'] = True
 
