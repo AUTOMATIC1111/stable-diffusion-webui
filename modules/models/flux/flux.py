@@ -50,12 +50,6 @@ class Flux1ClipL(sd_hijack_clip.TextConditionalModel):
         return self.tokenizer(texts, truncation=False, add_special_tokens=False)["input_ids"]
 
     def encode_with_transformers(self, tokens):
-        tokens_g = tokens.clone()
-
-        for batch_pos in range(tokens_g.shape[0]):
-            index = tokens_g[batch_pos].cpu().tolist().index(self.id_end)
-            tokens_g[batch_pos, index+1:tokens_g.shape[1]] = 0
-
         l_out, l_pooled = self.clip_l(tokens)
         l_out = torch.cat([l_out], dim=-1)
         l_out = torch.nn.functional.pad(l_out, (0, 4096 - l_out.shape[-1]))
