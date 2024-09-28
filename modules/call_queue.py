@@ -3,7 +3,7 @@ from functools import wraps
 import html
 import time
 
-from modules import shared, progress, errors, devices, fifo_lock, profiling
+from modules import shared, progress, errors, devices, fifo_lock, profiling, manager
 
 queue_lock = fifo_lock.FIFOLock()
 
@@ -34,7 +34,7 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
             progress.start_task(id_task)
 
             try:
-                res = func(*args, **kwargs)
+                res = manager.task.run_and_wait_result(func, *args, **kwargs)
                 progress.record_results(id_task, res)
             finally:
                 progress.finish_task(id_task)
