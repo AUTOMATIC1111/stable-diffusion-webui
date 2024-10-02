@@ -1,4 +1,5 @@
 import re
+import torch
 
 import gradio as gr
 from fastapi import FastAPI
@@ -9,7 +10,7 @@ import lora  # noqa:F401
 import lora_patches
 import extra_networks_lora
 import ui_extra_networks_lora
-from modules import script_callbacks, ui_extra_networks, extra_networks, shared
+from modules import script_callbacks, ui_extra_networks, extra_networks, shared, scripts, devices
 
 
 def unload():
@@ -95,6 +96,64 @@ def infotext_pasted(infotext, d):
         return f'<lora:{network_on_disk.get_alias()}:'
 
     d["Prompt"] = re.sub(re_lora, network_replacement, d["Prompt"])
+
+
+class ScriptLora(scripts.Script):
+    name = "Lora"
+
+    def title(self):
+        return self.name
+
+    def show(self, is_img2img):
+        return scripts.AlwaysVisible
+
+    def after_extra_networks_activate(self, p, *args, **kwargs):
+        # check modules and setup org_dtype
+        modules = []
+        if shared.sd_model.is_sdxl:
+            for _i, embedder in enumerate(shared.sd_model.conditioner.embedders):
+                if not hasattr(embedder, 'wrapped'):
+                    continue
+
+                for _name, module in embedder.wrapped.named_modules():
+                    if isinstance(module, (torch.nn.Conv2d, torch.nn.Linear, torch.nn.GroupNorm, torch.nn.LayerNorm, torch.nn.MultiheadAttention)):
+                        if hasattr(module, 'weight'):
+                            modules.append(module)
+                        elif isinstance(module, torch.nn.MultiheadAttention):
+                            modules.append(module)
+
+        else:
+            cond_stage_model = getattr(shared.sd_model.cond_stage_model, 'wrapped', shared.sd_model.cond_stage_model)
+
+            for _name, module in cond_stage_model.named_modules():
+                if isinstance(module, (torch.nn.Conv2d, torch.nn.Linear, torch.nn.GroupNorm, torch.nn.LayerNorm, torch.nn.MultiheadAttention)):
+                    if hasattr(module, 'weight'):
+                        modules.append(module)
+                    elif isinstance(module, torch.nn.MultiheadAttention):
+                        modules.append(module)
+
+        for _name, module in shared.sd_model.model.named_modules():
+            if isinstance(module, (torch.nn.Conv2d, torch.nn.Linear, torch.nn.GroupNorm, torch.nn.LayerNorm, torch.nn.MultiheadAttention)):
+                if hasattr(module, 'weight'):
+                    modules.append(module)
+                elif isinstance(module, torch.nn.MultiheadAttention):
+                    modules.append(module)
+
+        print("Total lora modules after_extra_networks_activate() =", len(modules))
+
+        target_dtype = devices.dtype_inference
+        for module in modules:
+            if isinstance(module, torch.nn.MultiheadAttention):
+                org_dtype = torch.float32
+            else:
+                org_dtype = None
+                for _name, param in module.named_parameters():
+                    if param.dtype != target_dtype:
+                        org_dtype = param.dtype
+                        break
+
+            # set org_dtype
+            module.org_dtype = org_dtype
 
 
 script_callbacks.on_infotext_pasted(infotext_pasted)

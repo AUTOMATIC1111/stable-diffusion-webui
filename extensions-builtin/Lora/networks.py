@@ -377,13 +377,13 @@ def allowed_layer_without_weight(layer):
     return False
 
 
-def store_weights_backup(weight):
+def store_weights_backup(weight, dtype):
     if weight is None:
         return None
 
     if shared.opts.lora_without_backup_weight:
         return True
-    return weight.to(devices.cpu, copy=True)
+    return weight.to(devices.cpu, dtype=dtype, copy=True)
 
 
 def restore_weights_backup(obj, field, weight):
@@ -437,18 +437,18 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
             raise RuntimeError(f"{network_layer_name} - no backup weights found and current weights are not unchanged")
 
         if isinstance(self, torch.nn.MultiheadAttention):
-            weights_backup = (store_weights_backup(self.in_proj_weight), store_weights_backup(self.out_proj.weight))
+            weights_backup = (store_weights_backup(self.in_proj_weight, self.org_dtype), store_weights_backup(self.out_proj.weight, self.org_dtype))
         else:
-            weights_backup = store_weights_backup(self.weight)
+            weights_backup = store_weights_backup(self.weight, self.org_dtype)
 
         self.network_weights_backup = weights_backup
 
     bias_backup = getattr(self, "network_bias_backup", None)
     if bias_backup is None and wanted_names != ():
         if isinstance(self, torch.nn.MultiheadAttention) and self.out_proj.bias is not None:
-            bias_backup = store_weights_backup(self.out_proj.bias)
+            bias_backup = store_weights_backup(self.out_proj.bias, self.org_dtype)
         elif getattr(self, 'bias', None) is not None:
-            bias_backup = store_weights_backup(self.bias)
+            bias_backup = store_weights_backup(self.bias, self.org_dtype)
         else:
             bias_backup = None
 
@@ -487,6 +487,7 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
                                 self.bias = torch.nn.Parameter(ex_bias).to(self.weight.dtype)
                             else:
                                 self.bias.copy_((bias + ex_bias).to(dtype=self.bias.dtype))
+                        del weight, bias, updown, ex_bias
                 except RuntimeError as e:
                     logging.debug(f"Network {net.name} layer {network_layer_name}: {e}")
                     extra_network_lora.errors[net.name] = extra_network_lora.errors.get(net.name, 0) + 1
@@ -538,6 +539,7 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
                         updown_qkv = torch.vstack([updown_q, updown_k, updown_v])
                         self.weight += updown_qkv
                         del updown_qkv
+                        del updown_q, updown_k, updown_v
 
                 except RuntimeError as e:
                     logging.debug(f"Network {net.name} layer {network_layer_name}: {e}")
@@ -560,6 +562,7 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
                         updown_qkv_mlp = torch.vstack([updown_q, updown_k, updown_v, updown_mlp])
                         self.weight += updown_qkv_mlp
                         del updown_qkv_mlp
+                        del updown_q, updown_k, updown_v, updown_mlp
 
                 except RuntimeError as e:
                     logging.debug(f"Network {net.name} layer {network_layer_name}: {e}")
