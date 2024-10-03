@@ -429,6 +429,18 @@ def network_backup_weights(self):
     current_names = getattr(self, "network_current_names", ())
     wanted_names = tuple((x.name, x.te_multiplier, x.unet_multiplier, x.dyn_dim) for x in loaded_networks)
 
+    need_backup = False
+    for net in loaded_networks:
+        if network_layer_name in net.modules:
+            need_backup = True
+            break
+        elif network_layer_name + "_q_proj" in net.modules:
+            need_backup = True
+            break
+
+    if not need_backup:
+        return
+
     weights_backup = getattr(self, "network_weights_backup", None)
     if weights_backup is None and wanted_names != ():
         if current_names != () and not allowed_layer_without_weight(self):
