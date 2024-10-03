@@ -394,7 +394,7 @@ def restore_weights_backup(obj, field, weight):
     getattr(obj, field).copy_(weight)
 
 
-def network_restore_weights_from_backup(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn.GroupNorm, torch.nn.LayerNorm, torch.nn.MultiheadAttention]):
+def network_restore_weights_from_backup(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn.GroupNorm, torch.nn.LayerNorm, torch.nn.MultiheadAttention], cleanup=False):
     weights_backup = getattr(self, "network_weights_backup", None)
     bias_backup = getattr(self, "network_bias_backup", None)
 
@@ -415,6 +415,12 @@ def network_restore_weights_from_backup(self: Union[torch.nn.Conv2d, torch.nn.Li
         restore_weights_backup(self.out_proj, 'bias', bias_backup)
     else:
         restore_weights_backup(self, 'bias', bias_backup)
+
+    if cleanup:
+        if weights_backup is not None:
+            del self.network_weights_backup
+        if bias_backup is not None:
+            del self.network_bias_backup
 
 
 def network_backup_weights(self):

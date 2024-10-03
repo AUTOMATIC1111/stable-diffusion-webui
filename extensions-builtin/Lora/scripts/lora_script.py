@@ -4,6 +4,7 @@ import torch
 import gradio as gr
 from fastapi import FastAPI
 
+import gc
 import network
 import networks
 import lora  # noqa:F401
@@ -168,8 +169,10 @@ class ScriptLora(scripts.Script):
             if current_names == () and current_names != wanted_names and weights_backup is None:
                 networks.network_backup_weights(module)
             elif current_names != () and current_names != wanted_names:
-                networks.network_restore_weights_from_backup(module)
+                networks.network_restore_weights_from_backup(module, wanted_names == ())
                 module.weights_restored = True
+        if current_names != wanted_names and wanted_names == ():
+            gc.collect()
 
 
 script_callbacks.on_infotext_pasted(infotext_pasted)
