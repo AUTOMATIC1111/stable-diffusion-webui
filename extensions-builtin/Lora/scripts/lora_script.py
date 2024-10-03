@@ -143,6 +143,10 @@ class ScriptLora(scripts.Script):
 
         target_dtype = devices.dtype_inference
         for module in modules:
+            network_layer_name = getattr(module, 'network_layer_name', None)
+            if network_layer_name is None:
+                continue
+
             if isinstance(module, torch.nn.MultiheadAttention):
                 org_dtype = torch.float32
             else:
@@ -154,6 +158,18 @@ class ScriptLora(scripts.Script):
 
             # set org_dtype
             module.org_dtype = org_dtype
+
+            # backup/restore weights
+            current_names = getattr(module, "network_current_names", ())
+            wanted_names = tuple((x.name, x.te_multiplier, x.unet_multiplier, x.dyn_dim) for x in networks.loaded_networks)
+
+            weights_backup = getattr(module, "network_weights_backup", None)
+
+            if current_names == () and current_names != wanted_names and weights_backup is None:
+                networks.network_backup_weights(module)
+            elif current_names != () and current_names != wanted_names:
+                networks.network_restore_weights_from_backup(module)
+                module.weights_restored = True
 
 
 script_callbacks.on_infotext_pasted(infotext_pasted)
