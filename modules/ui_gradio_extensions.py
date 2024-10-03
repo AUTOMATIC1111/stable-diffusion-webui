@@ -34,7 +34,7 @@ def css_html():
     def stylesheet(fn):
         return f'<link rel="stylesheet" property="stylesheet" href="{webpath(fn)}">'
 
-    for cssfile in scripts.list_files_with_name("style.css"):
+    for cssfile in scripts.list_files_with_prefix("style", ".css"):
         head += stylesheet(cssfile)
 
     user_css = os.path.join(data_path, "user.css")
