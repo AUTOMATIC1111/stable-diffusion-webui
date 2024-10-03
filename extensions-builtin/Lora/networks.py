@@ -426,7 +426,7 @@ def network_restore_weights_from_backup(self: Union[torch.nn.Conv2d, torch.nn.Li
 def network_backup_weights(self):
     network_layer_name = getattr(self, 'network_layer_name', None)
 
-    current_names = getattr(self, "network_current_names", ())
+    _current_names = getattr(self, "network_current_names", ())
     wanted_names = tuple((x.name, x.te_multiplier, x.unet_multiplier, x.dyn_dim) for x in loaded_networks)
 
     need_backup = False
@@ -443,9 +443,6 @@ def network_backup_weights(self):
 
     weights_backup = getattr(self, "network_weights_backup", None)
     if weights_backup is None and wanted_names != ():
-        if current_names != () and not allowed_layer_without_weight(self):
-            raise RuntimeError(f"{network_layer_name} - no backup weights found and current weights are not unchanged")
-
         if isinstance(self, torch.nn.MultiheadAttention):
             weights_backup = (store_weights_backup(self.in_proj_weight, self.org_dtype), store_weights_backup(self.out_proj.weight, self.org_dtype))
         else:
@@ -461,11 +458,6 @@ def network_backup_weights(self):
             bias_backup = store_weights_backup(self.bias, self.org_dtype)
         else:
             bias_backup = None
-
-        # Unlike weight which always has value, some modules don't have bias.
-        # Only report if bias is not None and current bias are not unchanged.
-        if bias_backup is not None and current_names != ():
-            raise RuntimeError("no backup bias found and current bias are not unchanged")
 
         self.network_bias_backup = bias_backup
 
