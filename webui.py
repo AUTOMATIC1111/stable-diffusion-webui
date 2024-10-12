@@ -10,6 +10,9 @@ from modules import initialize
 startup_timer = timer.startup_timer
 startup_timer.record("launcher")
 
+import cuda_malloc
+startup_timer.record("cuda_malloc")
+
 initialize.imports()
 
 initialize.check_versions()
