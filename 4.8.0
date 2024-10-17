@@ -1,0 +1,2 @@
+Requirement already satisfied: opencv-python in c:\a\webui\venv\lib\site-packages (4.10.0.84)
+Requirement already satisfied: numpy>=1.21.2 in c:\a\webui\venv\lib\site-packages (from opencv-python) (1.26.2)
