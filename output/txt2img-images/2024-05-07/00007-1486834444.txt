@@ -1,0 +1,2 @@
+a girl take flowers, focus face, park
+Steps: 20, Sampler: DPM++ 2M, Schedule type: Karras, CFG scale: 7, Seed: 1486834444, Face restoration: CodeFormer, Size: 512x768, Model hash: bb7e29def5, Model: rpg_v5, FP8 weight: Enable, Cache FP16 weight for LoRA: False, Hypertile U-Net: True, Hypertile VAE: True, Style Selector Enabled: True, Style Selector Randomize: False, Style Selector Style: base, Version: v1.9.3

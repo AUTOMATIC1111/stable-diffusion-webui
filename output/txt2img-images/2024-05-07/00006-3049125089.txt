@@ -1,0 +1,2 @@
+a girl take flowers, focus face, park
+Steps: 10, Sampler: DPM++ 2M, Schedule type: Karras, CFG scale: 2, Seed: 3049125089, Face restoration: CodeFormer, Size: 512x768, Model hash: 9453efa4ff, Model: ultraspiceXLTURBO_v14, FP8 weight: Enable, Cache FP16 weight for LoRA: False, Hypertile U-Net: True, Hypertile VAE: True, Style Selector Enabled: True, Style Selector Randomize: False, Style Selector Style: base, Version: v1.9.3

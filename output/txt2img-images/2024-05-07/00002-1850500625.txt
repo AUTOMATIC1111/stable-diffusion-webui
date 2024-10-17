@@ -1,0 +1,2 @@
+a girl, park
+Steps: 8, Sampler: DPM++ 2M, Schedule type: Karras, CFG scale: 1.5, Seed: 1850500625, Face restoration: CodeFormer, Size: 512x768, Model hash: 9453efa4ff, Model: ultraspiceXLTURBO_v14, FP8 weight: Enable, Cache FP16 weight for LoRA: False, Hypertile U-Net: True, Hypertile VAE: True, Style Selector Enabled: True, Style Selector Randomize: False, Style Selector Style: base, Version: v1.9.3

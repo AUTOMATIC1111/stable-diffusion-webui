@@ -1,0 +1,1 @@
+Postprocess upscale by: 4, Postprocess upscaler: 4x-UltraScale_V0.5 BETA, GFPGAN visibility: 1, CodeFormer visibility: 1, CodeFormer weight: 0, Rembg: u2net

@@ -1,0 +1,3 @@
+anime artwork a girl sleeping on the grass . anime style, key visual, vibrant, studio anime,  highly detailed
+Negative prompt: photo, deformed, black and white, realism, disfigured, low contrast
+Steps: 15, Sampler: DPM++ 2M, Schedule type: Karras, CFG scale: 1.5, Seed: 1625880118, Face restoration: CodeFormer, Size: 768x512, Model hash: 1524a9699f, Model: turboDiffusionXL_v112, FP8 weight: Enable, Cache FP16 weight for LoRA: False, Denoising strength: 0.7, Hypertile U-Net: True, Hypertile VAE: True, Style Selector Enabled: True, Style Selector Randomize: False, Style Selector Style: Anime, Mask mode: Inpaint not masked, Mask blur: 4, Version: v1.9.3
