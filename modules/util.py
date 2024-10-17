@@ -281,8 +281,10 @@ def load_file_from_url(
 def compare_sha256(file_path: str, hash_prefix: str) -> bool:
     """Check if the SHA256 hash of the file matches the given prefix."""
     import hashlib
-    sha256 = hashlib.sha256()
-    with open(file_path, 'rb') as f:
-        for chunk in iter(lambda: f.read(4096), b''):
-            sha256.update(chunk)
-    return sha256.hexdigest().startswith(hash_prefix)
+    hash_sha256 = hashlib.sha256()
+    blksize = 1024 * 1024
+
+    with open(file_path, "rb") as f:
+        for chunk in iter(lambda: f.read(blksize), b""):
+            hash_sha256.update(chunk)
+    return hash_sha256.hexdigest().startswith(hash_prefix.strip().lower())
