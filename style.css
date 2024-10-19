@@ -1685,6 +1685,10 @@ body.resizing .resize-handle {
     --pnginfo-copy-background:#22c922;
 }
 
+.pnginfo-page {
+    overflow-wrap: break-word;
+}
+
 /* PngInfo styles */
 .pnginfo-page p span.geninfo-setting-name {
     font-weight: var(--weight-semibold);
