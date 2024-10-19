@@ -14,6 +14,7 @@ config_sd2 = os.path.join(sd_repo_configs_path, "v2-inference.yaml")
 config_sd2v = os.path.join(sd_repo_configs_path, "v2-inference-v.yaml")
 config_sd2_inpainting = os.path.join(sd_repo_configs_path, "v2-inpainting-inference.yaml")
 config_sdxl = os.path.join(sd_xl_repo_configs_path, "sd_xl_base.yaml")
+config_sdxlv = os.path.join(sd_configs_path, "sd_xl_v.yaml")
 config_sdxl_refiner = os.path.join(sd_xl_repo_configs_path, "sd_xl_refiner.yaml")
 config_sdxl_inpainting = os.path.join(sd_configs_path, "sd_xl_inpaint.yaml")
 config_depth_model = os.path.join(sd_repo_configs_path, "v2-midas-inference.yaml")
@@ -81,6 +82,9 @@ def guess_model_config_from_state_dict(sd, filename):
         if diffusion_model_input.shape[1] == 9:
             return config_sdxl_inpainting
         else:
+            if ('v_pred' in sd):
+                del sd['v_pred']
+                return config_sdxlv
             return config_sdxl
 
     if sd.get('conditioner.embedders.0.model.ln_final.weight', None) is not None:
