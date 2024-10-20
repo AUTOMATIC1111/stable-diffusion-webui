@@ -280,12 +280,19 @@ def run_extensions_installers(settings_file):
             if os.path.isdir(path):
                 paths[dirname_extension] = path
 
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            futures = {executor.submit(run_extension_installer, path): dirname_extension for dirname_extension, path in paths.items()}
-            for future in as_completed(futures):
-                dirname_extension = futures[future]
-                if future.result():
-                    startup_timer.record(dirname_extension)
+        max_workers = args.max_install_thread
+        if max_workers == 1:
+            for dirname_extension, path in paths.items():
+                run_extension_installer(path)
+                startup_timer.record(dirname_extension)
+        else:
+            max_workers = min(max_workers, 4)
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = {executor.submit(run_extension_installer, path): dirname_extension for dirname_extension, path in paths.items()}
+                for future in as_completed(futures):
+                    dirname_extension = futures[future]
+                    if future.result():
+                        startup_timer.record(dirname_extension)
 
 
 re_requirement = re.compile(r"\s*([-_a-zA-Z0-9]+)\s*(?:==\s*([-+_.a-zA-Z0-9]+))?\s*")
