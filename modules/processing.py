@@ -65,8 +65,12 @@ def apply_color_correction(correction, original_image):
 def uncrop(image, dest_size, paste_loc):
     x, y, w, h = paste_loc
     base_image = Image.new('RGBA', dest_size)
+    factor_x = w // image.size[0]
+    factor_y = h // image.size[1]
     image = images.resize_image(1, image, w, h)
-    base_image.paste(image, (x, y))
+    paste_x = max(x - factor_x, 0)
+    paste_y = max(y - factor_y, 0)
+    base_image.paste(image, (paste_x, paste_y))
     image = base_image
 
     return image
@@ -1639,6 +1643,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 crop_region = masking.get_crop_region_v2(mask, self.inpaint_full_res_padding)
                 if crop_region:
                     crop_region = masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
+                    if shared.opts.integer_only_masked:
+                        crop_region = masking.fix_crop_region_integer_scale(crop_region, self.width, self.height, mask.width, mask.height)
                     x1, y1, x2, y2 = crop_region
                     mask = mask.crop(crop_region)
                     image_mask = images.resize_image(2, mask, self.width, self.height)

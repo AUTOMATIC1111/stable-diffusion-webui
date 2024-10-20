@@ -227,6 +227,7 @@ options_templates.update(options_section(('img2img', "img2img", "sd"), {
     "return_mask_composite": OptionInfo(False, "For inpainting, include masked composite in results for web"),
     "img2img_batch_show_results_limit": OptionInfo(32, "Show the first N batch img2img results in UI", gr.Slider, {"minimum": -1, "maximum": 1000, "step": 1}).info('0: disable, -1: show all images. Too many images can cause lag'),
     "overlay_inpaint": OptionInfo(True, "Overlay original for inpaint").info("when inpainting, overlay the original image over the areas that weren't inpainted."),
+    "integer_only_masked": OptionInfo(False, "Integer upscale in inpaint only masked").info("Correct inpaint padding for only masked to have integer upscaling after fitting cropped region in original image"),
 }))
 
 options_templates.update(options_section(('optimizations', "Optimizations", "sd"), {
