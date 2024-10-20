@@ -28,7 +28,7 @@ def html(filename):
         return ""
 
 
-def walk_files(path, allowed_extensions=None):
+def walk_files(path, allowed_extensions=None, allowed_mime=None):
     if not os.path.exists(path):
         return
 
@@ -40,15 +40,37 @@ def walk_files(path, allowed_extensions=None):
 
     for root, _, files in items:
         for filename in sorted(files, key=natural_sort_key):
-            if allowed_extensions is not None:
-                _, ext = os.path.splitext(filename)
-                if ext.lower() not in allowed_extensions:
-                    continue
-
+            filepath = os.path.join(root, filename)
             if not shared.opts.list_hidden_files and ("/." in root or "\\." in root):
                 continue
 
-            yield os.path.join(root, filename)
+            if allowed_extensions or allowed_mime:
+                file_allowed = False
+
+                if allowed_extensions is not None:
+                    _, ext = os.path.splitext(filename)
+                    if ext.lower() in allowed_extensions:
+                        file_allowed = True
+
+                if allowed_mime is not None:
+                    import filetype
+                    if filetype.guess(filepath).mime.startswith(allowed_mime):
+                        file_allowed = True
+            else:
+                file_allowed = True
+
+            if not file_allowed:
+                continue
+
+            yield filepath
+
+
+def walk_image_files(path):
+    if shared.cmd_opts.use_mime_file_filtering_for_batch_from_dir:
+        return walk_files(path, allowed_mime='image/')
+    else:
+        return walk_files(path, allowed_extensions=(".png", ".jpg", ".jpeg", ".webp", ".tif", ".tiff"))
+
 
 
 def ldm_print(*args, **kwargs):

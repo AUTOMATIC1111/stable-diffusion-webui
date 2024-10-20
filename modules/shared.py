@@ -82,6 +82,7 @@ listfiles = util.listfiles
 html_path = util.html_path
 html = util.html
 walk_files = util.walk_files
+walk_image_files = util.walk_image_files
 ldm_print = util.ldm_print
 
 reload_gradio_theme = shared_gradio_themes.reload_gradio_theme

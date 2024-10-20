@@ -301,16 +301,14 @@ def requirements_met(requirements_file):
             package = m.group(1).strip()
             version_required = (m.group(2) or "").strip()
 
-            if version_required == "":
-                continue
-
             try:
                 version_installed = importlib.metadata.version(package)
             except Exception:
                 return False
 
-            if packaging.version.parse(version_required) != packaging.version.parse(version_installed):
-                return False
+            if version_required != "":
+                if packaging.version.parse(version_required) != packaging.version.parse(version_installed):
+                    return False
 
     return True
 
@@ -405,6 +403,10 @@ def prepare_environment():
     if not is_installed("ngrok") and args.ngrok:
         run_pip("install ngrok", "ngrok")
         startup_timer.record("install ngrok")
+
+    if not is_installed('filetype') and args.use_mime_file_filtering_for_batch_from_dir:
+        run_pip("install filetype")
+        startup_timer.record("install filetype")
 
     os.makedirs(os.path.join(script_path, dir_repos), exist_ok=True)
 
