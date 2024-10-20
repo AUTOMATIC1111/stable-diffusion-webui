@@ -1,4 +1,5 @@
 import os
+import re
 import gradio as gr
 
 from modules import localization, shared, scripts, util
@@ -49,12 +50,21 @@ def css_html():
     return head
 
 
+re_preconnect = re.compile(rb'<link\s+rel="preconnect"\s+href="([^"]+)"(?:\s+[^>]*)?/?>')
+
+
 def reload_javascript():
     js = javascript_html()
     css = css_html()
 
     def template_response(*args, **kwargs):
         res = shared.GradioTemplateResponseOriginal(*args, **kwargs)
+
+        # remove preconnects
+        res.body = re_preconnect.sub(b'', res.body)
+        # replace iframeResizer with local version
+        res.body = res.body.replace(b'src="https://cdnjs.cloudflare.com/ajax/libs/iframe-resizer/4.3.6/iframeResizer.contentWindow.min.js"', b'src="webui-assets/js/iframe-resizer/4.3.6/iframeResizer.contentWindow.min.js"')
+
         res.body = res.body.replace(b'</head>', f'{js}<meta name="referrer" content="no-referrer"/></head>'.encode("utf8"))
         res.body = res.body.replace(b'</body>', f'{css}</body>'.encode("utf8"))
         res.init_headers()
