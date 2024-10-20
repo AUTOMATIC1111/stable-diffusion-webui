@@ -11,7 +11,7 @@ class ScriptPostprocessingGfpGan(scripts_postprocessing.ScriptPostprocessing):
 
     def ui(self):
         with ui_components.InputAccordion(False, label="GFPGAN") as enable:
-            gfpgan_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Visibility", value=1.0, elem_id="extras_gfpgan_visibility")
+            gfpgan_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Visibility", value=1.0, elem_id=self.elem_id_suffix("extras_gfpgan_visibility"))
 
         return {
             "enable": enable,

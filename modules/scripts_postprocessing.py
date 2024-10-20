@@ -1,3 +1,4 @@
+import re
 import dataclasses
 import os
 import gradio as gr
@@ -96,6 +97,31 @@ class ScriptPostprocessing:
 
     def image_changed(self):
         pass
+
+    tab_name = ''  # used by ScriptPostprocessingForMainUI
+    replace_pattern = re.compile(r'\s')
+    rm_pattern = re.compile(r'[^a-z_0-9]')
+
+    def elem_id(self, item_id):
+        """
+        Helper function to generate id for a HTML element
+        constructs final id out of script name and user-supplied item_id
+        'script_extras_{self.name.lower()}_{item_id}'
+        {tab_name} will append to the end of the id if set
+        tab_name will be set to '_img2img' or '_txt2img' if use by ScriptPostprocessingForMainUI
+
+        Extensions should use this function to generate element IDs
+        """
+        return self.elem_id_suffix(f'extras_{self.name.lower()}_{item_id}')
+
+    def elem_id_suffix(self, base_id):
+        """
+        Append tab_name to the base_id
+
+        Extensions that already have specific there element IDs and wish to keep their IDs the same when possible should use this function
+        """
+        base_id = self.rm_pattern.sub('', self.replace_pattern.sub('_', base_id))
+        return f'{base_id}{self.tab_name}'
 
 
 def wrap_call(func, filename, funcname, *args, default=None, **kwargs):
