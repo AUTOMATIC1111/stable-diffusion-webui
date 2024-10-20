@@ -2,14 +2,6 @@
 
 @import url('webui-assets/css/sourcesanspro.css');
 
-
-/* temporary fix to hide gradio crop tool until it's fixed https://github.com/gradio-app/gradio/issues/3810 */
-
-div.gradio-image button[aria-label="Edit"] {
-    display: none;
-}
-
-
 /* general gradio fixes */
 
 :root, .dark{
@@ -137,6 +129,10 @@ div.gradio-html.min{
     background: var(--input-background-fill);
 }
 
+.gradio-gallery > button.preview{
+    width: 100%;
+}
+
 .gradio-container .prose a, .gradio-container .prose a:visited{
     color: unset;
     text-decoration: none;
@@ -145,6 +141,15 @@ div.gradio-html.min{
 a{
     font-weight: bold;
     cursor: pointer;
+}
+
+.upload-container {
+    width: 100%;
+    max-width: 100%;
+}
+
+.layer-wrap > ul {
+    background: var(--background-fill-primary) !important;
 }
 
 /* gradio 3.39 puts a lot of overflow: hidden all over the place for an unknown reason. */
@@ -398,7 +403,7 @@ div#extras_scale_to_tab div.form{
     z-index: 5;
 }
 
-.image-buttons > .form{
+.image-buttons{
     justify-content: center;
 }
 
@@ -1098,9 +1103,9 @@ footer {
     height:100%;
 }
 
-div.block.gradio-box.edit-user-metadata {
+.edit-user-metadata {
     width: 56em;
-    background: var(--body-background-fill);
+    background: var(--body-background-fill) !important;
     padding: 2em !important;
 }
 
@@ -1134,14 +1139,10 @@ div.block.gradio-box.edit-user-metadata {
     margin-top: 1.5em;
 }
 
-div.block.gradio-box.popup-dialog, .popup-dialog {
+.popup-dialog {
     width: 56em;
-    background: var(--body-background-fill);
+    background: var(--body-background-fill) !important;
     padding: 2em !important;
-}
-
-div.block.gradio-box.popup-dialog > div:last-child, .popup-dialog > div:last-child{
-    margin-top: 1em;
 }
 
 div.block.input-accordion{

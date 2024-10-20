@@ -16,6 +16,20 @@ onUiLoaded(async() => {
     // Helper functions
     // Get active tab
 
+    function debounce(func, wait) {
+        let timeout;
+
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
     /**
      * Waits for an element to be present in the DOM.
      */
@@ -57,6 +71,30 @@ onUiLoaded(async() => {
             await new Promise(resolve => setTimeout(resolve, 100));
         }
     }
+
+    // // Hack to make the cursor always be the same size
+    function fixCursorSize() {
+        window.scrollBy(0, 1);
+    }
+
+    function copySpecificStyles(sourceElement, targetElement, zoomLevel = 1) {
+        const stylesToCopy = ['top', 'left', 'width', 'height'];
+
+        stylesToCopy.forEach(styleName => {
+            if (sourceElement.style[styleName]) {
+                // Convert style value to number and multiply by zoomLevel.
+                let adjustedStyleValue = parseFloat(sourceElement.style[styleName]) / zoomLevel;
+
+                // Set the adjusted style value back to target element's style.
+                // Important: this will work fine for top and left styles as they are usually in px.
+                // But be careful with other units like em or % that might need different handling.
+                targetElement.style[styleName] = `${adjustedStyleValue}px`;
+            }
+        });
+
+        targetElement.style["opacity"] = sourceElement.style["opacity"];
+    }
+
 
     // Detect whether the element has a horizontal scroll bar
     function hasHorizontalScrollbar(element) {
@@ -167,48 +205,6 @@ onUiLoaded(async() => {
         return config;
     }
 
-    /**
-     * The restoreImgRedMask function displays a red mask around an image to indicate the aspect ratio.
-     * If the image display property is set to 'none', the mask breaks. To fix this, the function
-     * temporarily sets the display property to 'block' and then hides the mask again after 300 milliseconds
-     * to avoid breaking the canvas. Additionally, the function adjusts the mask to work correctly on
-     * very long images.
-     */
-    function restoreImgRedMask(elements) {
-        const mainTabId = getTabId(elements);
-
-        if (!mainTabId) return;
-
-        const mainTab = gradioApp().querySelector(mainTabId);
-        const img = mainTab.querySelector("img");
-        const imageARPreview = gradioApp().querySelector("#imageARPreview");
-
-        if (!img || !imageARPreview) return;
-
-        imageARPreview.style.transform = "";
-        if (parseFloat(mainTab.style.width) > 865) {
-            const transformString = mainTab.style.transform;
-            const scaleMatch = transformString.match(
-                /scale\(([-+]?[0-9]*\.?[0-9]+)\)/
-            );
-            let zoom = 1; // default zoom
-
-            if (scaleMatch && scaleMatch[1]) {
-                zoom = Number(scaleMatch[1]);
-            }
-
-            imageARPreview.style.transformOrigin = "0 0";
-            imageARPreview.style.transform = `scale(${zoom})`;
-        }
-
-        if (img.style.display !== "none") return;
-
-        img.style.display = "block";
-
-        setTimeout(() => {
-            img.style.display = "none";
-        }, 400);
-    }
 
     const hotkeysConfigOpts = await waitForOpts();
 
@@ -224,7 +220,6 @@ onUiLoaded(async() => {
         canvas_hotkey_grow_brush: "KeyW",
         canvas_disabled_functions: [],
         canvas_show_tooltip: true,
-        canvas_auto_expand: true,
         canvas_blur_prompt: false,
     };
 
@@ -264,18 +259,6 @@ onUiLoaded(async() => {
     );
     const elemData = {};
 
-    // Apply functionality to the range inputs. Restore redmask and correct for long images.
-    const rangeInputs = elements.rangeGroup ?
-        Array.from(elements.rangeGroup.querySelectorAll("input")) :
-        [
-            gradioApp().querySelector("#img2img_width input[type='range']"),
-            gradioApp().querySelector("#img2img_height input[type='range']")
-        ];
-
-    for (const input of rangeInputs) {
-        input?.addEventListener("input", () => restoreImgRedMask(elements));
-    }
-
     function applyZoomAndPan(elemId, isExtension = true) {
         const targetElement = gradioApp().querySelector(elemId);
 
@@ -289,14 +272,118 @@ onUiLoaded(async() => {
         elemData[elemId] = {
             zoom: 1,
             panX: 0,
-            panY: 0
+            panY: 0,
         };
+
         let fullScreenMode = false;
+
+
+        // Cursor manipulation script for a painting application.
+        // The purpose of this code is to create custom cursors (for painting and erasing)
+        // that can change depending on which button the user presses.
+        // When the mouse moves over the canvas, the appropriate custom cursor also moves,
+        // replicating its appearance dynamically based on various CSS properties.
+
+        // This is done because the original cursor is tied to the size of the kanvas, it can not be changed, so I came up with a hack that creates an exact copy that works properly
+
+        const eraseButton = targetElement.querySelector(`button[aria-label='Erase button']`);
+        const paintButton = targetElement.querySelector(`button[aria-label='Draw button']`);
+
+        const canvasCursors = targetElement.querySelectorAll("span.svelte-btgkrd");
+        const paintCursorCopy = canvasCursors[0].cloneNode(true);
+        const eraserCursorCopy = canvasCursors[1].cloneNode(true);
+
+        canvasCursors.forEach(cursor => cursor.style.display = "none");
+
+        canvasCursors[0].parentNode.insertBefore(paintCursorCopy, canvasCursors[0].nextSibling);
+        canvasCursors[1].parentNode.insertBefore(eraserCursorCopy, canvasCursors[1].nextSibling);
+
+
+        // targetElement.appendChild(paintCursorCopy);
+        // paintCursorCopy.style.display = "none";
+
+        // targetElement.appendChild(eraserCursorCopy);
+        // eraserCursorCopy.style.display = "none";
+
+        let activeCursor;
+
+        paintButton.addEventListener('click', () => {
+            activateTool(paintButton, eraseButton, paintCursorCopy);
+        });
+
+        eraseButton.addEventListener('click', () => {
+            activateTool(eraseButton, paintButton, eraserCursorCopy);
+        });
+
+        function activateTool(activeButton, inactiveButton, activeCursorCopy) {
+            activeButton.classList.add("active");
+            inactiveButton.classList.remove("active");
+
+            // canvasCursors.forEach(cursor => cursor.style.display = "none");
+
+            if (activeCursor) {
+                activeCursor.style.display = "none";
+            }
+
+            activeCursor = activeCursorCopy;
+            // activeCursor.style.display = "none";
+            activeCursor.style.position = "absolute";
+        }
+
+        const canvasAreaEventsHandler = e => {
+
+            canvasCursors.forEach(cursor => cursor.style.display = "none");
+
+            if (!activeCursor) return;
+
+            const cursorNum = eraseButton.classList.contains("active") ? 1 : 0;
+
+            if (elemData[elemId].zoomLevel != 1) {
+                copySpecificStyles(canvasCursors[cursorNum], activeCursor, elemData[elemId].zoomLevel);
+            } else {
+                // Update the styles of the currently active cursor
+                copySpecificStyles(canvasCursors[cursorNum], activeCursor);
+            }
+
+            let offsetXAdjusted = e.offsetX;
+            let offsetYAdjusted = e.offsetY;
+
+            // Position the cursor based on the current mouse coordinates within target element.
+            activeCursor.style.transform =
+           `translate(${offsetXAdjusted}px, ${offsetYAdjusted}px)`;
+        };
+
+        const canvasAreaLeaveHandler = () => {
+            if (activeCursor) {
+                // activeCursor.style.opacity = 0
+                activeCursor.style.display = "none";
+            }
+        };
+
+        const canvasAreaEnterHandler = () => {
+            if (activeCursor) {
+                // activeCursor.style.opacity = 1
+                activeCursor.style.display = "block";
+            }
+        };
+
+        const canvasArea = targetElement.querySelector("canvas");
+
+        // Attach event listeners to the target element and canvas area
+        targetElement.addEventListener("mousemove", canvasAreaEventsHandler);
+        canvasArea.addEventListener("mouseout", canvasAreaLeaveHandler);
+        canvasArea.addEventListener("mouseenter", canvasAreaEnterHandler);
+
+        // Additional listener for handling zoom or other transformations which might affect visual representation
+        targetElement.addEventListener("wheel", canvasAreaEventsHandler);
+
+        // Remove border, cause bags
+        const canvasBorder = targetElement.querySelector(".border");
+        canvasBorder.style.display = "none";
 
         // Create tooltip
         function createTooltip() {
-            const toolTipElement =
-                targetElement.querySelector(".image-container");
+            const toolTipElement = targetElement.querySelector(".image-container");
             const tooltip = document.createElement("div");
             tooltip.className = "canvas-tooltip";
 
@@ -359,25 +446,15 @@ onUiLoaded(async() => {
 
             // Add a hint element to the target element
             toolTipElement.appendChild(tooltip);
+
+            return tooltip;
         }
 
         //Show tool tip if setting enable
-        if (hotkeysConfig.canvas_show_tooltip) {
-            createTooltip();
-        }
+        const canvasTooltip = createTooltip();
 
-        // In the course of research, it was found that the tag img is very harmful when zooming and creates white canvases. This hack allows you to almost never think about this problem, it has no effect on webui.
-        function fixCanvas() {
-            const activeTab = getActiveTab(elements)?.textContent.trim();
-
-            if (activeTab && activeTab !== "img2img") {
-                const img = targetElement.querySelector(`${elemId} img`);
-
-                if (img && img.style.display !== "none") {
-                    img.style.display = "none";
-                    img.style.visibility = "hidden";
-                }
-            }
+        if (!hotkeysConfig.canvas_show_tooltip) {
+            canvasTooltip.style.display = "none";
         }
 
         // Reset the zoom level and pan position of the target element to their initial values
@@ -385,7 +462,7 @@ onUiLoaded(async() => {
             elemData[elemId] = {
                 zoomLevel: 1,
                 panX: 0,
-                panY: 0
+                panY: 0,
             };
 
             if (isExtension) {
@@ -394,45 +471,22 @@ onUiLoaded(async() => {
 
             targetElement.isZoomed = false;
 
-            fixCanvas();
             targetElement.style.transform = `scale(${elemData[elemId].zoomLevel}) translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px)`;
 
             const canvas = gradioApp().querySelector(
-                `${elemId} canvas[key="interface"]`
+                `${elemId} canvas`
             );
 
             toggleOverlap("off");
             fullScreenMode = false;
 
-            const closeBtn = targetElement.querySelector("button[aria-label='Remove Image']");
+            const closeBtn = targetElement.querySelector("button[aria-label='Clear canvas']");
             if (closeBtn) {
                 closeBtn.addEventListener("click", resetZoom);
             }
 
-            if (canvas && isExtension) {
-                const parentElement = targetElement.closest('[id^="component-"]');
-                if (
-                    canvas &&
-                    parseFloat(canvas.style.width) > parentElement.offsetWidth &&
-                    parseFloat(targetElement.style.width) > parentElement.offsetWidth
-                ) {
-                    fitToElement();
-                    return;
-                }
-
-            }
-
-            if (
-                canvas &&
-                !isExtension &&
-                parseFloat(canvas.style.width) > 865 &&
-                parseFloat(targetElement.style.width) > 865
-            ) {
-                fitToElement();
-                return;
-            }
-
             targetElement.style.width = "";
+            fixCursorSize();
         }
 
         // Toggle the zIndex of the target element between two values, allowing it to overlap or be overlapped by other elements
@@ -459,10 +513,10 @@ onUiLoaded(async() => {
         ) {
             const input =
                 gradioApp().querySelector(
-                    `${elemId} input[aria-label='Brush radius']`
+                    `${elemId} input[type='range']`
                 ) ||
                 gradioApp().querySelector(
-                    `${elemId} button[aria-label="Use brush"]`
+                    `${elemId} button[aria-label="Size button"]`
                 );
 
             if (input) {
@@ -482,9 +536,14 @@ onUiLoaded(async() => {
 
         // Reset zoom when uploading a new image
         const fileInput = gradioApp().querySelector(
-            `${elemId} input[type="file"][accept="image/*"].svelte-116rqfv`
+            `${elemId} .upload-container input[type="file"][accept="image/*"]`
         );
+
         fileInput.addEventListener("click", resetZoom);
+
+        // Create clickble area
+        const inputCanvas = targetElement.querySelector("canvas");
+
 
         // Update the zoom level and pan position of the target element based on the values of the zoomLevel, panX and panY variables
         function updateZoom(newZoomLevel, mouseX, mouseY) {
@@ -502,6 +561,9 @@ onUiLoaded(async() => {
             if (isExtension) {
                 targetElement.style.overflow = "visible";
             }
+
+            // Hack to make the cursor always be the same size
+            fixCursorSize();
 
             return newZoomLevel;
         }
@@ -544,72 +606,13 @@ onUiLoaded(async() => {
          * zoomLevel, panX, and panY to reflect the new state.
          */
 
-        function fitToElement() {
-            //Reset Zoom
-            targetElement.style.transform = `translate(${0}px, ${0}px) scale(${1})`;
-
-            let parentElement;
-
-            if (isExtension) {
-                parentElement = targetElement.closest('[id^="component-"]');
-            } else {
-                parentElement = targetElement.parentElement;
-            }
-
-
-            // Get element and screen dimensions
-            const elementWidth = targetElement.offsetWidth;
-            const elementHeight = targetElement.offsetHeight;
-
-            const screenWidth = parentElement.clientWidth;
-            const screenHeight = parentElement.clientHeight;
-
-            // Get element's coordinates relative to the parent element
-            const elementRect = targetElement.getBoundingClientRect();
-            const parentRect = parentElement.getBoundingClientRect();
-            const elementX = elementRect.x - parentRect.x;
-
-            // Calculate scale and offsets
-            const scaleX = screenWidth / elementWidth;
-            const scaleY = screenHeight / elementHeight;
-            const scale = Math.min(scaleX, scaleY);
-
-            const transformOrigin =
-                window.getComputedStyle(targetElement).transformOrigin;
-            const [originX, originY] = transformOrigin.split(" ");
-            const originXValue = parseFloat(originX);
-            const originYValue = parseFloat(originY);
-
-            const offsetX =
-                (screenWidth - elementWidth * scale) / 2 -
-                originXValue * (1 - scale);
-            const offsetY =
-                (screenHeight - elementHeight * scale) / 2.5 -
-                originYValue * (1 - scale);
-
-            // Apply scale and offsets to the element
-            targetElement.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
-
-            // Update global variables
-            elemData[elemId].zoomLevel = scale;
-            elemData[elemId].panX = offsetX;
-            elemData[elemId].panY = offsetY;
-
-            fullScreenMode = false;
-            toggleOverlap("off");
-        }
-
-        /**
-         * This function fits the target element to the screen by calculating
-         * the required scale and offsets. It also updates the global variables
-         * zoomLevel, panX, and panY to reflect the new state.
-         */
-
         // Fullscreen mode
         function fitToScreen() {
             const canvas = gradioApp().querySelector(
-                `${elemId} canvas[key="interface"]`
+                `${elemId} canvas`
             );
+
+            // print(canvas)
 
             if (!canvas) return;
 
@@ -621,6 +624,7 @@ onUiLoaded(async() => {
                 targetElement.style.overflow = "visible";
             }
 
+            fixCursorSize();
             if (fullScreenMode) {
                 resetZoom();
                 fullScreenMode = false;
@@ -728,7 +732,7 @@ onUiLoaded(async() => {
 
         targetElement.isExpanded = false;
         function autoExpand() {
-            const canvas = document.querySelector(`${elemId} canvas[key="interface"]`);
+            const canvas = document.querySelector(`${elemId} canvas`);
             if (canvas) {
                 if (hasHorizontalScrollbar(targetElement) && targetElement.isExpanded === false) {
                     targetElement.style.visibility = "hidden";
@@ -743,26 +747,6 @@ onUiLoaded(async() => {
         }
 
         targetElement.addEventListener("mousemove", getMousePosition);
-
-        //observers
-        // Creating an observer with a callback function to handle DOM changes
-        const observer = new MutationObserver((mutationsList, observer) => {
-            for (let mutation of mutationsList) {
-                // If the style attribute of the canvas has changed, by observation it happens only when the picture changes
-                if (mutation.type === 'attributes' && mutation.attributeName === 'style' &&
-                    mutation.target.tagName.toLowerCase() === 'canvas') {
-                    targetElement.isExpanded = false;
-                    setTimeout(resetZoom, 10);
-                }
-            }
-        });
-
-        // Apply auto expand if enabled
-        if (hotkeysConfig.canvas_auto_expand) {
-            targetElement.addEventListener("mousemove", autoExpand);
-            // Set up an observer to track attribute changes
-            observer.observe(targetElement, {attributes: true, childList: true, subtree: true});
-        }
 
         // Handle events only inside the targetElement
         let isKeyDownHandlerAttached = false;
@@ -790,15 +774,7 @@ onUiLoaded(async() => {
         targetElement.addEventListener("mouseleave", handleMouseLeave);
 
         // Reset zoom when click on another tab
-        if (elements.img2imgTabs) {
-            elements.img2imgTabs.addEventListener("click", resetZoom);
-            elements.img2imgTabs.addEventListener("click", () => {
-                // targetElement.style.width = "";
-                if (parseInt(targetElement.style.width) > 865) {
-                    setTimeout(fitToElement, 0);
-                }
-            });
-        }
+        elements.img2imgTabs.addEventListener("click", resetZoom);
 
         targetElement.addEventListener("wheel", e => {
             // change zoom level
@@ -878,6 +854,7 @@ onUiLoaded(async() => {
             elemData[elemId].panY += movementY * panSpeed;
 
             // Delayed redraw of an element
+            const canvas = targetElement.querySelector("canvas");
             requestAnimationFrame(() => {
                 targetElement.style.transform = `translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px) scale(${elemData[elemId].zoomLevel})`;
                 toggleOverlap("on");
@@ -936,7 +913,6 @@ onUiLoaded(async() => {
 
         gradioApp().addEventListener("mousemove", handleMoveByKey);
 
-
     }
 
     applyZoomAndPan(elementIDs.sketch, false);
@@ -966,8 +942,29 @@ onUiLoaded(async() => {
     };
 
     window.applyZoomAndPan = applyZoomAndPan; // Only 1 elements, argument elementID, for example applyZoomAndPan("#txt2img_controlnet_ControlNet_input_image")
-
     window.applyZoomAndPanIntegration = applyZoomAndPanIntegration; // for any extension
+
+
+    // Return zoom functionality when send img via buttons
+    const img2imgArea = document.querySelector("#img2img_settings");
+    const checkForTooltip = (e) => {
+        const tabId = getTabId(elements); // Make sure that the item is passed correctly to determine the tabId
+
+        if (tabId === "#img2img_sketch" || tabId === "#inpaint_sketch" || tabId === "#img2maskimg") {
+            const zoomTooltip = document.querySelector(`${tabId} .canvas-tooltip`);
+
+            if (!zoomTooltip) {
+                applyZoomAndPan(tabId, false);
+                // resetZoom()
+            }
+        }
+    };
+
+    // Wrapping your function through debounce to reduce the number of calls
+    const debouncedCheckForTooltip = debounce(checkForTooltip, 20);
+
+    // Assigning an event handler
+    img2imgArea.addEventListener("mousemove", debouncedCheckForTooltip);
 
     /*
         The function `applyZoomAndPanIntegration` takes two arguments:

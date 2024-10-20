@@ -688,7 +688,7 @@ def create_ui():
 
                 config_save_button.click(fn=save_config_state, inputs=[config_save_name], outputs=[config_states_list, config_states_info])
 
-                dummy_component = gr.Label(visible=False)
+                dummy_component = gr.State()
                 config_restore_button.click(fn=restore_config_state, _js="config_state_confirm_restore", inputs=[dummy_component, config_states_list, config_restore_type], outputs=[config_states_info])
 
                 config_states_list.change(

@@ -1,10 +1,8 @@
-
-let currentWidth = null;
-let currentHeight = null;
-let arFrameTimeout = setTimeout(function() {}, 0);
+let currentWidth;
+let currentHeight;
+let arFrameTimeout;
 
 function dimensionChange(e, is_width, is_height) {
-
     if (is_width) {
         currentWidth = e.target.value * 1.0;
     }
@@ -22,18 +20,18 @@ function dimensionChange(e, is_width, is_height) {
 
     var tabIndex = get_tab_index('mode_img2img');
     if (tabIndex == 0) { // img2img
-        targetElement = gradioApp().querySelector('#img2img_image div[data-testid=image] img');
+        targetElement = gradioApp().querySelector('#img2img_image div[data-testid=image] canvas');
     } else if (tabIndex == 1) { //Sketch
-        targetElement = gradioApp().querySelector('#img2img_sketch div[data-testid=image] img');
+        targetElement = gradioApp().querySelector('#img2img_sketch div[data-testid=image] canvas');
     } else if (tabIndex == 2) { // Inpaint
-        targetElement = gradioApp().querySelector('#img2maskimg div[data-testid=image] img');
+        targetElement = gradioApp().querySelector('#img2maskimg div[data-testid=image] canvas');
     } else if (tabIndex == 3) { // Inpaint sketch
-        targetElement = gradioApp().querySelector('#inpaint_sketch div[data-testid=image] img');
+        targetElement = gradioApp().querySelector('#inpaint_sketch div[data-testid=image] canvas');
+    } else if (tabIndex == 4) { // Inpaint upload
+        targetElement = gradioApp().querySelector('#img_inpaint_base div[data-testid=image] img');
     }
 
-
     if (targetElement) {
-
         var arPreviewRect = gradioApp().querySelector('#imageARPreview');
         if (!arPreviewRect) {
             arPreviewRect = document.createElement('div');
@@ -41,14 +39,11 @@ function dimensionChange(e, is_width, is_height) {
             gradioApp().appendChild(arPreviewRect);
         }
 
-
-
         var viewportOffset = targetElement.getBoundingClientRect();
+        var viewportscale = Math.min(targetElement.clientWidth / targetElement.width, targetElement.clientHeight / targetElement.height);
 
-        var viewportscale = Math.min(targetElement.clientWidth / targetElement.naturalWidth, targetElement.clientHeight / targetElement.naturalHeight);
-
-        var scaledx = targetElement.naturalWidth * viewportscale;
-        var scaledy = targetElement.naturalHeight * viewportscale;
+        var scaledx = targetElement.width * viewportscale;
+        var scaledy = targetElement.height * viewportscale;
 
         var clientRectTop = (viewportOffset.top + window.scrollY);
         var clientRectLeft = (viewportOffset.left + window.scrollX);
@@ -75,21 +70,18 @@ function dimensionChange(e, is_width, is_height) {
         }, 2000);
 
         arPreviewRect.style.display = 'block';
-
     }
-
 }
-
 
 onAfterUiUpdate(function() {
     var arPreviewRect = gradioApp().querySelector('#imageARPreview');
     if (arPreviewRect) {
         arPreviewRect.style.display = 'none';
     }
+
     var tabImg2img = gradioApp().querySelector("#tab_img2img");
     if (tabImg2img) {
-        var inImg2img = tabImg2img.style.display == "block";
-        if (inImg2img) {
+        if (tabImg2img.style.display == "block") {
             let inputs = gradioApp().querySelectorAll('input');
             inputs.forEach(function(e) {
                 var is_width = e.parentElement.id == "img2img_width";
