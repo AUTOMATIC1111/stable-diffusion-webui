@@ -1689,6 +1689,12 @@ body.resizing .resize-handle {
     overflow-wrap: break-word;
 }
 
+#pnginfo-positive,
+#pnginfo-negative,
+#pnginfo-settings {
+    white-space: pre-wrap;
+}
+
 /* PngInfo styles */
 .pnginfo-page p span.geninfo-setting-name {
     font-weight: var(--weight-semibold);
