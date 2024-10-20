@@ -44,6 +44,9 @@ mimetypes.add_type('application/javascript', '.mjs')
 mimetypes.add_type('image/webp', '.webp')
 mimetypes.add_type('image/avif', '.avif')
 
+# override potentially incorrect mimetypes
+mimetypes.add_type('text/css', '.css')
+
 if not cmd_opts.share and not cmd_opts.listen:
     # fix gradio phoning home
     gradio.utils.version_check = lambda: None
