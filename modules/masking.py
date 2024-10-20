@@ -1,3 +1,4 @@
+import math
 from PIL import Image, ImageFilter, ImageOps
 
 
@@ -73,6 +74,43 @@ def expand_crop_region(crop_region, processing_width, processing_height, image_w
             x1 -= x1
         if x2 >= image_width:
             x2 = image_width
+
+    return x1, y1, x2, y2
+
+
+def fix_crop_region_integer_scale(crop_region, processing_width, processing_height, image_width, image_height):
+    """expands crop region get_crop_region() to avoid non-integer scaling artifacts (different pixels size) after applying overlay"""
+
+    x1, y1, x2, y2 = crop_region
+
+    ratio_w = (x2 - x1) / processing_width
+    ratio_h = (y2 - y1) / processing_height
+
+    desired_w = math.ceil(ratio_w) * processing_width
+    diff_w = desired_w - (x2 - x1)
+    diff_w_l = diff_w // 2
+    diff_w_r = diff_w - diff_w_l
+    x1 -= diff_w_l
+    x2 += diff_w_r
+    if x1 < 0:
+        x2 -= x1
+        x1 -= x1
+    if x2 >= image_width:
+        x2 = image_width
+
+    desired_h = math.ceil(ratio_h) * processing_height
+    diff_h = desired_h - (y2 - y1)
+    diff_h_u = diff_h // 2
+    diff_h_d = diff_h - diff_h_u
+    y1 -= diff_h_u
+    y2 += diff_h_d
+    if y1 < 0:
+        y2 -= y1
+        y1 -= y1
+    if y2 >= image_height:
+        y2 = image_height
+
+    print(f"padding was increased by {max(diff_w_l, diff_w_r, diff_h_u, diff_h_d)} after integer upscale correction")
 
     return x1, y1, x2, y2
 

@@ -104,6 +104,7 @@ options_templates.update(options_section(('upscaling', "Upscaling", "postprocess
     "DAT_tile": OptionInfo(192, "Tile size for DAT upscalers.", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}).info("0 = no tiling"),
     "DAT_tile_overlap": OptionInfo(8, "Tile overlap for DAT upscalers.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}).info("Low values = visible seam"),
     "upscaler_for_img2img": OptionInfo(None, "Upscaler for img2img", gr.Dropdown, lambda: {"choices": [x.name for x in shared.sd_upscalers]}),
+    "img2img_upscaler_preserve_colors": OptionInfo(False, "Preserve colors in upscaler for img2img"),
     "set_scale_by_when_changing_upscaler": OptionInfo(False, "Automatically set the Scale by factor based on the name of the selected Upscaler."),
 }))
 
@@ -227,6 +228,7 @@ options_templates.update(options_section(('img2img', "img2img", "sd"), {
     "return_mask_composite": OptionInfo(False, "For inpainting, include masked composite in results for web"),
     "img2img_batch_show_results_limit": OptionInfo(32, "Show the first N batch img2img results in UI", gr.Slider, {"minimum": -1, "maximum": 1000, "step": 1}).info('0: disable, -1: show all images. Too many images can cause lag'),
     "overlay_inpaint": OptionInfo(True, "Overlay original for inpaint").info("when inpainting, overlay the original image over the areas that weren't inpainted."),
+    "integer_only_masked": OptionInfo(False, "Integer upscale in inpaint only masked").info("Correct inpaint padding for only masked to have integer upscaling after fitting cropped region in original image"),
 }))
 
 options_templates.update(options_section(('optimizations', "Optimizations", "sd"), {
