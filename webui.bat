@@ -4,7 +4,16 @@ if exist webui.settings.bat (
     call webui.settings.bat
 )
 
-if not defined PYTHON (set PYTHON=python)
+if not defined PYTHON (
+  for /f "delims=" %%A in ('where python ^| findstr /n . ^| findstr ^^1:') do (
+    if /i "%%~xA" == ".exe" (
+      set PYTHON=python
+    ) else (
+      set PYTHON=call python
+    )
+  )
+)
+
 if defined GIT (set "GIT_PYTHON_GIT_EXECUTABLE=%GIT%")
 if not defined VENV_DIR (set "VENV_DIR=%~dp0%venv")
 
