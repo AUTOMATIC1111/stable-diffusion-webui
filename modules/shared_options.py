@@ -272,9 +272,12 @@ options_templates.update(options_section(('interrogate', "Interrogate"), {
 }))
 
 options_templates.update(options_section(('extra_networks', "Extra Networks", "sd"), {
-    "extra_networks_show_hidden_directories": OptionInfo(True, "Show hidden directories").info("directory is hidden if its name starts with \".\"."),
-    "extra_networks_dir_button_function": OptionInfo(False, "Add a '/' to the beginning of directory buttons").info("Buttons will display the contents of the selected directory without acting as a search filter."),
-    "extra_networks_hidden_models": OptionInfo("When searched", "Show cards for models in hidden directories", gr.Radio, {"choices": ["Always", "When searched", "Never"]}).info('"When searched" option will only show the item when the search string has 4 characters or more'),
+    "extra_networks_show_hidden_directories_buttons": OptionInfo(False, "Show buttons for hidden directories in the directory and tree views.").info("a directory is hidden if its name starts with a period (\".\").").needs_reload_ui(),
+    "extra_networks_show_hidden_models_cards": OptionInfo("Never", "Show cards for models in hidden directories", gr.Radio, {"choices": ["Always", "When searched", "Never"]}).info("\"When searched\" will only show cards when the search string has 4 characters or more and the search string matches either the model name or the hidden directory name (or any of its subdirectories).").needs_reload_ui(),
+    "extra_networks_show_hidden_models_in_tree_view": OptionInfo(False, "Show entries for models inside hidden directories in the tree view.").info("This option only applies if the \"Show buttons for hidden directories\" option is enabled.").needs_reload_ui(),
+    "extra_networks_tree_view_expand_depth_default": OptionInfo(0, "Expand all directories in the tree view up to this depth by default.").info("0 collapses all, -1 expands all.").needs_reload_ui(),
+    "extra_networks_directory_filter_click_behavior": OptionInfo("Click", "Filter directory recursively left mouse button action.", gr.Radio, {"choices": ["Click", "Long Press"]}).info("Sets the default left mouse button action required to filter a directory recursively (show children in all subdirectories) vs filtering to only show direct children of the selected directory."),
+    "extra_networks_card_details_click_behavior": OptionInfo("Click", "Show card details left mouse button action.", gr.Radio, {"choices": ["Click", "Long Press"]}).info("Sets the default left mouse button action when clicking a card."),
     "extra_networks_default_multiplier": OptionInfo(1.0, "Default multiplier for extra networks", gr.Slider, {"minimum": 0.0, "maximum": 2.0, "step": 0.01}),
     "extra_networks_card_width": OptionInfo(0, "Card width for Extra Networks").info("in pixels"),
     "extra_networks_card_height": OptionInfo(0, "Card height for Extra Networks").info("in pixels"),
@@ -283,14 +286,21 @@ options_templates.update(options_section(('extra_networks', "Extra Networks", "s
     "extra_networks_card_description_is_html": OptionInfo(False, "Treat card description as HTML"),
     "extra_networks_card_order_field": OptionInfo("Path", "Default order field for Extra Networks cards", gr.Dropdown, {"choices": ['Path', 'Name', 'Date Created', 'Date Modified']}).needs_reload_ui(),
     "extra_networks_card_order": OptionInfo("Ascending", "Default order for Extra Networks cards", gr.Dropdown, {"choices": ['Ascending', 'Descending']}).needs_reload_ui(),
-    "extra_networks_tree_view_style": OptionInfo("Dirs", "Extra Networks directory view style", gr.Radio, {"choices": ["Tree", "Dirs"]}).needs_reload_ui(),
-    "extra_networks_tree_view_default_enabled": OptionInfo(True, "Show the Extra Networks directory view by default").needs_reload_ui(),
-    "extra_networks_tree_view_default_width": OptionInfo(180, "Default width for the Extra Networks directory tree view", gr.Number).needs_reload_ui(),
+    "extra_networks_dirs_view_default_enabled": OptionInfo(True, "Show the Extra Networks directory view by default.").needs_reload_ui(),
+    "extra_networks_tree_view_default_enabled": OptionInfo(False, "Show the Extra Networks tree view by default").needs_reload_ui(),
+    "extra_networks_card_view_default_enabled": OptionInfo(True, "Show the Extra Networks card view by default").needs_reload_ui(),
+    "extra_networks_dets_view_default_enabled": OptionInfo(False, "Show the Extra Networks card details view by default").needs_reload_ui(),
+    "extra_networks_tree_view_show_files": OptionInfo(True, "Show files in tree view.").info("Disabling this option will remove file entries from the tree view and only show directories.").needs_reload_ui(),
+    "extra_networks_dirs_view_default_height": OptionInfo(90, "Default height for the Directory Buttons view", gr.Number).info("in pixels").needs_reload_ui(),
+    "extra_networks_tree_view_default_width": OptionInfo(180, "Default width for the Extra Networks directory tree view", gr.Number).info("in pixels").needs_reload_ui(),
+    "extra_networks_dets_view_default_width": OptionInfo(180, "Default width for the Extra Networks card details view", gr.Number).info("in pixels").needs_reload_ui(),
     "extra_networks_add_text_separator": OptionInfo(" ", "Extra networks separator").info("extra text to add before <...> when adding extra network to prompt"),
     "ui_extra_networks_tab_reorder": OptionInfo("", "Extra networks tab order").needs_reload_ui(),
     "textual_inversion_print_at_load": OptionInfo(False, "Print a list of Textual Inversion embeddings when loading model"),
     "textual_inversion_add_hashes_to_infotext": OptionInfo(True, "Add Textual Inversion hashes to infotext"),
     "sd_hypernetwork": OptionInfo("None", "Add hypernetwork to prompt", gr.Dropdown, lambda: {"choices": ["None", *shared.hypernetworks]}, refresh=shared_items.reload_hypernetworks),
+    "extra_networks_long_press_time_ms": OptionInfo(800, "Hold time required to register a long click").info("in milliseconds").info("default 800"),
+    "extra_networks_dbl_press_time_ms": OptionInfo(500, "Time between clicks to register a double click").info("in milliseconds").info("default 500"),
 }))
 
 options_templates.update(options_section(('ui_prompt_editing', "Prompt editing", "ui"), {

@@ -1,4 +1,3 @@
-import html
 import os
 
 from modules import shared, ui_extra_networks, sd_models
@@ -13,6 +12,7 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
 
     def refresh(self):
         shared.refresh_checkpoints()
+        super().refresh()
 
     def create_item(self, name, index=None, enable_filter=True):
         checkpoint: sd_models.CheckpointInfo = sd_models.checkpoint_aliases.get(name)
@@ -30,7 +30,6 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
             "preview": self.find_preview(path),
             "description": self.find_description(path),
             "search_terms": search_terms,
-            "onclick": html.escape(f"return selectCheckpoint({ui_extra_networks.quote_js(name)})"),
             "local_preview": f"{path}.{shared.opts.samples_format}",
             "metadata": checkpoint.metadata,
             "sort_keys": {'default': index, **self.get_sort_keys(checkpoint.filename)},

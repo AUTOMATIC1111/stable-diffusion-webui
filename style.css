@@ -31,6 +31,10 @@ div.gradio-container{
     display: none !important;
 }
 
+.invisible {
+    visibility: hidden !important;
+}
+
 .compact{
     background: transparent !important;
     padding: 0 !important;
@@ -915,11 +919,6 @@ footer {
     min-height: 2.7rem;
 }
 
-.extra-networks-controls-div{
-    align-self: center;
-    margin-left: auto;
-}
-
 .extra-networks > div > [id *= '_extra_']{
     margin: 0.3em;
 }
@@ -957,15 +956,13 @@ footer {
 
 .extra-network-pane .nocards li{
     margin-left: 0.5em;
+    text-align: left;
 }
 
 .extra-network-pane .card .button-row{
     display: inline-flex;
     visibility: hidden;
     color: white;
-}
-
-.extra-network-pane .card .button-row {
     position: absolute;
     right: 0;
     z-index: 1;
@@ -977,6 +974,11 @@ footer {
 
 .extra-network-pane .card-button{
     color: white;
+    width: 1.5em;
+    text-shadow: 2px 2px 3px black;
+    color: white;
+    padding: 0.25em 0.1em;
+    font-size: 2rem;
 }
 
 .extra-network-pane .copy-path-button::before {
@@ -991,23 +993,8 @@ footer {
     content: "🛠";
 }
 
-.extra-network-pane .card-button {
-    width: 1.5em;
-    text-shadow: 2px 2px 3px black;
-    color: white;
-    padding: 0.25em 0.1em;
-}
-
 .extra-network-pane .card-button:hover{
     color: red;
-}
-
-.extra-network-pane .card .card-button {
-    font-size: 2rem;
-}
-
-.extra-network-pane .card-minimal .card-button {
-    font-size: 1rem;
 }
 
 .standalone-card-preview.card .preview{
@@ -1034,9 +1021,29 @@ footer {
     background-image: url('./file=html/card-no-preview.png')
 }
 
+.card::after {
+    position: absolute;
+    content: "";
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    opacity: 0;
+    background: var(--color-accent-soft);
+    transition: all var(--wipe-reset-transition-time-ms, 350ms) cubic-bezier(0.215, 0.61, 0.355, 1);
+    z-index: 1;
+}
+
+.card.pressed::after {
+    width: 100%;
+    opacity: 0.25;
+    transition: all var(--wipe-transition-time-ms, 800ms) cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
 .extra-network-pane .card:hover{
     box-shadow: 0 0 2px 0.3em rgba(0, 128, 255, 0.35);
 }
+
 
 .extra-network-pane .card .actions .additional{
     display: none;
@@ -1179,17 +1186,31 @@ div.accordions > div.input-accordion.input-accordion-open{
     top: 0.5em;
 }
 
+/* ==== RESIZING EVENT FLAGS ==== */
+
 body.resizing {
     cursor: col-resize !important;
 }
 
 body.resizing * {
     pointer-events: none !important;
+    touch-action: none !important;
 }
 
-body.resizing .resize-handle {
+body.resizing .resize-handle,
+body.resizing .resize-grid--handle {
     pointer-events: initial !important;
 }
+
+body.resizing.resize-grid-col {
+    cursor: col-resize !important;
+}
+
+body.resizing.resize-grid-row {
+    cursor: row-resize !important;
+}
+
+/* ==== RESIZE HANDLE ==== */
 
 .resize-handle {
     position: relative;
@@ -1209,459 +1230,778 @@ body.resizing .resize-handle {
     border-left: 1px dashed var(--border-color-primary);
 }
 
-/* ========================= */
-.extra-network-pane {
+/* ==== RESIZE HANDLE GRID ==== */
+
+.resize-grid, .resize-grid--row, .resize-grid--col, .resize-grid--cell {
     display: flex;
-    height: calc(100vh - 24rem);
-    resize: vertical;
-    min-height: 52rem;
-    flex-direction: column;
+    flex-wrap: nowrap;
     overflow: hidden;
+    gap: 0 !important; /* prevent gap between handle and cells. */
+    /* prevent elements from oversizing the container. */
+    min-width: 0;
+    min-height: 0;
 }
 
-.extra-network-pane .extra-network-pane-content-dirs {
-    display: flex;
-    flex: 1;
+.resize-grid {
     flex-direction: column;
-    overflow: hidden;
-}
-
-.extra-network-pane .extra-network-pane-content-tree {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-}
-
-.extra-network-dirs-hidden .extra-network-dirs{ display: none; }
-.extra-network-dirs-hidden .extra-network-tree{ display: none; }
-.extra-network-dirs-hidden .resize-handle { display: none; }
-.extra-network-dirs-hidden .resize-handle-row { display: flex !important; }
-
-.extra-network-pane .extra-network-tree {
-    flex: 1;
-    font-size: 1rem;
-    border: 1px solid var(--block-border-color);
-    overflow: clip auto !important;
-}
-
-.extra-network-pane .extra-network-cards {
-    flex: 3;
-    overflow: clip auto !important;
-    border: 1px solid var(--block-border-color);
-}
-
-.extra-network-pane .extra-network-tree .tree-list {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 0;
     width: 100%;
-    overflow: hidden;
+    height: 100%;
 }
 
-
-.extra-network-pane .extra-network-cards::-webkit-scrollbar,
-.extra-network-pane .extra-network-tree::-webkit-scrollbar {
-    background-color: transparent;
-    width: 16px;
+.resize-grid--row {
+	flex-direction: row;
 }
 
-.extra-network-pane .extra-network-cards::-webkit-scrollbar-track,
-.extra-network-pane .extra-network-tree::-webkit-scrollbar-track {
-    background-color: transparent;
-    background-clip: content-box;
+.resize-grid--col {
+    flex-direction: column;
 }
 
-.extra-network-pane .extra-network-cards::-webkit-scrollbar-thumb,
-.extra-network-pane .extra-network-tree::-webkit-scrollbar-thumb {
-    background-color: var(--border-color-primary);
-    border-radius: 16px;
-    border: 4px solid var(--background-fill-primary);
+.resize-grid--handle {
+    position: relative;
+    height: 100%;
+    width: 100%;
+	z-index: 0;
+	background: transparent;
+    touch-action: none !important;
 }
 
-.extra-network-pane .extra-network-cards::-webkit-scrollbar-button,
-.extra-network-pane .extra-network-tree::-webkit-scrollbar-button {
+.resize-grid--handle::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+}
+
+.resize-grid--row-handle {
+    cursor: row-resize;
+}
+
+.resize-grid--row-handle::after {
+    left: 0;
+    right: 0;
+    top: 50%;
+	transform: translateY(-50%);
+	border-top: 1px dashed var(--border-color-primary);
+}
+
+.resize-grid--col-handle {
+    cursor: col-resize;
+}
+
+.resize-grid--col-handle::after {
+    top: 0;
+    bottom: 0;
+    left: 50%;
+	transform: translateX(-50%);
+	border-left: 1px dashed var(--border-color-primary);
+}
+
+/* ========================= */
+.clusterize-scroll {
+    width: 100%;
+    height: 100%;
+    /* Use scroll instead of auto so that content size doesn't change when there is no content. */
+    overflow: clip scroll;
+}
+
+.clusterize-content {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    flex-direction: row;
+    outline: 0;
+    /* need to manually set the gap to 0 to fix item dimension calcs. */
+    gap: 0;
+    counter-reset: clusterize-counter;
+}
+
+.clusterize-content .card {
+    margin: var(--spacing-md);
+}
+
+.clusterize-extra-row {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+.clusterize-extra-row.clusterize-keep-parity {
     display: none;
 }
 
-.extra-network-control {
+.clusterize-no-data, .clusterize-error {
+    width: 100%;
+    text-align: center;
+    color: var(--input-placeholder-color) !important;
+}
+
+.extra-network-pane {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    height: calc(100vh - 24rem);
+    resize: vertical;
+    min-height: 52rem;
+    overflow: hidden;
+}
+
+.extra-network-content {
     position: relative;
     display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: var(--spacing-sm);
+    border: 1px solid var(--block-border-color);
     width: 100%;
-    padding: 0 !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-    font-size: 1rem;
-    text-align: left;
-    user-select: none;
-    background-color: transparent;
+    height: 100%;
+    /* prevent children from oversizing this container */
+    min-height: 0;
+    min-width: 0;
+}
+
+.extra-network-content--container {
     border: none;
-    transition: background 33.333ms linear;
-    grid-template-rows: min-content;
-    grid-template-columns: minmax(0, auto) repeat(4, min-content);
-    grid-gap: 0.1rem;
-    align-items: start;
 }
 
-.extra-network-control small{
+/* Dirs View needs a different display style. */
+.extra-network-content--dirs-view {
+    display: block;
+    flex: 1;
+    overflow: clip scroll;
+    border: 1px solid var(--block-border-color);
+    padding: var(--spacing-md);
+}
+
+.extra-network-content--dirs-view > button {
+    margin: var(--spacing-xs) !important;
+}
+
+.extra-network-content.resize-handle-col {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+}
+
+/* Can be simplified using :has but this is only recently supported in firefox. */
+.resize-handle-row.resize-handle-hidden .resize-handle {
+    display: none;
+}
+
+/* Can be simplified using :has but this is only recently supported in firefox. */
+.resize-handle-row.resize-handle-hidden {
+    display: flex !important;
+}
+/* Only recently supported in firefox. Switch to this eventually to simplify code.
+.resize-handle-row:has(> .resize-handle-col.hidden) {
+    display: flex !important;
+}
+
+.resize-handle-row:has(> .resize-handle-col.hidden)>.resize-handle {
+    display: none;
+}
+*/
+
+.extra-network-controls-div {
+    margin-left: auto !important;
+}
+
+.extra-network-controls {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+}
+
+.extra-network-controls--container {
+    display: flex;
+    flex-direction: column;
+    margin-left: var(--spacing-xxl);
+    margin-right: var(--spacing-xxl);
+}
+
+.extra-network-controls--header {
+    flex: 1;
+    text-align: center;
     color: var(--input-placeholder-color);
-    line-height: 2.2rem;
-    margin: 0 0.5rem 0 0.75rem;
+    padding: 0;
+    margin: var(--spacing-sm) 0;
+    border-bottom: var(--input-border-width) solid var(--input-placeholder-color);
+    line-height: var(--text-sm);
 }
 
-.extra-network-tree .tree-list--tree {}
-
-/* Remove auto indentation from tree. Will be overridden later. */
-.extra-network-tree .tree-list--subgroup {
-    margin: 0 !important;
-    padding: 0 !important;
-    box-shadow: 0.5rem 0 0 var(--body-background-fill) inset,
-                0.7rem 0 0 var(--neutral-800) inset;
+@media (pointer: fine) {
+  .extra-network-controls--header {
+    display: none;
+  }
 }
 
-/* Set indentation for each depth of tree. */
-.extra-network-tree .tree-list--subgroup > .tree-list-item {
-    margin-left: 0.4rem !important;
-    padding-left: 0.4rem !important;
+.extra-network-controls--buttons {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    gap: 0 var(--spacing-sm);
+    place-items: center stretch;
+    justify-content: space-evenly;
 }
 
-/* Styles for tree <li> elements. */
-.extra-network-tree .tree-list-item {
-    list-style: none;
-    position: relative;
-    background-color: transparent;
+.extra-network-control {
+    background: transparent;
+    border: var(--input-border-width) solid transparent;
+    border-radius: var(--input-radius);
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
 }
 
-/* Directory <ul> visibility based on data-expanded attribute. */
-.extra-network-tree .tree-list-content+.tree-list--subgroup {
-    height: 0;
-    visibility: hidden;
-    opacity: 0;
+.extra-network-control--icon {
+    width: var(--text-xxl);
+    height: var(--text-xxl);
+    color: var(--input-placeholder-color);
+    background: transparent;
 }
 
-.extra-network-tree .tree-list-content[data-expanded]+.tree-list--subgroup {
-    height: auto;
+.extra-network-control:hover {
+    background: var(--button-secondary-background-fill-hover);
+}
+
+.extra-network-control:active {
+    background: var(--button-secondary-background-fill);
+}
+
+.extra-network-control:active .extra-network-control--icon {
+    color: var(--button-secondary-text-color-hover);
+}
+
+.extra-network-control[data-selected] .extra-network-control--icon {
+    color: var(--button-secondary-text-color);
+}
+
+/* ==== SEARCH INPUT ==== */
+.extra-network-control--search {
+    align-self: end;
+    display: flex;
+    flex-direction: row;
+    outline: var(--input-border-width) solid var(--input-border-color);
+    border-radius: var(--input-radius);
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    box-sizing: border-box;
+    background: var(--input-background-fill);
+    overflow: hidden;
+}
+
+/* Add outline to the contianer when the inner search-text <input> has focus. */
+.extra-network-control--search:focus-within {
+    outline: calc(var(--input-border-width) * 2) solid var(--input-border-color-focus);
+}
+
+/* Search icon on left of container. */
+.extra-network-control--search-icon {
+    user-select: none;
+    color: var(--input-placeholder-color);
+    width: var(--text-lg);
+    height: var(--text-lg);
+    margin-left: var(--input-padding);
+}
+
+/* circle with X icon on right of container used to clear input. */
+.extra-network-control--search-clear-icon {
+    user-select: none;
+    cursor: pointer;
+    color: var(--input-placeholder-color);
+    width: var(--text-md);
+    height: var(--text-md);
+}
+
+/* <input> text in container. */
+.extra-network-control--search .extra-network-control--search-text {
+    display: flex;
+    color: var(--body-text-color);
+    background: transparent;
+    font-weight: var(--input-text-weight);
+    font-size: var(--input-text-size);
+    line-height: 0;
+    padding: var(--spacing-md) 0;
+    margin: 0;
+    border: none;
+    outline: none;
+}
+
+/* Make "clear" button visible when user has entered text in search-text <input>. */
+.extra-network-control--search .extra-network-control--search-text:not(:placeholder-shown)+.extra-network-control--search-clear {
     visibility: visible;
-    opacity: 1;
 }
 
-/* File <li> */
-.extra-network-tree .tree-list-item--subitem {
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
+/* "Clear" button on right of container. Invisible until user enters text in <input>. */
+.extra-network-control--search .extra-network-control--search-clear {
+    visibility: hidden;
+    border-radius: 0;
+    transition: background var(--button-transition);
+    user-select: none;
+    cursor: pointer;
+    align-self: stretch;
+    /* forces button to fill vertical */
+    padding: var(--spacing-lg);
 }
 
-/* <li> containing <ul> */
-.extra-network-tree .tree-list-item--has-subitem {}
+.extra-network-control--search .extra-network-control--search-clear:hover {
+    color: var(--button-secondary-background-fill-hover);
+}
+
+.extra-network-control--search .extra-network-control--search-clear:hover .extra-network-control--search-clear-icon {
+    color: var(--button-secondary-text-color-hover);
+}
+
+/* Customize behavior of sort direction button icon. */
+.extra-network-control--sort-dir:not([data-selected]) {
+    display: none;
+}
+
+/* ==== ICONS ==== */
+.extra-network-control--refresh:hover .extra-network-control--icon {
+    animation: extra-network-control--refresh-keyframe-rotate 3s infinite;
+    transform-origin: 50% 50%;
+    transform-box: fill-box;
+    color: var(--button-secondary-text-color);
+}
+
+@keyframes extra-network-control--refresh-keyframe-rotate {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
 
 /* BUTTON ELEMENTS */
-/* <button> */
-.extra-network-tree .tree-list-content {
-    position: relative;
-    display: grid;
+.tree-list-item {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
     width: 100%;
+    height: calc(var(--button-large-text-size) + (2 * var(--spacing-sm)));
+    position: relative;
+    overflow: hidden;
+    z-index: 0;
     padding: 0 !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-    font-size: 1rem;
-    text-align: left;
+    margin: 0 !important;
+    border: none !important;
     user-select: none;
-    background-color: transparent;
-    border: none;
-    transition: background 33.333ms linear;
-    grid-template-rows: min-content;
-    grid-template-areas: "leading-action leading-visual label trailing-visual trailing-action";
-    grid-template-columns: min-content min-content minmax(0, auto) min-content min-content;
-    grid-gap: 0.1rem;
-    align-items: start;
-    flex-grow: 1;
-    flex-basis: 100%;
-}
-/* Buttons for directories. */
-.extra-network-tree .tree-list-content-dir {}   
-
-/* Buttons for files. */
-.extra-network-tree .tree-list-item--has-subitem .tree-list--subgroup > li:first-child {
-    padding-top: 0.5rem !important;
 }
 
-.dark .extra-network-tree div.tree-list-content:hover {
+.tree-list-item > button {
+    display: flex;
+    flex: 1;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: var(--spacing-sm);
+    user-select: none;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    min-width: 0;
+    text-align: center;
+    place-items: center stretch;
+}
+
+.tree-list-item:hover {
     -webkit-transition: all 0.05s ease-in-out;
-	transition: all 0.05s ease-in-out;
-    background-color: var(--neutral-800);
+    transition: all 0.05s ease-in-out;
+    background: var(--button-secondary-background-fill-hover);
 }
 
-.dark .extra-network-tree div.tree-list-content[data-selected] {
-    background-color: var(--neutral-700);
-}
-
-.extra-network-tree div.tree-list-content[data-selected] {
-    background-color: var(--neutral-300);
-}
-
-.extra-network-tree div.tree-list-content:hover {
-    -webkit-transition: all 0.05s ease-in-out;
-	transition: all 0.05s ease-in-out;
-    background-color: var(--neutral-200);
+.tree-list-item > button > span {
+    display: block;
+    flex: 0 0 auto;
+    text-align: center;
+    font-size: var(--button-large-text-size);
+    color: var(--button-secondary-text-color);
 }
 
 /* ==== CHEVRON ICON ACTIONS ==== */
 /* Define the animation for the arrow when it is clicked. */
-.extra-network-tree .tree-list-content-dir .tree-list-item-action-chevron {
+.tree-list-item-action--chevron {
+    height: var(--button-large-text-size);
+    width: var(--button-large-text-size);
+    background: transparent;
+    margin: 0 !important;
+    padding: 0 !important;
+    -ms-transform: rotate(45deg);
+    -webkit-transform: rotate(45deg);
+    transform: rotate(45deg);
+    transition: transform 0.1s ease;
+    z-index: 0;
+}
+
+.tree-list-item[data-expanded] .tree-list-item-action--chevron {
     -ms-transform: rotate(135deg);
     -webkit-transform: rotate(135deg);
     transform: rotate(135deg);
-    transition: transform 0.2s;
 }
 
-.extra-network-tree .tree-list-content-dir[data-expanded] .tree-list-item-action-chevron {
-    -ms-transform: rotate(225deg);
-    -webkit-transform: rotate(225deg);
-    transform: rotate(225deg);
-    transition: transform 0.2s;
-}
-
-.tree-list-item-action-chevron {
-    display: inline-flex;
-    /* Uses box shadow to generate a pseudo chevron `>` icon. */
-    padding: 0.3rem;
-    box-shadow: 0.1rem 0.1rem 0 0 var(--neutral-200) inset;
+.ctrl-pressed:not(.shift-pressed) .tree-list-item-action--chevron:hover {
+    -ms-transform: rotate(135deg);
+    -webkit-transform: rotate(135deg);
     transform: rotate(135deg);
 }
 
-/* ==== SEARCH INPUT ACTIONS ==== */
-/* Add icon to left side of <input> */
-.extra-network-control .extra-network-control--search::before {
-    content: "🔎︎";
+.shift-pressed:not(.ctrl-pressed) .tree-list-item-action--chevron:hover {
+    -ms-transform: rotate(-45deg);
+    -webkit-transform: rotate(-45deg);
+    transform: rotate(-45deg);
+}
+
+.tree-list-item-action--chevron .chevron-icon-single,
+.tree-list-item-action--chevron .chevron-icon-double {
     position: absolute;
-    margin: 0.5rem;
-    font-size: 1rem;
-    color: var(--input-placeholder-color);
-}
-
-.extra-network-control .extra-network-control--search {
-    display: inline-flex;
-    position: relative;
-}
-
-.extra-network-control .extra-network-control--search .extra-network-control--search-text {
-    border: 1px solid var(--button-secondary-border-color);
-    border-radius: 0.5rem;
-    color: var(--button-secondary-text-color);
-    background-color: transparent;
+    top: 0;
+    left: 0;
     width: 100%;
-    padding-left: 2rem;
-    line-height: 1rem;
+    height: 100%;
+    transition: all 0.1s ease;
 }
 
-
-.extra-network-control .extra-network-control--search .extra-network-control--search-text::placeholder {
-    color: var(--input-placeholder-color);
+.tree-list-item-action--chevron .chevron-icon-single {
+    opacity: 1;
+    stroke: var(--input-placeholder-color);
 }
 
-
-/* <input> clear button (x on right side) styling */
-.extra-network-control .extra-network-control--search .extra-network-control--search-text::-webkit-search-cancel-button {
-    -webkit-appearance: none;
-    appearance: none;
-    cursor: pointer;
-    height: 1rem;
-    width: 1rem;
-    mask-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>');
-    mask-repeat: no-repeat;
-    mask-position: center center;
-    mask-size: 100%;
-    background-color: var(--input-placeholder-color);
+:is(.ctrl-pressed:not(.shift-pressed), .shift-pressed:not(.ctrl-pressed)) .tree-list-item-action--chevron:hover .chevron-icon-double {
+    opacity: 1;
+    stroke: var(--button-primary-border-color);
 }
 
-/* ==== SORT ICON ACTIONS ==== */
-.extra-network-control .extra-network-control--sort {
-    padding: 0.25rem;
-    display: inline-flex;
-    cursor: pointer;
-    justify-self: center;
-    align-self: center;
+:is(.ctrl-pressed:not(.shift-pressed), .shift-pressed:not(.ctrl-pressed)) .tree-list-item-action--chevron:hover .chevron-icon-single,
+:not(.ctrl-pressed:not(.shift-pressed), .shift-pressed:not(.ctrl-pressed)) .tree-list-item-action--chevron .chevron-icon-double {
+    opacity: 0;
 }
-
-.extra-network-control .extra-network-control--sort .extra-network-control--sort-icon {
-    height: 1.5rem;
-    width: 1.5rem;
-    mask-repeat: no-repeat;
-    mask-position: center center;
-    mask-size: 100%;
-    background-color: var(--input-placeholder-color);
-}
-
-.extra-network-control .extra-network-control--sort[data-sortkey="default"] .extra-network-control--sort-icon {
-    mask-image: url('data:image/svg+xml,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path fill-rule="evenodd" clip-rule="evenodd" d="M1 5C1 3.34315 2.34315 2 4 2H8.43845C9.81505 2 11.015 2.93689 11.3489 4.27239L11.7808 6H13.5H20C21.6569 6 23 7.34315 23 9V11C23 11.5523 22.5523 12 22 12C21.4477 12 21 11.5523 21 11V9C21 8.44772 20.5523 8 20 8H13.5H11.7808H4C3.44772 8 3 8.44772 3 9V10V19C3 19.5523 3.44772 20 4 20H9C9.55228 20 10 20.4477 10 21C10 21.5523 9.55228 22 9 22H4C2.34315 22 1 20.6569 1 19V10V9V5ZM3 6.17071C3.31278 6.06015 3.64936 6 4 6H9.71922L9.40859 4.75746C9.2973 4.3123 8.89732 4 8.43845 4H4C3.44772 4 3 4.44772 3 5V6.17071ZM20.1716 18.7574C20.6951 17.967 21 17.0191 21 16C21 13.2386 18.7614 11 16 11C13.2386 11 11 13.2386 11 16C11 18.7614 13.2386 21 16 21C17.0191 21 17.967 20.6951 18.7574 20.1716L21.2929 22.7071C21.6834 23.0976 22.3166 23.0976 22.7071 22.7071C23.0976 22.3166 23.0976 21.6834 22.7071 21.2929L20.1716 18.7574ZM13 16C13 14.3431 14.3431 13 16 13C17.6569 13 19 14.3431 19 16C19 17.6569 17.6569 19 16 19C14.3431 19 13 17.6569 13 16Z" fill="%23000000"></path></g></svg>');
-}
-
-.extra-network-control .extra-network-control--sort[data-sortkey="name"] .extra-network-control--sort-icon {
-    mask-image: url('data:image/svg+xml,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path fill-rule="evenodd" clip-rule="evenodd" d="M17.1841 6.69223C17.063 6.42309 16.7953 6.25 16.5002 6.25C16.2051 6.25 15.9374 6.42309 15.8162 6.69223L11.3162 16.6922C11.1463 17.07 11.3147 17.514 11.6924 17.6839C12.0701 17.8539 12.5141 17.6855 12.6841 17.3078L14.1215 14.1136H18.8789L20.3162 17.3078C20.4862 17.6855 20.9302 17.8539 21.308 17.6839C21.6857 17.514 21.8541 17.07 21.6841 16.6922L17.1841 6.69223ZM16.5002 8.82764L14.7965 12.6136H18.2039L16.5002 8.82764Z" fill="%231C274C"></path><path opacity="0.5" fill-rule="evenodd" clip-rule="evenodd" d="M2.25 7C2.25 6.58579 2.58579 6.25 3 6.25H13C13.4142 6.25 13.75 6.58579 13.75 7C13.75 7.41421 13.4142 7.75 13 7.75H3C2.58579 7.75 2.25 7.41421 2.25 7Z" fill="%231C274C"></path><path opacity="0.5" d="M2.25 12C2.25 11.5858 2.58579 11.25 3 11.25H10C10.4142 11.25 10.75 11.5858 10.75 12C10.75 12.4142 10.4142 12.75 10 12.75H3C2.58579 12.75 2.25 12.4142 2.25 12Z" fill="%231C274C"></path><path opacity="0.5" d="M2.25 17C2.25 16.5858 2.58579 16.25 3 16.25H8C8.41421 16.25 8.75 16.5858 8.75 17C8.75 17.4142 8.41421 17.75 8 17.75H3C2.58579 17.75 2.25 17.4142 2.25 17Z" fill="%231C274C"></path></g></svg>');
-}
-
-.extra-network-control .extra-network-control--sort[data-sortkey="date_created"] .extra-network-control--sort-icon {
-    mask-image: url('data:image/svg+xml,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M17 11C14.2386 11 12 13.2386 12 16C12 18.7614 14.2386 21 17 21C19.7614 21 22 18.7614 22 16C22 13.2386 19.7614 11 17 11ZM17 11V9M2 9V15.8C2 16.9201 2 17.4802 2.21799 17.908C2.40973 18.2843 2.71569 18.5903 3.09202 18.782C3.51984 19 4.0799 19 5.2 19H13M2 9V8.2C2 7.0799 2 6.51984 2.21799 6.09202C2.40973 5.71569 2.71569 5.40973 3.09202 5.21799C3.51984 5 4.0799 5 5.2 5H13.8C14.9201 5 15.4802 5 15.908 5.21799C16.2843 5.40973 16.5903 5.71569 16.782 6.09202C17 6.51984 17 7.0799 17 8.2V9M2 9H17M5 3V5M14 3V5M15 16H17M17 16H19M17 16V14M17 16V18" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>');
-}
-
-.extra-network-control .extra-network-control--sort[data-sortkey="date_modified"] .extra-network-control--sort-icon {
-    mask-image: url('data:image/svg+xml,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M10 21H6.2C5.0799 21 4.51984 21 4.09202 20.782C3.71569 20.5903 3.40973 20.2843 3.21799 19.908C3 19.4802 3 18.9201 3 17.8V8.2C3 7.0799 3 6.51984 3.21799 6.09202C3.40973 5.71569 3.71569 5.40973 4.09202 5.21799C4.51984 5 5.0799 5 6.2 5H17.8C18.9201 5 19.4802 5 19.908 5.21799C20.2843 5.40973 20.5903 5.71569 20.782 6.09202C21 6.51984 21 7.0799 21 8.2V10M7 3V5M17 3V5M3 9H21M13.5 13.0001L7 13M10 17.0001L7 17M14 21L16.025 20.595C16.2015 20.5597 16.2898 20.542 16.3721 20.5097C16.4452 20.4811 16.5147 20.4439 16.579 20.399C16.6516 20.3484 16.7152 20.2848 16.8426 20.1574L21 16C21.5523 15.4477 21.5523 14.5523 21 14C20.4477 13.4477 19.5523 13.4477 19 14L14.8426 18.1574C14.7152 18.2848 14.6516 18.3484 14.601 18.421C14.5561 18.4853 14.5189 18.5548 14.4903 18.6279C14.458 18.7102 14.4403 18.7985 14.405 18.975L14 21Z" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>');
-}
-
-/* ==== SORT DIRECTION ICON ACTIONS ==== */
-.extra-network-control .extra-network-control--sort-dir {
-    padding: 0.25rem;
-    display: inline-flex;
-    cursor: pointer;
-    justify-self: center;
-    align-self: center;
-}
-
-.extra-network-control .extra-network-control--sort-dir .extra-network-control--sort-dir-icon {
-    height: 1.5rem;
-    width: 1.5rem;
-    mask-repeat: no-repeat;
-    mask-position: center center;
-    mask-size: 100%;
-    background-color: var(--input-placeholder-color);
-}
-
-.extra-network-control .extra-network-control--sort-dir[data-sortdir="Ascending"] .extra-network-control--sort-dir-icon {
-    mask-image: url('data:image/svg+xml,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M13 12H21M13 8H21M13 16H21M6 7V17M6 7L3 10M6 7L9 10" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>');
-}
-
-.extra-network-control .extra-network-control--sort-dir[data-sortdir="Descending"] .extra-network-control--sort-dir-icon {
-    mask-image: url('data:image/svg+xml,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M13 12H21M13 8H21M13 16H21M6 7V17M6 17L3 14M6 17L9 14" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>');
-}
-
-/* ==== TREE VIEW ICON ACTIONS ==== */
-.extra-network-control .extra-network-control--tree-view {
-    padding: 0.25rem;
-    display: inline-flex;
-    cursor: pointer;
-    justify-self: center;
-    align-self: center;
-}
-
-.extra-network-control .extra-network-control--tree-view .extra-network-control--tree-view-icon {
-    height: 1.5rem;
-    width: 1.5rem;
-    mask-image: url('data:image/svg+xml,<svg viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="black"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path fill="black" d="M16 10v-4h-11v1h-2v-3h9v-4h-12v4h2v10h3v2h11v-4h-11v1h-2v-5h2v2z"></path></g></svg>');
-    mask-repeat: no-repeat;
-    mask-position: center center;
-    mask-size: 100%;
-    background-color: var(--input-placeholder-color);
-}
-
-.extra-network-control .extra-network-control--enabled {
-    background-color: rgba(0, 0, 0, 0.1);
-    border-radius: 0.25rem;
-}
-
-.dark .extra-network-control .extra-network-control--enabled {
-    background-color: rgba(255, 255, 255, 0.15);
-}
-
-.extra-network-control .extra-network-control--enabled .extra-network-control--icon{
-    background-color: var(--button-secondary-text-color);
-}
-
-/* ==== REFRESH ICON ACTIONS ==== */
-.extra-network-control .extra-network-control--refresh {
-    padding: 0.25rem;
-    display: inline-flex;
-    cursor: pointer;
-    justify-self: center;
-    align-self: center;
-}
-
-.extra-network-control .extra-network-control--refresh .extra-network-control--refresh-icon {
-    height: 1.5rem;
-    width: 1.5rem;
-    mask-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="bevel"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38"/></svg>');
-    mask-repeat: no-repeat;
-    mask-position: center center;
-    mask-size: 100%;
-    background-color: var(--input-placeholder-color);
-}
-
-.extra-network-control .extra-network-control--refresh-icon:active {
-    -ms-transform: rotate(180deg);
-    -webkit-transform: rotate(180deg);
-    transform: rotate(180deg);
-    transition: transform 0.2s;
-}
-
-/* ==== TREE GRID CONFIG ==== */
 
 /* Text for button. */
-.extra-network-tree .tree-list-item-label {
-    position: relative;
-    line-height: 1.25rem;
-    color: var(--button-secondary-text-color);
-    grid-area: label;
-    padding-left: 0.5rem;
+.tree-list-item .tree-list-item-label {
+    flex: 0 1 auto;
+    text-align: start;
 }
 
 /* Text for button truncated. */
-.extra-network-tree .tree-list-item-label--truncate {
+.tree-list-item-label--truncate {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 /* Icon for button. */
-.extra-network-tree .tree-list-item-visual {
-    min-height: 1rem;
-    color: var(--button-secondary-text-color);
+.tree-list-item-visual {
     pointer-events: none;
-    align-items: right;
 }
 
-
 /* Icon for button when it is before label. */
-.extra-network-tree .tree-list-item-visual--leading {
-    grid-area: leading-visual;
-    width: 1rem;
+.tree-list-item .tree-list-item-visual--leading {
+    width: var(--button-large-text-size);
     text-align: right;
 }
 
 /* Icon for button when it is after label. */
-.extra-network-tree .tree-list-item-visual--trailing {
-    grid-area: trailing-visual;
-    width: 1rem;
+.tree-list-item-visual--trailing {
+    width: var(--button-large-text-size);
     text-align: right;
+    margin-left: auto;
 }
 
 /* Dropdown arrow for button. */
-.extra-network-tree .tree-list-item-action--leading {
-    margin-right: 0.5rem;
-    margin-left: 0.2rem;
-}
+.tree-list-item-action--leading {}
 
-.extra-network-tree .tree-list-content-file .tree-list-item-action--leading {
+.tree-list-item--file .tree-list-item-action--leading {
     visibility: hidden;
 }
 
-.extra-network-tree .tree-list-item-action--leading {
-    grid-area: leading-action;
+/* Allow trailing action to overlap previous columns when area is too small. */
+.tree-list-item-action--trailing {}
+
+/* Force background color on hover to hide any overlapped column content. */
+.tree-list-item:hover .tree-list-item-action--trailing {
+    background: var(--button-secondary-background-fill-hover);
 }
 
-.extra-network-tree .tree-list-item-action--trailing {
-    grid-area: trailing-action;
-    display: inline-flex;
-}
-
-.extra-network-tree .tree-list-content .button-row {
-    display: inline-flex;
+.tree-list-item .button-row {
+    display: flex;
     visibility: hidden;
-    color: var(--button-secondary-text-color);
-    width: 0;
+    flex-direction: row;
+    align-items: center;
+    place-content: center;
+    gap: var(--spacing-sm);
+    box-sizing: border-box;
+    margin: 0;
+    margin-right: var(--spacing-sm);
 }
 
-.extra-network-tree .tree-list-content:hover .button-row {
+.tree-list-item:hover .button-row {
     visibility: visible;
-    width: auto;
+}
+
+.tree-list-item .card-button {
+    width: 100%;
+    height: 100%;
+    text-shadow: var(--shadow-drop);
+    font-size: var(--button-large-text-size);
+    color: var(--button-secondary-text-color);
+    padding: 0;
+    margin: 0;
+}
+
+/* Custom scrollbar style. Only works on chromium based browsers. */
+.styled-scrollbar::-webkit-scrollbar {
+    background: transparent;
+    width: var(--spacing-xxl);
+}
+
+.styled-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+    background-clip: content-box;
+}
+
+.styled-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--border-color-primary);
+    border-radius: var(--radius-xl);
+    border: var(--spacing-sm) solid var(--background-fill-primary);
+}
+
+.styled-scrollbar::-webkit-scrollbar-button {
+    display: none;
+}
+
+.styled-scrollbar::-webkit-scrollbar-corner {
+    background: var(--background-fill-primary);
+}
+
+/* Long-press buttons. Wipe L->R effect when button is held, then toggles color. */
+.extra-network-dirs-view-button {
+    position: relative;
+    overflow: hidden;
+    z-index: 0;
+    user-select: none;
+}
+
+.extra-network-dirs-view-button:not(.pressed):hover {
+    -webkit-transition: all 0.05s ease-in-out;
+    transition: all 0.05s ease-in-out;
+    background: var(--button-secondary-background-fill-hover);
+}
+
+.extra-network-dirs-view-button[data-selected] {
+    background: var(--button-secondary-background-fill);
+}
+
+.extra-network-dirs-view-button[data-selected]:not(.pressed):hover {
+    -webkit-transition: all 0.05s ease-in-out;
+    transition: all 0.05s ease-in-out;
+    background: var(--button-secondary-background-fill-hover);
+}
+
+.extra-network-dirs-view-button.recurse {
+    background: var(--button-primary-background-fill);
+    border-color: var(--button-primary-border-color);
+}
+
+.extra-network-dirs-view-button.recurse:not(.pressed):hover {
+    -webkit-transition: all 0.05s ease-in-out;
+    transition: all 0.05s ease-in-out;
+    background: var(--button-primary-background-fill-hover);
+}
+
+.extra-network-dirs-view-button::after {
+    position: absolute;
+    content: "";
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    transition: all var(--wipe-reset-transition-time-ms, 350ms) cubic-bezier(0.215, 0.61, 0.355, 1);
+    z-index: -1;
+}
+
+.extra-network-dirs-view-button:not(.recurse)::after {
+    background: var(--button-secondary-background-fill-hover);
+}
+
+.extra-network-dirs-view-button.recurse::after {
+    background: var(--button-primary-background-fill-hover);
+}
+
+.extra-network-dirs-view-button.pressed::after {
+    width: 100%;
+    transition: all var(--wipe-transition-time-ms, 800ms) cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+.extra-network-dirs-view-button[data-selected] {
+    outline: var(--spacing-xs) solid var(--button-primary-border-color);
+    outline-offset: calc(-1 * var(--spacing-xs));
+}
+
+.tree-list-item:not(.pressed):hover {
+    -webkit-transition: all 0.05s ease-in-out;
+    transition: all 0.05s ease-in-out;
+    background: var(--button-secondary-background-fill-hover);
+}
+
+.tree-list-item:not(.tree-list-item--file)[data-selected] {
+    background: var(--button-secondary-background-fill);
+}
+
+.tree-list-item.pressed:hover {
+    -webkit-transition: all 0.05s ease-in-out;
+    transition: all 0.05s ease-in-out;
+    background: var(--button-secondary-background-fill);
+}
+
+.tree-list-item::after {
+    position: absolute;
+    content: "";
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    background: var(--button-secondary-background-fill-hover);
+    transition: all var(--wipe-reset-transition-time-ms, 350ms) cubic-bezier(0.215, 0.61, 0.355, 1);
+    z-index: -1;
+}
+
+.tree-list-item.pressed::after {
+    width: 100%;
+    transition: all var(--wipe-transition-time-ms, 800ms) cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+.tree-list-item.recurse .tree-list-item-action--chevron .chevron-icon-single {
+    stroke: var(--button-primary-border-color);
+}
+
+.tree-list-item-indent {
+    height: 100%;
+    position: relative;
+    display: inline-block;
+}
+
+.tree-list-item-indent > * {
+    display: inline-block;
+    position: relative;
+    width: 1em;
+    height: 100%;
+}
+
+.tree-list-item-indent > *::after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    border-left: 1px solid var(--border-color-primary);
+}
+
+.tree-list-item-indent > *[data-selected]::after {
+    border-left: 1px solid var(--button-primary-border-color);
+}
+
+.extra-network-list-splash {
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 99;
+    background: var(--body-background-fill);
+    padding: var(--block-label-padding);
+    text-align: center;
+}
+
+.extra-network-content--dets-view {
+    padding: var(--block-padding);
+    overflow: auto auto;
+}
+
+.extra-network-content--dets-view-model-info {
+    display: flex;
+    flex-direction: column;
+    text-align: start;
+}
+
+.extra-network-content--dets-view-model-info p {
+    overflow-wrap: break-word;
+}
+
+.extra-network-content--dets-view-model-info table {
+    font-size: var(--text-sm);
+    font-weight: var(--prose-text-weight);
+    margin-left: var(--spacing-lg) !important;
+}
+
+.extra-network-content--dets-view-model-info table :is(th, td) {
+    padding-top: var(--spacing-sm) !important;
+    padding-bottom: var(--spacing-sm) !important;
+}
+
+.extra-network-content--dets-view-model-info table th {
+    white-space: nowrap;
+    
+}
+
+.extra-network-content--dets-view-model-info table td {
+    width: 99%;
+}
+
+.model-info--tags {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+}
+
+.model-info--header {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+}
+
+.model-info--header h1 {
+    flex: 1;
+    margin: 0 !important;
+    justify-items: center;
+    word-break: break-all;
+}
+
+.model-info--close {
+    position: relative;
+}
+
+.model-info--tag {
+    display: inline-block;
+    cursor: pointer;
+    box-shadow: var(--button-shadow);
+    border-width: 0;
+    border-radius: var(--radius-sm);
+    text-shadow: var(--shadow-drop);
+    font-size: var(--button-large-text-size);
+    font-weight: var(--body-text-weight);
+    transition: var(--button-transition);
+    padding: var(--spacing-xs) calc(2 * var(--spacing-xs));
+}
+
+.model-info--tag:active {
+    box-shadow: var(--button-shadow-active);
+}
+
+.model-info--tag::hover {
+    box-shadow: var(--button-shadow-hover);
+}
+
+.model-info--tag-name {
+    padding: var(--spacing-xs) calc(2 * var(--spacing-xs));
+    word-break: break-all;
+}
+
+.model-info--tag-count {
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-xs) calc(2 * var(--spacing-xs));
+    font-weight: var(--button-large-text-weight);
 }

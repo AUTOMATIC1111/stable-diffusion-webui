@@ -148,7 +148,18 @@ class UserMetadataEditor:
     def setup_save_handler(self, button, func, components):
         button\
             .click(fn=func, inputs=[self.edit_name_input, *components], outputs=[])\
-            .then(fn=None, _js="function(name){closePopup(); extraNetworksRefreshSingleCard(" + json.dumps(self.page.name) + "," + json.dumps(self.tabname) + ", name);}", inputs=[self.edit_name_input], outputs=[])
+            .then(
+                fn=None,
+                _js=(
+                    "function(name){"
+                    "closePopup(); "
+                    "extraNetworksRefreshSingleCard("
+                    f"'{self.tabname}', '{self.page.extra_networks_tabname}', name"
+                    ");}"
+                ),
+                inputs=[self.edit_name_input],
+                outputs=[],
+            )
 
     def create_editor(self):
         self.create_default_editor_elems()
@@ -199,7 +210,12 @@ class UserMetadataEditor:
             outputs=[self.html_preview, self.html_status]
         ).then(
             fn=None,
-            _js="function(name){extraNetworksRefreshSingleCard(" + json.dumps(self.page.name) + "," + json.dumps(self.tabname) + ", name);}",
+            _js=(
+                "function(name){"
+                "extraNetworksRefreshSingleCard("
+                f"'{self.tabname}', '{self.page.extra_networks_tabname}', name"
+                ");}"
+            ),
             inputs=[self.edit_name_input],
             outputs=[]
         )

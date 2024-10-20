@@ -1,81 +1,211 @@
-<div id='{tabname}_{extra_networks_tabname}_pane' class='extra-network-pane {tree_view_div_default_display_class}'>
-    <div class="extra-network-control" id="{tabname}_{extra_networks_tabname}_controls" style="display:none" >
+<div id='{tabname}_{extra_networks_tabname}_pane' class='extra-network-pane' data-tabname="{tabname}"
+    data-extra-networks-tabname="{extra_networks_tabname}" data-tabname-full="{tabname}_{extra_networks_tabname}">
+    <div class="extra-network-controls hidden" data-tabname-full="{tabname}_{extra_networks_tabname}">
         <div class="extra-network-control--search">
-            <input
-                id="{tabname}_{extra_networks_tabname}_extra_search"
-                class="extra-network-control--search-text"
-                type="search"
-                placeholder="Search"
-            >
+            <svg class="extra-network-control--search-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
+                fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1">
+                <circle cx="6" cy="6" r="5" />
+                <line x1="9.75" y1="9.75" x2="13" y2="13" />
+            </svg>
+            <input class="extra-network-control--search-text" type="text" placeholder="Search">
+            <button role="button" class="extra-network-control extra-network-control--search-clear">
+                <svg class="extra-network-control--search-clear-icon" viewBox="0 0 16 16"
+                    xmlns="http://www.w3.org/2000/svg" stroke-linecap="round" stroke-linejoin="round" stroke-width="1">
+                    <path fill="none" stroke="currentColor" d="M 5 5 L 11 11 M 5 11 L 11 5" />
+                    <circle fill="none" stroke="currentColor" cx="8" cy="8" r="7" />
+                </svg>
+            </button>
         </div>
-
-        <small>Sort: </small>
-        <div 
-            id="{tabname}_{extra_networks_tabname}_extra_sort_path"
-            class="extra-network-control--sort{sort_path_active}"
-            data-sortkey="default"
-            title="Sort by path"
-            onclick="extraNetworksControlSortOnClick(event, '{tabname}', '{extra_networks_tabname}');"
-        >
-            <i class="extra-network-control--icon extra-network-control--sort-icon"></i>
+        <div class="extra-network-controls--container">
+            <div class="extra-network-controls--header">Clear Filters</div>
+            <div class="extra-network-controls--buttons">
+                <button class="extra-network-control extra-network-control--clear-filters"
+                    title="Clear all directory filters">
+                    <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
+                        fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                        stroke-width="1">
+                        <path d="M 2 2 V 4 L 6 8 V 13 L 9 14 V 12 M 12 5 L 13 4 V 2 H 2" />
+                        <path d="M 9 10 L 12 7 M 9 7 L 12 10" />
+                    </svg>
+                </button>
+            </div>
         </div>
-        <div
-            id="{tabname}_{extra_networks_tabname}_extra_sort_name"
-            class="extra-network-control--sort{sort_name_active}"
-            data-sortkey="name"
-            title="Sort by name"
-            onclick="extraNetworksControlSortOnClick(event, '{tabname}', '{extra_networks_tabname}');"
-        >
-            <i class="extra-network-control--icon extra-network-control--sort-icon"></i>
+        <div class="extra-network-controls--container">
+            <div class="extra-network-controls--header">Sort Mode</div>
+            <div class="extra-network-controls--buttons">
+                <button class="extra-network-control extra-network-control--sort-mode" title="Sort by path"
+                    data-sort-mode="path" {btn_sort_mode_path_data_attributes}>
+                    <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
+                        fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                        stroke-width="1">
+                        <rect x="0.5" y="4" width="15" height="10" rx="1" />
+                        <path d="M 0.5 5 L 0.5 3 Q 0.5 2 1.5 2 L 6 2 Q 7 2 7 3 L 7 4" />
+                        <circle cx="7.5" cy="8.5" r="2" />
+                        <line x1="9" y1="10" x2="10.5" y2="11.5" />
+                    </svg>
+                </button>
+                <button class="extra-network-control extra-network-control--sort-mode" title="Sort by name"
+                    data-sort-mode="name" {btn_sort_mode_name_data_attributes}>
+                    <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
+                        fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke-width="1" d="M 2 12 L 6 3 L 10 12 M 3.5 9 L 8.5 9" />
+                        <path stroke-width="1" d="M 8 3 L 15 3 M 9.5 6 L 15 6 M 11 9 L 15 9 M 12.5 12 L 15 12" />
+                    </svg>
+                </button>
+                <button class="extra-network-control extra-network-control--sort-mode" title="Sort by date created"
+                    data-sort-mode="date_created" {btn_sort_mode_date_created_data_attributes}>
+                    <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
+                        stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1">
+                        <rect x="1" y="2" width="14" height="12" rx="2" fill="none" />
+                        <line x1="1" y1="6" x2="15" y2="6" />
+                        <line x1="8" y1="8" x2="8" y2="12" />
+                        <line x1="6" y1="10" x2="10" y2="10" />
+                        <line x1="4" y1="1" x2="4" y2="3" />
+                        <line x1="8" y1="1" x2="8" y2="3" />
+                        <line x1="12" y1="1" x2="12" y2="3" />
+                    </svg>
+                </button>
+                <button class="extra-network-control extra-network-control--sort-mode" title="Sort by date modified"
+                    data-sort-mode="date_modified" {btn_sort_mode_date_modified_data_attributes}>
+                    <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
+                        fill="none" stroke="currentColor" stroke-width="1">
+                        <g stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="1" y="2" width="14" height="12" rx="2" />
+                            <line x1="1" y1="6" x2="15" y2="6" />
+                            <line x1="4" y1="1" x2="4" y2="3" />
+                            <line x1="8" y1="1" x2="8" y2="3" />
+                            <line x1="12" y1="1" x2="12" y2="3" />
+                        </g>
+                        <g stroke-linecap="square" stroke-linejoin="square">
+                            <path d="M 4 9 H 10 L 12 10 L 10 11 H 4 Z M 6 9 V 10" />
+                        </g>
+                    </svg>
+                </button>
+            </div>
         </div>
-        <div
-            id="{tabname}_{extra_networks_tabname}_extra_sort_date_created"
-            class="extra-network-control--sort{sort_date_created_active}"
-            data-sortkey="date_created"
-            title="Sort by date created"
-            onclick="extraNetworksControlSortOnClick(event, '{tabname}', '{extra_networks_tabname}');"
-        >
-            <i class="extra-network-control--icon extra-network-control--sort-icon"></i>
+        <div class="extra-network-controls--container">
+            <div class="extra-network-controls--header">Sort Order</div>
+            <div class="extra-network-controls--buttons">
+                <button class="extra-network-control extra-network-control--sort-dir" title="Sort ascending"
+                    data-sort-dir="ascending" {btn_sort_dir_ascending_data_attributes}>
+                    <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
+                        stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                        <path fill="currentColor" d="M 8 1 L 3 7 L 13 7 Z" />
+                        <path fill="none" stroke="var(--input-placeholder-color)" d="M 8 15 L 3 9 L 13 9 Z" />
+                    </svg>
+                </button>
+                <button class="extra-network-control extra-network-control--sort-dir" title="Sort descending"
+                    data-sort-dir="descending" {btn_sort_dir_descending_data_attributes}>
+                    <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
+                        stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                        <path fill="none" stroke="var(--input-placeholder-color)" d="M 8 1 L 3 7 L 13 7 Z" />
+                        <path fill="currentColor" d="M 8 15 L 3 9 L 13 9 Z" />
+                    </svg>
+                </button>
+            </div>
         </div>
-        <div
-            id="{tabname}_{extra_networks_tabname}_extra_sort_date_modified"
-            class="extra-network-control--sort{sort_date_modified_active}"
-            data-sortkey="date_modified"
-            title="Sort by date modified"
-            onclick="extraNetworksControlSortOnClick(event, '{tabname}', '{extra_networks_tabname}');"
-        >
-            <i class="extra-network-control--icon extra-network-control--sort-icon"></i>
+        <div class="extra-network-controls--container">
+            <div class="extra-network-controls--header">View Mode</div>
+            <div class="extra-network-controls--buttons">
+                <button class="extra-network-control extra-network-control--dirs-view" title="Enable Directory View"
+                    {btn_dirs_view_data_attributes}>
+                    <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
+                        fill="currentColor" stroke="none">
+                        <rect x="0" y="6" width="4" height="4" rx="1" />
+                        <rect x="6" y="6" width="4" height="4" rx="1" />
+                        <rect x="12" y="6" width="4" height="4" rx="1" />
+                    </svg>
+                </button>
+                <button class="extra-network-control extra-network-control--tree-view" title="Enable Tree View"
+                    {btn_tree_view_data_attributes}>
+                    <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
+                        fill="currentColor" stroke="none">
+                        <rect x="3" y="0" width="4" height="4" rx="1" />
+                        <rect x="9" y="6" width="4" height="4" rx="1" />
+                        <rect x="9" y="12" width="4" height="4" rx="1" />
+                        <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                            d="M 5 5 V 14 H 8 M 5 8 H 8" />
+                    </svg>
+                </button>
+                <button class="extra-network-control extra-network-control--card-view" title="Enable Card View"
+                    {btn_card_view_data_attributes}>
+                    <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
+                        fill="currentColor" stroke="none">
+                        <rect x="3" y="3" width="4" height="4" rx="1" />
+                        <rect x="3" y="9" width="4" height="4" rx="1" />
+                        <rect x="9" y="3" width="4" height="4" rx="1" />
+                        <rect x="9" y="9" width="4" height="4" rx="1" />
+                    </svg>
+                </button>
+                <button class="extra-network-control extra-network-control--dets-view" title="Enable Card Detail View"
+                    {btn_dets_view_data_attributes}>
+                    <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
+                        fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M 3 3 H 12 M 3 6 H 12 M 3 9 H 12 M 3 12 H 12" />
+                    </svg>
+                </button>
+            </div>
         </div>
-
-        <small> </small>
-        <div
-            id="{tabname}_{extra_networks_tabname}_extra_sort_dir"
-            class="extra-network-control--sort-dir"
-            data-sortdir="{data_sortdir}"
-            title="Sort ascending"
-            onclick="extraNetworksControlSortDirOnClick(event, '{tabname}', '{extra_networks_tabname}');"
-        >
-            <i class="extra-network-control--icon extra-network-control--sort-dir-icon"></i>
-        </div>
-
-
-        <small> </small>
-        <div
-            id="{tabname}_{extra_networks_tabname}_extra_tree_view"
-            class="extra-network-control--tree-view {tree_view_btn_extra_class}"
-            title="Enable Tree View"
-            onclick="extraNetworksControlTreeViewOnClick(event, '{tabname}', '{extra_networks_tabname}');"
-        >
-            <i class="extra-network-control--icon extra-network-control--tree-view-icon"></i>
-        </div>
-        <div
-            id="{tabname}_{extra_networks_tabname}_extra_refresh"
-            class="extra-network-control--refresh"
-            title="Refresh page"
-            onclick="extraNetworksControlRefreshOnClick(event, '{tabname}', '{extra_networks_tabname}');"
-        >
-            <i class="extra-network-control--icon extra-network-control--refresh-icon"></i>
+        <div class="extra-network-controls--container">
+            <div class="extra-network-controls--header">Refresh</div>
+            <div class="extra-network-controls--buttons">
+                <button class="extra-network-control extra-network-control--refresh" title="Refresh tab">
+                    <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"
+                        fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M 8 14 A 6 6 0 1 1 14 8 L 12 6.5 M 14 8 L 15 5.5 " />
+                    </svg>
+                </button>
+            </div>
         </div>
     </div>
-    {pane_content}
+    <div class="extra-network-content extra-network-content--container resize-grid">
+        <div id="{tabname}_{extra_networks_tabname}_dirs_view_row" class="resize-grid--row"
+            style="{dirs_view_row_style}" {dirs_view_row_data_attributes}>
+            <div id="{tabname}_{extra_networks_tabname}_dirs_view_cell" class="resize-grid--cell" data-min-size="0px" style="flex: 1 1 0px;">
+                <div class="extra-network-content extra-network-content--dirs-view styled-scrollbar">
+                    {dirs_html}
+                </div>
+            </div>
+        </div>
+        <div id="{tabname}_{extra_networks_tabname}_main_row" class="resize-grid--row" style="{main_row_style}"
+            {main_row_data_attributes}>
+            <div id="{tabname}_{extra_networks_tabname}_tree_view_cell" class="resize-grid--cell"
+                style="{tree_view_cell_style}" {tree_view_cell_data_attributes}>
+                <div class="extra-network-content extra-network-content--tree-view">
+                    <div id='{tabname}_{extra_networks_tabname}_tree_list_loading_splash'
+                        class='extra-network-list-splash'>
+                        {tree_list_loading_splash_content}</div>
+                    <div id='{tabname}_{extra_networks_tabname}_tree_list_no_data_splash'
+                        class='extra-network-list-splash hidden'>{tree_list_no_data_splash_content}</div>
+                    <div id='{tabname}_{extra_networks_tabname}_tree_list_scroll_area'
+                        class='styled-scrollbar clusterize-scroll'>
+                        <div id='{tabname}_{extra_networks_tabname}_tree_list_content_area'
+                            class='extra-network-tree-content clusterize-content'></div>
+                    </div>
+                </div>
+            </div>
+            <div id="{tabname}_{extra_networks_tabname}_card_view_cell" class="resize-grid--cell"
+                style="{card_view_cell_style}" {card_view_cell_data_attributes}>
+                <div class="extra-network-content extra-network-content--card-view extra-network-cards">
+                    <div id='{tabname}_{extra_networks_tabname}_card_list_loading_splash'
+                        class='extra-network-list-splash'>
+                        {card_list_loading_splash_content}</div>
+                    <div id='{tabname}_{extra_networks_tabname}_card_list_no_data_splash'
+                        class='extra-network-list-splash hidden'>{card_list_no_data_splash_content}
+                    </div>
+                    <div id='{tabname}_{extra_networks_tabname}_card_list_scroll_area'
+                        class='styled-scrollbar clusterize-scroll'>
+                        <div id='{tabname}_{extra_networks_tabname}_card_list_content_area'
+                            class='extra-network-card-content clusterize-content'></div>
+                    </div>
+                </div>
+            </div>
+            <div id="{tabname}_{extra_networks_tabname}_dets_view_cell" class="resize-grid--cell"
+                style="{dets_view_cell_style}" {dets_view_cell_data_attributes}>
+                <div class="extra-network-content extra-network-content--dets-view styled-scrollbar"></div>
+            </div>
+        </div>
+    </div>
 </div>
