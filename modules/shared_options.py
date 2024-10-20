@@ -128,6 +128,7 @@ options_templates.update(options_section(('system', "System", "system"), {
     "disable_mmap_load_safetensors": OptionInfo(False, "Disable memmapping for loading .safetensors files.").info("fixes very slow loading speed in some cases"),
     "hide_ldm_prints": OptionInfo(True, "Prevent Stability-AI's ldm/sgm modules from printing noise to console."),
     "dump_stacks_on_signal": OptionInfo(False, "Print stack traces before exiting the program with ctrl+c."),
+    "hd_dl_local_first": OptionInfo(False, "Prevent connecting to huggingface for assets if cache is available").info('this will also prevent assets from being updated'),
 }))
 
 options_templates.update(options_section(('profiler', "Profiler", "system"), {

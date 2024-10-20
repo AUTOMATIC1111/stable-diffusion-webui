@@ -14,6 +14,7 @@ def imports():
 
     import torch  # noqa: F401
     startup_timer.record("import torch")
+    from modules import patch_hf_hub_download  # noqa: F401
     import pytorch_lightning  # noqa: F401
     startup_timer.record("import torch")
     warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="pytorch_lightning")
