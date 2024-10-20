@@ -528,7 +528,7 @@ def load_scripts():
 
     # here the scripts_list is already ordered
     # processing_script is not considered though
-    max_workers = shared.opts.data.get("script_loading_max_thread", 2)
+    max_workers = shared.opts.data.get("script_loading_max_thread", 1)
     if max_workers == 1:
         for scriptfile in scripts_list:
             load_module(scriptfile)
