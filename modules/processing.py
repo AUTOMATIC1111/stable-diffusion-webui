@@ -484,7 +484,7 @@ class StableDiffusionProcessing:
 
         cache = caches[0]
 
-        with devices.autocast():
+        with devices.autocast(target_dtype=devices.dtype_inference):
             cache[1] = function(shared.sd_model, required_prompts, steps, hires_steps, shared.opts.use_old_scheduling)
 
         cache[0] = cached_params
@@ -984,7 +984,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             sd_models.apply_alpha_schedule_override(p.sd_model, p)
 
-            with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
+            with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast(target_dtype=devices.dtype_inference, current_dtype=devices.dtype_unet):
                 samples_ddim = p.sample(conditioning=p.c, unconditional_conditioning=p.uc, seeds=p.seeds, subseeds=p.subseeds, subseed_strength=p.subseed_strength, prompts=p.prompts)
 
             if p.scripts is not None:
@@ -1146,6 +1146,11 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
     if p.scripts is not None:
         p.scripts.postprocess(p, res)
+
+
+    if lowvram.is_enabled(shared.sd_model):
+        # for interrupted case
+        lowvram.send_everything_to_cpu()
 
     return res
 
@@ -1436,7 +1441,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             with devices.autocast():
                 extra_networks.activate(self, self.hr_extra_network_data)
 
-        with devices.autocast():
+        with devices.autocast(target_dtype=devices.dtype_inference):
             self.calculate_hr_conds()
 
         sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio(for_hr=True))

@@ -29,7 +29,7 @@ def initialize():
 
     devices.dtype = torch.float32 if cmd_opts.no_half else torch.float16
     devices.dtype_vae = torch.float32 if cmd_opts.no_half or cmd_opts.no_half_vae else torch.float16
-    devices.dtype_inference = torch.float32 if cmd_opts.precision == 'full' else devices.dtype
+    devices.dtype_inference = torch.float32 if cmd_opts.precision == 'full' else devices.dtype_inference
 
     if cmd_opts.precision == "half":
         msg = "--no-half and --no-half-vae conflict with --precision half"

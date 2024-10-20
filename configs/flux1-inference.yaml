@@ -1,0 +1,4 @@
+model:
+  target: modules.models.flux.FLUX1Inferencer
+  params:
+    state_dict: null

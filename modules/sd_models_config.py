@@ -25,6 +25,7 @@ config_instruct_pix2pix = os.path.join(sd_configs_path, "instruct-pix2pix.yaml")
 config_alt_diffusion = os.path.join(sd_configs_path, "alt-diffusion-inference.yaml")
 config_alt_diffusion_m18 = os.path.join(sd_configs_path, "alt-diffusion-m18-inference.yaml")
 config_sd3 = os.path.join(sd_configs_path, "sd3-inference.yaml")
+config_flux1 = os.path.join(sd_configs_path, "flux1-inference.yaml")
 
 
 def is_using_v_parameterization_for_sd2(state_dict):
@@ -77,6 +78,9 @@ def guess_model_config_from_state_dict(sd, filename):
 
     if "model.diffusion_model.x_embedder.proj.weight" in sd:
         return config_sd3
+
+    if "model.diffusion_model.double_blocks.0.img_attn.norm.key_norm.scale" in sd:
+        return config_flux1
 
     if sd.get('conditioner.embedders.1.model.ln_final.weight', None) is not None:
         if diffusion_model_input.shape[1] == 9:

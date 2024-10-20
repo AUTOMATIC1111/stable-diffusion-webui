@@ -43,7 +43,7 @@ CLIPG_CONFIG = {
     "textual_inversion_key": "clip_g",
 }
 
-T5_URL = "https://huggingface.co/AUTOMATIC/stable-diffusion-3-medium-text-encoders/resolve/main/t5xxl_fp16.safetensors"
+T5_URL = "https://huggingface.co/AUTOMATIC/stable-diffusion-3-medium-text-encoders/resolve/main/t5xxl_fp8_e4m3fn.safetensors"
 T5_CONFIG = {
     "d_ff": 10240,
     "d_model": 4096,
@@ -140,7 +140,7 @@ class Sd3T5(torch.nn.Module):
         return tokens, multipliers
 
     def forward(self, texts, *, token_count):
-        if not self.t5xxl or not shared.opts.sd3_enable_t5:
+        if not self.t5xxl:
             return torch.zeros((len(texts), token_count, 4096), device=devices.device, dtype=devices.dtype)
 
         tokens_batch = []
@@ -164,11 +164,11 @@ class SD3Cond(torch.nn.Module):
         self.tokenizer = SD3Tokenizer()
 
         with torch.no_grad():
-            self.clip_g = SDXLClipG(CLIPG_CONFIG, device="cpu", dtype=devices.dtype)
-            self.clip_l = SDClipModel(layer="hidden", layer_idx=-2, device="cpu", dtype=devices.dtype, layer_norm_hidden_state=False, return_projected_pooled=False, textmodel_json_config=CLIPL_CONFIG)
+            self.clip_g = SDXLClipG(CLIPG_CONFIG, device="cpu", dtype=devices.dtype_inference)
+            self.clip_l = SDClipModel(layer="hidden", layer_idx=-2, device="cpu", dtype=devices.dtype_inference, layer_norm_hidden_state=False, return_projected_pooled=False, textmodel_json_config=CLIPL_CONFIG)
 
             if shared.opts.sd3_enable_t5:
-                self.t5xxl = T5XXLModel(T5_CONFIG, device="cpu", dtype=devices.dtype)
+                self.t5xxl = T5XXLModel(T5_CONFIG, device="cpu", dtype=devices.dtype_inference)
             else:
                 self.t5xxl = None
 
@@ -199,8 +199,8 @@ class SD3Cond(torch.nn.Module):
             with safetensors.safe_open(clip_l_file, framework="pt") as file:
                 self.clip_l.transformer.load_state_dict(SafetensorsMapping(file), strict=False)
 
-        if self.t5xxl and 'text_encoders.t5xxl.transformer.encoder.embed_tokens.weight' not in state_dict:
-            t5_file = modelloader.load_file_from_url(T5_URL, model_dir=clip_path, file_name="t5xxl_fp16.safetensors")
+        if self.t5xxl and 'text_encoders.t5xxl.transformer.encoder.block.0.layer.0.SelfAttention.k.weight' not in state_dict:
+            t5_file = modelloader.load_file_from_url(T5_URL, model_dir=clip_path, file_name="t5xxl_fp8_e4m3fn.safetensors")
             with safetensors.safe_open(t5_file, framework="pt") as file:
                 self.t5xxl.transformer.load_state_dict(SafetensorsMapping(file), strict=False)
 

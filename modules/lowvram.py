@@ -1,5 +1,6 @@
 from collections import namedtuple
 
+import gc
 import torch
 from modules import devices, shared
 
@@ -32,6 +33,22 @@ def apply(sd_model):
 
 
 def setup_for_low_vram(sd_model, use_medvram):
+    global module_in_gpu
+
+    if module_in_gpu is not None:
+        # module_in_gpu remains in GPU for some cases
+        if module_in_gpu in sd_model.named_modules():
+            module_in_gpu.to(cpu)
+        else:
+            # model changed. remove
+            module_in_gpu.to(device="meta")
+
+        devices.torch_gc()
+        gc.collect()
+
+        module_in_gpu = None
+
+
     if getattr(sd_model, 'lowvram', False):
         return
 
@@ -53,6 +70,7 @@ def setup_for_low_vram(sd_model, use_medvram):
 
         if module_in_gpu is not None:
             module_in_gpu.to(cpu)
+            devices.torch_gc()
 
         module.to(devices.device)
         module_in_gpu = module

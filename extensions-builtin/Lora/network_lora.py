@@ -2,6 +2,7 @@ import torch
 
 import lyco_helpers
 import modules.models.sd3.mmdit
+import modules.models.flux.modules.layers
 import network
 from modules import devices
 
@@ -37,7 +38,7 @@ class NetworkModuleLora(network.NetworkModule):
         if weight is None and none_ok:
             return None
 
-        is_linear = type(self.sd_module) in [torch.nn.Linear, torch.nn.modules.linear.NonDynamicallyQuantizableLinear, torch.nn.MultiheadAttention, modules.models.sd3.mmdit.QkvLinear]
+        is_linear = type(self.sd_module) in [torch.nn.Linear, torch.nn.modules.linear.NonDynamicallyQuantizableLinear, torch.nn.MultiheadAttention, modules.models.sd3.mmdit.QkvLinear, modules.models.flux.modules.layers.QkvLinear ]
         is_conv = type(self.sd_module) in [torch.nn.Conv2d]
 
         if is_linear:
