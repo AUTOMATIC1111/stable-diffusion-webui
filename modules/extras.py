@@ -12,16 +12,20 @@ from modules.ui_common import plaintext_to_html
 import gradio as gr
 import safetensors.torch
 
+
 def pnginfo_format_string(plain_text):
     content = "<br>\n".join(html.escape(x) for x in str(plain_text).split('\n'))
     return content
+
 
 def pnginfo_format_setting(name, value):
     cls_name = 'geninfo-setting-string' if value.startswith('"') else 'geninfo-setting-value'
     return f"<span class='geninfo-setting-name'>{html.escape(name)}:</span> <span class='{cls_name}' onclick='uiCopyElementText(this)'>{html.escape(value)}</span>"
 
+
 def pnginfo_format_quicklink(name):
     return f"<span class='geninfo-quick-link' onclick='uiCopyPngInfo(this, \"{name}\")'>[{html.escape(name)}]</span>"
+
 
 def run_pnginfo(image):
     if image is None:
@@ -32,38 +36,38 @@ def run_pnginfo(image):
     info = ''
     parser = png_parser.PngParser(geninfo)
     if parser.valid:
-            info += f"""
+        info += f"""
 <div class='pnginfo-page'>
 <p><b>parameters</b><br>
 {pnginfo_format_quicklink("Copy")}&nbsp;{pnginfo_format_quicklink("Prompt")}"""
-            if parser.negative is not None:
-                info += f'&nbsp;{pnginfo_format_quicklink("Negative")}'
-            info += f"""&nbsp;{pnginfo_format_quicklink("Settings")}
+        if parser.negative is not None:
+            info += f'&nbsp;{pnginfo_format_quicklink("Negative")}'
+        info += f"""&nbsp;{pnginfo_format_quicklink("Settings")}
 </p>
 <p id='pnginfo-positive'>{pnginfo_format_string(parser.positive)}</p>"""
-            if parser.negative is not None:
-                 info += f"""
+        if parser.negative is not None:
+            info += f"""
 <p>
 <span class='geninfo-setting-name'>Negative prompt:</span><br><span id='pnginfo-negative'>{pnginfo_format_string(parser.negative)}</span>
 </p>
 """
-            if parser.settings is None:
-                info += f"{plaintext_to_html(str(parser.parameters))}"
-            else:
-                info += "<p id='pnginfo-settings'>"
-                first = True
-                for setting in parser.settings:
-                    if first:
-                        first = False
-                    else:
-                        info += ", "
-                    info += pnginfo_format_setting(str(setting[0]), str(setting[1])+str(setting[2]))
-                info += "</p>"
+        if parser.settings is None:
+            info += f"{plaintext_to_html(str(parser.parameters))}"
+        else:
+            info += "<p id='pnginfo-settings'>"
+            first = True
+            for setting in parser.settings:
+                if first:
+                    first = False
+                else:
+                    info += ", "
+                info += pnginfo_format_setting(str(setting[0]), str(setting[1])+str(setting[2]))
+            info += "</p>"
 
-            if parser.extra is not None:
-                info += f"<p>{pnginfo_format_string(parser.extra)}</p>"
+        if parser.extra is not None:
+            info += f"<p>{pnginfo_format_string(parser.extra)}</p>"
 
-            info += "</div>\n"
+        info += "</div>\n"
     else:
         items = {**{'parameters': geninfo}, **items}
 
@@ -248,8 +252,8 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
                 if a.shape[1] == 4 and b.shape[1] == 8:
                     raise RuntimeError("When merging instruct-pix2pix model with a normal one, A must be the instruct-pix2pix model.")
 
-                if a.shape[1] == 8 and b.shape[1] == 4:#If we have an Instruct-Pix2Pix model...
-                    theta_0[key][:, 0:4, :, :] = theta_func2(a[:, 0:4, :, :], b, multiplier)#Merge only the vectors the models have in common.  Otherwise we get an error due to dimension mismatch.
+                if a.shape[1] == 8 and b.shape[1] == 4:  # If we have an Instruct-Pix2Pix model...
+                    theta_0[key][:, 0:4, :, :] = theta_func2(a[:, 0:4, :, :], b, multiplier)  # Merge only the vectors the models have in common.  Otherwise we get an error due to dimension mismatch.
                     result_is_instruct_pix2pix_model = True
                 else:
                     assert a.shape[1] == 9 and b.shape[1] == 4, f"Bad dimensions for merged layer {key}: A={a.shape}, B={b.shape}"
@@ -320,7 +324,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
 
     if save_metadata and add_merge_recipe:
         merge_recipe = {
-            "type": "webui", # indicate this model was merged with webui's built-in merger
+            "type": "webui",  # indicate this model was merged with webui's built-in merger
             "primary_model_hash": primary_model_info.sha256,
             "secondary_model_hash": secondary_model_info.sha256 if secondary_model_info else None,
             "tertiary_model_hash": tertiary_model_info.sha256 if tertiary_model_info else None,
@@ -358,7 +362,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
 
     _, extension = os.path.splitext(output_modelname)
     if extension.lower() == ".safetensors":
-        safetensors.torch.save_file(theta_0, output_modelname, metadata=metadata if len(metadata)>0 else None)
+        safetensors.torch.save_file(theta_0, output_modelname, metadata=metadata if len(metadata) > 0 else None)
     else:
         torch.save(theta_0, output_modelname)
 
