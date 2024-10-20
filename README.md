@@ -133,7 +133,7 @@ If your system is very new, you need to install python3.11 or python3.10:
 # Ubuntu 24.04
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt update
-sudo apt install python3.11
+sudo apt install python3.11 python3.11-venv
 
 # Manjaro/Arch
 sudo pacman -S yay
