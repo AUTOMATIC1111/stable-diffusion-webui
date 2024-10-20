@@ -16,10 +16,12 @@ def dat_models_names():
     return [x.name for x in modules.dat_model.get_dat_models(None)]
 
 
-def postprocessing_scripts():
+def postprocessing_scripts(filter_out_extra_only=False, filter_out_main_ui_only=False):
     import modules.scripts
-
-    return modules.scripts.scripts_postproc.scripts
+    return list(filter(
+        lambda s: (not filter_out_extra_only or not s.extra_only) and (not filter_out_main_ui_only or not s.main_ui_only),
+        modules.scripts.scripts_postproc.scripts,
+    ))
 
 
 def sd_vae_items():

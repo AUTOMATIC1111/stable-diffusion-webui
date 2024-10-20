@@ -169,6 +169,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
 class ScriptPostprocessingUpscaleSimple(ScriptPostprocessingUpscale):
     name = "Simple Upscale"
     order = 900
+    main_ui_only = True
 
     def ui(self):
         with FormRow():

@@ -33,7 +33,7 @@ def create_auto_preprocessing_script_data():
 
     for name in shared.opts.postprocessing_enable_in_main_ui:
         script = next(iter([x for x in scripts.postprocessing_scripts_data if x.script_class.name == name]), None)
-        if script is None:
+        if script is None or script.script_class.extra_only:
             continue
 
         constructor = lambda s=script: ScriptPostprocessingForMainUI(s.script_class())
