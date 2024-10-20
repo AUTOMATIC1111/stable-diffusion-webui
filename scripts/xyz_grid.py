@@ -259,6 +259,7 @@ axis_options = [
     AxisOption("Schedule min sigma", float, apply_override("sigma_min")),
     AxisOption("Schedule max sigma", float, apply_override("sigma_max")),
     AxisOption("Schedule rho", float, apply_override("rho")),
+    AxisOption("Skip Early CFG", float, apply_override('skip_early_cond')),
     AxisOption("Beta schedule alpha", float, apply_override("beta_dist_alpha")),
     AxisOption("Beta schedule beta", float, apply_override("beta_dist_beta")),
     AxisOption("Eta", float, apply_field("eta")),
