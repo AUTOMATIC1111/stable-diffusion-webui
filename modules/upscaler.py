@@ -93,13 +93,14 @@ class UpscalerData:
     scaler: Upscaler = None
     model: None
 
-    def __init__(self, name: str, path: str, upscaler: Upscaler = None, scale: int = 4, model=None):
+    def __init__(self, name: str, path: str, upscaler: Upscaler = None, scale: int = 4, model=None, sha256: str = None):
         self.name = name
         self.data_path = path
         self.local_data_path = path
         self.scaler = upscaler
         self.scale = scale
         self.model = model
+        self.sha256 = sha256
 
     def __repr__(self):
         return f"<UpscalerData name={self.name} path={self.data_path} scale={self.scale}>"
