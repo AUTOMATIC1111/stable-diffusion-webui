@@ -69,7 +69,7 @@ def run_pnginfo(image):
 
         for key, text in items.items():
             info += f"""
-<div>
+<div class="infotext">
 <p><b>{plaintext_to_html(str(key))}</b></p>
 <p>{plaintext_to_html(str(text))}</p>
 </div>

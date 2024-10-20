@@ -148,6 +148,7 @@ python_cmd="python3.11"
 2. Navigate to the directory you would like the webui to be installed and execute the following command:
 ```bash
 wget -q https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/master/webui.sh
+chmod +x webui.sh
 ```
 Or just clone the repo wherever you want:
 ```bash

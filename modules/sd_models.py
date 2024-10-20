@@ -159,7 +159,7 @@ def list_models():
         model_url = None
         expected_sha256 = None
     else:
-        model_url = f"{shared.hf_endpoint}/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
+        model_url = f"{shared.hf_endpoint}/stable-diffusion-v1-5/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
         expected_sha256 = '6ce0161689b3853acaa03779ec93eafe75a02f4ced659bee03f50797806fa2fa'
 
     model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.cmd_opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors"], hash_prefix=expected_sha256)
@@ -783,7 +783,7 @@ def get_obj_from_str(string, reload=False):
     return getattr(importlib.import_module(module, package=None), cls)
 
 
-def load_model(checkpoint_info=None, already_loaded_state_dict=None):
+def load_model(checkpoint_info=None, already_loaded_state_dict=None, checkpoint_config=None):
     from modules import sd_hijack
     checkpoint_info = checkpoint_info or select_checkpoint()
 
@@ -801,7 +801,8 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
     else:
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
 
-    checkpoint_config = sd_models_config.find_checkpoint_config(state_dict, checkpoint_info)
+    if not checkpoint_config:
+        checkpoint_config = sd_models_config.find_checkpoint_config(state_dict, checkpoint_info)
     clip_is_included_into_sd = any(x for x in [sd1_clip_weight, sd2_clip_weight, sdxl_clip_weight, sdxl_refiner_clip_weight] if x in state_dict)
 
     timer.record("find config")
@@ -974,7 +975,7 @@ def reload_model_weights(sd_model=None, info=None, forced_reload=False):
         if sd_model is not None:
             send_model_to_trash(sd_model)
 
-        load_model(checkpoint_info, already_loaded_state_dict=state_dict)
+        load_model(checkpoint_info, already_loaded_state_dict=state_dict, checkpoint_config=checkpoint_config)
         return model_data.sd_model
 
     try:
