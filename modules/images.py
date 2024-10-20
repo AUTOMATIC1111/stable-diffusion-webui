@@ -24,7 +24,7 @@ from modules.paths_internal import roboto_ttf_file
 from modules.shared import opts
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
-
+BILINEAR = (Image.Resampling.BILINEAR if hasattr(Image, 'Resampling') else Image.BILINEAR)
 
 def get_font(fontsize: int):
     try:
@@ -268,7 +268,7 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
 
     def resize(im, w, h):
         if upscaler_name is None or upscaler_name == "None" or im.mode == 'L':
-            return im.resize((w, h), resample=LANCZOS)
+            return im.resize((w, h), resample=BILINEAR if im.mode == 'L' and opts.img2img_bilinear_grayscale_resize else LANCZOS)
 
         scale = max(w / im.width, h / im.height)
 
@@ -283,7 +283,7 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
             im = upscaler.scaler.upscale(im, scale, upscaler.data_path)
 
         if im.width != w or im.height != h:
-            im = im.resize((w, h), resample=LANCZOS)
+            im = im.resize((w, h), resample=BILINEAR if im.mode == 'L' and opts.img2img_bilinear_grayscale_resize else LANCZOS)
 
         return im
 
