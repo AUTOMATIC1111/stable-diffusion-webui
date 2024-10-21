@@ -262,7 +262,7 @@ def split_infotext(x: str):
 
 def parameters_to_dict(parameters: str):
     """convert parameters from string to dict"""
-    return {k: v for k, v in re_param.findall(parameters)}
+    return dict(re_param.findall(parameters))
 
 
 def parse_parameters(param_dict: dict):
