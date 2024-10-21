@@ -7,7 +7,7 @@ import html
 import torch
 import tqdm
 
-from modules import shared, images, sd_models, sd_vae, sd_models_config, errors, png_parser
+from modules import shared, images, sd_models, sd_vae, sd_models_config, errors, infotext_utils
 from modules.ui_common import plaintext_to_html
 import gradio as gr
 import safetensors.torch
@@ -27,57 +27,78 @@ def pnginfo_format_quicklink(name):
     return f"<span class='geninfo-quick-link' onclick='uiCopyPngInfo(this, \"{name}\")'>[{html.escape(name)}]</span>"
 
 
-def run_pnginfo(image):
-    if image is None:
-        return '', '', ''
+def pnginfo_html_v1(geninfo, items):
+    items = {**{'parameters': geninfo}, **items}
+    info_html = ''
+    for key, text in items.items():
+        info_html += f"""<div class="infotext">
+<p><b>{plaintext_to_html(str(key))}</b></p>
+<p>{plaintext_to_html(str(text))}</p>
+</div>""".strip() + "\n"
 
-    geninfo, items = images.read_info_from_image(image)
+    if len(info_html) == 0:
+        message = "Nothing found in the image."
+        info_html = f"<div><p>{message}<p></div>"
 
-    info = ''
-    parser = png_parser.PngParser(geninfo)
-    if parser.valid:
-        info += f"""
+    return info_html
+
+
+def pnginfo_html_v2(geninfo, items):
+    # raise ValueError
+    prompt, negative_prompt, last_line = infotext_utils.split_infotext(geninfo)
+    res = infotext_utils.parameters_to_dict(last_line)
+    if not any([prompt, res, items]):
+        raise ValueError
+
+    info_html = ''
+    if prompt:
+        info_html += f"""
 <div class='pnginfo-page'>
 <p><b>parameters</b><br>
 {pnginfo_format_quicklink("Copy")}&nbsp;{pnginfo_format_quicklink("Prompt")}"""
-        if parser.negative is not None:
-            info += f'&nbsp;{pnginfo_format_quicklink("Negative")}'
-        info += f"""&nbsp;{pnginfo_format_quicklink("Settings")}
+        if negative_prompt:
+            info_html += f'&nbsp;{pnginfo_format_quicklink("Negative")}'
+        info_html += f"""&nbsp;{pnginfo_format_quicklink("Settings")}
 </p>
-<p id='pnginfo-positive'>{pnginfo_format_string(parser.positive)}</p>"""
-        if parser.negative is not None:
-            info += f"""
+<p id='pnginfo-positive'>{pnginfo_format_string(prompt)}</p>"""
+        if negative_prompt:
+            info_html += f"""
 <p>
-<span class='geninfo-setting-name'>Negative prompt:</span><br><span id='pnginfo-negative'>{pnginfo_format_string(parser.negative)}</span>
+<span class='geninfo-setting-name'>Negative prompt:</span><br><span id='pnginfo-negative'>{pnginfo_format_string(negative_prompt)}</span>
 </p>
 """
-        if parser.settings is None:
-            info += f"{plaintext_to_html(str(parser.parameters))}"
-        else:
-            info += "<p id='pnginfo-settings'>"
+        if res:
+            info_html += "<p id='pnginfo-settings'>"
             first = True
-            for setting in parser.settings:
+            for key, value in res.items():
                 if first:
                     first = False
                 else:
-                    info += ", "
-                info += pnginfo_format_setting(str(setting[0]), str(setting[1])+str(setting[2]))
-            info += "</p>"
+                    info_html += ", "
+                info_html += pnginfo_format_setting(key, value)
+            info_html += "</p>"
+        info_html += "</div>\n"
 
-        if parser.extra is not None:
-            info += f"<p>{pnginfo_format_string(parser.extra)}</p>"
-
-        info += "</div>\n"
-    else:
-        items = {**{'parameters': geninfo}, **items}
-
-        for key, text in items.items():
-            info += f"""
+    for key, text in items.items():
+        info_html += f"""
 <div class="infotext">
 <p><b>{plaintext_to_html(str(key))}</b></p>
 <p>{plaintext_to_html(str(text))}</p>
 </div>
 """.strip()+"\n"
+
+    return info_html
+
+
+def run_pnginfo(image):
+    if image is None:
+        return '', '', ''
+
+    geninfo, items = images.read_info_from_image(image)
+    try:
+        info = pnginfo_html_v2(geninfo, items)
+    except ValueError:
+        info = pnginfo_html_v1(geninfo, items)
 
     if len(info) == 0:
         message = "Nothing found in the image."
