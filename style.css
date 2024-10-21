@@ -1711,7 +1711,6 @@ body.resizing .resize-handle {
 
 .pnginfo-page p span.geninfo-setting-string {
     color: var(--pnginfo-string-color);
-    font-style: italic;
     cursor: pointer;
 }
 
