@@ -32,6 +32,12 @@ def apply(sd_model):
 
 
 def setup_for_low_vram(sd_model, use_medvram):
+    global module_in_gpu
+
+    if module_in_gpu is not None:
+        # module_in_gpu is already trashed or in the cpu. simply dereference
+        module_in_gpu = None
+
     if getattr(sd_model, 'lowvram', False):
         return
 
