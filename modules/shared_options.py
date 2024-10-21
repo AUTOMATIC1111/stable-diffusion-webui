@@ -366,7 +366,7 @@ It is displayed in UI below the image. To use infotext, paste it into the prompt
 <li>Discard: remove style text from prompt, keep styles dropdown as it is.</li>
 <li>Apply if any: remove style text from prompt; if any styles are found in prompt, put them into styles dropdown, otherwise keep it as it is.</li>
 </ul>"""),
-
+    "png_info_html_style": OptionInfo("Default", "PNG Info style", gr.Radio, lambda: {"choices": shared_items.list_pnginfo_html_methods()}).info('"Default -> Parsed"'),
 }))
 
 options_templates.update(options_section(('ui', "Live previews", "ui"), {

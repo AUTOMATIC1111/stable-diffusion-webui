@@ -44,11 +44,11 @@ def pnginfo_html_v1(geninfo, items):
 
 
 def pnginfo_html_v2(geninfo, items):
-    # raise ValueError
+
     prompt, negative_prompt, last_line = infotext_utils.split_infotext(geninfo)
     res = infotext_utils.parameters_to_dict(last_line)
     if not any([prompt, res, items]):
-        raise ValueError
+        return pnginfo_html_v1(geninfo, items)
 
     info_html = ''
     if prompt:
@@ -90,21 +90,25 @@ def pnginfo_html_v2(geninfo, items):
     return info_html
 
 
+pnginfo_html_map = {
+    'Default': pnginfo_html_v2,
+    'Parsed': pnginfo_html_v2,
+    'Raw': pnginfo_html_v1,
+}
+
+
 def run_pnginfo(image):
     if image is None:
         return '', '', ''
 
     geninfo, items = images.read_info_from_image(image)
-    try:
-        info = pnginfo_html_v2(geninfo, items)
-    except ValueError:
-        info = pnginfo_html_v1(geninfo, items)
+    info_html = pnginfo_html_map.get(shared.opts.png_info_html_style, pnginfo_html_v2)(geninfo, items)
 
-    if len(info) == 0:
+    if len(info_html) == 0:
         message = "Nothing found in the image."
-        info = f"<div><p>{message}<p></div>"
+        info_html = f"<div><p>{message}<p></div>"
 
-    return '', geninfo, info
+    return '', geninfo, info_html
 
 
 def create_config(ckpt_result, config_source, a, b, c):
