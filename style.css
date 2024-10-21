@@ -1665,3 +1665,102 @@ body.resizing .resize-handle {
     visibility: visible;
     width: auto;
 }
+
+/* PngInfo colors */
+:root {
+    --pnginfo-value-color:var(--secondary-600);
+    --pnginfo-string-color:var(--primary-600);
+    --pnginfo-value-hover:var(--secondary-100);
+    --pnginfo-string-hover:var(--primary-100);
+    --pnginfo-copy-color:#22c922;
+    --pnginfo-copy-background:#a9cfa9;
+}
+
+.dark {
+    --pnginfo-value-color:var(--secondary-400);
+    --pnginfo-string-color:var(--primary-400);
+    --pnginfo-value-hover:var(--secondary-700);
+    --pnginfo-string-hover:var(--primary-700);
+    --pnginfo-copy-color:#a9cfa9;
+    --pnginfo-copy-background:#22c922;
+}
+
+.pnginfo-page {
+    overflow-wrap: break-word;
+}
+
+#pnginfo-positive,
+#pnginfo-negative,
+#pnginfo-settings {
+    white-space: pre-wrap;
+}
+
+/* PngInfo styles */
+.pnginfo-page p span.geninfo-setting-name {
+    font-weight: var(--weight-semibold);
+}
+
+.pnginfo-page p span.geninfo-setting-value {
+    color: var(--pnginfo-value-color);
+    cursor: pointer;
+}
+
+.pnginfo-page p span.geninfo-setting-value:hover {
+    background-color: var(--pnginfo-value-hover);
+}
+
+.pnginfo-page p span.geninfo-setting-string {
+    color: var(--pnginfo-string-color);
+    cursor: pointer;
+}
+
+.pnginfo-page p span.geninfo-setting-string:hover {
+    background-color: var(--pnginfo-string-hover);
+}
+
+.pnginfo-page p span.geninfo-quick-link {
+    color: var(--pnginfo-string-color);
+    cursor: pointer;
+}
+
+.pnginfo-page p span.geninfo-quick-link:hover {
+    background-color: var(--pnginfo-string-hover);
+}
+
+/* PngInfo animations */
+@keyframes copyAnimationSettingValue {
+    0% {
+        color: var(--pnginfo-copy-color);
+        background-color: var(--pnginfo-copy-background);
+    }
+    100% {
+        color: var(--pnginfo-value-color);
+        background-color: unset;
+    }
+}
+
+span.geninfo-setting-value.animate {
+    -webkit-animation: copyAnimationSettingValue 1s 1;
+    animation: copyAnimationSettingValue 1s 1;
+}
+
+@keyframes copyAnimationSettingString {
+    0% {
+        color: var(--pnginfo-copy-color);
+        background-color: var(--pnginfo-copy-background);
+    }
+    100% {
+        color: var(--pnginfo-string-color);
+        background-color: unset;
+    }
+}
+
+span.geninfo-setting-string.animate {
+    -webkit-animation: copyAnimationSettingString 1s 1;
+    animation: copyAnimationSettingString 1s 1;
+}
+
+span.geninfo-quick-link.animate {
+    -webkit-animation: copyAnimationSettingString 1s 1;
+    animation: copyAnimationSettingString 1s 1;
+}
