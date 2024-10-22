@@ -13,6 +13,7 @@ function showModal(event) {
     if (modalImage.style.display === 'none') {
         lb.style.setProperty('background-image', 'url(' + source.src + ')');
     }
+    updateModalImage();
     lb.style.display = "flex";
     lb.focus();
 
@@ -31,21 +32,26 @@ function negmod(n, m) {
     return ((n % m) + m) % m;
 }
 
+function updateModalImage() {
+    const modalImage = gradioApp().getElementById("modalImage");
+    let currentButton = selected_gallery_button();
+    let preview = gradioApp().querySelectorAll('.livePreview > img');
+    if (opts.js_live_preview_in_modal_lightbox && preview.length > 0) {
+        // show preview image if available
+        modalImage.src = preview[preview.length - 1].src;
+    } else if (currentButton?.children?.length > 0 && modalImage.src != currentButton.children[0].src) {
+        modalImage.src = currentButton.children[0].src;
+        if (modalImage.style.display === 'none') {
+            const modal = gradioApp().getElementById("lightboxModal");
+            modal.style.setProperty('background-image', `url(${modalImage.src})`);
+        }
+    }
+}
+
 function updateOnBackgroundChange() {
     const modalImage = gradioApp().getElementById("modalImage");
     if (modalImage && modalImage.offsetParent) {
-        let currentButton = selected_gallery_button();
-        let preview = gradioApp().querySelectorAll('.livePreview > img');
-        if (opts.js_live_preview_in_modal_lightbox && preview.length > 0) {
-            // show preview image if available
-            modalImage.src = preview[preview.length - 1].src;
-        } else if (currentButton?.children?.length > 0 && modalImage.src != currentButton.children[0].src) {
-            modalImage.src = currentButton.children[0].src;
-            if (modalImage.style.display === 'none') {
-                const modal = gradioApp().getElementById("lightboxModal");
-                modal.style.setProperty('background-image', `url(${modalImage.src})`);
-            }
-        }
+        updateModalImage();
     }
 }
 
