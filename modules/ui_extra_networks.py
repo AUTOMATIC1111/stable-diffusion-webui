@@ -1450,7 +1450,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
         _js="setupAllResizeHandles",
     ).then(
         fn=lambda: None,
-        _js="extraNetworksSetup",
+        _js="function(){extraNetworksSetup('" + tabname + "')}",
     )
 
     return ui

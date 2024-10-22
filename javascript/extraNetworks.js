@@ -2167,7 +2167,7 @@ async function extraNetworksSetupTab(tabname) {
     }
 }
 
-async function extraNetworksSetup() {
+async function extraNetworksSetup(tabname) {
     /** Sets up all tabs for extra networks.
      *
      *  This function is called from `modules/ui_extra_networks.py::create_ui()`
@@ -2177,8 +2177,7 @@ async function extraNetworksSetup() {
     await waitForBool(initialUiOptionsLoaded);
     extra_networks_setup_debounce_timer = setTimeout(async() => {
         await Promise.all([
-            extraNetworksSetupTab('txt2img'),
-            extraNetworksSetupTab('img2img'),
+            extraNetworksSetupTab(tabname),
         ]);
         extraNetworksSetupEventDelegators();
         extra_networks_setup_debounce_timer = null;
