@@ -247,6 +247,7 @@ class ExtraNetworksPage:
         self.btn_dirs_view_item_tpl = shared.html("extra-networks-btn-dirs-view-item.html")
         self.btn_chevron_tpl = shared.html("extra-networks-btn-chevron.html")
         self.model_details_tpl = shared.html("extra-networks-model-details.html")
+        self.button_row_tpl = '<div class="button-row">{btn_copy_path}{btn_metadata}{btn_edit_item}</div>'
 
     def clear_data(self) -> None:
         self.is_ready = False
@@ -374,25 +375,23 @@ class ExtraNetworksPage:
         name = item.get("name", "")
         filename = os.path.normpath(item.get("filename", ""))
 
-        button_row_tpl = '<div class="button-row">{btn_copy_path}{btn_edit_item}{btn_metadata}</div>'
-
         btn_copy_path = self.btn_copy_path_tpl.format(clipboard_text=filename)
-        btn_edit_item = self.btn_edit_metadata_tpl.format(
-            tabname=tabname,
-            extra_networks_tabname=self.extra_networks_tabname,
-            name=name,
-        )
-        btn_metadata = ""
         if metadata:
             btn_metadata = self.btn_show_metadata_tpl.format(
                 extra_networks_tabname=self.extra_networks_tabname,
                 name=name,
             )
-
-        return button_row_tpl.format(
+        else:
+            btn_metadata = ""
+        btn_edit_item = self.btn_edit_metadata_tpl.format(
+            tabname=tabname,
+            extra_networks_tabname=self.extra_networks_tabname,
+            name=name,
+        )
+        return self.button_row_tpl.format(
             btn_copy_path=btn_copy_path,
-            btn_edit_item=btn_edit_item,
             btn_metadata=btn_metadata,
+            btn_edit_item=btn_edit_item,
         )
 
     def create_card_html(
