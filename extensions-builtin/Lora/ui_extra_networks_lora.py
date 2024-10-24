@@ -3,7 +3,7 @@ import os
 import network
 import networks
 
-from modules import shared, ui_extra_networks
+from modules import shared, ui_extra_networks, sd_models_types
 from modules.ui_extra_networks import quote_js
 from ui_edit_user_metadata import LoraUserMetadataEditor
 
@@ -62,8 +62,14 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
 
         if shared.opts.lora_show_all or not enable_filter or not shared.sd_model:
             pass
+        elif shared.sd_model.is_sd3:
+            # TODO: add proper SD3 filtering when detection is implemented
+            # TODO: move after Unknown block when implemented
+            if sd_version is network.SdVersion.SD3 or sd_version.name in shared.opts.TEMP_setting_sd3_lora_filter:
+                return item
+            return None
         elif sd_version == network.SdVersion.Unknown:
-            model_version = network.SdVersion.SDXL if shared.sd_model.is_sdxl else network.SdVersion.SD2 if shared.sd_model.is_sd2 else network.SdVersion.SD1
+            model_version = self.sd_to_lora_version(shared.sd_model)
             if model_version.name in shared.opts.lora_hide_unknown_for_versions:
                 return None
         elif shared.sd_model.is_sdxl and sd_version != network.SdVersion.SDXL:
@@ -88,3 +94,14 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
 
     def create_user_metadata_editor(self, ui, tabname):
         return LoraUserMetadataEditor(ui, tabname, self)
+
+    @staticmethod
+    def sd_to_lora_version(sd_model: sd_models_types.WebuiSdModel):
+        if sd_model.is_sd1:
+            return network.SdVersion.SD1
+        elif sd_model.is_sd2:
+            return network.SdVersion.SD2
+        elif sd_model.is_sdxl:
+            return network.SdVersion.SDXL
+        elif sd_model.is_sd3:
+            return network.SdVersion.SD3
