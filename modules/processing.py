@@ -1259,7 +1259,10 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 if self.hr_checkpoint_info is None:
                     raise Exception(f'Could not find checkpoint with name {self.hr_checkpoint_name}')
 
-                self.extra_generation_params["Hires checkpoint"] = self.hr_checkpoint_info.short_title
+                if shared.sd_model.sd_checkpoint_info == self.hr_checkpoint_info:
+                    self.hr_checkpoint_info = None
+                else:
+                    self.extra_generation_params["Hires checkpoint"] = self.hr_checkpoint_info.short_title
 
             if self.hr_sampler_name is not None and self.hr_sampler_name != self.sampler_name:
                 self.extra_generation_params["Hires sampler"] = self.hr_sampler_name
