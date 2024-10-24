@@ -74,29 +74,38 @@ def image_from_url_text(filedata):
     if filedata is None:
         return None
 
-    if type(filedata) == list and filedata and type(filedata[0]) == dict and filedata[0].get("is_file", False):
+    if isinstance(filedata, list):
+        if len(filedata) == 0:
+            return None
+
         filedata = filedata[0]
 
+    if isinstance(filedata, dict) and filedata.get("is_file", False):
+        filedata = filedata
+
+    filename = None
     if type(filedata) == dict and filedata.get("is_file", False):
         filename = filedata["name"]
+
+    elif isinstance(filedata, tuple) and len(filedata) == 2:  # gradio 4.16 sends images from gallery as a list of tuples
+        return filedata[0]
+
+    if filename:
         is_in_right_dir = ui_tempdir.check_tmp_file(shared.demo, filename)
         assert is_in_right_dir, 'trying to open image file outside of allowed directories'
 
         filename = filename.rsplit('?', 1)[0]
         return images.read(filename)
 
-    if type(filedata) == list:
-        if len(filedata) == 0:
-            return None
+    if isinstance(filedata, str):
+        if filedata.startswith("data:image/png;base64,"):
+            filedata = filedata[len("data:image/png;base64,"):]
 
-        filedata = filedata[0]
+        filedata = base64.decodebytes(filedata.encode('utf-8'))
+        image = images.read(io.BytesIO(filedata))
+        return image
 
-    if filedata.startswith("data:image/png;base64,"):
-        filedata = filedata[len("data:image/png;base64,"):]
-
-    filedata = base64.decodebytes(filedata.encode('utf-8'))
-    image = images.read(io.BytesIO(filedata))
-    return image
+    return None
 
 
 def add_paste_fields(tabname, init_img, fields, override_settings_component=None):
@@ -186,6 +195,8 @@ def connect_paste_params_buttons():
 def send_image_and_dimensions(x):
     if isinstance(x, Image.Image):
         img = x
+    elif isinstance(x, list) and isinstance(x[0], tuple):
+        img = x[0][0]
     else:
         img = image_from_url_text(x)
 
@@ -412,6 +423,9 @@ def create_override_settings_dict(text_pairs):
     """
 
     res = {}
+
+    if not text_pairs:
+        return res
 
     params = {}
     for pair in text_pairs:

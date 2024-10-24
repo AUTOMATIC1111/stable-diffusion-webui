@@ -1,3 +1,4 @@
+from __future__ import annotations
 import base64
 import io
 import time
@@ -66,11 +67,11 @@ class ProgressResponse(BaseModel):
     active: bool = Field(title="Whether the task is being worked on right now")
     queued: bool = Field(title="Whether the task is in queue")
     completed: bool = Field(title="Whether the task has already finished")
-    progress: float = Field(default=None, title="Progress", description="The progress with a range of 0 to 1")
-    eta: float = Field(default=None, title="ETA in secs")
-    live_preview: str = Field(default=None, title="Live preview image", description="Current live preview; a data: uri")
-    id_live_preview: int = Field(default=None, title="Live preview image ID", description="Send this together with next request to prevent receiving same image")
-    textinfo: str = Field(default=None, title="Info text", description="Info text used by WebUI.")
+    progress: float | None = Field(default=None, title="Progress", description="The progress with a range of 0 to 1")
+    eta: float | None = Field(default=None, title="ETA in secs")
+    live_preview: str | None = Field(default=None, title="Live preview image", description="Current live preview; a data: uri")
+    id_live_preview: int | None = Field(default=None, title="Live preview image ID", description="Send this together with next request to prevent receiving same image")
+    textinfo: str | None = Field(default=None, title="Info text", description="Info text used by WebUI.")
 
 
 def setup_progress_api(app):

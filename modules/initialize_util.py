@@ -4,6 +4,8 @@ import signal
 import sys
 import re
 
+import starlette
+
 from modules.timer import startup_timer
 
 
@@ -192,8 +194,7 @@ def configure_opts_onchange():
 def setup_middleware(app):
     from starlette.middleware.gzip import GZipMiddleware
 
-    app.middleware_stack = None  # reset current middleware to allow modifying user provided list
-    app.add_middleware(GZipMiddleware, minimum_size=1000)
+    app.user_middleware.insert(0, starlette.middleware.Middleware(GZipMiddleware, minimum_size=1000))
     configure_cors_middleware(app)
     app.build_middleware_stack()  # rebuild middleware stack on-the-fly
 
@@ -211,5 +212,6 @@ def configure_cors_middleware(app):
         cors_options["allow_origins"] = cmd_opts.cors_allow_origins.split(',')
     if cmd_opts.cors_allow_origins_regex:
         cors_options["allow_origin_regex"] = cmd_opts.cors_allow_origins_regex
-    app.add_middleware(CORSMiddleware, **cors_options)
+
+    app.user_middleware.insert(0, starlette.middleware.Middleware(CORSMiddleware, **cors_options))
 

@@ -750,9 +750,11 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
             elem_id = f"{tabname}_{page.extra_networks_tabname}_cards_html"
             page_elem = gr.HTML(page.create_html(tabname, empty=True), elem_id=elem_id)
             ui.pages.append(page_elem)
+
             editor = page.create_user_metadata_editor(ui, tabname)
             editor.create_ui()
             ui.user_metadata_editors.append(editor)
+
             related_tabs.append(tab)
 
     ui.button_save_preview = gr.Button('Save preview', elem_id=f"{tabname}_save_preview", visible=False)

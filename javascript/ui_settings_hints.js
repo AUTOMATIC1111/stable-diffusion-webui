@@ -14,10 +14,16 @@ onOptionsChanged(function() {
         if (!commentBefore && !commentAfter) return;
 
         var span = null;
-        if (div.classList.contains('gradio-checkbox')) span = div.querySelector('label span');
-        else if (div.classList.contains('gradio-checkboxgroup')) span = div.querySelector('span').firstChild;
-        else if (div.classList.contains('gradio-radio')) span = div.querySelector('span').firstChild;
-        else span = div.querySelector('label span').firstChild;
+        if (div.classList.contains('gradio-checkbox')) {
+            span = div.querySelector('label span');
+        } else if (div.classList.contains('gradio-checkboxgroup')) {
+            span = div.querySelector('span').firstChild;
+        } else if (div.classList.contains('gradio-radio')) {
+            span = div.querySelector('span').firstChild;
+        } else {
+            var elem = div.querySelector('label span');
+            if (elem) span = elem.firstChild;
+        }
 
         if (!span) return;
 
