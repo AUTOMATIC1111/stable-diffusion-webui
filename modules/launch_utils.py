@@ -12,6 +12,7 @@ import json
 import shlex
 from functools import lru_cache
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from modules import cmd_args, errors
 from modules.paths_internal import script_path, extensions_dir
 from modules.timer import startup_timer
@@ -228,7 +229,10 @@ def version_check(commit):
 def run_extension_installer(extension_dir):
     path_installer = os.path.join(extension_dir, "install.py")
     if not os.path.isfile(path_installer):
-        return
+        return False
+
+    dirname = os.path.basename(extension_dir)
+    logging.debug(f"Installing {dirname}")
 
     try:
         env = os.environ.copy()
@@ -239,6 +243,8 @@ def run_extension_installer(extension_dir):
             print(stdout)
     except Exception as e:
         errors.report(str(e))
+
+    return True
 
 
 def list_extensions(settings_file):
@@ -267,14 +273,26 @@ def run_extensions_installers(settings_file):
         return
 
     with startup_timer.subcategory("run extensions installers"):
+        paths = {}
         for dirname_extension in list_extensions(settings_file):
-            logging.debug(f"Installing {dirname_extension}")
-
             path = os.path.join(extensions_dir, dirname_extension)
 
             if os.path.isdir(path):
+                paths[dirname_extension] = path
+
+        max_workers = args.max_install_thread
+        if max_workers == 1:
+            for dirname_extension, path in paths.items():
                 run_extension_installer(path)
                 startup_timer.record(dirname_extension)
+        else:
+            max_workers = min(max_workers, 4)
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = {executor.submit(run_extension_installer, path): dirname_extension for dirname_extension, path in paths.items()}
+                for future in as_completed(futures):
+                    dirname_extension = futures[future]
+                    if future.result():
+                        startup_timer.record(dirname_extension)
 
 
 re_requirement = re.compile(r"\s*([-_a-zA-Z0-9]+)\s*(?:==\s*([-+_.a-zA-Z0-9]+))?\s*")
