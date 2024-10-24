@@ -13,6 +13,7 @@ class ScriptPostprocessingForMainUI(scripts.Script):
         return scripts.AlwaysVisible
 
     def ui(self, is_img2img):
+        self.script.tab_name = '_img2img' if is_img2img else '_txt2img'
         self.postprocessing_controls = self.script.ui()
         return self.postprocessing_controls.values()
 
