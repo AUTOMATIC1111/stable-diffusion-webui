@@ -3,7 +3,9 @@ import re
 import sys
 import inspect
 from collections import namedtuple
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
+from threading import Lock
 
 import gradio as gr
 
@@ -492,9 +494,10 @@ def load_scripts():
 
     scripts_list = list_scripts("scripts", ".py") + list_scripts("modules/processing_scripts", ".py", include_extensions=False)
 
-    syspath = sys.path
+    lock = Lock()
+    syspath = sys.path[:]
 
-    def register_scripts_from_module(module):
+    def register_scripts_from_module(scriptfile, module):
         for script_class in module.__dict__.values():
             if not inspect.isclass(script_class):
                 continue
@@ -504,24 +507,43 @@ def load_scripts():
             elif issubclass(script_class, scripts_postprocessing.ScriptPostprocessing):
                 postprocessing_scripts_data.append(ScriptClassData(script_class, scriptfile.path, scriptfile.basedir, module))
 
-    # here the scripts_list is already ordered
-    # processing_script is not considered though
-    for scriptfile in scripts_list:
+    def load_module(scriptfile):
+        global current_basedir
         try:
-            if scriptfile.basedir != paths.script_path:
-                sys.path = [scriptfile.basedir] + sys.path
-            current_basedir = scriptfile.basedir
+            with lock:
+                if scriptfile.basedir != paths.script_path:
+                    sys.path[0] = scriptfile.basedir
+                current_basedir = scriptfile.basedir
 
-            script_module = script_loading.load_module(scriptfile.path)
-            register_scripts_from_module(script_module)
+                script_module = script_loading.load_module(scriptfile.path)
+            register_scripts_from_module(scriptfile, script_module)
 
         except Exception:
             errors.report(f"Error loading script: {scriptfile.filename}", exc_info=True)
 
         finally:
-            sys.path = syspath
-            current_basedir = paths.script_path
             timer.startup_timer.record(scriptfile.filename)
+
+    sys.path.insert(0, current_basedir)
+
+    # here the scripts_list is already ordered
+    # processing_script is not considered though
+    max_workers = shared.opts.data.get("script_loading_max_thread", 1)
+    if max_workers == 1:
+        for scriptfile in scripts_list:
+            load_module(scriptfile)
+    else:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = [executor.submit(load_module, scriptfile) for scriptfile in scripts_list]
+            completed = 0
+            for _ in as_completed(futures):
+                completed += 1
+
+            print(f"Total {completed} script files loaded")
+
+
+    sys.path = syspath
+    current_basedir = paths.script_path
 
     global scripts_txt2img, scripts_img2img, scripts_postproc
 
