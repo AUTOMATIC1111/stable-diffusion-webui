@@ -338,6 +338,7 @@ def prepare_environment():
             # See https://intel.github.io/intel-extension-for-pytorch/index.html#installation for details.
             torch_index_url = os.environ.get('TORCH_INDEX_URL', "https://pytorch-extension.intel.com/release-whl/stable/xpu/us/")
             torch_command = os.environ.get('TORCH_COMMAND', f"pip install torch==2.0.0a0 intel-extension-for-pytorch==2.0.110+gitba7f6c1 --extra-index-url {torch_index_url}")
+    requirements_file_temp = os.environ.get('REQS_FILE', "requirements_temp.txt")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
     requirements_file_for_npu = os.environ.get('REQS_FILE_FOR_NPU', "requirements_npu.txt")
 
@@ -415,6 +416,13 @@ def prepare_environment():
     git_clone(blip_repo, repo_dir('BLIP'), "BLIP", blip_commit_hash)
 
     startup_timer.record("clone repositores")
+
+    if not os.path.isfile(requirements_file_temp):
+        requirements_file_temp = os.path.join(script_path, requirements_file_temp)
+
+    if not requirements_met(requirements_file_temp):
+        run_pip(f"install -r \"{requirements_file_temp}\"", "requirements_temp")
+        startup_timer.record("install requirements_temp")
 
     if not os.path.isfile(requirements_file):
         requirements_file = os.path.join(script_path, requirements_file)
