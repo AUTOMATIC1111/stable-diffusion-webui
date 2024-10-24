@@ -160,7 +160,7 @@ class LoadStateDictOnMeta(ReplaceHelper):
         self.state_dict = state_dict
         self.device = device
         self.weight_dtype_conversion = weight_dtype_conversion or {}
-        self.default_dtype = self.weight_dtype_conversion.get('')
+        self.default_dtype = self.weight_dtype_conversion.get('', None)
 
     def get_weight_dtype(self, key):
         key_first_term, _ = key.split('.', 1)
@@ -176,6 +176,11 @@ class LoadStateDictOnMeta(ReplaceHelper):
         def load_from_state_dict(original, module, state_dict, prefix, *args, **kwargs):
             used_param_keys = []
 
+            if isinstance(module, (torch.nn.Linear, torch.nn.Conv2d, torch.nn.GroupNorm,)):
+                # HACK add assign=True to local_metadata for some cases
+                args[0]['assign_to_params_buffers'] = True
+
+
             for name, param in module._parameters.items():
                 if param is None:
                     continue
@@ -183,12 +188,16 @@ class LoadStateDictOnMeta(ReplaceHelper):
                 key = prefix + name
                 sd_param = sd.pop(key, None)
                 if sd_param is not None:
-                    state_dict[key] = sd_param.to(dtype=self.get_weight_dtype(key))
+                    dtype = self.get_weight_dtype(key)
+                    if dtype is None:
+                        state_dict[key] = sd_param
+                    else:
+                        state_dict[key] = sd_param.to(dtype=dtype)
                     used_param_keys.append(key)
 
                 if param.is_meta:
                     dtype = sd_param.dtype if sd_param is not None else param.dtype
-                    module._parameters[name] = torch.nn.parameter.Parameter(torch.zeros_like(param, device=device, dtype=dtype), requires_grad=param.requires_grad)
+                    module._parameters[name] = torch.nn.parameter.Parameter(torch.empty_like(param, device=device, dtype=dtype), requires_grad=param.requires_grad)
 
             for name in module._buffers:
                 key = prefix + name

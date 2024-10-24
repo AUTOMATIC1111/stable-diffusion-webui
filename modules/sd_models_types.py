@@ -36,5 +36,8 @@ class WebuiSdModel(LatentDiffusion):
     is_sd3: bool
     """True if the model's architecture is SD 3"""
 
+    is_flux1: bool
+    """True if the model's architecture is FLUX 1"""
+
     latent_channels: int
     """number of layer in latent image representation; will be 16 in SD3 and 4 in other version"""

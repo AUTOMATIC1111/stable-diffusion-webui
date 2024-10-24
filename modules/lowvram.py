@@ -53,6 +53,7 @@ def setup_for_low_vram(sd_model, use_medvram):
 
         if module_in_gpu is not None:
             module_in_gpu.to(cpu)
+            devices.torch_gc()
 
         module.to(devices.device)
         module_in_gpu = module

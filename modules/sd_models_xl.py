@@ -18,7 +18,7 @@ def get_learned_conditioning(self: sgm.models.diffusion.DiffusionEngine, batch: 
     is_negative_prompt = getattr(batch, 'is_negative_prompt', False)
     aesthetic_score = shared.opts.sdxl_refiner_low_aesthetic_score if is_negative_prompt else shared.opts.sdxl_refiner_high_aesthetic_score
 
-    devices_args = dict(device=devices.device, dtype=devices.dtype)
+    devices_args = dict(device=devices.device, dtype=devices.dtype_inference)
 
     sdxl_conds = {
         "txt": batch,

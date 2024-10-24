@@ -1,15 +1,17 @@
 import re
+import torch
 
 import gradio as gr
 from fastapi import FastAPI
 
+import gc
 import network
 import networks
 import lora  # noqa:F401
 import lora_patches
 import extra_networks_lora
 import ui_extra_networks_lora
-from modules import script_callbacks, ui_extra_networks, extra_networks, shared
+from modules import script_callbacks, ui_extra_networks, extra_networks, shared, scripts, devices
 
 
 def unload():
@@ -95,6 +97,82 @@ def infotext_pasted(infotext, d):
         return f'<lora:{network_on_disk.get_alias()}:'
 
     d["Prompt"] = re.sub(re_lora, network_replacement, d["Prompt"])
+
+
+class ScriptLora(scripts.Script):
+    name = "Lora"
+
+    def title(self):
+        return self.name
+
+    def show(self, is_img2img):
+        return scripts.AlwaysVisible
+
+    def after_extra_networks_activate(self, p, *args, **kwargs):
+        # check modules and setup org_dtype
+        modules = []
+        if shared.sd_model.is_sdxl:
+            for _i, embedder in enumerate(shared.sd_model.conditioner.embedders):
+                if not hasattr(embedder, 'wrapped'):
+                    continue
+
+                for _name, module in embedder.wrapped.named_modules():
+                    if isinstance(module, (torch.nn.Conv2d, torch.nn.Linear, torch.nn.GroupNorm, torch.nn.LayerNorm, torch.nn.MultiheadAttention)):
+                        if hasattr(module, 'weight'):
+                            modules.append(module)
+                        elif isinstance(module, torch.nn.MultiheadAttention):
+                            modules.append(module)
+
+        else:
+            cond_stage_model = getattr(shared.sd_model.cond_stage_model, 'wrapped', shared.sd_model.cond_stage_model)
+
+            for _name, module in cond_stage_model.named_modules():
+                if isinstance(module, (torch.nn.Conv2d, torch.nn.Linear, torch.nn.GroupNorm, torch.nn.LayerNorm, torch.nn.MultiheadAttention)):
+                    if hasattr(module, 'weight'):
+                        modules.append(module)
+                    elif isinstance(module, torch.nn.MultiheadAttention):
+                        modules.append(module)
+
+        for _name, module in shared.sd_model.model.named_modules():
+            if isinstance(module, (torch.nn.Conv2d, torch.nn.Linear, torch.nn.GroupNorm, torch.nn.LayerNorm, torch.nn.MultiheadAttention)):
+                if hasattr(module, 'weight'):
+                    modules.append(module)
+                elif isinstance(module, torch.nn.MultiheadAttention):
+                    modules.append(module)
+
+        print("Total lora modules after_extra_networks_activate() =", len(modules))
+
+        target_dtype = devices.dtype_inference
+        for module in modules:
+            network_layer_name = getattr(module, 'network_layer_name', None)
+            if network_layer_name is None:
+                continue
+
+            if isinstance(module, torch.nn.MultiheadAttention):
+                org_dtype = torch.float32
+            else:
+                org_dtype = None
+                for _name, param in module.named_parameters():
+                    if param.dtype != target_dtype:
+                        org_dtype = param.dtype
+                        break
+
+            # set org_dtype
+            module.org_dtype = org_dtype
+
+            # backup/restore weights
+            current_names = getattr(module, "network_current_names", ())
+            wanted_names = tuple((x.name, x.te_multiplier, x.unet_multiplier, x.dyn_dim) for x in networks.loaded_networks)
+
+            weights_backup = getattr(module, "network_weights_backup", None)
+
+            if current_names == () and current_names != wanted_names and weights_backup is None:
+                networks.network_backup_weights(module)
+            elif current_names != () and current_names != wanted_names:
+                networks.network_restore_weights_from_backup(module, wanted_names == ())
+                module.weights_restored = True
+        if current_names != wanted_names and wanted_names == ():
+            gc.collect()
 
 
 script_callbacks.on_infotext_pasted(infotext_pasted)

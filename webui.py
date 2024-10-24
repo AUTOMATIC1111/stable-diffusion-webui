@@ -6,6 +6,8 @@ import time
 from modules import timer
 from modules import initialize_util
 from modules import initialize
+from modules import manager
+from threading import Thread
 
 startup_timer = timer.startup_timer
 startup_timer.record("launcher")
@@ -13,6 +15,8 @@ startup_timer.record("launcher")
 initialize.imports()
 
 initialize.check_versions()
+
+initialize.initialize()
 
 
 def create_api(app):
@@ -23,11 +27,9 @@ def create_api(app):
     return api
 
 
-def api_only():
+def _api_only():
     from fastapi import FastAPI
     from modules.shared_cmd_options import cmd_opts
-
-    initialize.initialize()
 
     app = FastAPI()
     initialize_util.setup_middleware(app)
@@ -45,11 +47,10 @@ def api_only():
     )
 
 
-def webui():
+def _webui():
     from modules.shared_cmd_options import cmd_opts
 
     launch_api = cmd_opts.api
-    initialize.initialize()
 
     from modules import shared, ui_tempdir, script_callbacks, ui, progress, ui_extra_networks
 
@@ -137,6 +138,7 @@ def webui():
             print("Stopping server...")
             # If we catch a keyboard interrupt, we want to stop the server and exit.
             shared.demo.close()
+            manager.task.stop()
             break
 
         # disable auto launch webui in browser for subsequent UI Reload
@@ -153,6 +155,13 @@ def webui():
         initialize.initialize_rest(reload_script_modules=True)
 
 
+def api_only():
+    Thread(target=_api_only, daemon=True).start()
+
+
+def webui():
+    Thread(target=_webui, daemon=True).start()
+
 if __name__ == "__main__":
     from modules.shared_cmd_options import cmd_opts
 
@@ -160,3 +169,5 @@ if __name__ == "__main__":
         api_only()
     else:
         webui()
+
+    manager.task.main_loop()

@@ -24,6 +24,11 @@ class AutocastLinear(nn.Linear):
     def forward(self, x):
         return torch.nn.functional.linear(x, self.weight.to(x.dtype), self.bias.to(x.dtype) if self.bias is not None else None)
 
+class AutocastLayerNorm(nn.LayerNorm):
+    def forward(self, x):
+        return torch.nn.functional.layer_norm(
+            x, self.normalized_shape, self.weight.to(x.dtype), self.bias.to(x.dtype) if self.bias is not None else None, self.eps)
+
 
 def attention(q, k, v, heads, mask=None):
     """Convenience wrapper around a basic attention operation"""
@@ -41,9 +46,9 @@ class Mlp(nn.Module):
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
 
-        self.fc1 = nn.Linear(in_features, hidden_features, bias=bias, dtype=dtype, device=device)
+        self.fc1 = AutocastLinear(in_features, hidden_features, bias=bias, dtype=dtype, device=device)
         self.act = act_layer
-        self.fc2 = nn.Linear(hidden_features, out_features, bias=bias, dtype=dtype, device=device)
+        self.fc2 = AutocastLinear(hidden_features, out_features, bias=bias, dtype=dtype, device=device)
 
     def forward(self, x):
         x = self.fc1(x)
@@ -61,10 +66,10 @@ class CLIPAttention(torch.nn.Module):
     def __init__(self, embed_dim, heads, dtype, device):
         super().__init__()
         self.heads = heads
-        self.q_proj = nn.Linear(embed_dim, embed_dim, bias=True, dtype=dtype, device=device)
-        self.k_proj = nn.Linear(embed_dim, embed_dim, bias=True, dtype=dtype, device=device)
-        self.v_proj = nn.Linear(embed_dim, embed_dim, bias=True, dtype=dtype, device=device)
-        self.out_proj = nn.Linear(embed_dim, embed_dim, bias=True, dtype=dtype, device=device)
+        self.q_proj = AutocastLinear(embed_dim, embed_dim, bias=True, dtype=dtype, device=device)
+        self.k_proj = AutocastLinear(embed_dim, embed_dim, bias=True, dtype=dtype, device=device)
+        self.v_proj = AutocastLinear(embed_dim, embed_dim, bias=True, dtype=dtype, device=device)
+        self.out_proj = AutocastLinear(embed_dim, embed_dim, bias=True, dtype=dtype, device=device)
 
     def forward(self, x, mask=None):
         q = self.q_proj(x)
@@ -82,9 +87,11 @@ ACTIVATIONS = {
 class CLIPLayer(torch.nn.Module):
     def __init__(self, embed_dim, heads, intermediate_size, intermediate_activation, dtype, device):
         super().__init__()
-        self.layer_norm1 = nn.LayerNorm(embed_dim, dtype=dtype, device=device)
+        #self.layer_norm1 = nn.LayerNorm(embed_dim, dtype=dtype, device=device)
+        self.layer_norm1 = AutocastLayerNorm(embed_dim, dtype=dtype, device=device)
         self.self_attn = CLIPAttention(embed_dim, heads, dtype, device)
-        self.layer_norm2 = nn.LayerNorm(embed_dim, dtype=dtype, device=device)
+        self.layer_norm2 = AutocastLayerNorm(embed_dim, dtype=dtype, device=device)
+        #self.layer_norm2 = nn.LayerNorm(embed_dim, dtype=dtype, device=device)
         #self.mlp = CLIPMLP(embed_dim, intermediate_size, intermediate_activation, dtype, device)
         self.mlp = Mlp(embed_dim, intermediate_size, embed_dim, act_layer=ACTIVATIONS[intermediate_activation], dtype=dtype, device=device)
 
@@ -131,7 +138,7 @@ class CLIPTextModel_(torch.nn.Module):
         super().__init__()
         self.embeddings = CLIPEmbeddings(embed_dim, dtype=torch.float32, device=device, textual_inversion_key=config_dict.get('textual_inversion_key', 'clip_l'))
         self.encoder = CLIPEncoder(num_layers, embed_dim, heads, intermediate_size, intermediate_activation, dtype, device)
-        self.final_layer_norm = nn.LayerNorm(embed_dim, dtype=dtype, device=device)
+        self.final_layer_norm = AutocastLayerNorm(embed_dim, dtype=dtype, device=device)
 
     def forward(self, input_tokens, intermediate_output=None, final_layer_norm_intermediate=True):
         x = self.embeddings(input_tokens)
@@ -150,7 +157,7 @@ class CLIPTextModel(torch.nn.Module):
         self.num_layers = config_dict["num_hidden_layers"]
         self.text_model = CLIPTextModel_(config_dict, dtype, device)
         embed_dim = config_dict["hidden_size"]
-        self.text_projection = nn.Linear(embed_dim, embed_dim, bias=False, dtype=dtype, device=device)
+        self.text_projection = AutocastLinear(embed_dim, embed_dim, bias=False, dtype=dtype, device=device)
         self.text_projection.weight.copy_(torch.eye(embed_dim))
         self.dtype = dtype
 
@@ -370,7 +377,7 @@ class T5Attention(torch.nn.Module):
         if relative_attention_bias:
             self.relative_attention_num_buckets = 32
             self.relative_attention_max_distance = 128
-            self.relative_attention_bias = torch.nn.Embedding(self.relative_attention_num_buckets, self.num_heads, device=device)
+            self.relative_attention_bias = torch.nn.Embedding(self.relative_attention_num_buckets, self.num_heads, device=device, dtype=torch.float32)
 
     @staticmethod
     def _relative_position_bucket(relative_position, bidirectional=True, num_buckets=32, max_distance=128):
@@ -442,7 +449,7 @@ class T5Attention(torch.nn.Module):
         else:
             mask = None
 
-        out = attention(q, k * ((k.shape[-1] / self.num_heads) ** 0.5), v, self.num_heads, mask.to(x.dtype) if mask is not None else None)
+        out = attention(q, k * ((k.shape[-1] / self.num_heads) ** 0.5), v, self.num_heads, mask.to(q.dtype) if mask is not None else None)
 
         return self.o(out), past_bias
 
@@ -475,19 +482,21 @@ class T5Block(torch.nn.Module):
 class T5Stack(torch.nn.Module):
     def __init__(self, num_layers, model_dim, inner_dim, ff_dim, num_heads, vocab_size, dtype, device):
         super().__init__()
-        self.embed_tokens = torch.nn.Embedding(vocab_size, model_dim, device=device)
+        #self.embed_tokens = torch.nn.Embedding(vocab_size, model_dim, device=device, dtype=torch.float32)
         self.block = torch.nn.ModuleList([T5Block(model_dim, inner_dim, ff_dim, num_heads, relative_attention_bias=(i == 0), dtype=dtype, device=device) for i in range(num_layers)])
         self.final_layer_norm = T5LayerNorm(model_dim, dtype=dtype, device=device)
 
-    def forward(self, input_ids, intermediate_output=None, final_layer_norm_intermediate=True):
+    def forward(self, x, intermediate_output=None, final_layer_norm_intermediate=True):
         intermediate = None
-        x = self.embed_tokens(input_ids).to(torch.float32)  # needs float32 or else T5 returns all zeroes
+        #x = self.embed_tokens(input_ids).to(torch.float32)  # needs float32 or else T5 returns all zeroes
+        # some T5XXL do not embed_token. use shared token instead like comfy
         past_bias = None
         for i, layer in enumerate(self.block):
             x, past_bias = layer(x, past_bias)
             if i == intermediate_output:
                 intermediate = x.clone()
         x = self.final_layer_norm(x)
+        x = torch.nan_to_num(x)
         if intermediate is not None and final_layer_norm_intermediate:
             intermediate = self.final_layer_norm(intermediate)
         return x, intermediate
@@ -498,13 +507,18 @@ class T5(torch.nn.Module):
         super().__init__()
         self.num_layers = config_dict["num_layers"]
         self.encoder = T5Stack(self.num_layers, config_dict["d_model"], config_dict["d_model"], config_dict["d_ff"], config_dict["num_heads"], config_dict["vocab_size"], dtype, device)
+        self.shared = torch.nn.Embedding(config_dict["vocab_size"], config_dict["d_model"], device=device, dtype=torch.float32)
         self.dtype = dtype
 
     def get_input_embeddings(self):
-        return self.encoder.embed_tokens
+        #return self.encoder.embed_tokens
+        return self.shared
 
     def set_input_embeddings(self, embeddings):
-        self.encoder.embed_tokens = embeddings
+        #self.encoder.embed_tokens = embeddings
+        self.shared = embeddings
 
-    def forward(self, *args, **kwargs):
-        return self.encoder(*args, **kwargs)
+    def forward(self, input_ids, *args, **kwargs):
+        x = self.shared(input_ids).float()
+        x = torch.nan_to_num(x)
+        return self.encoder(x, *args, **kwargs)
