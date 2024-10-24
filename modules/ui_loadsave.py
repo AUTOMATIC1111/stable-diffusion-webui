@@ -176,7 +176,7 @@ class UiLoadsave:
             if new_value == old_value:
                 continue
 
-            if old_value is None and new_value == '' or new_value == []:
+            if old_value is None and (new_value == '' or new_value == []):
                 continue
 
             yield path, old_value, new_value
