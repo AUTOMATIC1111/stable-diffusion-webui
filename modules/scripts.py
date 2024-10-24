@@ -484,6 +484,34 @@ def list_files_with_name(filename):
     return res
 
 
+def custom_sort_key(filename):
+    # Regular files come first, followed by those with - and then alphanumeric
+    match = re.match(r"(.+?)(-\d{2}|-[A-Z]|)(\.\w+)", filename)
+    base = match.group(1) if match else filename
+    suffix = match.group(2) if match else ''
+    extension = match.group(3) if match else ''
+
+    # 1. Base name
+    # 2. Suffix (optional)
+    return (base, suffix, extension)
+
+def list_files_with_prefix(prefix, file_extension):
+    res = []
+    dirs = [paths.script_path] + [ext.path for ext in extensions.active()]
+
+    for dirpath in dirs:
+        if not os.path.isdir(dirpath):
+            continue
+
+        for filename in os.listdir(dirpath):
+            if filename.startswith(prefix) and filename.endswith(file_extension):
+                res.append(os.path.join(dirpath, filename))
+
+    res.sort(key=lambda x: (os.path.dirname(x), custom_sort_key(os.path.basename(x))))
+
+    return res
+
+
 def load_scripts():
     global current_basedir
     scripts_data.clear()
