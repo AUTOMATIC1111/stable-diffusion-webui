@@ -177,10 +177,8 @@ def add_pages_to_demo(app):
     app.add_api_route("/sd_extra_networks/get-single-card", get_single_card, methods=["GET"])
 
 
-def quote_js(s):
-    s = s.replace('\\', '\\\\')
-    s = s.replace('"', '\\"')
-    return f'"{s}"'
+def quote_js(s: str):
+    return json.dumps(s, ensure_ascii=False)
 
 
 class ExtraNetworksPage:
