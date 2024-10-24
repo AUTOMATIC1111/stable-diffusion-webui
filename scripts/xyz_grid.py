@@ -20,7 +20,7 @@ import modules.sd_models
 import modules.sd_vae
 import re
 
-from modules.ui_components import ToolButton
+from modules.ui_components import ToolButton, InputAccordion
 
 fill_values_symbol = "\U0001f4d2"  # 📒
 
@@ -285,7 +285,7 @@ axis_options = [
 ]
 
 
-def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend, include_lone_images, include_sub_grids, first_axes_processed, second_axes_processed, margin_size):
+def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend, include_lone_images, include_sub_grids, first_axes_processed, second_axes_processed, margin_size, draw_grid):
     hor_texts = [[images.GridAnnotation(x)] for x in x_labels]
     ver_texts = [[images.GridAnnotation(y)] for y in y_labels]
     title_texts = [[images.GridAnnotation(z)] for z in z_labels]
@@ -370,29 +370,30 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
         print("Unexpected error: draw_xyz_grid failed to return even a single processed image")
         return Processed(p, [])
 
-    z_count = len(zs)
+    if draw_grid:
+        z_count = len(zs)
 
-    for i in range(z_count):
-        start_index = (i * len(xs) * len(ys)) + i
-        end_index = start_index + len(xs) * len(ys)
-        grid = images.image_grid(processed_result.images[start_index:end_index], rows=len(ys))
+        for i in range(z_count):
+            start_index = (i * len(xs) * len(ys)) + i
+            end_index = start_index + len(xs) * len(ys)
+            grid = images.image_grid(processed_result.images[start_index:end_index], rows=len(ys))
+            if draw_legend:
+                grid_max_w, grid_max_h = map(max, zip(*(img.size for img in processed_result.images[start_index:end_index])))
+                grid = images.draw_grid_annotations(grid, grid_max_w, grid_max_h, hor_texts, ver_texts, margin_size)
+            processed_result.images.insert(i, grid)
+            processed_result.all_prompts.insert(i, processed_result.all_prompts[start_index])
+            processed_result.all_seeds.insert(i, processed_result.all_seeds[start_index])
+            processed_result.infotexts.insert(i, processed_result.infotexts[start_index])
+
+        z_grid = images.image_grid(processed_result.images[:z_count], rows=1)
+        z_sub_grid_max_w, z_sub_grid_max_h = map(max, zip(*(img.size for img in processed_result.images[:z_count])))
         if draw_legend:
-            grid_max_w, grid_max_h = map(max, zip(*(img.size for img in processed_result.images[start_index:end_index])))
-            grid = images.draw_grid_annotations(grid, grid_max_w, grid_max_h, hor_texts, ver_texts, margin_size)
-        processed_result.images.insert(i, grid)
-        processed_result.all_prompts.insert(i, processed_result.all_prompts[start_index])
-        processed_result.all_seeds.insert(i, processed_result.all_seeds[start_index])
-        processed_result.infotexts.insert(i, processed_result.infotexts[start_index])
-
-    z_grid = images.image_grid(processed_result.images[:z_count], rows=1)
-    z_sub_grid_max_w, z_sub_grid_max_h = map(max, zip(*(img.size for img in processed_result.images[:z_count])))
-    if draw_legend:
-        z_grid = images.draw_grid_annotations(z_grid, z_sub_grid_max_w, z_sub_grid_max_h, title_texts, [[images.GridAnnotation()]])
-    processed_result.images.insert(0, z_grid)
-    # TODO: Deeper aspects of the program rely on grid info being misaligned between metadata arrays, which is not ideal.
-    # processed_result.all_prompts.insert(0, processed_result.all_prompts[0])
-    # processed_result.all_seeds.insert(0, processed_result.all_seeds[0])
-    processed_result.infotexts.insert(0, processed_result.infotexts[0])
+            z_grid = images.draw_grid_annotations(z_grid, z_sub_grid_max_w, z_sub_grid_max_h, title_texts, [[images.GridAnnotation()]])
+        processed_result.images.insert(0, z_grid)
+        # TODO: Deeper aspects of the program rely on grid info being misaligned between metadata arrays, which is not ideal.
+        # processed_result.all_prompts.insert(0, processed_result.all_prompts[0])
+        # processed_result.all_seeds.insert(0, processed_result.all_seeds[0])
+        processed_result.infotexts.insert(0, processed_result.infotexts[0])
 
     return processed_result
 
@@ -442,7 +443,6 @@ class Script(scripts.Script):
 
         with gr.Row(variant="compact", elem_id="axis_options"):
             with gr.Column():
-                draw_legend = gr.Checkbox(label='Draw legend', value=True, elem_id=self.elem_id("draw_legend"))
                 no_fixed_seeds = gr.Checkbox(label='Keep -1 for seeds', value=False, elem_id=self.elem_id("no_fixed_seeds"))
                 with gr.Row():
                     vary_seeds_x = gr.Checkbox(label='Vary seeds for X', value=False, min_width=80, elem_id=self.elem_id("vary_seeds_x"), tooltip="Use different seeds for images along X axis.")
@@ -450,9 +450,12 @@ class Script(scripts.Script):
                     vary_seeds_z = gr.Checkbox(label='Vary seeds for Z', value=False, min_width=80, elem_id=self.elem_id("vary_seeds_z"), tooltip="Use different seeds for images along Z axis.")
             with gr.Column():
                 include_lone_images = gr.Checkbox(label='Include Sub Images', value=False, elem_id=self.elem_id("include_lone_images"))
-                include_sub_grids = gr.Checkbox(label='Include Sub Grids', value=False, elem_id=self.elem_id("include_sub_grids"))
                 csv_mode = gr.Checkbox(label='Use text inputs instead of dropdowns', value=False, elem_id=self.elem_id("csv_mode"))
-            with gr.Column():
+
+        with InputAccordion(True, label='Draw grid', elem_id=self.elem_id('draw_grid')) as draw_grid:
+            with gr.Row():
+                include_sub_grids = gr.Checkbox(label='Include Sub Grids', value=False, elem_id=self.elem_id("include_sub_grids"))
+                draw_legend = gr.Checkbox(label='Draw legend', value=True, elem_id=self.elem_id("draw_legend"))
                 margin_size = gr.Slider(label="Grid margins (px)", minimum=0, maximum=500, value=0, step=2, elem_id=self.elem_id("margin_size"))
 
         with gr.Row(variant="compact", elem_id="swap_axes"):
@@ -534,9 +537,9 @@ class Script(scripts.Script):
             (z_values_dropdown, lambda params: get_dropdown_update_from_params("Z", params)),
         )
 
-        return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode]
+        return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode, draw_grid]
 
-    def run(self, p, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode):
+    def run(self, p, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode, draw_grid):
         x_type, y_type, z_type = x_type or 0, y_type or 0, z_type or 0  # if axle type is None set to 0
 
         if not no_fixed_seeds:
@@ -781,7 +784,8 @@ class Script(scripts.Script):
                 include_sub_grids=include_sub_grids,
                 first_axes_processed=first_axes_processed,
                 second_axes_processed=second_axes_processed,
-                margin_size=margin_size
+                margin_size=margin_size,
+                draw_grid=draw_grid,
             )
 
         if not processed.images:
@@ -790,14 +794,15 @@ class Script(scripts.Script):
 
         z_count = len(zs)
 
-        # Set the grid infotexts to the real ones with extra_generation_params (1 main grid + z_count sub-grids)
-        processed.infotexts[:1 + z_count] = grid_infotext[:1 + z_count]
+        if draw_grid:
+            # Set the grid infotexts to the real ones with extra_generation_params (1 main grid + z_count sub-grids)
+            processed.infotexts[:1 + z_count] = grid_infotext[:1 + z_count]
 
         if not include_lone_images:
             # Don't need sub-images anymore, drop from list:
-            processed.images = processed.images[:z_count + 1]
+            processed.images = processed.images[:z_count + 1] if draw_grid else []
 
-        if opts.grid_save:
+        if draw_grid and opts.grid_save:
             # Auto-save main and sub-grids:
             grid_count = z_count + 1 if z_count > 1 else 1
             for g in range(grid_count):
@@ -807,7 +812,7 @@ class Script(scripts.Script):
                 if not include_sub_grids:  # if not include_sub_grids then skip saving after the first grid
                     break
 
-        if not include_sub_grids:
+        if draw_grid and not include_sub_grids:
             # Done with sub-grids, drop all related information:
             for _ in range(z_count):
                 del processed.images[1]
