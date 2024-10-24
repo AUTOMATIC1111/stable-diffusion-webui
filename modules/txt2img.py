@@ -87,14 +87,18 @@ def txt2img_upscale(id_task: str, request: gr.Request, gallery, gallery_index, g
     new_gallery = []
     for i, image in enumerate(gallery):
         if i == gallery_index:
-            geninfo["infotexts"][gallery_index: gallery_index+1] = processed.infotexts
+            if shared.opts.hires_button_gallery_inset:
+                fake_image = Image.new(mode="RGB", size=(1, 1))
+                fake_image.already_saved_as = image["name"].rsplit('?', 1)[0]
+                new_gallery.append(fake_image)
+                geninfo["infotexts"][gallery_index+1: gallery_index+1] = processed.infotexts
+            else:
+                geninfo["infotexts"][gallery_index: gallery_index+1] = processed.infotexts
             new_gallery.extend(processed.images)
         else:
             fake_image = Image.new(mode="RGB", size=(1, 1))
             fake_image.already_saved_as = image["name"].rsplit('?', 1)[0]
             new_gallery.append(fake_image)
-
-    geninfo["infotexts"][gallery_index] = processed.info
 
     return new_gallery, json.dumps(geninfo), plaintext_to_html(processed.info), plaintext_to_html(processed.comments, classname="comments")
 
