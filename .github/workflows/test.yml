@@ -1,0 +1,45 @@
+name: Test WebUI Startup
+
+on: [push, pull_request]
+
+jobs:
+  test-webui:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout do código
+      uses: actions/checkout@v3
+
+    - name: Instalar dependências de sistema
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-venv curl
+
+    - name: Configurar ambiente virtual e dependências Python
+      run: |
+        python3 -m venv venv
+        source venv/bin/activate
+        pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - name: Iniciar WebUI em background
+      run: |
+        source venv/bin/activate
+        nohup python webui.py > log.txt 2>&1 &
+
+    - name: Esperar servidor iniciar
+      run: |
+        sleep 20
+        curl -sf http://127.0.0.1:7860 || (echo "Servidor não respondeu" && cat log.txt && exit 1)
+
+    - name: Encerrar servidor (se rodando)
+      run: |
+        curl -X POST http://127.0.0.1:7860/sdapi/v1/server-stop || true
+
+    - name: Rodar webui e salvar log
+      run: |
+        python webui.py > log.txt 2>&1
+
+    - name: Mostrar log final do servidor
+      run: |
+        cat log.txt || true
