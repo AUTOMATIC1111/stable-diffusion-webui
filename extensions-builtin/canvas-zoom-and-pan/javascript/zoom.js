@@ -286,8 +286,9 @@ onUiLoaded(async() => {
 
         targetElement.style.transformOrigin = "0 0";
 
+        // initialize element state — use `zoomLevel` consistently across the file
         elemData[elemId] = {
-            zoom: 1,
+            zoomLevel: 1,
             panX: 0,
             panY: 0
         };
@@ -333,9 +334,8 @@ onUiLoaded(async() => {
             // Create hotkeys array with disabled property based on the config values
             const hotkeys = hotkeysInfo.map(info => {
                 const configValue = hotkeysConfig[info.configKey];
-                const key = info.keySuffix ?
-                    `${configValue}${info.keySuffix}` :
-                    configValue.charAt(configValue.length - 1);
+                const displayKey = formatHotkeyForDisplay(String(configValue || ""));
+                const key = info.keySuffix ? `${displayKey}${info.keySuffix}` : displayKey;
                 return {
                     key,
                     action: info.action,
@@ -371,7 +371,8 @@ onUiLoaded(async() => {
             const activeTab = getActiveTab(elements)?.textContent.trim();
 
             if (activeTab && activeTab !== "img2img") {
-                const img = targetElement.querySelector(`${elemId} img`);
+                // look for an actual <img> inside the target element
+                const img = targetElement.querySelector('img');
 
                 if (img && img.style.display !== "none") {
                     img.style.display = "none";
@@ -481,10 +482,13 @@ onUiLoaded(async() => {
         }
 
         // Reset zoom when uploading a new image
+        // file input may be absent or the class may vary — guard the listener
         const fileInput = gradioApp().querySelector(
-            `${elemId} input[type="file"][accept="image/*"].svelte-116rqfv`
+            `${elemId} input[type="file"][accept="image/*"]`
         );
-        fileInput.addEventListener("click", resetZoom);
+        if (fileInput) {
+            fileInput.addEventListener("click", resetZoom);
+        }
 
         // Update the zoom level and pan position of the target element based on the values of the zoomLevel, panX and panY variables
         function updateZoom(newZoomLevel, mouseX, mouseY) {
@@ -718,8 +722,10 @@ onUiLoaded(async() => {
 
         // Get Mouse position
         function getMousePosition(e) {
-            mouseX = e.offsetX;
-            mouseY = e.offsetY;
+            // compute mouse position relative to the target element
+            const rect = targetElement.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
         }
 
         // Simulation of the function to put a long image into the screen.
