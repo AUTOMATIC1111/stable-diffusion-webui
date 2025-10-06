@@ -41,7 +41,8 @@ def patch():
 
         modified_command = ["uv", "pip", *cmd]
 
-        result = subprocess.__original_run([*modified_command, *_args], **_kwargs)
+        cmd_str = shlex.join([*modified_command, *_args])
+        result = subprocess.__original_run(cmd_str, **_kwargs)
         if result.returncode != 0:
             return subprocess.__original_run(*args, **kwargs)
         return result
