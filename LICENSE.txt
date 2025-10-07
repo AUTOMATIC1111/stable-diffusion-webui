@@ -83,7 +83,7 @@ on the Program.
 permission, would make you directly or secondarily liable for
 infringement under applicable copyright law, except executing it on a
 computer or modifying a private copy.  Propagation includes copying,
-distribution (with or without modification), making available to the
+distribu bytion (with or without modification), making available to the
 public, and in some countries other activities as well.
 
   To "convey" a work means any kind of propagation that enables other
@@ -661,3 +661,4 @@ specific requirements.
 if any, to sign a "copyright disclaimer" for the program, if necessary.
 For more information on this, and how to apply and follow the GNU AGPL, see
 <https://www.gnu.org/licenses/>.
+
