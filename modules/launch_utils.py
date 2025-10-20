@@ -378,8 +378,9 @@ def prepare_environment():
     print(f"Commit hash: {commit}")
 
     if args.reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
-        run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch", live=True)
-        startup_timer.record("install torch")
+    # Skipping automatic torch install; using manually installed torch 1.12.1 + cu113
+     print("Skipping torch installation. Using existing torch 1.12.1 + cu113.")
+    startup_timer.record("install torch")
 
     if args.use_ipex:
         args.skip_torch_cuda_test = True
