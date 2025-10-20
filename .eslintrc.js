@@ -88,6 +88,7 @@ module.exports = {
         // imageviewer.js
         modalPrevImage: "readonly",
         modalNextImage: "readonly",
+        updateModalImageIfVisible: "readonly",
         // localStorage.js
         localSet: "readonly",
         localGet: "readonly",

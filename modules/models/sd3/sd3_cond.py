@@ -24,7 +24,7 @@ class SafetensorsMapping(typing.Mapping):
         return self.file.get_tensor(key)
 
 
-CLIPL_URL = "https://huggingface.co/AUTOMATIC/stable-diffusion-3-medium-text-encoders/resolve/main/clip_l.safetensors"
+CLIPL_URL = f"{shared.hf_endpoint}/AUTOMATIC/stable-diffusion-3-medium-text-encoders/resolve/main/clip_l.safetensors"
 CLIPL_CONFIG = {
     "hidden_act": "quick_gelu",
     "hidden_size": 768,
@@ -33,7 +33,7 @@ CLIPL_CONFIG = {
     "num_hidden_layers": 12,
 }
 
-CLIPG_URL = "https://huggingface.co/AUTOMATIC/stable-diffusion-3-medium-text-encoders/resolve/main/clip_g.safetensors"
+CLIPG_URL = f"{shared.hf_endpoint}/AUTOMATIC/stable-diffusion-3-medium-text-encoders/resolve/main/clip_g.safetensors"
 CLIPG_CONFIG = {
     "hidden_act": "gelu",
     "hidden_size": 1280,
@@ -43,7 +43,7 @@ CLIPG_CONFIG = {
     "textual_inversion_key": "clip_g",
 }
 
-T5_URL = "https://huggingface.co/AUTOMATIC/stable-diffusion-3-medium-text-encoders/resolve/main/t5xxl_fp16.safetensors"
+T5_URL = f"{shared.hf_endpoint}/AUTOMATIC/stable-diffusion-3-medium-text-encoders/resolve/main/t5xxl_fp16.safetensors"
 T5_CONFIG = {
     "d_ff": 10240,
     "d_model": 4096,

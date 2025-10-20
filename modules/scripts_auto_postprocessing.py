@@ -13,6 +13,7 @@ class ScriptPostprocessingForMainUI(scripts.Script):
         return scripts.AlwaysVisible
 
     def ui(self, is_img2img):
+        self.script.tab_name = '_img2img' if is_img2img else '_txt2img'
         self.postprocessing_controls = self.script.ui()
         return self.postprocessing_controls.values()
 
@@ -33,7 +34,7 @@ def create_auto_preprocessing_script_data():
 
     for name in shared.opts.postprocessing_enable_in_main_ui:
         script = next(iter([x for x in scripts.postprocessing_scripts_data if x.script_class.name == name]), None)
-        if script is None:
+        if script is None or script.script_class.extra_only:
             continue
 
         constructor = lambda s=script: ScriptPostprocessingForMainUI(s.script_class())

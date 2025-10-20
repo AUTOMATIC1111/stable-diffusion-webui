@@ -11,7 +11,7 @@ class ScriptPostprocessingGfpGan(scripts_postprocessing.ScriptPostprocessing):
 
     def ui(self):
         with ui_components.InputAccordion(False, label="GFPGAN") as enable:
-            gfpgan_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Visibility", value=1.0, elem_id="extras_gfpgan_visibility")
+            gfpgan_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Visibility", value=1.0, elem_id=self.elem_id_suffix("extras_gfpgan_visibility"))
 
         return {
             "enable": enable,
@@ -26,6 +26,10 @@ class ScriptPostprocessingGfpGan(scripts_postprocessing.ScriptPostprocessing):
         res = Image.fromarray(restored_img)
 
         if gfpgan_visibility < 1.0:
+            if pp.image.size != res.size:
+                res = res.resize(pp.image.size)
+            if pp.image.mode != res.mode:
+                res = res.convert(pp.image.mode)
             res = Image.blend(pp.image, res, gfpgan_visibility)
 
         pp.image = res
