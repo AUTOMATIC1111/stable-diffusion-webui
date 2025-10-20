@@ -1,5 +1,8 @@
+
 # Stable Diffusion WebUI (Fixed for Maxwell GPUs - Windows Only)
 A web interface for Stable Diffusion, implemented using Gradio library.
+> ⚙️ This fork fixes CUDA compatibility issues on older **NVIDIA Maxwell GPUs** (GTX 900 series) for Windows users.  
+> It ensures proper GPU acceleration with the correct CUDA 11.3-compatible PyTorch build.
 
 ![](screenshot.png)
 
@@ -99,14 +102,19 @@ Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-di
 ### Installation on Windows 10/11 with NVidia-GPUs:
 1. Install [Python 3.10.6](https://www.python.org/downloads/release/python-3106/) (Newer version of Python does not support torch), checking "Add Python to PATH".
 2. Enter the venv(requires launching webui-user.bat once):
-#   .\venv\Scripts\activate
+ ```bash
+.\venv\Scripts\activate
+```
 3. Install pytorch:
-#  pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
+ ```bash
+pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
+```
+Additional note:   Lower version of pytorch and CUDA can be installed for cards with CC<5.2
 
 **4. Optional:**
-If you face the error `Torch not compiled with CUDA enabled`, uninstall all torch packages and reinstall using step 3 again.
+If you face the error `Torch not compiled with CUDA enabled`, uninstall all torch packages and reinstall using Step 3 again.
 
-NOTE: Installation on linux has not been tested yet.
+NOTE: Installation on Linux has not been tested yet.
 
 ## Contributing
 Here's how to add code to this repo: [Contributing](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Contributing)
@@ -151,3 +159,5 @@ Licenses for borrowed code can be found in `Settings -> Licenses` screen, and al
 - Hypertile - tfernd - https://github.com/tfernd/HyperTile
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - (You)
+
+
