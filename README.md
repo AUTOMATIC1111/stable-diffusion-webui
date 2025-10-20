@@ -1,4 +1,4 @@
-# Stable Diffusion web UI
+# Stable Diffusion WebUI (Fixed for Maxwell GPUs - Windows Only)
 A web interface for Stable Diffusion, implemented using Gradio library.
 
 ![](screenshot.png)
@@ -94,71 +94,19 @@ A web interface for Stable Diffusion, implemented using Gradio library.
 - [Segmind Stable Diffusion](https://huggingface.co/segmind/SSD-1B) support
 
 ## Installation and Running
-Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for:
-- [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended)
-- [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.
-- [Intel CPUs, Intel GPUs (both integrated and discrete)](https://github.com/openvinotoolkit/stable-diffusion-webui/wiki/Installation-on-Intel-Silicon) (external wiki page)
-- [Ascend NPUs](https://github.com/wangshuai09/stable-diffusion-webui/wiki/Install-and-run-on-Ascend-NPUs) (external wiki page)
+Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met.
 
-Alternatively, use online services (like Google Colab):
-
-- [List of Online Services](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Online-Services)
-
-### Installation on Windows 10/11 with NVidia-GPUs using release package
-1. Download `sd.webui.zip` from [v1.0.0-pre](https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases/tag/v1.0.0-pre) and extract its contents.
-2. Run `update.bat`.
-3. Run `run.bat`.
-> For more details see [Install-and-Run-on-NVidia-GPUs](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs)
-
-### Automatic Installation on Windows
+### Installation on Windows 10/11 with NVidia-GPUs:
 1. Install [Python 3.10.6](https://www.python.org/downloads/release/python-3106/) (Newer version of Python does not support torch), checking "Add Python to PATH".
-2. Install [git](https://git-scm.com/download/win).
-3. Download the stable-diffusion-webui repository, for example by running `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git`.
-4. Run `webui-user.bat` from Windows Explorer as normal, non-administrator, user.
+2. Enter the venv(requires launching webui-user.bat once):
+#   .\venv\Scripts\activate
+3. Install pytorch:
+#  pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
 
-### Automatic Installation on Linux
-1. Install the dependencies:
-```bash
-# Debian-based:
-sudo apt install wget git python3 python3-venv libgl1 libglib2.0-0
-# Red Hat-based:
-sudo dnf install wget git python3 gperftools-libs libglvnd-glx
-# openSUSE-based:
-sudo zypper install wget git python3 libtcmalloc4 libglvnd
-# Arch-based:
-sudo pacman -S wget git python3
-```
-If your system is very new, you need to install python3.11 or python3.10:
-```bash
-# Ubuntu 24.04
-sudo add-apt-repository ppa:deadsnakes/ppa
-sudo apt update
-sudo apt install python3.11
+**4. Optional:**
+If you face the error `Torch not compiled with CUDA enabled`, uninstall all torch packages and reinstall using step 3 again.
 
-# Manjaro/Arch
-sudo pacman -S yay
-yay -S python311 # do not confuse with python3.11 package
-
-# Only for 3.11
-# Then set up env variable in launch script
-export python_cmd="python3.11"
-# or in webui-user.sh
-python_cmd="python3.11"
-```
-2. Navigate to the directory you would like the webui to be installed and execute the following command:
-```bash
-wget -q https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/master/webui.sh
-```
-Or just clone the repo wherever you want:
-```bash
-git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui
-```
-
-3. Run `webui.sh`.
-4. Check `webui-user.sh` for options.
-### Installation on Apple Silicon
-
-Find the instructions [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Installation-on-Apple-Silicon).
+NOTE: Installation on linux has not been tested yet.
 
 ## Contributing
 Here's how to add code to this repo: [Contributing](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Contributing)
