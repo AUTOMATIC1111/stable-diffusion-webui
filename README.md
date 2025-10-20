@@ -102,11 +102,11 @@ Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-di
 1. Install [Python 3.10.6](https://www.python.org/downloads/release/python-3106/) (Newer version of Python does not support torch), checking "Add Python to PATH".
 2. Enter the venv(requires launching webui-user.bat once):
  ```bash
-#   .\venv\Scripts\activate
+.\venv\Scripts\activate
 ```
 3. Install pytorch:
  ```bash
-#  pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
+pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
 ```
 Additional note:   Lower version of pytorch and CUDA can be installed for cards with CC<5.2
 **4. Optional:**
@@ -157,4 +157,5 @@ Licenses for borrowed code can be found in `Settings -> Licenses` screen, and al
 - Hypertile - tfernd - https://github.com/tfernd/HyperTile
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - (You)
+
 
