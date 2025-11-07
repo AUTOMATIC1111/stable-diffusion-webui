@@ -347,9 +347,19 @@ def early_access_blackwell_wheels():
         return f'pip install {ea_whl.get(sys.version_info.minor)}'
 
 
+def maxwell():
+    """For Maxwell GPUs"""
+    cc = get_cuda_comp_cap()
+    if 5.0 <= cc < 6.0:  # Maxwell, Compute Capability 5.0/5.2
+        torch_command = os.environ.get('TORCH_COMMAND', f"pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126")
+        return torch_command
+        
+    return None
+
+
 def prepare_environment():
     torch_index_url = os.environ.get('TORCH_INDEX_URL', "https://download.pytorch.org/whl/cu128")
-    torch_command = os.environ.get('TORCH_COMMAND', f"pip install torch==2.7.0 torchvision==0.22.0 --extra-index-url {torch_index_url}")
+    torch_command = maxwell() or os.environ.get('TORCH_COMMAND', f"pip install torch==2.7.0 torchvision==0.22.0 --extra-index-url {torch_index_url}")
     if args.use_ipex:
         if platform.system() == "Windows":
             # The "Nuullll/intel-extension-for-pytorch" wheels were built from IPEX source for Intel Arc GPU: https://github.com/intel/intel-extension-for-pytorch/tree/xpu-main
@@ -512,3 +522,4 @@ def dump_sysinfo():
         file.write(text)
 
     return filename
+
