@@ -1,0 +1,94 @@
+Photoshop Action: "Place_Michael_CartoonInvite_v1" (manual recording / step list)
+Purpose: Place Michael (head+torso) into invitation artwork (image 2 style). Canvas: 7x5 in @300dpi (2100x1500 px).
+
+PREP
+1. Open the invitation background file. Create new document:
+   - File > New: Width 7 in, Height 5 in, Resolution 300 dpi, RGB/8-bit. Name: Invitation_Work.
+   - Paste or place invitation art as layer "BG_Invitation" (locked).
+
+2. Open Michael photo. Duplicate the Background layer (Ctrl/Cmd+J). Hide original; work on duplicate.
+
+CUTOUT / MASK
+3. With duplicated layer selected:
+   - Select > Subject.
+   - Select and Mask: View On Layers; Radius 12 px; Smooth 5; Feather 0.3 px; Contrast 10%; Shift Edge -2%; Decontaminate Colors ON 30%; Output To: New Layer with Layer Mask.
+   - Rename output layer "Michael_cutout".
+
+PLACE & TRANSFORM
+4. Drag or copy "Michael_cutout" into Invitation_Work above BG_Invitation. Rename "Michael_main".
+5. Convert "Michael_main" to Smart Object: Right-click > Convert to Smart Object.
+6. Free Transform (Ctrl/Cmd+T):
+   - Scale so subject height ≈ 40% of canvas height → target ≈ 600 px high (canvas height 1500 px).
+   - Position so feet/hem contact the foreground grass plane. Use arrow keys for 1–3 px nudges.
+
+CARTOON STYLIZE (non-destructive via Smart Filters)
+7. Apply Surface Blur (Smart Filter):
+   - Filter > Blur > Surface Blur: Radius 8 px; Threshold 15 → OK.
+8. Apply Poster Edges (Smart Filter):
+   - Filter > Filter Gallery > Poster Edges: Edge Thickness 2; Edge Intensity 1; Posterization 2.
+   - Reduce Poster Edges filter layer opacity to 75% if effect is strong.
+
+COLOR MATCH (clipped to subject)
+9. Add Curves adjustment layer, clip to Michael_main (Alt-click between layers); name "Curves_Match".
+   - Subtly lower midtones: pull midpoint down by ~0.05 (visual).
+   - Slightly lift highlights by ~+0.04.
+10. Add Color Balance (clipped):
+    - Midtones: +6 Red, -3 Blue.
+    - Highlights: +3 Red, +1 Yellow.
+    - Shadows: +2 Red, +1 Yellow.
+11. Add Hue/Saturation (clipped): Master Saturation +8.
+
+LIGHT WRAP (ambient color)
+12. Duplicate BG_Invitation → "BG_blur_for_wrap". Place under Michael_main.
+13. Filter > Blur > Gaussian Blur: 30 px.
+14. Set "BG_blur_for_wrap" opacity to 10–12%. Add Layer Mask filled black.
+15. On mask, paint a soft white halo (low flow, soft brush) to reveal faint color overlap around Michael edges where ambient light hits (top/side).
+
+EDGE CLEANUP (hair)
+16. If fringes exist:
+    - Add layer above Michael_main named "Edge_Fix". Sample nearby background color, very low-opacity brush (10–25%), paint along edges to neutralize color fringe. Set layer opacity to 40% and clip to Michael_main.
+
+GROUND SHADOW (contact)
+17. Create new layer below Michael_main: "Shadow_cast".
+18. Soft round brush, black, Opacity 40%, Flow 50%, size ~350–600 px (adjust).
+19. Paint elliptical shadow under feet; Transform > Distort/Perspective to match ground plane.
+20. Filter > Blur > Gaussian Blur: 18–24 px.
+21. Layer Blend Mode: Multiply; Layer Opacity 40–55%. Mask & soften inner edge near feet.
+
+AMBIENT OCCLUSION / LOCAL SHADING
+22. New layer "AO_local" above Shadow_cast, set Multiply 12–18% opacity.
+23. Soft black brush, opacity 8–12%: paint subtle shading under chin, under arms, inner folds. Blur if necessary (Gaussian 6 px).
+
+FINAL UNIFY (stamp & global subtle grade)
+24. Stamp visible: Ctrl/Cmd+Alt+Shift+E → layer "Flatten_Unify".
+25. Filter > Camera Raw Filter (on "Flatten_Unify"):
+    - Exposure +0.04; Contrast +6; Highlights -8; Shadows +6; Texture +4; Clarity +6; Vibrance +10.
+26. Add Color Lookup (not clipped): 3DLUT "Crisp_Warm" or "LateSunrise" at 25–30% opacity.
+
+OPTIONAL GRAIN
+27. Filter > Noise > Add Noise: Amount 1–1.5%, Gaussian, Monochromatic. Reduce layer opacity if too strong.
+
+EXPORTS & NAMING
+28. Save PSD: File > Save As → Michael_in_Invitation.psd.
+29. Save TIFF for print: File > Save As → Michael_in_Invitation.tif, LZW, 300 dpi.
+30. Export PNG (web): File > Export > Export As → PNG 2100x1500 px.
+31. Export preview JPEG 1200x800 px, quality 80% for sharing.
+
+Layer naming checklist (final PSD):
+- BG_Invitation (locked)
+- BG_blur_for_wrap (masked)
+- Michael_main (Smart Object) [with Smart Filters Surface Blur + Poster Edges]
+- Curves_Match (clipped)
+- ColorBalance_Match (clipped)
+- HueSat_Match (clipped)
+- Edge_Fix (clipped, optional)
+- Shadow_cast (below Michael)
+- AO_local
+- Flatten_Unify
+
+Notes (use while running):
+- Tweak Surface Blur and Poster Edges strength for different source resolutions.
+- If using Neural Filters (Style Transfer) instead of Poster Edges, use low strength (20–30%) to preserve likeness.
+- Keep PSD master with all layers for re-editing.
+
+End of Photoshop action instructions.
