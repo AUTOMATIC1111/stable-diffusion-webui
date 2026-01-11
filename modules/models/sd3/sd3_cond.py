@@ -91,7 +91,24 @@ class Sd3ClipLG(sd_hijack_clip.TextConditionalModel):
         return lg_out
 
     def encode_embedding_init_text(self, init_text, nvpt):
-        return torch.zeros((nvpt, 768+1280), device=devices.device) # XXX
+        """Encode initialization text for embeddings using both CLIP-L and CLIP-G."""
+        batch = [init_text]
+        tokens = torch.asarray([self.tokenizer.tokenize_with_weights(init_text)["input_ids"]]).to(devices.device)
+
+        # Get embeddings from both CLIP models
+        l_out, l_pooled = self.clip_l(tokens)
+        g_out, g_pooled = self.clip_g(tokens)
+
+        # Concatenate CLIP-L (768) and CLIP-G (1280) embeddings
+        lg_out = torch.cat([l_out, g_out], dim=-1)
+
+        # Take the first nvpt tokens
+        if lg_out.shape[1] >= nvpt:
+            return lg_out[0, :nvpt, :]
+        else:
+            # Pad if needed
+            padding = torch.zeros((nvpt - lg_out.shape[1], 768+1280), device=devices.device, dtype=lg_out.dtype)
+            return torch.cat([lg_out[0], padding], dim=0)
 
 
 class Sd3T5(torch.nn.Module):
@@ -154,7 +171,20 @@ class Sd3T5(torch.nn.Module):
         return t5_out
 
     def encode_embedding_init_text(self, init_text, nvpt):
-        return torch.zeros((nvpt, 4096), device=devices.device) # XXX
+        """Encode initialization text for T5 embeddings."""
+        if not self.t5xxl or not shared.opts.sd3_enable_t5:
+            return torch.zeros((nvpt, 4096), device=devices.device, dtype=devices.dtype)
+
+        tokens, multipliers = self.tokenize_line(init_text, target_token_count=nvpt)
+        t5_out, t5_pooled = self.t5xxl([tokens])
+
+        # Return first nvpt tokens
+        if t5_out.shape[1] >= nvpt:
+            return t5_out[0, :nvpt, :]
+        else:
+            # Pad if needed
+            padding = torch.zeros((nvpt - t5_out.shape[1], 4096), device=devices.device, dtype=t5_out.dtype)
+            return torch.cat([t5_out[0], padding], dim=0)
 
 
 class SD3Cond(torch.nn.Module):
