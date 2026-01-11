@@ -30,7 +30,7 @@ class HypertileParams:
 
 
 
-# TODO add SD-XL layers
+# Depth layers for SD 1.5 models
 DEPTH_LAYERS = {
     0: [
         # SD 1.5 U-Net (diffusers)
@@ -182,7 +182,7 @@ DEPTH_LAYERS_XL = {
         "middle_block.1.transformer_blocks.8.attn1",
         "middle_block.1.transformer_blocks.9.attn1",
     ],
-    3 : [] # TODO - separate layers for SD-XL
+    3: []  # Depth 3 layers for SDXL - currently none defined, may be added in future if needed
 }
 
 

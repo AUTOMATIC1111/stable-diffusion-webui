@@ -8,7 +8,7 @@ diskcache
 einops
 facexlib
 fastapi>=0.90.1
-gradio==3.41.2
+gradio>=4.44.0
 inflection
 jsonmerge
 kornia
@@ -18,7 +18,7 @@ omegaconf
 open-clip-torch
 
 piexif
-protobuf==3.20.0
+protobuf>=3.20.2
 psutil
 pytorch_lightning
 requests
@@ -30,5 +30,5 @@ tomesd
 torch
 torchdiffeq
 torchsde
-transformers==4.30.2
-pillow-avif-plugin==1.4.3
+transformers>=4.44.0
+pillow-avif-plugin>=1.4.3

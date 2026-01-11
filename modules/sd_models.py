@@ -33,6 +33,7 @@ class ModelType(enum.Enum):
     SDXL = 3
     SSD = 4
     SD3 = 5
+    SD3_5 = 6  # Stable Diffusion 3.5 (Large, Turbo, Medium variants)
 
 
 def replace_key(d, key, new_key, value):
