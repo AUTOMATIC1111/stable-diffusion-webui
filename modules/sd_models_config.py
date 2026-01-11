@@ -24,6 +24,7 @@ config_instruct_pix2pix = os.path.join(sd_configs_path, "instruct-pix2pix.yaml")
 config_alt_diffusion = os.path.join(sd_configs_path, "alt-diffusion-inference.yaml")
 config_alt_diffusion_m18 = os.path.join(sd_configs_path, "alt-diffusion-m18-inference.yaml")
 config_sd3 = os.path.join(sd_configs_path, "sd3-inference.yaml")
+config_sd3_5 = os.path.join(sd_configs_path, "sd3.5-inference.yaml")
 
 
 def is_using_v_parameterization_for_sd2(state_dict):
@@ -70,11 +71,28 @@ def is_using_v_parameterization_for_sd2(state_dict):
 
 
 def guess_model_config_from_state_dict(sd, filename):
+    """
+    Automatically detect the model architecture from state dict keys and shapes.
+    Supports SD1.x, SD2.x, SDXL, SD3, SD3.5, and various special variants.
+    """
+    if sd is None or len(sd) == 0:
+        return config_default
+
+    filename_lower = filename.lower() if filename else ""
+
     sd2_cond_proj_weight = sd.get('cond_stage_model.model.transformer.resblocks.0.attn.in_proj_weight', None)
     diffusion_model_input = sd.get('model.diffusion_model.input_blocks.0.0.weight', None)
     sd2_variations_weight = sd.get('embedder.model.ln_final.weight', None)
 
+    # Check for SD3/SD3.5 (DiT architecture with x_embedder)
     if "model.diffusion_model.x_embedder.proj.weight" in sd:
+        # Detect SD3.5 by filename or model characteristics
+        # SD3.5 Large: 8B parameters, Medium: 2.5B parameters
+        x_embedder_weight = sd.get("model.diffusion_model.x_embedder.proj.weight", None)
+        if x_embedder_weight is not None:
+            # Check filename for SD3.5 indicators
+            if any(indicator in filename_lower for indicator in ["3.5", "3_5", "35", "sd35"]):
+                return config_sd3_5
         return config_sd3
 
     if sd.get('conditioner.embedders.1.model.ln_final.weight', None) is not None:

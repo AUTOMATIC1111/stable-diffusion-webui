@@ -1,0 +1,7 @@
+model:
+  target: modules.models.sd3.sd3_model.SD3Inferencer
+  params:
+    shift: 3
+    state_dict: null
+    # SD3.5 uses the same basic architecture as SD3 but with improvements
+    # The model will auto-detect parameters from the state dict
