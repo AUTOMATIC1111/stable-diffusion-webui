@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import gradio as gr
 
 from modules import ui_common, shared, script_callbacks, scripts, sd_models, sysinfo, timer, shared_items
@@ -10,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 def get_value_for_setting(key):
+        """TODO: Add docstring."""
     value = getattr(opts, key)
 
     info = opts.data_labels[key]
@@ -21,6 +23,7 @@ def get_value_for_setting(key):
 
 def create_setting_component(key, is_quicksettings=False):
     def fun():
+            """TODO: Add docstring."""
         return opts.data[key] if key in opts.data else opts.data_labels[key].default
 
     info = opts.data_labels[key]
@@ -56,6 +59,7 @@ def create_setting_component(key, is_quicksettings=False):
 
 
 class UiSettings:
+        """TODO: Add docstring."""
     submit = None
     result = None
     interface = None
@@ -70,6 +74,7 @@ class UiSettings:
     search_input = None
 
     def run_settings(self, *args):
+            """TODO: Add docstring."""
         changed = []
 
         for key, value, comp in zip(opts.data_labels.keys(), args, self.components):
@@ -89,6 +94,7 @@ class UiSettings:
         return opts.dumpjson(), f'{len(changed)} settings changed{": " if changed else ""}{", ".join(changed)}.'
 
     def run_settings_single(self, value, key):
+            """TODO: Add docstring."""
         if not opts.same_type(value, opts.data_labels[key].default):
             return gr.update(visible=True), opts.dumpjson()
 
@@ -100,9 +106,11 @@ class UiSettings:
         return get_value_for_setting(key), opts.dumpjson()
 
     def register_settings(self):
+            """TODO: Add docstring."""
         script_callbacks.ui_settings_callback()
 
     def create_ui(self, loadsave, dummy_component):
+            """TODO: Add docstring."""
         self.components = []
         self.component_dict = {}
         self.dummy_component = dummy_component
@@ -204,6 +212,7 @@ class UiSettings:
 
             def call_func_and_return_text(func, text):
                 def handler():
+                        """TODO: Add docstring."""
                     t = timer.Timer()
                     func()
                     t.record(text)
@@ -239,6 +248,7 @@ class UiSettings:
             )
 
             def reload_scripts():
+                    """TODO: Add docstring."""
                 scripts.reload_script_body_only()
                 reload_javascript()  # need to refresh the html page
 
@@ -256,6 +266,7 @@ class UiSettings:
             )
 
             def check_file(x):
+                    """TODO: Add docstring."""
                 if x is None:
                     return ''
 
@@ -271,6 +282,7 @@ class UiSettings:
             )
 
             def calculate_all_checkpoint_hash_fn(max_thread):
+                    """TODO: Add docstring."""
                 checkpoints_list = sd_models.checkpoints_list.values()
                 with ThreadPoolExecutor(max_workers=max_thread) as executor:
                     futures = [executor.submit(checkpoint.calculate_shorthash) for checkpoint in checkpoints_list]
@@ -288,12 +300,14 @@ class UiSettings:
         self.interface = settings_interface
 
     def add_quicksettings(self):
+            """TODO: Add docstring."""
         with gr.Row(elem_id="quicksettings", variant="compact"):
             for _i, k, _item in sorted(self.quicksettings_list, key=lambda x: self.quicksettings_names.get(x[1], x[0])):
                 component = create_setting_component(k, is_quicksettings=True)
                 self.component_dict[k] = component
 
     def add_functionality(self, demo):
+            """TODO: Add docstring."""
         self.submit.click(
             fn=wrap_gradio_call_no_job(lambda *args: self.run_settings(*args), extra_outputs=[gr.update()]),
             inputs=self.components,
@@ -330,6 +344,7 @@ class UiSettings:
         component_keys = [k for k in opts.data_labels.keys() if k in self.component_dict]
 
         def get_settings_values():
+                """TODO: Add docstring."""
             return [get_value_for_setting(key) for key in component_keys]
 
         demo.load(
@@ -340,6 +355,7 @@ class UiSettings:
         )
 
     def search(self, text):
+            """TODO: Add docstring."""
         print(text)
 
         return [gr.update(visible=text in (comp.label or "")) for comp in self.components]

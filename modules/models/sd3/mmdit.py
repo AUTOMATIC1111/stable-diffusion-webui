@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 ### This file contains impls for MM-DiT, the core model component of SD3
 
 import math
@@ -12,6 +13,7 @@ from modules.models.sd3.other_impls import attention, Mlp
 class PatchEmbed(nn.Module):
     """ 2D Image to Patch Embedding"""
     def __init__(
+                """TODO: Add docstring."""
             self,
             img_size: Optional[int] = 224,
             patch_size: int = 16,
@@ -43,6 +45,7 @@ class PatchEmbed(nn.Module):
         self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size, bias=bias, dtype=dtype, device=device)
 
     def forward(self, x):
+            """TODO: Add docstring."""
         B, C, H, W = x.shape
         x = self.proj(x)
         if self.flatten:
@@ -51,6 +54,7 @@ class PatchEmbed(nn.Module):
 
 
 def modulate(x, shift, scale):
+        """TODO: Add docstring."""
     if shift is None:
         shift = torch.zeros_like(scale)
     return x * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1)
@@ -83,6 +87,7 @@ def get_2d_sincos_pos_embed(embed_dim, grid_size, cls_token=False, extra_tokens=
 
 
 def get_2d_sincos_pos_embed_from_grid(embed_dim, grid):
+        """TODO: Add docstring."""
     assert embed_dim % 2 == 0
     # use half of dimensions to encode grid_h
     emb_h = get_1d_sincos_pos_embed_from_grid(embed_dim // 2, grid[0])  # (H*W, D/2)
@@ -117,6 +122,7 @@ class TimestepEmbedder(nn.Module):
     """Embeds scalar timesteps into vector representations."""
 
     def __init__(self, hidden_size, frequency_embedding_size=256, dtype=None, device=None):
+            """TODO: Add docstring."""
         super().__init__()
         self.mlp = nn.Sequential(
             nn.Linear(frequency_embedding_size, hidden_size, bias=True, dtype=dtype, device=device),
@@ -150,6 +156,7 @@ class TimestepEmbedder(nn.Module):
         return embedding
 
     def forward(self, t, dtype, **kwargs):
+            """TODO: Add docstring."""
         t_freq = self.timestep_embedding(t, self.frequency_embedding_size).to(dtype)
         t_emb = self.mlp(t_freq)
         return t_emb
@@ -159,6 +166,7 @@ class VectorEmbedder(nn.Module):
     """Embeds a flat vector of dimension input_dim"""
 
     def __init__(self, input_dim: int, hidden_size: int, dtype=None, device=None):
+            """TODO: Add docstring."""
         super().__init__()
         self.mlp = nn.Sequential(
             nn.Linear(input_dim, hidden_size, bias=True, dtype=dtype, device=device),
@@ -167,6 +175,7 @@ class VectorEmbedder(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """TODO: Add docstring."""
         return self.mlp(x)
 
 
@@ -176,19 +185,24 @@ class VectorEmbedder(nn.Module):
 
 
 class QkvLinear(torch.nn.Linear):
+        """TODO: Add docstring."""
     pass
 
 def split_qkv(qkv, head_dim):
+        """TODO: Add docstring."""
     qkv = qkv.reshape(qkv.shape[0], qkv.shape[1], 3, -1, head_dim).movedim(2, 0)
     return qkv[0], qkv[1], qkv[2]
 
 def optimized_attention(qkv, num_heads):
+        """TODO: Add docstring."""
     return attention(qkv[0], qkv[1], qkv[2], num_heads)
 
 class SelfAttention(nn.Module):
+        """TODO: Add docstring."""
     ATTENTION_MODES = ("xformers", "torch", "torch-hb", "math", "debug")
 
     def __init__(
+            """TODO: Add docstring."""
         self,
         dim: int,
         num_heads: int = 8,
@@ -225,6 +239,7 @@ class SelfAttention(nn.Module):
             raise ValueError(qk_norm)
 
     def pre_attention(self, x: torch.Tensor):
+            """TODO: Add docstring."""
         B, L, C = x.shape
         qkv = self.qkv(x)
         q, k, v = split_qkv(qkv, self.head_dim)
@@ -233,11 +248,13 @@ class SelfAttention(nn.Module):
         return (q, k, v)
 
     def post_attention(self, x: torch.Tensor) -> torch.Tensor:
+            """TODO: Add docstring."""
         assert not self.pre_only
         x = self.proj(x)
         return x
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """TODO: Add docstring."""
         (q, k, v) = self.pre_attention(x)
         x = attention(q, k, v, self.num_heads)
         x = self.post_attention(x)
@@ -246,6 +263,7 @@ class SelfAttention(nn.Module):
 
 class RMSNorm(torch.nn.Module):
     def __init__(
+            """TODO: Add docstring."""
         self, dim: int, elementwise_affine: bool = False, eps: float = 1e-6, device=None, dtype=None
     ):
         """
@@ -292,6 +310,7 @@ class RMSNorm(torch.nn.Module):
 
 class SwiGLUFeedForward(nn.Module):
     def __init__(
+            """TODO: Add docstring."""
         self,
         dim: int,
         hidden_dim: int,
@@ -325,6 +344,7 @@ class SwiGLUFeedForward(nn.Module):
         self.w3 = nn.Linear(dim, hidden_dim, bias=False)
 
     def forward(self, x):
+            """TODO: Add docstring."""
         return self.w2(nn.functional.silu(self.w1(x)) * self.w3(x))
 
 
@@ -334,6 +354,7 @@ class DismantledBlock(nn.Module):
     ATTENTION_MODES = ("xformers", "torch", "torch-hb", "math", "debug")
 
     def __init__(
+            """TODO: Add docstring."""
         self,
         hidden_size: int,
         num_heads: int,
@@ -376,6 +397,7 @@ class DismantledBlock(nn.Module):
         self.pre_only = pre_only
 
     def pre_attention(self, x: torch.Tensor, c: torch.Tensor):
+            """TODO: Add docstring."""
         assert x is not None, "pre_attention called with None input"
         if not self.pre_only:
             if not self.scale_mod_only:
@@ -396,12 +418,14 @@ class DismantledBlock(nn.Module):
             return qkv, None
 
     def post_attention(self, attn, x, gate_msa, shift_mlp, scale_mlp, gate_mlp):
+            """TODO: Add docstring."""
         assert not self.pre_only
         x = x + gate_msa.unsqueeze(1) * self.attn.post_attention(attn)
         x = x + gate_mlp.unsqueeze(1) * self.mlp(modulate(self.norm2(x), shift_mlp, scale_mlp))
         return x
 
     def forward(self, x: torch.Tensor, c: torch.Tensor) -> torch.Tensor:
+            """TODO: Add docstring."""
         assert not self.pre_only
         (q, k, v), intermediates = self.pre_attention(x, c)
         attn = attention(q, k, v, self.attn.num_heads)
@@ -409,6 +433,7 @@ class DismantledBlock(nn.Module):
 
 
 def block_mixing(context, x, context_block, x_block, c):
+        """TODO: Add docstring."""
     assert context is not None, "block_mixing called with None context"
     context_qkv, context_intermediates = context_block.pre_attention(context, c)
 
@@ -434,6 +459,7 @@ class JointBlock(nn.Module):
     """just a small wrapper to serve as a fsdp unit"""
 
     def __init__(self, *args, **kwargs):
+            """TODO: Add docstring."""
         super().__init__()
         pre_only = kwargs.pop("pre_only")
         qk_norm = kwargs.pop("qk_norm", None)
@@ -441,6 +467,7 @@ class JointBlock(nn.Module):
         self.x_block = DismantledBlock(*args, pre_only=False, qk_norm=qk_norm, **kwargs)
 
     def forward(self, *args, **kwargs):
+            """TODO: Add docstring."""
         return block_mixing(*args, context_block=self.context_block, x_block=self.x_block, **kwargs)
 
 
@@ -450,6 +477,7 @@ class FinalLayer(nn.Module):
     """
 
     def __init__(self, hidden_size: int, patch_size: int, out_channels: int, total_out_channels: Optional[int] = None, dtype=None, device=None):
+            """TODO: Add docstring."""
         super().__init__()
         self.norm_final = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6, dtype=dtype, device=device)
         self.linear = (
@@ -460,6 +488,7 @@ class FinalLayer(nn.Module):
         self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(hidden_size, 2 * hidden_size, bias=True, dtype=dtype, device=device))
 
     def forward(self, x: torch.Tensor, c: torch.Tensor) -> torch.Tensor:
+            """TODO: Add docstring."""
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
         x = modulate(self.norm_final(x), shift, scale)
         x = self.linear(x)
@@ -470,6 +499,7 @@ class MMDiT(nn.Module):
     """Diffusion model with a Transformer backbone."""
 
     def __init__(
+            """TODO: Add docstring."""
         self,
         input_size: int = 32,
         patch_size: int = 2,
@@ -548,6 +578,7 @@ class MMDiT(nn.Module):
         self.final_layer = FinalLayer(hidden_size, patch_size, self.out_channels, dtype=dtype, device=device)
 
     def cropped_pos_embed(self, hw):
+            """TODO: Add docstring."""
         assert self.pos_embed_max_size is not None
         p = self.x_embedder.patch_size[0]
         h, w = hw
@@ -589,6 +620,7 @@ class MMDiT(nn.Module):
         return imgs
 
     def forward_core_with_concat(self, x: torch.Tensor, c_mod: torch.Tensor, context: Optional[torch.Tensor] = None) -> torch.Tensor:
+            """TODO: Add docstring."""
         if self.register_length > 0:
             context = torch.cat((repeat(self.register, "1 ... -> b ...", b=x.shape[0]), context if context is not None else torch.Tensor([]).type_as(x)), 1)
 

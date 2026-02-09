@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import base64
 import io
 import os
@@ -34,6 +35,7 @@ from contextlib import closing
 from modules.progress import create_task_id, add_task_to_queue, start_task, finish_task, current_task
 
 def script_name_to_index(name, scripts):
+        """TODO: Add docstring."""
     try:
         return [script.title().lower() for script in scripts].index(name.lower())
     except Exception as e:
@@ -41,6 +43,7 @@ def script_name_to_index(name, scripts):
 
 
 def validate_sampler_name(name):
+        """TODO: Add docstring."""
     config = sd_samplers.all_samplers_map.get(name, None)
     if config is None:
         raise HTTPException(status_code=400, detail="Sampler not found")
@@ -49,6 +52,7 @@ def validate_sampler_name(name):
 
 
 def setUpscalers(req: dict):
+        """TODO: Add docstring."""
     reqDict = vars(req)
     reqDict['extras_upscaler_1'] = reqDict.pop('upscaler_1', None)
     reqDict['extras_upscaler_2'] = reqDict.pop('upscaler_2', None)
@@ -75,6 +79,7 @@ def verify_url(url):
 
 
 def decode_base64_to_image(encoding):
+        """TODO: Add docstring."""
     if encoding.startswith("http://") or encoding.startswith("https://"):
         if not opts.api_enable_requests:
             raise HTTPException(status_code=500, detail="Requests not allowed")
@@ -100,6 +105,7 @@ def decode_base64_to_image(encoding):
 
 
 def encode_pil_to_base64(image):
+        """TODO: Add docstring."""
     with io.BytesIO() as output_bytes:
         if isinstance(image, str):
             return image
@@ -133,6 +139,7 @@ def encode_pil_to_base64(image):
 
 
 def api_middleware(app: FastAPI):
+        """TODO: Add docstring."""
     rich_available = False
     try:
         if os.environ.get('WEBUI_RICH_EXCEPTIONS', None) is not None:
@@ -165,6 +172,7 @@ def api_middleware(app: FastAPI):
         return res
 
     def handle_exception(request: Request, e: Exception):
+            """TODO: Add docstring."""
         err = {
             "error": type(e).__name__,
             "detail": vars(e).get('detail', ''),
@@ -198,6 +206,7 @@ def api_middleware(app: FastAPI):
 
 class Api:
     def __init__(self, app: FastAPI, queue_lock: Lock):
+            """TODO: Add docstring."""
         if shared.cmd_opts.api_auth:
             self.credentials = {}
             for auth in shared.cmd_opts.api_auth.split(","):
@@ -272,11 +281,13 @@ class Api:
 
 
     def add_api_route(self, path: str, endpoint, **kwargs):
+            """TODO: Add docstring."""
         if shared.cmd_opts.api_auth:
             return self.app.add_api_route(path, endpoint, dependencies=[Depends(self.auth)], **kwargs)
         return self.app.add_api_route(path, endpoint, **kwargs)
 
     def auth(self, credentials: HTTPBasicCredentials = Depends(HTTPBasic())):
+            """TODO: Add docstring."""
         if credentials.username in self.credentials:
             if compare_digest(credentials.password, self.credentials[credentials.username]):
                 return True
@@ -284,6 +295,7 @@ class Api:
         raise HTTPException(status_code=401, detail="Incorrect username or password", headers={"WWW-Authenticate": "Basic"})
 
     def get_selectable_script(self, script_name, script_runner):
+            """TODO: Add docstring."""
         if script_name is None or script_name == "":
             return None, None
 
@@ -292,12 +304,14 @@ class Api:
         return script, script_idx
 
     def get_scripts_list(self):
+            """TODO: Add docstring."""
         t2ilist = [script.name for script in scripts.scripts_txt2img.scripts if script.name is not None]
         i2ilist = [script.name for script in scripts.scripts_img2img.scripts if script.name is not None]
 
         return models.ScriptsList(txt2img=t2ilist, img2img=i2ilist)
 
     def get_script_info(self):
+            """TODO: Add docstring."""
         res = []
 
         for script_list in [scripts.scripts_txt2img.scripts, scripts.scripts_img2img.scripts]:
@@ -306,6 +320,7 @@ class Api:
         return res
 
     def get_script(self, script_name, script_runner):
+            """TODO: Add docstring."""
         if script_name is None or script_name == "":
             return None, None
 
@@ -313,6 +328,7 @@ class Api:
         return script_runner.scripts[script_idx]
 
     def init_default_script_args(self, script_runner):
+            """TODO: Add docstring."""
         #find max idx from the scripts in runner and generate a none array to init script_args
         last_arg_index = 1
         for script in script_runner.scripts:
@@ -333,6 +349,7 @@ class Api:
         return script_args
 
     def init_script_args(self, request, default_script_args, selectable_scripts, selectable_idx, script_runner, *, input_script_args=None):
+            """TODO: Add docstring."""
         script_args = default_script_args.copy()
 
         if input_script_args is not None:
@@ -376,6 +393,7 @@ class Api:
         params = infotext_utils.parse_generation_parameters(request.infotext)
 
         def get_field_value(field, params):
+                """TODO: Add docstring."""
             value = field.function(params) if field.function else params.get(field.label)
             if value is None:
                 return None
@@ -430,6 +448,7 @@ class Api:
         return params
 
     def text2imgapi(self, txt2imgreq: models.StableDiffusionTxt2ImgProcessingAPI):
+            """TODO: Add docstring."""
         task_id = txt2imgreq.force_task_id or create_task_id("txt2img")
 
         script_runner = scripts.scripts_txt2img
@@ -490,6 +509,7 @@ class Api:
         return models.TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
 
     def img2imgapi(self, img2imgreq: models.StableDiffusionImg2ImgProcessingAPI):
+            """TODO: Add docstring."""
         task_id = img2imgreq.force_task_id or create_task_id("img2img")
 
         init_images = img2imgreq.init_images
@@ -565,6 +585,7 @@ class Api:
         return models.ImageToImageResponse(images=b64images, parameters=vars(img2imgreq), info=processed.js())
 
     def extras_single_image_api(self, req: models.ExtrasSingleImageRequest):
+            """TODO: Add docstring."""
         reqDict = setUpscalers(req)
 
         reqDict['image'] = decode_base64_to_image(reqDict['image'])
@@ -575,6 +596,7 @@ class Api:
         return models.ExtrasSingleImageResponse(image=encode_pil_to_base64(result[0][0]), html_info=result[1])
 
     def extras_batch_images_api(self, req: models.ExtrasBatchImagesRequest):
+            """TODO: Add docstring."""
         reqDict = setUpscalers(req)
 
         image_list = reqDict.pop('imageList', [])
@@ -586,6 +608,7 @@ class Api:
         return models.ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info=result[1])
 
     def pnginfoapi(self, req: models.PNGInfoRequest):
+            """TODO: Add docstring."""
         image = decode_base64_to_image(req.image.strip())
         if image is None:
             return models.PNGInfoResponse(info="")
@@ -600,6 +623,7 @@ class Api:
         return models.PNGInfoResponse(info=geninfo, items=items, parameters=params)
 
     def progressapi(self, req: models.ProgressRequest = Depends()):
+            """TODO: Add docstring."""
         # copy from check_progress_call of ui.py
 
         if shared.state.job_count == 0:
@@ -628,6 +652,7 @@ class Api:
         return models.ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.dict(), current_image=current_image, textinfo=shared.state.textinfo, current_task=current_task)
 
     def interrogateapi(self, interrogatereq: models.InterrogateRequest):
+            """TODO: Add docstring."""
         image_b64 = interrogatereq.image
         if image_b64 is None:
             raise HTTPException(status_code=404, detail="Image not found")
@@ -647,24 +672,29 @@ class Api:
         return models.InterrogateResponse(caption=processed)
 
     def interruptapi(self):
+            """TODO: Add docstring."""
         shared.state.interrupt()
 
         return {}
 
     def unloadapi(self):
+            """TODO: Add docstring."""
         sd_models.unload_model_weights()
 
         return {}
 
     def reloadapi(self):
+            """TODO: Add docstring."""
         sd_models.send_model_to_device(shared.sd_model)
 
         return {}
 
     def skip(self):
+            """TODO: Add docstring."""
         shared.state.skip()
 
     def get_config(self):
+            """TODO: Add docstring."""
         options = {}
         for key in shared.opts.data.keys():
             metadata = shared.opts.data_labels.get(key)
@@ -676,6 +706,7 @@ class Api:
         return options
 
     def set_config(self, req: dict[str, Any]):
+            """TODO: Add docstring."""
         checkpoint_name = req.get("sd_model_checkpoint", None)
         if checkpoint_name is not None and checkpoint_name not in sd_models.checkpoint_aliases:
             raise RuntimeError(f"model {checkpoint_name!r} not found")
@@ -687,12 +718,15 @@ class Api:
         return
 
     def get_cmd_flags(self):
+            """TODO: Add docstring."""
         return vars(shared.cmd_opts)
 
     def get_samplers(self):
+            """TODO: Add docstring."""
         return [{"name": sampler[0], "aliases":sampler[2], "options":sampler[3]} for sampler in sd_samplers.all_samplers]
 
     def get_schedulers(self):
+            """TODO: Add docstring."""
         return [
             {
                 "name": scheduler.name,
@@ -704,6 +738,7 @@ class Api:
             for scheduler in sd_schedulers.schedulers]
 
     def get_upscalers(self):
+            """TODO: Add docstring."""
         return [
             {
                 "name": upscaler.name,
@@ -716,6 +751,7 @@ class Api:
         ]
 
     def get_latent_upscale_modes(self):
+            """TODO: Add docstring."""
         return [
             {
                 "name": upscale_mode,
@@ -724,23 +760,29 @@ class Api:
         ]
 
     def get_sd_models(self):
+            """TODO: Add docstring."""
         import modules.sd_models as sd_models
         return [{"title": x.title, "model_name": x.model_name, "hash": x.shorthash, "sha256": x.sha256, "filename": x.filename, "config": find_checkpoint_config_near_filename(x)} for x in sd_models.checkpoints_list.values()]
 
     def get_sd_vaes(self):
+            """TODO: Add docstring."""
         import modules.sd_vae as sd_vae
         return [{"model_name": x, "filename": sd_vae.vae_dict[x]} for x in sd_vae.vae_dict.keys()]
 
     def get_hypernetworks(self):
+            """TODO: Add docstring."""
         return [{"name": name, "path": shared.hypernetworks[name]} for name in shared.hypernetworks]
 
     def get_face_restorers(self):
+            """TODO: Add docstring."""
         return [{"name":x.name(), "cmd_dir": getattr(x, "cmd_dir", None)} for x in shared.face_restorers]
 
     def get_realesrgan_models(self):
+            """TODO: Add docstring."""
         return [{"name":x.name,"path":x.data_path, "scale":x.scale} for x in get_realesrgan_models(None)]
 
     def get_prompt_styles(self):
+            """TODO: Add docstring."""
         styleList = []
         for k in shared.prompt_styles.styles:
             style = shared.prompt_styles.styles[k]
@@ -749,9 +791,11 @@ class Api:
         return styleList
 
     def get_embeddings(self):
+            """TODO: Add docstring."""
         db = sd_hijack.model_hijack.embedding_db
 
         def convert_embedding(embedding):
+                """TODO: Add docstring."""
             return {
                 "step": embedding.step,
                 "sd_checkpoint": embedding.sd_checkpoint,
@@ -761,6 +805,7 @@ class Api:
             }
 
         def convert_embeddings(embeddings):
+                """TODO: Add docstring."""
             return {embedding.name: convert_embedding(embedding) for embedding in embeddings.values()}
 
         return {
@@ -769,18 +814,22 @@ class Api:
         }
 
     def refresh_embeddings(self):
+            """TODO: Add docstring."""
         with self.queue_lock:
             sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)
 
     def refresh_checkpoints(self):
+            """TODO: Add docstring."""
         with self.queue_lock:
             shared.refresh_checkpoints()
 
     def refresh_vae(self):
+            """TODO: Add docstring."""
         with self.queue_lock:
             shared_items.refresh_vae_list()
 
     def create_embedding(self, args: dict):
+            """TODO: Add docstring."""
         try:
             shared.state.begin(job="create_embedding")
             filename = create_embedding(**args) # create empty embedding
@@ -793,6 +842,7 @@ class Api:
 
 
     def create_hypernetwork(self, args: dict):
+            """TODO: Add docstring."""
         try:
             shared.state.begin(job="create_hypernetwork")
             filename = create_hypernetwork(**args) # create empty embedding
@@ -803,6 +853,7 @@ class Api:
             shared.state.end()
 
     def train_embedding(self, args: dict):
+            """TODO: Add docstring."""
         try:
             shared.state.begin(job="train_embedding")
             apply_optimizations = shared.opts.training_xattention_optimizations
@@ -824,6 +875,7 @@ class Api:
             shared.state.end()
 
     def train_hypernetwork(self, args: dict):
+            """TODO: Add docstring."""
         try:
             shared.state.begin(job="train_hypernetwork")
             shared.loaded_hypernetworks = []
@@ -849,6 +901,7 @@ class Api:
             shared.state.end()
 
     def get_memory(self):
+            """TODO: Add docstring."""
         try:
             import os
             import psutil
@@ -884,6 +937,7 @@ class Api:
         return models.MemoryResponse(ram=ram, cuda=cuda)
 
     def get_extensions_list(self):
+            """TODO: Add docstring."""
         from modules import extensions
         extensions.list_extensions()
         ext_list = []
@@ -903,6 +957,7 @@ class Api:
         return ext_list
 
     def launch(self, server_name, port, root_path):
+            """TODO: Add docstring."""
         self.app.include_router(self.router)
         uvicorn.run(
             self.app,
@@ -915,14 +970,17 @@ class Api:
         )
 
     def kill_webui(self):
+            """TODO: Add docstring."""
         restart.stop_program()
 
     def restart_webui(self):
+            """TODO: Add docstring."""
         if restart.is_restartable():
             restart.restart_program()
         return Response(status_code=501)
 
     def stop_webui(request):
+            """TODO: Add docstring."""
         shared.state.server_command = "stop"
         return Response("Stopping.")
 

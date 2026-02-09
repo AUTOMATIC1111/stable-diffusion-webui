@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from modules import shared
 from packaging import version
 import re
@@ -10,6 +11,7 @@ v180_hr_styles = version.parse("1.8.0-139")
 
 
 def parse_version(text):
+        """TODO: Add docstring."""
     if text is None:
         return None
 

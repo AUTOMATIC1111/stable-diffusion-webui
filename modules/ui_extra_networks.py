@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import functools
 import os.path
 import urllib.parse
@@ -23,10 +24,12 @@ default_allowed_preview_extensions = ["png", "jpg", "jpeg", "webp", "gif"]
 
 @functools.cache
 def allowed_preview_extensions_with_extra(extra_extensions=None):
+        """TODO: Add docstring."""
     return set(default_allowed_preview_extensions) | set(extra_extensions or [])
 
 
 def allowed_preview_extensions():
+        """TODO: Add docstring."""
     return allowed_preview_extensions_with_extra((shared.opts.samples_format, ))
 
 
@@ -51,6 +54,7 @@ def get_tree(paths: Union[str, list[str]], items: dict[str, ExtraNetworksItem]) 
         paths = [paths]
 
     def _get_tree(_paths: list[str], _root: str):
+            """TODO: Add docstring."""
         _res = {}
         for path in _paths:
             relpath = os.path.relpath(path, _root)
@@ -95,6 +99,7 @@ def register_page(page):
 
 
 def fetch_file(filename: str = ""):
+        """TODO: Add docstring."""
     from starlette.responses import FileResponse
 
     if not os.path.isfile(filename):
@@ -112,6 +117,7 @@ def fetch_file(filename: str = ""):
 
 
 def fetch_cover_images(page: str = "", item: str = "", index: int = 0):
+        """TODO: Add docstring."""
     from starlette.responses import Response
 
     page = next(iter([x for x in extra_pages if x.name == page]), None)
@@ -137,6 +143,7 @@ def fetch_cover_images(page: str = "", item: str = "", index: int = 0):
 
 
 def get_metadata(page: str = "", item: str = ""):
+        """TODO: Add docstring."""
     from starlette.responses import JSONResponse
 
     page = next(iter([x for x in extra_pages if x.name == page]), None)
@@ -153,6 +160,7 @@ def get_metadata(page: str = "", item: str = ""):
 
 
 def get_single_card(page: str = "", tabname: str = "", name: str = ""):
+        """TODO: Add docstring."""
     from starlette.responses import JSONResponse
 
     page = next(iter([x for x in extra_pages if x.name == page]), None)
@@ -171,6 +179,7 @@ def get_single_card(page: str = "", tabname: str = "", name: str = ""):
 
 
 def add_pages_to_demo(app):
+        """TODO: Add docstring."""
     app.add_api_route("/sd_extra_networks/thumb", fetch_file, methods=["GET"])
     app.add_api_route("/sd_extra_networks/cover-images", fetch_cover_images, methods=["GET"])
     app.add_api_route("/sd_extra_networks/metadata", get_metadata, methods=["GET"])
@@ -178,6 +187,7 @@ def add_pages_to_demo(app):
 
 
 def quote_js(s):
+        """TODO: Add docstring."""
     s = s.replace('\\', '\\\\')
     s = s.replace('"', '\\"')
     return f'"{s}"'
@@ -185,6 +195,7 @@ def quote_js(s):
 
 class ExtraNetworksPage:
     def __init__(self, title):
+            """TODO: Add docstring."""
         self.title = title
         self.name = title.lower()
         # This is the actual name of the extra networks tab (not txt2img/img2img).
@@ -205,9 +216,11 @@ class ExtraNetworksPage:
         self.btn_edit_item_tpl = shared.html("extra-networks-edit-item-button.html")
 
     def refresh(self):
+            """TODO: Add docstring."""
         pass
 
     def read_user_metadata(self, item, use_cache=True):
+            """TODO: Add docstring."""
         filename = item.get("filename", None)
         metadata = extra_networks.get_user_metadata(filename, lister=self.lister if use_cache else None)
 
@@ -218,11 +231,13 @@ class ExtraNetworksPage:
         item["user_metadata"] = metadata
 
     def link_preview(self, filename):
+            """TODO: Add docstring."""
         quoted_filename = urllib.parse.quote(filename.replace('\\', '/'))
         mtime, _ = self.lister.mctime(filename)
         return f"./sd_extra_networks/thumb?filename={quoted_filename}&mtime={mtime}"
 
     def search_terms_from_path(self, filename, possible_directories=None):
+            """TODO: Add docstring."""
         abspath = os.path.abspath(filename)
         for parentdir in (possible_directories if possible_directories is not None else self.allowed_directories_for_previews()):
             parentdir = os.path.dirname(os.path.abspath(parentdir))
@@ -232,6 +247,7 @@ class ExtraNetworksPage:
         return ""
 
     def create_item_html(
+            """TODO: Add docstring."""
         self,
         tabname: str,
         item: dict,
@@ -351,6 +367,7 @@ class ExtraNetworksPage:
             return args
 
     def create_tree_dir_item_html(
+            """TODO: Add docstring."""
         self,
         tabname: str,
         dir_path: str,
@@ -623,12 +640,15 @@ class ExtraNetworksPage:
         return self.pane_tpl.format(**page_params, pane_content=pane_content)
 
     def create_item(self, name, index=None):
+            """TODO: Add docstring."""
         raise NotImplementedError()
 
     def list_items(self):
+            """TODO: Add docstring."""
         raise NotImplementedError()
 
     def allowed_directories_for_previews(self):
+            """TODO: Add docstring."""
         return []
 
     def get_sort_keys(self, path):
@@ -684,14 +704,17 @@ class ExtraNetworksPage:
         return None
 
     def create_user_metadata_editor(self, ui, tabname):
+            """TODO: Add docstring."""
         return ui_extra_networks_user_metadata.UserMetadataEditor(ui, tabname, self)
 
 
 def initialize():
+        """TODO: Add docstring."""
     extra_pages.clear()
 
 
 def register_default_pages():
+        """TODO: Add docstring."""
     from modules.ui_extra_networks_textual_inversion import ExtraNetworksPageTextualInversion
     from modules.ui_extra_networks_hypernets import ExtraNetworksPageHypernetworks
     from modules.ui_extra_networks_checkpoints import ExtraNetworksPageCheckpoints
@@ -702,6 +725,7 @@ def register_default_pages():
 
 class ExtraNetworksUi:
     def __init__(self):
+            """TODO: Add docstring."""
         self.pages = None
         """gradio HTML components related to extra networks' pages"""
 
@@ -717,9 +741,11 @@ class ExtraNetworksUi:
 
 
 def pages_in_preferred_order(pages):
+        """TODO: Add docstring."""
     tab_order = [x.lower().strip() for x in shared.opts.ui_extra_networks_tab_reorder.split(",")]
 
     def tab_name_score(name):
+            """TODO: Add docstring."""
         name = name.lower()
         for i, possible_match in enumerate(tab_order):
             if possible_match in name:
@@ -733,6 +759,7 @@ def pages_in_preferred_order(pages):
 
 
 def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
+        """TODO: Add docstring."""
     ui = ExtraNetworksUi()
     ui.pages = []
     ui.pages_contents = []
@@ -771,6 +798,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
         tab.select(fn=None, _js=jscode, inputs=[], outputs=[], show_progress=False)
 
         def refresh():
+                """TODO: Add docstring."""
             for pg in ui.stored_extra_pages:
                 pg.refresh()
             create_html()
@@ -780,9 +808,11 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
         button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages).then(fn=lambda: None, _js="function(){ " + f"applyExtraNetworkFilter('{tabname}_{page.extra_networks_tabname}');" + " }").then(fn=lambda: None, _js='setupAllResizeHandles')
 
     def create_html():
+            """TODO: Add docstring."""
         ui.pages_contents = [pg.create_html(ui.tabname) for pg in ui.stored_extra_pages]
 
     def pages_html():
+            """TODO: Add docstring."""
         if not ui.pages_contents:
             create_html()
         return ui.pages_contents
@@ -793,6 +823,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
 
 
 def path_is_parent(parent_path, child_path):
+        """TODO: Add docstring."""
     parent_path = os.path.abspath(parent_path)
     child_path = os.path.abspath(child_path)
 
@@ -801,6 +832,7 @@ def path_is_parent(parent_path, child_path):
 
 def setup_ui(ui, gallery):
     def save_preview(index, images, filename):
+            """TODO: Add docstring."""
         # this function is here for backwards compatibility and likely will be removed soon
 
         if len(images) == 0:

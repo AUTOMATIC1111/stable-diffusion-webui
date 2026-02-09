@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from collections import namedtuple
 
 import numpy as np
@@ -12,6 +13,7 @@ import torch
 import k_diffusion as K
 
 def find_noise_for_image(p, cond, uncond, cfg_scale, steps):
+        """TODO: Add docstring."""
     x = p.init_latent
 
     s_in = x.new_ones([x.shape[0]])
@@ -64,6 +66,7 @@ Cached = namedtuple("Cached", ["noise", "cfg_scale", "steps", "latent", "origina
 
 # Based on changes suggested by briansemrau in https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/736
 def find_noise_for_image_sigma_adjustment(p, cond, uncond, cfg_scale, steps):
+        """TODO: Add docstring."""
     x = p.init_latent
 
     s_in = x.new_ones([x.shape[0]])
@@ -120,15 +123,19 @@ def find_noise_for_image_sigma_adjustment(p, cond, uncond, cfg_scale, steps):
 
 class Script(scripts.Script):
     def __init__(self):
+            """TODO: Add docstring."""
         self.cache = None
 
     def title(self):
+            """TODO: Add docstring."""
         return "img2img alternative test"
 
     def show(self, is_img2img):
+            """TODO: Add docstring."""
         return is_img2img
 
     def ui(self, is_img2img):
+            """TODO: Add docstring."""
         info = gr.Markdown('''
         * `CFG Scale` should be 2 or lower.
         ''')
@@ -158,6 +165,7 @@ class Script(scripts.Script):
         ]
 
     def run(self, p, _, override_sampler, override_prompt, original_prompt, original_negative_prompt, override_steps, st, override_strength, cfg, randomness, sigma_adjustment):
+            """TODO: Add docstring."""
         # Override
         if override_sampler:
             p.sampler_name = "Euler"
@@ -170,6 +178,7 @@ class Script(scripts.Script):
             p.denoising_strength = 1.0
 
         def sample_extra(conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
+                """TODO: Add docstring."""
             lat = (p.init_latent.cpu().numpy() * 10).astype(int)
 
             same_params = self.cache is not None and self.cache.cfg_scale == cfg and self.cache.steps == st \

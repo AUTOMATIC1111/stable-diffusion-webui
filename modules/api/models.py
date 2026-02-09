@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import inspect
 
 from pydantic import BaseModel, Field, create_model
@@ -42,12 +43,14 @@ class PydanticModelGenerator:
     """
 
     def __init__(
+            """TODO: Add docstring."""
         self,
         model_name: str = None,
         class_instance = None,
         additional_fields = None,
     ):
         def field_type_generator(k, v):
+                """TODO: Add docstring."""
             field_type = v.annotation
 
             if field_type == 'Image':
@@ -57,6 +60,7 @@ class PydanticModelGenerator:
             return Optional[field_type]
 
         def merge_class_params(class_):
+                """TODO: Add docstring."""
             all_classes = list(filter(lambda x: x is not object, inspect.getmro(class_)))
             parameters = {}
             for classes in all_classes:
@@ -132,16 +136,19 @@ StableDiffusionImg2ImgProcessingAPI = PydanticModelGenerator(
 ).generate_model()
 
 class TextToImageResponse(BaseModel):
+        """TODO: Add docstring."""
     images: list[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
     parameters: dict
     info: str
 
 class ImageToImageResponse(BaseModel):
+        """TODO: Add docstring."""
     images: list[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
     parameters: dict
     info: str
 
 class ExtrasBaseRequest(BaseModel):
+        """TODO: Add docstring."""
     resize_mode: Literal[0, 1] = Field(default=0, title="Resize Mode", description="Sets the resize mode: 0 to upscale by upscaling_resize amount, 1 to upscale up to upscaling_resize_h x upscaling_resize_w.")
     show_extras_results: bool = Field(default=True, title="Show results", description="Should the backend return the generated image?")
     gfpgan_visibility: float = Field(default=0, title="GFPGAN Visibility", ge=0, le=1, allow_inf_nan=False, description="Sets the visibility of GFPGAN, values should be between 0 and 1.")
@@ -157,36 +164,46 @@ class ExtrasBaseRequest(BaseModel):
     upscale_first: bool = Field(default=False, title="Upscale first", description="Should the upscaler run before restoring faces?")
 
 class ExtraBaseResponse(BaseModel):
+        """TODO: Add docstring."""
     html_info: str = Field(title="HTML info", description="A series of HTML tags containing the process info.")
 
 class ExtrasSingleImageRequest(ExtrasBaseRequest):
+        """TODO: Add docstring."""
     image: str = Field(default="", title="Image", description="Image to work on, must be a Base64 string containing the image's data.")
 
 class ExtrasSingleImageResponse(ExtraBaseResponse):
+        """TODO: Add docstring."""
     image: str = Field(default=None, title="Image", description="The generated image in base64 format.")
 
 class FileData(BaseModel):
+        """TODO: Add docstring."""
     data: str = Field(title="File data", description="Base64 representation of the file")
     name: str = Field(title="File name")
 
 class ExtrasBatchImagesRequest(ExtrasBaseRequest):
+        """TODO: Add docstring."""
     imageList: list[FileData] = Field(title="Images", description="List of images to work on. Must be Base64 strings")
 
 class ExtrasBatchImagesResponse(ExtraBaseResponse):
+        """TODO: Add docstring."""
     images: list[str] = Field(title="Images", description="The generated images in base64 format.")
 
 class PNGInfoRequest(BaseModel):
+        """TODO: Add docstring."""
     image: str = Field(title="Image", description="The base64 encoded PNG image")
 
 class PNGInfoResponse(BaseModel):
+        """TODO: Add docstring."""
     info: str = Field(title="Image info", description="A string with the parameters used to generate the image")
     items: dict = Field(title="Items", description="A dictionary containing all the other fields the image had")
     parameters: dict = Field(title="Parameters", description="A dictionary with parsed generation info fields")
 
 class ProgressRequest(BaseModel):
+        """TODO: Add docstring."""
     skip_current_image: bool = Field(default=False, title="Skip current image", description="Skip current image serialization")
 
 class ProgressResponse(BaseModel):
+        """TODO: Add docstring."""
     progress: float = Field(title="Progress", description="The progress with a range of 0 to 1")
     eta_relative: float = Field(title="ETA in secs")
     state: dict = Field(title="State", description="The current state snapshot")
@@ -194,16 +211,20 @@ class ProgressResponse(BaseModel):
     textinfo: str = Field(default=None, title="Info text", description="Info text used by WebUI.")
 
 class InterrogateRequest(BaseModel):
+        """TODO: Add docstring."""
     image: str = Field(default="", title="Image", description="Image to work on, must be a Base64 string containing the image's data.")
     model: str = Field(default="clip", title="Model", description="The interrogate model used.")
 
 class InterrogateResponse(BaseModel):
+        """TODO: Add docstring."""
     caption: str = Field(default=None, title="Caption", description="The generated caption for the image.")
 
 class TrainResponse(BaseModel):
+        """TODO: Add docstring."""
     info: str = Field(title="Train info", description="Response string from train embedding or hypernetwork task.")
 
 class CreateResponse(BaseModel):
+        """TODO: Add docstring."""
     info: str = Field(title="Create info", description="Response string from create embedding or hypernetwork task.")
 
 fields = {}
@@ -231,11 +252,13 @@ for key in _options:
 FlagsModel = create_model("Flags", **flags)
 
 class SamplerItem(BaseModel):
+        """TODO: Add docstring."""
     name: str = Field(title="Name")
     aliases: list[str] = Field(title="Aliases")
     options: dict[str, str] = Field(title="Options")
 
 class SchedulerItem(BaseModel):
+        """TODO: Add docstring."""
     name: str = Field(title="Name")
     label: str = Field(title="Label")
     aliases: Optional[list[str]] = Field(title="Aliases")
@@ -243,6 +266,7 @@ class SchedulerItem(BaseModel):
     need_inner_model: Optional[bool] = Field(title="Needs Inner Model")
 
 class UpscalerItem(BaseModel):
+        """TODO: Add docstring."""
     name: str = Field(title="Name")
     model_name: Optional[str] = Field(title="Model Name")
     model_path: Optional[str] = Field(title="Path")
@@ -250,9 +274,11 @@ class UpscalerItem(BaseModel):
     scale: Optional[float] = Field(title="Scale")
 
 class LatentUpscalerModeItem(BaseModel):
+        """TODO: Add docstring."""
     name: str = Field(title="Name")
 
 class SDModelItem(BaseModel):
+        """TODO: Add docstring."""
     title: str = Field(title="Title")
     model_name: str = Field(title="Model Name")
     hash: Optional[str] = Field(title="Short hash")
@@ -261,29 +287,35 @@ class SDModelItem(BaseModel):
     config: Optional[str] = Field(title="Config file")
 
 class SDVaeItem(BaseModel):
+        """TODO: Add docstring."""
     model_name: str = Field(title="Model Name")
     filename: str = Field(title="Filename")
 
 class HypernetworkItem(BaseModel):
+        """TODO: Add docstring."""
     name: str = Field(title="Name")
     path: Optional[str] = Field(title="Path")
 
 class FaceRestorerItem(BaseModel):
+        """TODO: Add docstring."""
     name: str = Field(title="Name")
     cmd_dir: Optional[str] = Field(title="Path")
 
 class RealesrganItem(BaseModel):
+        """TODO: Add docstring."""
     name: str = Field(title="Name")
     path: Optional[str] = Field(title="Path")
     scale: Optional[int] = Field(title="Scale")
 
 class PromptStyleItem(BaseModel):
+        """TODO: Add docstring."""
     name: str = Field(title="Name")
     prompt: Optional[str] = Field(title="Prompt")
     negative_prompt: Optional[str] = Field(title="Negative Prompt")
 
 
 class EmbeddingItem(BaseModel):
+        """TODO: Add docstring."""
     step: Optional[int] = Field(title="Step", description="The number of steps that were used to train this embedding, if available")
     sd_checkpoint: Optional[str] = Field(title="SD Checkpoint", description="The hash of the checkpoint this embedding was trained on, if available")
     sd_checkpoint_name: Optional[str] = Field(title="SD Checkpoint Name", description="The name of the checkpoint this embedding was trained on, if available. Note that this is the name that was used by the trainer; for a stable identifier, use `sd_checkpoint` instead")
@@ -291,20 +323,24 @@ class EmbeddingItem(BaseModel):
     vectors: int = Field(title="Vectors", description="The number of vectors in the embedding")
 
 class EmbeddingsResponse(BaseModel):
+        """TODO: Add docstring."""
     loaded: dict[str, EmbeddingItem] = Field(title="Loaded", description="Embeddings loaded for the current model")
     skipped: dict[str, EmbeddingItem] = Field(title="Skipped", description="Embeddings skipped for the current model (likely due to architecture incompatibility)")
 
 class MemoryResponse(BaseModel):
+        """TODO: Add docstring."""
     ram: dict = Field(title="RAM", description="System memory stats")
     cuda: dict = Field(title="CUDA", description="nVidia CUDA memory stats")
 
 
 class ScriptsList(BaseModel):
+        """TODO: Add docstring."""
     txt2img: list = Field(default=None, title="Txt2img", description="Titles of scripts (txt2img)")
     img2img: list = Field(default=None, title="Img2img", description="Titles of scripts (img2img)")
 
 
 class ScriptArg(BaseModel):
+        """TODO: Add docstring."""
     label: str = Field(default=None, title="Label", description="Name of the argument in UI")
     value: Optional[Any] = Field(default=None, title="Value", description="Default value of the argument")
     minimum: Optional[Any] = Field(default=None, title="Minimum", description="Minimum allowed value for the argumentin UI")
@@ -314,12 +350,14 @@ class ScriptArg(BaseModel):
 
 
 class ScriptInfo(BaseModel):
+        """TODO: Add docstring."""
     name: str = Field(default=None, title="Name", description="Script name")
     is_alwayson: bool = Field(default=None, title="IsAlwayson", description="Flag specifying whether this script is an alwayson script")
     is_img2img: bool = Field(default=None, title="IsImg2img", description="Flag specifying whether this script is an img2img script")
     args: list[ScriptArg] = Field(title="Arguments", description="List of script's arguments")
 
 class ExtensionItem(BaseModel):
+        """TODO: Add docstring."""
     name: str = Field(title="Name", description="Extension name")
     remote: str = Field(title="Remote", description="Extension Repository URL")
     branch: str = Field(title="Branch", description="Extension Repository Branch")

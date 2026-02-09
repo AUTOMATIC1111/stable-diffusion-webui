@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import torch.nn
 
 from modules import script_callbacks, shared, devices
@@ -8,6 +9,7 @@ current_unet = None
 original_forward = None  # not used, only left temporarily for compatibility
 
 def list_unets():
+        """TODO: Add docstring."""
     new_unets = script_callbacks.list_unets_callback()
 
     unet_options.clear()
@@ -15,6 +17,7 @@ def list_unets():
 
 
 def get_unet_option(option=None):
+        """TODO: Add docstring."""
     option = option or shared.opts.sd_unet
 
     if option == "None":
@@ -31,6 +34,7 @@ def get_unet_option(option=None):
 
 
 def apply_unet(option=None):
+        """TODO: Add docstring."""
     global current_unet_option
     global current_unet
 
@@ -61,6 +65,7 @@ def apply_unet(option=None):
 
 
 class SdUnetOption:
+        """TODO: Add docstring."""
     model_name = None
     """name of related checkpoint - this option will be selected automatically for unet if the name of checkpoint matches this"""
 
@@ -74,17 +79,21 @@ class SdUnetOption:
 
 class SdUnet(torch.nn.Module):
     def forward(self, x, timesteps, context, *args, **kwargs):
+            """TODO: Add docstring."""
         raise NotImplementedError()
 
     def activate(self):
+            """TODO: Add docstring."""
         pass
 
     def deactivate(self):
+            """TODO: Add docstring."""
         pass
 
 
 def create_unet_forward(original_forward):
     def UNetModel_forward(self, x, timesteps=None, context=None, *args, **kwargs):
+            """TODO: Add docstring."""
         if current_unet is not None:
             return current_unet.forward(x, timesteps, context, *args, **kwargs)
 

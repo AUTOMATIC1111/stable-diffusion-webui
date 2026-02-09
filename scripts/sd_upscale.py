@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import math
 
 import modules.scripts as scripts
@@ -11,12 +12,15 @@ from modules.shared import opts, state
 
 class Script(scripts.Script):
     def title(self):
+            """TODO: Add docstring."""
         return "SD upscale"
 
     def show(self, is_img2img):
+            """TODO: Add docstring."""
         return is_img2img
 
     def ui(self, is_img2img):
+            """TODO: Add docstring."""
         info = gr.HTML("<p style=\"margin-bottom:0.75em\">Will upscale the image by the selected scale factor; use width and height sliders to set tile size</p>")
         overlap = gr.Slider(minimum=0, maximum=256, step=16, label='Tile overlap', value=64, elem_id=self.elem_id("overlap"))
         scale_factor = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label='Scale Factor', value=2.0, elem_id=self.elem_id("scale_factor"))
@@ -25,6 +29,7 @@ class Script(scripts.Script):
         return [info, overlap, upscaler_index, scale_factor]
 
     def run(self, p, _, overlap, upscaler_index, scale_factor):
+            """TODO: Add docstring."""
         if isinstance(upscaler_index, str):
             upscaler_index = [x.name.lower() for x in shared.sd_upscalers].index(upscaler_index.lower())
         processing.fix_seed(p)

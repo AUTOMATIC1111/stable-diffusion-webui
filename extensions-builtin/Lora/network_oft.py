@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import torch
 import network
 from einops import rearrange
@@ -5,6 +6,7 @@ from einops import rearrange
 
 class ModuleTypeOFT(network.ModuleType):
     def create_module(self, net: network.Network, weights: network.NetworkWeights):
+            """TODO: Add docstring."""
         if all(x in weights.w for x in ["oft_blocks"]) or all(x in weights.w for x in ["oft_diag"]):
             return NetworkModuleOFT(net, weights)
 
@@ -68,6 +70,7 @@ class NetworkModuleOFT(network.NetworkModule):
             self.boft_b = self.block_size
 
     def calc_updown(self, orig_weight):
+            """TODO: Add docstring."""
         oft_blocks = self.oft_blocks.to(orig_weight.device)
         eye = torch.eye(self.block_size, device=oft_blocks.device)
 

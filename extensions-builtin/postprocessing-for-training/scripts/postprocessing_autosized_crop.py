@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from PIL import Image
 
 from modules import scripts_postprocessing, ui_components
@@ -5,6 +6,7 @@ import gradio as gr
 
 
 def center_crop(image: Image, w: int, h: int):
+        """TODO: Add docstring."""
     iw, ih = image.size
     if ih / h < iw / w:
         sw = w * ih / h
@@ -16,6 +18,7 @@ def center_crop(image: Image, w: int, h: int):
 
 
 def multicrop_pic(image: Image, mindim, maxdim, minarea, maxarea, objective, threshold):
+        """TODO: Add docstring."""
     iw, ih = image.size
     err = lambda w, h: 1 - (lambda x: x if x < 1 else 1 / x)(iw / ih / (w / h))
     wh = max(((w, h) for w in range(mindim, maxdim + 1, 64) for h in range(mindim, maxdim + 1, 64)
@@ -27,10 +30,12 @@ def multicrop_pic(image: Image, mindim, maxdim, minarea, maxarea, objective, thr
 
 
 class ScriptPostprocessingAutosizedCrop(scripts_postprocessing.ScriptPostprocessing):
+        """TODO: Add docstring."""
     name = "Auto-sized crop"
     order = 4020
 
     def ui(self):
+            """TODO: Add docstring."""
         with ui_components.InputAccordion(False, label="Auto-sized crop") as enable:
             gr.Markdown('Each image is center-cropped with an automatically chosen width and height.')
             with gr.Row():
@@ -54,6 +59,7 @@ class ScriptPostprocessingAutosizedCrop(scripts_postprocessing.ScriptPostprocess
         }
 
     def process(self, pp: scripts_postprocessing.PostprocessedImage, enable, mindim, maxdim, minarea, maxarea, objective, threshold):
+            """TODO: Add docstring."""
         if not enable:
             return
 

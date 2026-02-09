@@ -1,7 +1,9 @@
+    """TODO: Add docstring."""
 import ngrok
 
 # Connect to ngrok for ingress
 def connect(token, port, options):
+        """TODO: Add docstring."""
     account = None
     if token is None:
         token = 'None'

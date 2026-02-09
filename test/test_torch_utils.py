@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import types
 
 import pytest
@@ -8,6 +9,7 @@ from modules import torch_utils
 
 @pytest.mark.parametrize("wrapped", [True, False])
 def test_get_param(wrapped):
+        """TODO: Add docstring."""
     mod = torch.nn.Linear(1, 1)
     cpu = torch.device("cpu")
     mod.to(dtype=torch.float16, device=cpu)

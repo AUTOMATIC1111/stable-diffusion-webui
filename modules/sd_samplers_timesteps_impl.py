@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import torch
 import tqdm
 import k_diffusion.sampling
@@ -10,6 +11,7 @@ from modules.torch_utils import float64
 
 @torch.no_grad()
 def ddim(model, x, timesteps, extra_args=None, callback=None, disable=None, eta=0.0):
+        """TODO: Add docstring."""
     alphas_cumprod = model.inner_model.inner_model.alphas_cumprod
     alphas = alphas_cumprod[timesteps]
     alphas_prev = alphas_cumprod[torch.nn.functional.pad(timesteps[:-1], pad=(1, 0))].to(float64(x))
@@ -82,6 +84,7 @@ def ddim_cfgpp(model, x, timesteps, extra_args=None, callback=None, disable=None
 
 @torch.no_grad()
 def plms(model, x, timesteps, extra_args=None, callback=None, disable=None):
+        """TODO: Add docstring."""
     alphas_cumprod = model.inner_model.inner_model.alphas_cumprod
     alphas = alphas_cumprod[timesteps]
     alphas_prev = alphas_cumprod[torch.nn.functional.pad(timesteps[:-1], pad=(1, 0))].to(float64(x))
@@ -93,6 +96,7 @@ def plms(model, x, timesteps, extra_args=None, callback=None, disable=None):
     old_eps = []
 
     def get_x_prev_and_pred_x0(e_t, index):
+            """TODO: Add docstring."""
         # select parameters corresponding to the currently considered timestep
         a_t = alphas[index].item() * s_x
         a_prev = alphas_prev[index].item() * s_x
@@ -144,9 +148,11 @@ def plms(model, x, timesteps, extra_args=None, callback=None, disable=None):
 
 class UniPCCFG(uni_pc.UniPC):
     def __init__(self, cfg_model, extra_args, callback, *args, **kwargs):
+            """TODO: Add docstring."""
         super().__init__(None, *args, **kwargs)
 
         def after_update(x, model_x):
+                """TODO: Add docstring."""
             callback({'x': x, 'i': self.index, 'sigma': 0, 'sigma_hat': 0, 'denoised': model_x})
             self.index += 1
 
@@ -157,9 +163,11 @@ class UniPCCFG(uni_pc.UniPC):
         self.after_update = after_update
 
     def get_model_input_time(self, t_continuous):
+            """TODO: Add docstring."""
         return (t_continuous - 1. / self.noise_schedule.total_N) * 1000.
 
     def model(self, x, t):
+            """TODO: Add docstring."""
         t_input = self.get_model_input_time(t)
 
         res = self.cfg_model(x, t_input, **self.extra_args)
@@ -168,6 +176,7 @@ class UniPCCFG(uni_pc.UniPC):
 
 
 def unipc(model, x, timesteps, extra_args=None, callback=None, disable=None, is_img2img=False):
+        """TODO: Add docstring."""
     alphas_cumprod = model.inner_model.inner_model.alphas_cumprod
 
     ns = uni_pc.NoiseScheduleVP('discrete', alphas_cumprod=alphas_cumprod)

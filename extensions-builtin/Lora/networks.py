@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from __future__ import annotations
 import gradio as gr
 import logging
@@ -55,6 +56,7 @@ suffix_conversion = {
 
 def convert_diffusers_name_to_compvis(key, is_sd2):
     def match(match_list, regex_text):
+            """TODO: Add docstring."""
         regex = re_compiled.get(regex_text)
         if regex is None:
             regex = re.compile(regex_text)
@@ -120,6 +122,7 @@ def convert_diffusers_name_to_compvis(key, is_sd2):
 
 
 def assign_network_names_to_compvis_modules(sd_model):
+        """TODO: Add docstring."""
     network_layer_mapping = {}
 
     if shared.sd_model.is_sdxl:
@@ -149,13 +152,16 @@ def assign_network_names_to_compvis_modules(sd_model):
 
 class BundledTIHash(str):
     def __init__(self, hash_str):
+            """TODO: Add docstring."""
         self.hash = hash_str
 
     def __str__(self):
+            """TODO: Add docstring."""
         return self.hash if shared.opts.lora_bundled_ti_to_infotext else ''
 
 
 def load_network(name, network_on_disk):
+        """TODO: Add docstring."""
     net = network.Network(name, network_on_disk)
     net.mtime = os.path.getmtime(network_on_disk.filename)
 
@@ -271,6 +277,7 @@ def load_network(name, network_on_disk):
 
 
 def purge_networks_from_memory():
+        """TODO: Add docstring."""
     while len(networks_in_memory) > shared.opts.lora_in_memory_limit and len(networks_in_memory) > 0:
         name = next(iter(networks_in_memory))
         networks_in_memory.pop(name, None)
@@ -279,6 +286,7 @@ def purge_networks_from_memory():
 
 
 def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=None):
+        """TODO: Add docstring."""
     emb_db = sd_hijack.model_hijack.embedding_db
     already_loaded = {}
 
@@ -367,6 +375,7 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
 
 
 def allowed_layer_without_weight(layer):
+        """TODO: Add docstring."""
     if isinstance(layer, torch.nn.LayerNorm) and not layer.elementwise_affine:
         return True
 
@@ -374,6 +383,7 @@ def allowed_layer_without_weight(layer):
 
 
 def store_weights_backup(weight):
+        """TODO: Add docstring."""
     if weight is None:
         return None
 
@@ -381,6 +391,7 @@ def store_weights_backup(weight):
 
 
 def restore_weights_backup(obj, field, weight):
+        """TODO: Add docstring."""
     if weight is None:
         setattr(obj, field, None)
         return
@@ -389,6 +400,7 @@ def restore_weights_backup(obj, field, weight):
 
 
 def network_restore_weights_from_backup(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn.GroupNorm, torch.nn.LayerNorm, torch.nn.MultiheadAttention]):
+        """TODO: Add docstring."""
     weights_backup = getattr(self, "network_weights_backup", None)
     bias_backup = getattr(self, "network_bias_backup", None)
 
@@ -570,12 +582,14 @@ def network_forward(org_module, input, original_forward):
 
 
 def network_reset_cached_weight(self: Union[torch.nn.Conv2d, torch.nn.Linear]):
+        """TODO: Add docstring."""
     self.network_current_names = ()
     self.network_weights_backup = None
     self.network_bias_backup = None
 
 
 def network_Linear_forward(self, input):
+        """TODO: Add docstring."""
     if shared.opts.lora_functional:
         return network_forward(self, input, originals.Linear_forward)
 
@@ -585,12 +599,14 @@ def network_Linear_forward(self, input):
 
 
 def network_Linear_load_state_dict(self, *args, **kwargs):
+        """TODO: Add docstring."""
     network_reset_cached_weight(self)
 
     return originals.Linear_load_state_dict(self, *args, **kwargs)
 
 
 def network_Conv2d_forward(self, input):
+        """TODO: Add docstring."""
     if shared.opts.lora_functional:
         return network_forward(self, input, originals.Conv2d_forward)
 
@@ -600,12 +616,14 @@ def network_Conv2d_forward(self, input):
 
 
 def network_Conv2d_load_state_dict(self, *args, **kwargs):
+        """TODO: Add docstring."""
     network_reset_cached_weight(self)
 
     return originals.Conv2d_load_state_dict(self, *args, **kwargs)
 
 
 def network_GroupNorm_forward(self, input):
+        """TODO: Add docstring."""
     if shared.opts.lora_functional:
         return network_forward(self, input, originals.GroupNorm_forward)
 
@@ -615,12 +633,14 @@ def network_GroupNorm_forward(self, input):
 
 
 def network_GroupNorm_load_state_dict(self, *args, **kwargs):
+        """TODO: Add docstring."""
     network_reset_cached_weight(self)
 
     return originals.GroupNorm_load_state_dict(self, *args, **kwargs)
 
 
 def network_LayerNorm_forward(self, input):
+        """TODO: Add docstring."""
     if shared.opts.lora_functional:
         return network_forward(self, input, originals.LayerNorm_forward)
 
@@ -630,24 +650,28 @@ def network_LayerNorm_forward(self, input):
 
 
 def network_LayerNorm_load_state_dict(self, *args, **kwargs):
+        """TODO: Add docstring."""
     network_reset_cached_weight(self)
 
     return originals.LayerNorm_load_state_dict(self, *args, **kwargs)
 
 
 def network_MultiheadAttention_forward(self, *args, **kwargs):
+        """TODO: Add docstring."""
     network_apply_weights(self)
 
     return originals.MultiheadAttention_forward(self, *args, **kwargs)
 
 
 def network_MultiheadAttention_load_state_dict(self, *args, **kwargs):
+        """TODO: Add docstring."""
     network_reset_cached_weight(self)
 
     return originals.MultiheadAttention_load_state_dict(self, *args, **kwargs)
 
 
 def process_network_files(names: list[str] | None = None):
+        """TODO: Add docstring."""
     candidates = list(shared.walk_files(shared.cmd_opts.lora_dir, allowed_extensions=[".pt", ".ckpt", ".safetensors"]))
     candidates += list(shared.walk_files(shared.cmd_opts.lyco_dir_backcompat, allowed_extensions=[".pt", ".ckpt", ".safetensors"]))
     for filename in candidates:
@@ -673,10 +697,12 @@ def process_network_files(names: list[str] | None = None):
 
 
 def update_available_networks_by_names(names: list[str]):
+        """TODO: Add docstring."""
     process_network_files(names)
 
 
 def list_available_networks():
+        """TODO: Add docstring."""
     available_networks.clear()
     available_network_aliases.clear()
     forbidden_network_aliases.clear()
@@ -692,6 +718,7 @@ re_network_name = re.compile(r"(.*)\s*\([0-9a-fA-F]+\)")
 
 
 def infotext_pasted(infotext, params):
+        """TODO: Add docstring."""
     if "AddNet Module 1" in [x[1] for x in scripts.scripts_txt2img.infotext_fields]:
         return  # if the other extension is active, it will handle those fields, no need to do anything
 

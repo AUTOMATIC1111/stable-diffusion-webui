@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 
 from modules import modelloader, errors
@@ -8,6 +9,7 @@ from modules.upscaler_utils import upscale_with_model
 
 class UpscalerRealESRGAN(Upscaler):
     def __init__(self, path):
+            """TODO: Add docstring."""
         self.name = "RealESRGAN"
         self.user_path = path
         super().__init__()
@@ -27,6 +29,7 @@ class UpscalerRealESRGAN(Upscaler):
                 self.scalers.append(scaler)
 
     def do_upscale(self, img, path):
+            """TODO: Add docstring."""
         if not self.enable:
             return img
 
@@ -51,6 +54,7 @@ class UpscalerRealESRGAN(Upscaler):
         )
 
     def load_model(self, path):
+            """TODO: Add docstring."""
         for scaler in self.scalers:
             if scaler.data_path == path:
                 if scaler.local_data_path.startswith("http"):
@@ -65,6 +69,7 @@ class UpscalerRealESRGAN(Upscaler):
 
 
 def get_realesrgan_models(scaler: UpscalerRealESRGAN):
+        """TODO: Add docstring."""
     return [
         UpscalerData(
             name="R-ESRGAN General 4xV3",

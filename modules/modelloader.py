@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from __future__ import annotations
 
 import importlib
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def load_file_from_url(
+        """TODO: Add docstring."""
     url: str,
     *,
     model_dir: str,
@@ -91,6 +93,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
 
 
 def friendly_name(file: str):
+        """TODO: Add docstring."""
     if file.startswith("http"):
         file = urlparse(file).path
 
@@ -100,6 +103,7 @@ def friendly_name(file: str):
 
 
 def load_upscalers():
+        """TODO: Add docstring."""
     # We can only do this 'magic' method to dynamically load upscalers if they are referenced,
     # so we'll try to import any _model.py files before looking in __subclasses__
     modules_dir = os.path.join(shared.script_path, "modules")
@@ -162,6 +166,7 @@ def _init_spandrel_extra_archs() -> None:
 
 
 def load_spandrel_model(
+        """TODO: Add docstring."""
     path: str | os.PathLike,
     *,
     device: str | torch.device | None,

@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import cv2
 import requests
 import os
@@ -72,6 +73,7 @@ def crop_image(im, settings):
 
 
 def focal_point(im, settings):
+        """TODO: Add docstring."""
     corner_points = image_corner_points(im, settings) if settings.corner_points_weight > 0 else []
     entropy_points = image_entropy_points(im, settings) if settings.entropy_points_weight > 0 else []
     face_points = image_face_points(im, settings) if settings.face_points_weight > 0 else []
@@ -140,6 +142,7 @@ def focal_point(im, settings):
 
 
 def image_face_points(im, settings):
+        """TODO: Add docstring."""
     if settings.dnn_model_path is not None:
         detector = cv2.FaceDetectorYN.create(
             settings.dnn_model_path,
@@ -198,6 +201,7 @@ def image_face_points(im, settings):
 
 
 def image_corner_points(im, settings):
+        """TODO: Add docstring."""
     grayscale = im.convert("L")
 
     # naive attempt at preventing focal points from collecting at watermarks near the bottom
@@ -226,6 +230,7 @@ def image_corner_points(im, settings):
 
 
 def image_entropy_points(im, settings):
+        """TODO: Add docstring."""
     landscape = im.height < im.width
     portrait = im.height > im.width
     if landscape:
@@ -258,6 +263,7 @@ def image_entropy_points(im, settings):
 
 
 def image_entropy(im):
+        """TODO: Add docstring."""
     # greyscale image entropy
     # band = np.asarray(im.convert("L"))
     band = np.asarray(im.convert("1"), dtype=np.uint8)
@@ -267,12 +273,14 @@ def image_entropy(im):
 
 
 def centroid(pois):
+        """TODO: Add docstring."""
     x = [poi.x for poi in pois]
     y = [poi.y for poi in pois]
     return PointOfInterest(sum(x) / len(pois), sum(y) / len(pois))
 
 
 def poi_average(pois, settings):
+        """TODO: Add docstring."""
     weight = 0.0
     x = 0.0
     y = 0.0
@@ -287,14 +295,17 @@ def poi_average(pois, settings):
 
 
 def is_landscape(w, h):
+        """TODO: Add docstring."""
     return w > h
 
 
 def is_portrait(w, h):
+        """TODO: Add docstring."""
     return h > w
 
 
 def is_square(w, h):
+        """TODO: Add docstring."""
     return w == h
 
 
@@ -308,6 +319,7 @@ else:
 
 
 def download_and_cache_models():
+        """TODO: Add docstring."""
     if not os.path.exists(model_file_path):
         os.makedirs(model_dir_opencv, exist_ok=True)
         print(f"downloading face detection model from '{model_url}' to '{model_file_path}'")
@@ -319,12 +331,14 @@ def download_and_cache_models():
 
 class PointOfInterest:
     def __init__(self, x, y, weight=1.0, size=10):
+            """TODO: Add docstring."""
         self.x = x
         self.y = y
         self.weight = weight
         self.size = size
 
     def bounding(self, size):
+            """TODO: Add docstring."""
         return [
             self.x - size // 2,
             self.y - size // 2,
@@ -335,6 +349,7 @@ class PointOfInterest:
 
 class Settings:
     def __init__(self, crop_width=512, crop_height=512, corner_points_weight=0.5, entropy_points_weight=0.5, face_points_weight=0.5, annotate_image=False, dnn_model_path=None):
+            """TODO: Add docstring."""
         self.crop_width = crop_width
         self.crop_height = crop_height
         self.corner_points_weight = corner_points_weight

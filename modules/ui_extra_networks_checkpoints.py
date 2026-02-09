@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import html
 import os
 
@@ -7,14 +8,17 @@ from modules.ui_extra_networks_checkpoints_user_metadata import CheckpointUserMe
 
 class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
     def __init__(self):
+            """TODO: Add docstring."""
         super().__init__('Checkpoints')
 
         self.allow_prompt = False
 
     def refresh(self):
+            """TODO: Add docstring."""
         shared.refresh_checkpoints()
 
     def create_item(self, name, index=None, enable_filter=True):
+            """TODO: Add docstring."""
         checkpoint: sd_models.CheckpointInfo = sd_models.checkpoint_aliases.get(name)
         if checkpoint is None:
             return
@@ -37,6 +41,7 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
         }
 
     def list_items(self):
+            """TODO: Add docstring."""
         # instantiate a list to protect against concurrent modification
         names = list(sd_models.checkpoints_list)
         for index, name in enumerate(names):
@@ -45,7 +50,9 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
                 yield item
 
     def allowed_directories_for_previews(self):
+            """TODO: Add docstring."""
         return [v for v in [shared.cmd_opts.ckpt_dir, sd_models.model_path] if v is not None]
 
     def create_user_metadata_editor(self, ui, tabname):
+            """TODO: Add docstring."""
         return CheckpointUserMetadataEditor(ui, tabname, self)

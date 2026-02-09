@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 from abc import abstractmethod
 
@@ -12,6 +13,7 @@ NEAREST = (Image.Resampling.NEAREST if hasattr(Image, 'Resampling') else Image.N
 
 
 class Upscaler:
+        """TODO: Add docstring."""
     name = None
     model_path = None
     model_name = None
@@ -24,6 +26,7 @@ class Upscaler:
     tile = True
 
     def __init__(self, create_dirs=False):
+            """TODO: Add docstring."""
         self.mod_pad_h = None
         self.tile_size = modules.shared.opts.ESRGAN_tile
         self.tile_pad = modules.shared.opts.ESRGAN_tile_overlap
@@ -49,9 +52,11 @@ class Upscaler:
 
     @abstractmethod
     def do_upscale(self, img: PIL.Image, selected_model: str):
+            """TODO: Add docstring."""
         return img
 
     def upscale(self, img: PIL.Image, scale, selected_model: str = None):
+            """TODO: Add docstring."""
         self.scale = scale
         dest_w = int((img.width * scale) // 8 * 8)
         dest_h = int((img.height * scale) // 8 * 8)
@@ -77,16 +82,20 @@ class Upscaler:
 
     @abstractmethod
     def load_model(self, path: str):
+            """TODO: Add docstring."""
         pass
 
     def find_models(self, ext_filter=None) -> list:
+            """TODO: Add docstring."""
         return modelloader.load_models(model_path=self.model_path, model_url=self.model_url, command_path=self.user_path, ext_filter=ext_filter)
 
     def update_status(self, prompt):
+            """TODO: Add docstring."""
         print(f"\nextras: {prompt}", file=shared.progress_print_out)
 
 
 class UpscalerData:
+        """TODO: Add docstring."""
     name = None
     data_path = None
     scale: int = 4
@@ -94,6 +103,7 @@ class UpscalerData:
     model: None
 
     def __init__(self, name: str, path: str, upscaler: Upscaler = None, scale: int = 4, model=None):
+            """TODO: Add docstring."""
         self.name = name
         self.data_path = path
         self.local_data_path = path
@@ -102,49 +112,62 @@ class UpscalerData:
         self.model = model
 
     def __repr__(self):
+            """TODO: Add docstring."""
         return f"<UpscalerData name={self.name} path={self.data_path} scale={self.scale}>"
 
 
 class UpscalerNone(Upscaler):
+        """TODO: Add docstring."""
     name = "None"
     scalers = []
 
     def load_model(self, path):
+            """TODO: Add docstring."""
         pass
 
     def do_upscale(self, img, selected_model=None):
+            """TODO: Add docstring."""
         return img
 
     def __init__(self, dirname=None):
+            """TODO: Add docstring."""
         super().__init__(False)
         self.scalers = [UpscalerData("None", None, self)]
 
 
 class UpscalerLanczos(Upscaler):
+        """TODO: Add docstring."""
     scalers = []
 
     def do_upscale(self, img, selected_model=None):
+            """TODO: Add docstring."""
         return img.resize((int(img.width * self.scale), int(img.height * self.scale)), resample=LANCZOS)
 
     def load_model(self, _):
+            """TODO: Add docstring."""
         pass
 
     def __init__(self, dirname=None):
+            """TODO: Add docstring."""
         super().__init__(False)
         self.name = "Lanczos"
         self.scalers = [UpscalerData("Lanczos", None, self)]
 
 
 class UpscalerNearest(Upscaler):
+        """TODO: Add docstring."""
     scalers = []
 
     def do_upscale(self, img, selected_model=None):
+            """TODO: Add docstring."""
         return img.resize((int(img.width * self.scale), int(img.height * self.scale)), resample=NEAREST)
 
     def load_model(self, _):
+            """TODO: Add docstring."""
         pass
 
     def __init__(self, dirname=None):
+            """TODO: Add docstring."""
         super().__init__(False)
         self.name = "Nearest"
         self.scalers = [UpscalerData("Nearest", None, self)]

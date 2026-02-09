@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 from collections import namedtuple
 from contextlib import closing
@@ -25,6 +26,7 @@ textual_inversion_templates = {}
 
 
 def list_textual_inversion_templates():
+        """TODO: Add docstring."""
     textual_inversion_templates.clear()
 
     for root, _, fns in os.walk(shared.cmd_opts.textual_inversion_templates_dir):
@@ -38,6 +40,7 @@ def list_textual_inversion_templates():
 
 class Embedding:
     def __init__(self, vec, name, step=None):
+            """TODO: Add docstring."""
         self.vec = vec
         self.name = name
         self.step = step
@@ -52,6 +55,7 @@ class Embedding:
         self.shorthash = None
 
     def save(self, filename):
+            """TODO: Add docstring."""
         embedding_data = {
             "string_to_token": {"*": 265},
             "string_to_param": {"*": self.vec},
@@ -71,10 +75,12 @@ class Embedding:
             torch.save(optimizer_saved_dict, f"{filename}.optim")
 
     def checksum(self):
+            """TODO: Add docstring."""
         if self.cached_checksum is not None:
             return self.cached_checksum
 
         def const_hash(a):
+                """TODO: Add docstring."""
             r = 0
             for v in a:
                 r = (r * 281 ^ int(v) * 997) & 0xFFFFFFFF
@@ -84,16 +90,19 @@ class Embedding:
         return self.cached_checksum
 
     def set_hash(self, v):
+            """TODO: Add docstring."""
         self.hash = v
         self.shorthash = self.hash[0:12]
 
 
 class DirWithTextualInversionEmbeddings:
     def __init__(self, path):
+            """TODO: Add docstring."""
         self.path = path
         self.mtime = None
 
     def has_changed(self):
+            """TODO: Add docstring."""
         if not os.path.isdir(self.path):
             return False
 
@@ -102,6 +111,7 @@ class DirWithTextualInversionEmbeddings:
             return True
 
     def update(self):
+            """TODO: Add docstring."""
         if not os.path.isdir(self.path):
             return
 
@@ -110,6 +120,7 @@ class DirWithTextualInversionEmbeddings:
 
 class EmbeddingDatabase:
     def __init__(self):
+            """TODO: Add docstring."""
         self.ids_lookup = {}
         self.word_embeddings = {}
         self.skipped_embeddings = {}
@@ -118,15 +129,19 @@ class EmbeddingDatabase:
         self.previously_displayed_embeddings = ()
 
     def add_embedding_dir(self, path):
+            """TODO: Add docstring."""
         self.embedding_dirs[path] = DirWithTextualInversionEmbeddings(path)
 
     def clear_embedding_dirs(self):
+            """TODO: Add docstring."""
         self.embedding_dirs.clear()
 
     def register_embedding(self, embedding, model):
+            """TODO: Add docstring."""
         return self.register_embedding_by_name(embedding, model, embedding.name)
 
     def register_embedding_by_name(self, embedding, model, name):
+            """TODO: Add docstring."""
         ids = model.cond_stage_model.tokenize([name])[0]
         first_id = ids[0]
         if first_id not in self.ids_lookup:
@@ -150,11 +165,13 @@ class EmbeddingDatabase:
         return embedding
 
     def get_expected_shape(self):
+            """TODO: Add docstring."""
         devices.torch_npu_set_device()
         vec = shared.sd_model.cond_stage_model.encode_embedding_init_text(",", 1)
         return vec.shape[1]
 
     def load_from_file(self, path, filename):
+            """TODO: Add docstring."""
         name, ext = os.path.splitext(filename)
         ext = ext.upper()
 
@@ -193,6 +210,7 @@ class EmbeddingDatabase:
 
 
     def load_from_dir(self, embdir):
+            """TODO: Add docstring."""
         if not os.path.isdir(embdir.path):
             return
 
@@ -210,6 +228,7 @@ class EmbeddingDatabase:
                     continue
 
     def load_textual_inversion_embeddings(self, force_reload=False):
+            """TODO: Add docstring."""
         if not force_reload:
             need_reload = False
             for embdir in self.embedding_dirs.values():
@@ -243,6 +262,7 @@ class EmbeddingDatabase:
                 print(f"Textual inversion embeddings skipped({len(self.skipped_embeddings)}): {', '.join(self.skipped_embeddings.keys())}")
 
     def find_embedding_at_position(self, tokens, offset):
+            """TODO: Add docstring."""
         token = tokens[offset]
         possible_matches = self.ids_lookup.get(token, None)
 
@@ -257,6 +277,7 @@ class EmbeddingDatabase:
 
 
 def create_embedding(name, num_vectors_per_token, overwrite_old, init_text='*'):
+        """TODO: Add docstring."""
     cond_model = shared.sd_model.cond_stage_model
 
     with devices.autocast():
@@ -285,6 +306,7 @@ def create_embedding(name, num_vectors_per_token, overwrite_old, init_text='*'):
 
 
 def create_embedding_from_data(data, name, filename='unknown embedding file', filepath=None):
+        """TODO: Add docstring."""
     if 'string_to_param' in data:  # textual inversion embeddings
         param_dict = data['string_to_param']
         param_dict = getattr(param_dict, '_parameters', param_dict)  # fix for torch 1.12.1 loading saved file from torch 1.11
@@ -324,6 +346,7 @@ def create_embedding_from_data(data, name, filename='unknown embedding file', fi
 
 
 def write_loss(log_directory, filename, step, epoch_len, values):
+        """TODO: Add docstring."""
     if shared.opts.training_write_csv_every == 0:
         return
 
@@ -348,6 +371,7 @@ def write_loss(log_directory, filename, step, epoch_len, values):
         })
 
 def tensorboard_setup(log_directory):
+        """TODO: Add docstring."""
     from torch.utils.tensorboard import SummaryWriter
     os.makedirs(os.path.join(log_directory, "tensorboard"), exist_ok=True)
     return SummaryWriter(
@@ -355,16 +379,19 @@ def tensorboard_setup(log_directory):
             flush_secs=shared.opts.training_tensorboard_flush_every)
 
 def tensorboard_add(tensorboard_writer, loss, global_step, step, learn_rate, epoch_num):
+        """TODO: Add docstring."""
     tensorboard_add_scaler(tensorboard_writer, "Loss/train", loss, global_step)
     tensorboard_add_scaler(tensorboard_writer, f"Loss/train/epoch-{epoch_num}", loss, step)
     tensorboard_add_scaler(tensorboard_writer, "Learn rate/train", learn_rate, global_step)
     tensorboard_add_scaler(tensorboard_writer, f"Learn rate/train/epoch-{epoch_num}", learn_rate, step)
 
 def tensorboard_add_scaler(tensorboard_writer, tag, value, step):
+        """TODO: Add docstring."""
     tensorboard_writer.add_scalar(tag=tag,
         scalar_value=value, global_step=step)
 
 def tensorboard_add_image(tensorboard_writer, tag, pil_image, step):
+        """TODO: Add docstring."""
     # Convert a pil image to a torch tensor
     img_tensor = torch.as_tensor(np.array(pil_image, copy=True))
     img_tensor = img_tensor.view(pil_image.size[1], pil_image.size[0],
@@ -374,6 +401,7 @@ def tensorboard_add_image(tensorboard_writer, tag, pil_image, step):
     tensorboard_writer.add_image(tag, img_tensor, global_step=step)
 
 def validate_train_inputs(model_name, learn_rate, batch_size, gradient_step, data_root, template_file, template_filename, steps, save_model_every, create_image_every, log_directory, name="embedding"):
+        """TODO: Add docstring."""
     assert model_name, f"{name} not selected"
     assert learn_rate, "Learning rate is empty or 0"
     assert isinstance(batch_size, int), "Batch size must be integer"
@@ -398,6 +426,7 @@ def validate_train_inputs(model_name, learn_rate, batch_size, gradient_step, dat
 
 
 def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_step, data_root, log_directory, training_width, training_height, varsize, steps, clip_grad_mode, clip_grad_value, shuffle_tags, tag_drop_out, latent_sampling_method, use_weight, create_image_every, save_embedding_every, template_filename, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_name, preview_cfg_scale, preview_seed, preview_width, preview_height):
+        """TODO: Add docstring."""
     from modules import processing
 
     save_embedding_every = save_embedding_every or 0
@@ -689,6 +718,7 @@ Last saved image: {html.escape(last_saved_image)}<br/>
 
 
 def save_embedding(embedding, optimizer, checkpoint, embedding_name, filename, remove_cached_checksum=True):
+        """TODO: Add docstring."""
     old_embedding_name = embedding.name
     old_sd_checkpoint = embedding.sd_checkpoint if hasattr(embedding, "sd_checkpoint") else None
     old_sd_checkpoint_name = embedding.sd_checkpoint_name if hasattr(embedding, "sd_checkpoint_name") else None

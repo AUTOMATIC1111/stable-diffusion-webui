@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from modules import shared
 from modules.sd_hijack_utils import CondFunc
 
@@ -11,16 +12,19 @@ except Exception:
 
 
 def check_for_xpu():
+        """TODO: Add docstring."""
     return has_ipex and hasattr(torch, 'xpu') and torch.xpu.is_available()
 
 
 def get_xpu_device_string():
+        """TODO: Add docstring."""
     if shared.cmd_opts.device_id is not None:
         return f"xpu:{shared.cmd_opts.device_id}"
     return "xpu"
 
 
 def torch_xpu_gc():
+        """TODO: Add docstring."""
     with torch.xpu.device(get_xpu_device_string()):
         torch.xpu.empty_cache()
 
@@ -36,6 +40,7 @@ has_xpu = check_for_xpu()
 ARC_SINGLE_ALLOCATION_LIMIT = {}
 orig_sdp_attn_func = torch.nn.functional.scaled_dot_product_attention
 def torch_xpu_scaled_dot_product_attention(
+        """TODO: Add docstring."""
     query, key, value, attn_mask=None, dropout_p=0.0, is_causal=False, *args, **kwargs
 ):
     # cast to same dtype first
@@ -95,6 +100,7 @@ def torch_xpu_scaled_dot_product_attention(
 
 
 def is_xpu_device(device: str | torch.device = None):
+        """TODO: Add docstring."""
     if device is None:
         return False
     if isinstance(device, str):

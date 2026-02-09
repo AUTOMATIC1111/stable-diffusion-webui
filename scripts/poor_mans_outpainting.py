@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import math
 
 import modules.scripts as scripts
@@ -11,12 +12,15 @@ from modules.shared import opts, state
 
 class Script(scripts.Script):
     def title(self):
+            """TODO: Add docstring."""
         return "Poor man's outpainting"
 
     def show(self, is_img2img):
+            """TODO: Add docstring."""
         return is_img2img
 
     def ui(self, is_img2img):
+            """TODO: Add docstring."""
         if not is_img2img:
             return None
 
@@ -28,6 +32,7 @@ class Script(scripts.Script):
         return [pixels, mask_blur, inpainting_fill, direction]
 
     def run(self, p, pixels, mask_blur, inpainting_fill, direction):
+            """TODO: Add docstring."""
         initial_seed = None
         initial_info = None
 

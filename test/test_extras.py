@@ -1,7 +1,9 @@
+    """TODO: Add docstring."""
 import requests
 
 
 def test_simple_upscaling_performed(base_url, img2img_basic_image_base64):
+        """TODO: Add docstring."""
     payload = {
         "resize_mode": 0,
         "show_extras_results": True,
@@ -21,6 +23,7 @@ def test_simple_upscaling_performed(base_url, img2img_basic_image_base64):
 
 
 def test_png_info_performed(base_url, img2img_basic_image_base64):
+        """TODO: Add docstring."""
     payload = {
         "image": img2img_basic_image_base64,
     }
@@ -28,6 +31,7 @@ def test_png_info_performed(base_url, img2img_basic_image_base64):
 
 
 def test_interrogate_performed(base_url, img2img_basic_image_base64):
+        """TODO: Add docstring."""
     payload = {
         "image": img2img_basic_image_base64,
         "model": "clip",

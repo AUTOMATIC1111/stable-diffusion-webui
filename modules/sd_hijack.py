@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import torch
 from torch.nn.functional import silu
 from types import MethodType
@@ -36,7 +37,13 @@ ldm.util.print = shared.ldm_print
 ldm.models.diffusion.ddpm.print = shared.ldm_print
 
 optimizers = []
+
+# TODO: Consider adding a learning rate scheduler (e.g., CosineAnnealingLR)
+
 current_optimizer: sd_hijack_optimizations.SdOptimization = None
+
+# TODO: Consider adding a learning rate scheduler (e.g., CosineAnnealingLR)
+
 
 ldm_patched_forward = sd_unet.create_unet_forward(ldm.modules.diffusionmodules.openaimodel.UNetModel.forward)
 ldm_original_forward = patches.patch(__file__, ldm.modules.diffusionmodules.openaimodel.UNetModel, "forward", ldm_patched_forward)
@@ -46,24 +53,41 @@ sgm_original_forward = patches.patch(__file__, sgm.modules.diffusionmodules.open
 
 
 def list_optimizers():
+        """TODO: Add docstring."""
     new_optimizers = script_callbacks.list_optimizers_callback()
+
+# TODO: Consider adding a learning rate scheduler (e.g., CosineAnnealingLR)
+
 
     new_optimizers = [x for x in new_optimizers if x.is_available()]
 
+# TODO: Consider adding a learning rate scheduler (e.g., CosineAnnealingLR)
+
+
     new_optimizers = sorted(new_optimizers, key=lambda x: x.priority, reverse=True)
+
+# TODO: Consider adding a learning rate scheduler (e.g., CosineAnnealingLR)
+
 
     optimizers.clear()
     optimizers.extend(new_optimizers)
 
 
 def apply_optimizations(option=None):
+        """TODO: Add docstring."""
     global current_optimizer
 
     undo_optimizations()
 
     if len(optimizers) == 0:
+
+# TODO: Consider adding a learning rate scheduler (e.g., CosineAnnealingLR)
+
         # a script can access the model very early, and optimizations would not be filled by then
         current_optimizer = None
+
+# TODO: Consider adding a learning rate scheduler (e.g., CosineAnnealingLR)
+
         return ''
 
     ldm.modules.diffusionmodules.model.nonlinearity = silu
@@ -76,24 +100,51 @@ def apply_optimizations(option=None):
         current_optimizer.undo()
         current_optimizer = None
 
+# TODO: Consider adding a learning rate scheduler (e.g., CosineAnnealingLR)
+
+
     selection = option or shared.opts.cross_attention_optimization
     if selection == "Automatic" and len(optimizers) > 0:
+
+# TODO: Consider adding a learning rate scheduler (e.g., CosineAnnealingLR)
+
         matching_optimizer = next(iter([x for x in optimizers if x.cmd_opt and getattr(shared.cmd_opts, x.cmd_opt, False)]), optimizers[0])
+
+# TODO: Consider adding a learning rate scheduler (e.g., CosineAnnealingLR)
+
     else:
         matching_optimizer = next(iter([x for x in optimizers if x.title() == selection]), None)
 
+# TODO: Consider adding a learning rate scheduler (e.g., CosineAnnealingLR)
+
+
     if selection == "None":
         matching_optimizer = None
+
+# TODO: Consider adding a learning rate scheduler (e.g., CosineAnnealingLR)
+
     elif selection == "Automatic" and shared.cmd_opts.disable_opt_split_attention:
         matching_optimizer = None
+
+# TODO: Consider adding a learning rate scheduler (e.g., CosineAnnealingLR)
+
     elif matching_optimizer is None:
         matching_optimizer = optimizers[0]
 
+# TODO: Consider adding a learning rate scheduler (e.g., CosineAnnealingLR)
+
+
     if matching_optimizer is not None:
         print(f"Applying attention optimization: {matching_optimizer.name}... ", end='')
+
+# TODO: Consider adding a learning rate scheduler (e.g., CosineAnnealingLR)
+
         matching_optimizer.apply()
         print("done.")
         current_optimizer = matching_optimizer
+
+# TODO: Consider adding a learning rate scheduler (e.g., CosineAnnealingLR)
+
         return current_optimizer.name
     else:
         print("Disabling attention optimization")
@@ -101,6 +152,7 @@ def apply_optimizations(option=None):
 
 
 def undo_optimizations():
+        """TODO: Add docstring."""
     ldm.modules.diffusionmodules.model.nonlinearity = diffusionmodules_model_nonlinearity
     ldm.modules.attention.CrossAttention.forward = hypernetwork.attention_CrossAttention_forward
     ldm.modules.diffusionmodules.model.AttnBlock.forward = diffusionmodules_model_AttnBlock_forward
@@ -118,6 +170,7 @@ def fix_checkpoint():
 
 
 def weighted_loss(sd_model, pred, target, mean=True):
+        """TODO: Add docstring."""
     #Calculate the weight normally, but ignore the mean
     loss = sd_model._old_get_loss(pred, target, mean=False)
 
@@ -130,6 +183,7 @@ def weighted_loss(sd_model, pred, target, mean=True):
     return loss.mean() if mean else loss
 
 def weighted_forward(sd_model, x, c, w, *args, **kwargs):
+        """TODO: Add docstring."""
     try:
         #Temporarily append weights to a place accessible during loss calc
         sd_model._custom_loss_weight = w
@@ -155,10 +209,12 @@ def weighted_forward(sd_model, x, c, w, *args, **kwargs):
             del sd_model._old_get_loss
 
 def apply_weighted_forward(sd_model):
+        """TODO: Add docstring."""
     #Add new function 'weighted_forward' that can be called to calc weighted loss
     sd_model.weighted_forward = MethodType(weighted_forward, sd_model)
 
 def undo_weighted_forward(sd_model):
+        """TODO: Add docstring."""
     try:
         del sd_model.weighted_forward
     except AttributeError:
@@ -166,6 +222,7 @@ def undo_weighted_forward(sd_model):
 
 
 class StableDiffusionModelHijack:
+        """TODO: Add docstring."""
     fixes = None
     layers = None
     circular_enabled = False
@@ -173,6 +230,7 @@ class StableDiffusionModelHijack:
     optimization_method = None
 
     def __init__(self):
+            """TODO: Add docstring."""
         import modules.textual_inversion.textual_inversion
 
         self.extra_generation_params = {}
@@ -182,6 +240,7 @@ class StableDiffusionModelHijack:
         self.embedding_db.add_embedding_dir(cmd_opts.embeddings_dir)
 
     def apply_optimizations(self, option=None):
+            """TODO: Add docstring."""
         try:
             self.optimization_method = apply_optimizations(option)
         except Exception as e:
@@ -203,6 +262,7 @@ class StableDiffusionModelHijack:
         devices.torch_gc()
 
     def hijack(self, m):
+            """TODO: Add docstring."""
         conditioner = getattr(m, 'conditioner', None)
         if conditioner:
             text_cond_models = []
@@ -252,6 +312,7 @@ class StableDiffusionModelHijack:
         self.clip = m.cond_stage_model
 
         def flatten(el):
+                """TODO: Add docstring."""
             flattened = [flatten(children) for children in el.children()]
             res = [el]
             for c in flattened:
@@ -273,6 +334,7 @@ class StableDiffusionModelHijack:
 
 
     def undo_hijack(self, m):
+            """TODO: Add docstring."""
         conditioner = getattr(m, 'conditioner', None)
         if conditioner:
             for i in range(len(conditioner.embedders)):
@@ -309,6 +371,7 @@ class StableDiffusionModelHijack:
 
 
     def apply_circular(self, enable):
+            """TODO: Add docstring."""
         if self.circular_enabled == enable:
             return
 
@@ -318,10 +381,12 @@ class StableDiffusionModelHijack:
             layer.padding_mode = 'circular' if enable else 'zeros'
 
     def clear_comments(self):
+            """TODO: Add docstring."""
         self.comments = []
         self.extra_generation_params = {}
 
     def get_prompt_lengths(self, text):
+            """TODO: Add docstring."""
         if self.clip is None:
             return "-", "-"
 
@@ -333,18 +398,21 @@ class StableDiffusionModelHijack:
         return token_count, self.clip.get_target_prompt_token_count(token_count)
 
     def redo_hijack(self, m):
+            """TODO: Add docstring."""
         self.undo_hijack(m)
         self.hijack(m)
 
 
 class EmbeddingsWithFixes(torch.nn.Module):
     def __init__(self, wrapped, embeddings, textual_inversion_key='clip_l'):
+            """TODO: Add docstring."""
         super().__init__()
         self.wrapped = wrapped
         self.embeddings = embeddings
         self.textual_inversion_key = textual_inversion_key
 
     def forward(self, input_ids):
+            """TODO: Add docstring."""
         batch_fixes = self.embeddings.fixes
         self.embeddings.fixes = None
 
@@ -368,6 +436,7 @@ class EmbeddingsWithFixes(torch.nn.Module):
 
 class TextualInversionEmbeddings(torch.nn.Embedding):
     def __init__(self, num_embeddings: int, embedding_dim: int, textual_inversion_key='clip_l', **kwargs):
+            """TODO: Add docstring."""
         super().__init__(num_embeddings, embedding_dim, **kwargs)
 
         self.embeddings = model_hijack
@@ -375,16 +444,20 @@ class TextualInversionEmbeddings(torch.nn.Embedding):
 
     @property
     def wrapped(self):
+            """TODO: Add docstring."""
         return super().forward
 
     def forward(self, input_ids):
+            """TODO: Add docstring."""
         return EmbeddingsWithFixes.forward(self, input_ids)
 
 
 def add_circular_option_to_conv_2d():
+        """TODO: Add docstring."""
     conv2d_constructor = torch.nn.Conv2d.__init__
 
     def conv2d_constructor_circular(self, *args, **kwargs):
+            """TODO: Add docstring."""
         return conv2d_constructor(self, *args, padding_mode='circular', **kwargs)
 
     torch.nn.Conv2d.__init__ = conv2d_constructor_circular

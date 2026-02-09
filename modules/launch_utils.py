@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 # this scripts installs necessary requirements and launches main program in webui.py
 import logging
 import re
@@ -32,6 +33,7 @@ os.environ.setdefault('GRADIO_ANALYTICS_ENABLED', 'False')
 
 
 def check_python_version():
+        """TODO: Add docstring."""
     is_windows = platform.system() == "Windows"
     major = sys.version_info.major
     minor = sys.version_info.minor
@@ -64,6 +66,7 @@ Use --skip-python-version-check to suppress this warning.
 
 @lru_cache()
 def commit_hash():
+        """TODO: Add docstring."""
     try:
         return subprocess.check_output([git, "-C", script_path, "rev-parse", "HEAD"], shell=False, encoding='utf8').strip()
     except Exception:
@@ -72,6 +75,7 @@ def commit_hash():
 
 @lru_cache()
 def git_tag():
+        """TODO: Add docstring."""
     try:
         return subprocess.check_output([git, "-C", script_path, "describe", "--tags"], shell=False, encoding='utf8').strip()
     except Exception:
@@ -87,6 +91,7 @@ def git_tag():
 
 
 def run(command, desc=None, errdesc=None, custom_env=None, live: bool = default_command_live) -> str:
+        """TODO: Add docstring."""
     if desc is not None:
         print(desc)
 
@@ -119,6 +124,7 @@ def run(command, desc=None, errdesc=None, custom_env=None, live: bool = default_
 
 
 def is_installed(package):
+        """TODO: Add docstring."""
     try:
         dist = importlib.metadata.distribution(package)
     except importlib.metadata.PackageNotFoundError:
@@ -133,10 +139,12 @@ def is_installed(package):
 
 
 def repo_dir(name):
+        """TODO: Add docstring."""
     return os.path.join(script_path, dir_repos, name)
 
 
 def run_pip(command, desc=None, live=default_command_live):
+        """TODO: Add docstring."""
     if args.skip_install:
         return
 
@@ -145,17 +153,20 @@ def run_pip(command, desc=None, live=default_command_live):
 
 
 def check_run_python(code: str) -> bool:
+        """TODO: Add docstring."""
     result = subprocess.run([python, "-c", code], capture_output=True, shell=False)
     return result.returncode == 0
 
 
 def git_fix_workspace(dir, name):
+        """TODO: Add docstring."""
     run(f'"{git}" -C "{dir}" fetch --refetch --no-auto-gc', f"Fetching all contents for {name}", f"Couldn't fetch {name}", live=True)
     run(f'"{git}" -C "{dir}" gc --aggressive --prune=now', f"Pruning {name}", f"Couldn't prune {name}", live=True)
     return
 
 
 def run_git(dir, name, command, desc=None, errdesc=None, custom_env=None, live: bool = default_command_live, autofix=True):
+        """TODO: Add docstring."""
     try:
         return run(f'"{git}" -C "{dir}" {command}', desc=desc, errdesc=errdesc, custom_env=custom_env, live=live)
     except RuntimeError:
@@ -169,6 +180,7 @@ def run_git(dir, name, command, desc=None, errdesc=None, custom_env=None, live: 
 
 
 def git_clone(url, dir, name, commithash=None):
+        """TODO: Add docstring."""
     # TODO clone into temporary dir and move if successful
 
     if os.path.exists(dir):
@@ -199,6 +211,7 @@ def git_clone(url, dir, name, commithash=None):
 
 
 def git_pull_recursive(dir):
+        """TODO: Add docstring."""
     for subdir, _, _ in os.walk(dir):
         if os.path.exists(os.path.join(subdir, '.git')):
             try:
@@ -209,6 +222,7 @@ def git_pull_recursive(dir):
 
 
 def version_check(commit):
+        """TODO: Add docstring."""
     try:
         import requests
         commits = requests.get('https://api.github.com/repos/AUTOMATIC1111/stable-diffusion-webui/branches/master').json()
@@ -226,6 +240,7 @@ def version_check(commit):
 
 
 def run_extension_installer(extension_dir):
+        """TODO: Add docstring."""
     path_installer = os.path.join(extension_dir, "install.py")
     if not os.path.isfile(path_installer):
         return
@@ -242,6 +257,7 @@ def run_extension_installer(extension_dir):
 
 
 def list_extensions(settings_file):
+        """TODO: Add docstring."""
     settings = {}
 
     try:
@@ -263,6 +279,7 @@ def list_extensions(settings_file):
 
 
 def run_extensions_installers(settings_file):
+        """TODO: Add docstring."""
     if not os.path.isdir(extensions_dir):
         return
 
@@ -316,6 +333,7 @@ def requirements_met(requirements_file):
 
 
 def prepare_environment():
+        """TODO: Add docstring."""
     torch_index_url = os.environ.get('TORCH_INDEX_URL', "https://download.pytorch.org/whl/cu121")
     torch_command = os.environ.get('TORCH_COMMAND', f"pip install torch==2.1.2 torchvision==0.16.2 --extra-index-url {torch_index_url}")
     if args.use_ipex:
@@ -447,6 +465,7 @@ def prepare_environment():
 
 
 def configure_for_tests():
+        """TODO: Add docstring."""
     if "--api" not in sys.argv:
         sys.argv.append("--api")
     if "--ckpt" not in sys.argv:
@@ -461,6 +480,7 @@ def configure_for_tests():
 
 
 def start():
+        """TODO: Add docstring."""
     print(f"Launching {'API server' if '--nowebui' in sys.argv else 'Web UI'} with arguments: {shlex.join(sys.argv[1:])}")
     import webui
     if '--nowebui' in sys.argv:
@@ -470,6 +490,7 @@ def start():
 
 
 def dump_sysinfo():
+        """TODO: Add docstring."""
     from modules import sysinfo
     import datetime
 
@@ -480,3 +501,5 @@ def dump_sysinfo():
         file.write(text)
 
     return filename
+
+# TODO: Consider using mixed precision training (torch.cuda.amp) for faster training

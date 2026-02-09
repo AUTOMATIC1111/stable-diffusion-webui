@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import inspect
 from collections import namedtuple
 import numpy as np
@@ -13,6 +14,7 @@ SamplerDataTuple = namedtuple('SamplerData', ['name', 'constructor', 'aliases', 
 
 class SamplerData(SamplerDataTuple):
     def total_steps(self, steps):
+            """TODO: Add docstring."""
         if self.options.get("second_order", False):
             steps = steps * 2
 
@@ -20,6 +22,7 @@ class SamplerData(SamplerDataTuple):
 
 
 def setup_img2img_steps(p, steps=None):
+        """TODO: Add docstring."""
     if opts.img2img_fix_steps or steps is not None:
         requested_steps = (steps or p.steps)
         steps = int(requested_steps / min(p.denoising_strength, 0.999)) if p.denoising_strength > 0 else 0
@@ -61,6 +64,7 @@ def samples_to_images_tensor(sample, approximation=None, model=None):
 
 
 def single_sample_to_image(sample, approximation=None):
+        """TODO: Add docstring."""
     x_sample = samples_to_images_tensor(sample.unsqueeze(0), approximation)[0] * 0.5 + 0.5
 
     x_sample = torch.clamp(x_sample, min=0.0, max=1.0)
@@ -71,20 +75,24 @@ def single_sample_to_image(sample, approximation=None):
 
 
 def decode_first_stage(model, x):
+        """TODO: Add docstring."""
     x = x.to(devices.dtype_vae)
     approx_index = approximation_indexes.get(opts.sd_vae_decode_method, 0)
     return samples_to_images_tensor(x, approx_index, model)
 
 
 def sample_to_image(samples, index=0, approximation=None):
+        """TODO: Add docstring."""
     return single_sample_to_image(samples[index], approximation)
 
 
 def samples_to_image_grid(samples, approximation=None):
+        """TODO: Add docstring."""
     return images.image_grid([single_sample_to_image(sample, approximation) for sample in samples])
 
 
 def images_tensor_to_samples(image, approximation=None, model=None):
+        """TODO: Add docstring."""
     '''image[0, 1] -> latent'''
     if approximation is None:
         approximation = approximation_indexes.get(opts.sd_vae_encode_method, 0)
@@ -113,6 +121,7 @@ def images_tensor_to_samples(image, approximation=None, model=None):
 
 
 def store_latent(decoded):
+        """TODO: Add docstring."""
     state.current_latent = decoded
 
     if opts.live_previews_enable and opts.show_progress_every_n_steps > 0 and shared.state.sampling_step % opts.show_progress_every_n_steps == 0:
@@ -140,13 +149,16 @@ def is_sampler_using_eta_noise_seed_delta(p):
 
 
 class InterruptedException(BaseException):
+        """TODO: Add docstring."""
     pass
 
 
 def replace_torchsde_browinan():
+        """TODO: Add docstring."""
     import torchsde._brownian.brownian_interval
 
     def torchsde_randn(size, dtype, device, seed):
+            """TODO: Add docstring."""
         return devices.randn_local(seed, size).to(device=device, dtype=dtype)
 
     torchsde._brownian.brownian_interval._randn = torchsde_randn
@@ -156,6 +168,7 @@ replace_torchsde_browinan()
 
 
 def apply_refiner(cfg_denoiser, sigma=None):
+        """TODO: Add docstring."""
     if opts.refiner_switch_by_sample_steps or sigma is None:
         completed_ratio = cfg_denoiser.step / cfg_denoiser.total_steps
         cfg_denoiser.p.extra_generation_params["Refiner switch by sampling steps"] = True
@@ -211,9 +224,11 @@ class TorchHijack:
     We need to replace to make images generated in batches to be same as images generated individually."""
 
     def __init__(self, p):
+            """TODO: Add docstring."""
         self.rng = p.rng
 
     def __getattr__(self, item):
+            """TODO: Add docstring."""
         if item == 'randn_like':
             return self.randn_like
 
@@ -223,11 +238,13 @@ class TorchHijack:
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{item}'")
 
     def randn_like(self, x):
+            """TODO: Add docstring."""
         return self.rng.next()
 
 
 class Sampler:
     def __init__(self, funcname):
+            """TODO: Add docstring."""
         self.funcname = funcname
         self.func = funcname
         self.extra_params = []
@@ -254,6 +271,7 @@ class Sampler:
         self.options = {}
 
     def callback_state(self, d):
+            """TODO: Add docstring."""
         step = d['i']
 
         if self.stop_at is not None and step > self.stop_at:
@@ -263,6 +281,7 @@ class Sampler:
         shared.total_tqdm.update()
 
     def launch_sampling(self, steps, func):
+            """TODO: Add docstring."""
         self.model_wrap_cfg.steps = steps
         self.model_wrap_cfg.total_steps = self.config.total_steps(steps)
         state.sampling_steps = steps
@@ -281,9 +300,11 @@ class Sampler:
             return self.last_latent
 
     def number_of_needed_noises(self, p):
+            """TODO: Add docstring."""
         return p.steps
 
     def initialize(self, p) -> dict:
+            """TODO: Add docstring."""
         self.p = p
         self.model_wrap_cfg.p = p
         self.model_wrap_cfg.mask = p.mask if hasattr(p, 'mask') else None
@@ -342,12 +363,15 @@ class Sampler:
         return BrownianTreeNoiseSampler(x, sigma_min, sigma_max, seed=current_iter_seeds)
 
     def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
+            """TODO: Add docstring."""
         raise NotImplementedError()
 
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
+            """TODO: Add docstring."""
         raise NotImplementedError()
 
     def add_infotext(self, p):
+            """TODO: Add docstring."""
         if self.model_wrap_cfg.padded_cond_uncond:
             p.extra_generation_params["Pad conds"] = True
 

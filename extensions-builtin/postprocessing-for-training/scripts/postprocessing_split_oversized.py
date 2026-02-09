@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import math
 
 from modules import scripts_postprocessing, ui_components
@@ -5,6 +6,7 @@ import gradio as gr
 
 
 def split_pic(image, inverse_xy, width, height, overlap_ratio):
+        """TODO: Add docstring."""
     if inverse_xy:
         from_w, from_h = image.height, image.width
         to_w, to_h = height, width
@@ -29,10 +31,12 @@ def split_pic(image, inverse_xy, width, height, overlap_ratio):
 
 
 class ScriptPostprocessingSplitOversized(scripts_postprocessing.ScriptPostprocessing):
+        """TODO: Add docstring."""
     name = "Split oversized images"
     order = 4000
 
     def ui(self):
+            """TODO: Add docstring."""
         with ui_components.InputAccordion(False, label="Split oversized images") as enable:
             with gr.Row():
                 split_threshold = gr.Slider(label='Threshold', value=0.5, minimum=0.0, maximum=1.0, step=0.05, elem_id="postprocess_split_threshold")
@@ -45,6 +49,7 @@ class ScriptPostprocessingSplitOversized(scripts_postprocessing.ScriptPostproces
         }
 
     def process(self, pp: scripts_postprocessing.PostprocessedImage, enable, split_threshold, overlap_ratio):
+            """TODO: Add docstring."""
         if not enable:
             return
 

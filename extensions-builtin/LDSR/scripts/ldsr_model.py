@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 
 from modules.modelloader import load_file_from_url
@@ -10,6 +11,7 @@ import sd_hijack_ddpm_v1  # noqa: F401
 
 class UpscalerLDSR(Upscaler):
     def __init__(self, user_path):
+            """TODO: Add docstring."""
         self.name = "LDSR"
         self.user_path = user_path
         self.model_url = "https://heibox.uni-heidelberg.de/f/578df07c8fc04ffbadf3/?dl=1"
@@ -19,6 +21,7 @@ class UpscalerLDSR(Upscaler):
         self.scalers = [scaler_data]
 
     def load_model(self, path: str):
+            """TODO: Add docstring."""
         # Remove incorrect project.yaml file if too big
         yaml_path = os.path.join(self.model_path, "project.yaml")
         old_model_path = os.path.join(self.model_path, "model.pth")
@@ -49,6 +52,7 @@ class UpscalerLDSR(Upscaler):
         return LDSR(model, yaml)
 
     def do_upscale(self, img, path):
+            """TODO: Add docstring."""
         try:
             ldsr = self.load_model(path)
         except Exception:
@@ -59,6 +63,7 @@ class UpscalerLDSR(Upscaler):
 
 
 def on_ui_settings():
+        """TODO: Add docstring."""
     import gradio as gr
 
     shared.opts.add_option("ldsr_steps", shared.OptionInfo(100, "LDSR processing steps. Lower = faster", gr.Slider, {"minimum": 1, "maximum": 200, "step": 1}, section=('upscaling', "Upscaling")))

@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import collections
 import importlib
 import os
@@ -28,6 +29,7 @@ checkpoints_loaded = collections.OrderedDict()
 
 
 class ModelType(enum.Enum):
+        """TODO: Add docstring."""
     SD1 = 1
     SD2 = 2
     SDXL = 3
@@ -36,6 +38,7 @@ class ModelType(enum.Enum):
 
 
 def replace_key(d, key, new_key, value):
+        """TODO: Add docstring."""
     keys = list(d.keys())
 
     d[new_key] = value
@@ -55,6 +58,7 @@ def replace_key(d, key, new_key, value):
 
 class CheckpointInfo:
     def __init__(self, filename):
+            """TODO: Add docstring."""
         self.filename = filename
         abspath = os.path.abspath(filename)
         abs_ckpt_dir = os.path.abspath(shared.cmd_opts.ckpt_dir) if shared.cmd_opts.ckpt_dir is not None else None
@@ -72,6 +76,7 @@ class CheckpointInfo:
             name = name[1:]
 
         def read_metadata():
+                """TODO: Add docstring."""
             metadata = read_metadata_from_safetensors(filename)
             self.modelspec_thumbnail = metadata.pop('modelspec.thumbnail', None)
 
@@ -100,11 +105,13 @@ class CheckpointInfo:
             self.ids += [self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]', f'{self.name_for_extra} [{self.shorthash}]']
 
     def register(self):
+            """TODO: Add docstring."""
         checkpoints_list[self.title] = self
         for id in self.ids:
             checkpoint_aliases[id] = self
 
     def calculate_shorthash(self):
+            """TODO: Add docstring."""
         self.sha256 = hashes.sha256(self.filename, f"checkpoint/{self.name}")
         if self.sha256 is None:
             return
@@ -147,10 +154,12 @@ def setup_model():
 
 
 def checkpoint_tiles(use_short=False):
+        """TODO: Add docstring."""
     return [x.short_title if use_short else x.title for x in checkpoints_list.values()]
 
 
 def list_models():
+        """TODO: Add docstring."""
     checkpoints_list.clear()
     checkpoint_aliases.clear()
 
@@ -181,6 +190,7 @@ re_strip_checksum = re.compile(r"\s*\[[^]]+]\s*$")
 
 
 def get_closet_checkpoint_match(search_string):
+        """TODO: Add docstring."""
     if not search_string:
         return None
 
@@ -252,6 +262,7 @@ checkpoint_dict_replacements_sd2_turbo = { # Converts SD 2.1 Turbo from SGM to L
 
 
 def transform_checkpoint_dict_key(k, replacements):
+        """TODO: Add docstring."""
     for text, replacement in replacements.items():
         if k.startswith(text):
             k = replacement + k[len(text):]
@@ -260,6 +271,7 @@ def transform_checkpoint_dict_key(k, replacements):
 
 
 def get_state_dict_from_checkpoint(pl_sd):
+        """TODO: Add docstring."""
     pl_sd = pl_sd.pop("state_dict", pl_sd)
     pl_sd.pop("state_dict", None)
 
@@ -282,6 +294,7 @@ def get_state_dict_from_checkpoint(pl_sd):
 
 
 def read_metadata_from_safetensors(filename):
+        """TODO: Add docstring."""
     import json
 
     with open(filename, mode="rb") as file:
@@ -310,6 +323,7 @@ def read_metadata_from_safetensors(filename):
 
 
 def read_state_dict(checkpoint_file, print_global_state=False, map_location=None):
+        """TODO: Add docstring."""
     _, extension = os.path.splitext(checkpoint_file)
     if extension.lower() == ".safetensors":
         device = map_location or shared.weight_load_location or devices.get_optimal_device_name()
@@ -330,6 +344,7 @@ def read_state_dict(checkpoint_file, print_global_state=False, map_location=None
 
 
 def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
+        """TODO: Add docstring."""
     sd_model_hash = checkpoint_info.calculate_shorthash()
     timer.record("calculate hash")
 
@@ -354,15 +369,18 @@ class SkipWritingToConfig:
     previous = None
 
     def __enter__(self):
+            """TODO: Add docstring."""
         self.previous = SkipWritingToConfig.skip
         SkipWritingToConfig.skip = True
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
+            """TODO: Add docstring."""
         SkipWritingToConfig.skip = self.previous
 
 
 def check_fp8(model):
+        """TODO: Add docstring."""
     if model is None:
         return None
     if devices.get_optimal_device_name() == "mps":
@@ -377,6 +395,7 @@ def check_fp8(model):
 
 
 def set_model_type(model, state_dict):
+        """TODO: Add docstring."""
     model.is_sd1 = False
     model.is_sd2 = False
     model.is_sdxl = False
@@ -403,11 +422,13 @@ def set_model_type(model, state_dict):
 
 
 def set_model_fields(model):
+        """TODO: Add docstring."""
     if not hasattr(model, 'latent_channels'):
         model.latent_channels = 4
 
 
 def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer):
+        """TODO: Add docstring."""
     sd_model_hash = checkpoint_info.calculate_shorthash()
     timer.record("calculate hash")
 
@@ -568,6 +589,7 @@ def enable_midas_autodownload():
     midas.api.load_model_inner = midas.api.load_model
 
     def load_model_wrapper(model_type):
+            """TODO: Add docstring."""
         path = midas.api.ISL_PATHS[model_type]
         if not os.path.exists(path):
             if not os.path.exists(midas_path):
@@ -583,6 +605,7 @@ def enable_midas_autodownload():
 
 
 def patch_given_betas():
+        """TODO: Add docstring."""
     import ldm.models.diffusion.ddpm
 
     def patched_register_schedule(*args, **kwargs):
@@ -597,6 +620,7 @@ def patch_given_betas():
 
 
 def repair_config(sd_config, state_dict=None):
+        """TODO: Add docstring."""
     if not hasattr(sd_config.model.params, "use_ema"):
         sd_config.model.params.use_ema = False
 
@@ -626,6 +650,7 @@ def repair_config(sd_config, state_dict=None):
 
 
 def rescale_zero_terminal_snr_abar(alphas_cumprod):
+        """TODO: Add docstring."""
     alphas_bar_sqrt = alphas_cumprod.sqrt()
 
     # Store old values.
@@ -675,12 +700,14 @@ sdxl_refiner_clip_weight = 'conditioner.embedders.0.model.ln_final.weight'
 
 class SdModelData:
     def __init__(self):
+            """TODO: Add docstring."""
         self.sd_model = None
         self.loaded_sd_models = []
         self.was_loaded_at_least_once = False
         self.lock = threading.Lock()
 
     def get_sd_model(self):
+            """TODO: Add docstring."""
         if self.was_loaded_at_least_once:
             return self.sd_model
 
@@ -701,6 +728,7 @@ class SdModelData:
         return self.sd_model
 
     def set_sd_model(self, v, already_loaded=False):
+            """TODO: Add docstring."""
         self.sd_model = v
         if already_loaded:
             sd_vae.base_vae = getattr(v, "base_vae", None)
@@ -736,6 +764,7 @@ def get_empty_cond(sd_model):
 
 
 def send_model_to_cpu(m):
+        """TODO: Add docstring."""
     if m is not None:
         if m.lowvram:
             lowvram.send_everything_to_cpu()
@@ -746,6 +775,7 @@ def send_model_to_cpu(m):
 
 
 def model_target_device(m):
+        """TODO: Add docstring."""
     if lowvram.is_needed(m):
         return devices.cpu
     else:
@@ -753,6 +783,7 @@ def model_target_device(m):
 
 
 def send_model_to_device(m):
+        """TODO: Add docstring."""
     lowvram.apply(m)
 
     if not m.lowvram:
@@ -760,11 +791,13 @@ def send_model_to_device(m):
 
 
 def send_model_to_trash(m):
+        """TODO: Add docstring."""
     m.to(device="meta")
     devices.torch_gc()
 
 
 def instantiate_from_config(config, state_dict=None):
+        """TODO: Add docstring."""
     constructor = get_obj_from_str(config["target"])
 
     params = {**config.get("params", {})}
@@ -776,6 +809,7 @@ def instantiate_from_config(config, state_dict=None):
 
 
 def get_obj_from_str(string, reload=False):
+        """TODO: Add docstring."""
     module, cls = string.rsplit(".", 1)
     if reload:
         module_imp = importlib.import_module(module)
@@ -784,6 +818,7 @@ def get_obj_from_str(string, reload=False):
 
 
 def load_model(checkpoint_info=None, already_loaded_state_dict=None):
+        """TODO: Add docstring."""
     from modules import sd_hijack
     checkpoint_info = checkpoint_info or select_checkpoint()
 
@@ -938,6 +973,7 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
 
 
 def reload_model_weights(sd_model=None, info=None, forced_reload=False):
+        """TODO: Add docstring."""
     checkpoint_info = info or select_checkpoint()
 
     timer = Timer()
@@ -1003,6 +1039,7 @@ def reload_model_weights(sd_model=None, info=None, forced_reload=False):
 
 
 def unload_model_weights(sd_model=None, info=None):
+        """TODO: Add docstring."""
     send_model_to_cpu(sd_model or shared.sd_model)
 
     return sd_model

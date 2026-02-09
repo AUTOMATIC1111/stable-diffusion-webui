@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from __future__ import annotations
 
 import datetime
@@ -27,6 +28,7 @@ LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.L
 
 
 def get_font(fontsize: int):
+        """TODO: Add docstring."""
     try:
         return ImageFont.truetype(opts.font or roboto_ttf_file, fontsize)
     except Exception:
@@ -34,6 +36,7 @@ def get_font(fontsize: int):
 
 
 def image_grid(imgs, batch_size=1, rows=None):
+        """TODO: Add docstring."""
     if rows is None:
         if opts.n_rows > 0:
             rows = opts.n_rows
@@ -67,6 +70,7 @@ def image_grid(imgs, batch_size=1, rows=None):
 
 
 class Grid(namedtuple("_Grid", ["tiles", "tile_w", "tile_h", "image_w", "image_h", "overlap"])):
+        """TODO: Add docstring."""
     @property
     def tile_count(self) -> int:
         """
@@ -76,6 +80,7 @@ class Grid(namedtuple("_Grid", ["tiles", "tile_w", "tile_h", "image_w", "image_h
 
 
 def split_grid(image: Image.Image, tile_w: int = 512, tile_h: int = 512, overlap: int = 64) -> Grid:
+        """TODO: Add docstring."""
     w, h = image.size
 
     non_overlap_width = tile_w - overlap
@@ -113,6 +118,7 @@ def split_grid(image: Image.Image, tile_w: int = 512, tile_h: int = 512, overlap
 
 def combine_grid(grid):
     def make_mask_image(r):
+            """TODO: Add docstring."""
         r = r * 255 / grid.overlap
         r = r.astype(np.uint8)
         return Image.fromarray(r, 'L')
@@ -143,6 +149,7 @@ def combine_grid(grid):
 
 class GridAnnotation:
     def __init__(self, text='', is_active=True):
+            """TODO: Add docstring."""
         self.text = text
         self.is_active = is_active
         self.size = None
@@ -155,6 +162,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
     color_background = ImageColor.getcolor(opts.grid_background_color, 'RGB')
 
     def wrap(drawing, text, font, line_length):
+            """TODO: Add docstring."""
         lines = ['']
         for word in text.split():
             line = f'{lines[-1]} {word}'.strip()
@@ -165,6 +173,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
         return lines
 
     def draw_texts(drawing, draw_x, draw_y, lines, initial_fnt, initial_fontsize):
+            """TODO: Add docstring."""
         for line in lines:
             fnt = initial_fnt
             fontsize = initial_fontsize
@@ -237,6 +246,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
 
 
 def draw_prompt_matrix(im, width, height, all_prompts, margin=0):
+        """TODO: Add docstring."""
     prompts = all_prompts[1:]
     boundary = math.ceil(len(prompts) / 2)
 
@@ -267,6 +277,7 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
     upscaler_name = upscaler_name or opts.upscaler_for_img2img
 
     def resize(im, w, h):
+            """TODO: Add docstring."""
         if upscaler_name is None or upscaler_name == "None" or im.mode == 'L':
             return im.resize((w, h), resample=LANCZOS)
 
@@ -340,6 +351,7 @@ NOTHING_AND_SKIP_PREVIOUS_TEXT = object()
 
 
 def sanitize_filename_part(text, replace_spaces=True):
+        """TODO: Add docstring."""
     if text is None:
         return None
 
@@ -379,6 +391,7 @@ def get_sampler_scheduler(p, sampler):
 
 
 class FilenameGenerator:
+        """TODO: Add docstring."""
     replacements = {
         'basename': lambda self: self.basename or 'img',
         'seed': lambda self: self.seed if self.seed is not None else '',
@@ -418,6 +431,7 @@ class FilenameGenerator:
     default_time_format = '%Y%m%d%H%M%S'
 
     def __init__(self, p, seed, prompt, image, zip=False, basename=""):
+            """TODO: Add docstring."""
         self.p = p
         self.seed = seed
         self.prompt = prompt
@@ -442,6 +456,7 @@ class FilenameGenerator:
 
 
     def hasprompt(self, *args):
+            """TODO: Add docstring."""
         lower = self.prompt.lower()
         if self.p is None or self.prompt is None:
             return None
@@ -458,6 +473,7 @@ class FilenameGenerator:
         return sanitize_filename_part(outres)
 
     def prompt_no_style(self):
+            """TODO: Add docstring."""
         if self.p is None or self.prompt is None:
             return None
 
@@ -472,12 +488,14 @@ class FilenameGenerator:
         return sanitize_filename_part(prompt_no_style, replace_spaces=False)
 
     def prompt_words(self):
+            """TODO: Add docstring."""
         words = [x for x in re_nonletters.split(self.prompt or "") if x]
         if len(words) == 0:
             words = ["empty"]
         return sanitize_filename_part(" ".join(words[0:opts.directories_max_prompt_words]), replace_spaces=False)
 
     def datetime(self, *args):
+            """TODO: Add docstring."""
         time_datetime = datetime.datetime.now()
 
         time_format = args[0] if (args and args[0] != "") else self.default_time_format
@@ -495,14 +513,17 @@ class FilenameGenerator:
         return sanitize_filename_part(formatted_time, replace_spaces=False)
 
     def image_hash(self, *args):
+            """TODO: Add docstring."""
         length = int(args[0]) if (args and args[0] != "") else None
         return hashlib.sha256(self.image.tobytes()).hexdigest()[0:length]
 
     def string_hash(self, text, *args):
+            """TODO: Add docstring."""
         length = int(args[0]) if (args and args[0] != "") else 8
         return hashlib.sha256(text.encode()).hexdigest()[0:length]
 
     def apply(self, x):
+            """TODO: Add docstring."""
         res = ''
 
         for m in re_pattern.finditer(x):
@@ -775,6 +796,7 @@ IGNORED_INFO_KEYS = {
 
 
 def read_info_from_image(image: Image.Image) -> tuple[str | None, dict]:
+        """TODO: Add docstring."""
     items = (image.info or {}).copy()
 
     geninfo = items.pop('parameters', None)
@@ -818,6 +840,7 @@ Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}
 
 
 def image_data(data):
+        """TODO: Add docstring."""
     import gradio as gr
 
     try:
@@ -850,6 +873,7 @@ def flatten(img, bgcolor):
 
 
 def read(fp, **kwargs):
+        """TODO: Add docstring."""
     image = Image.open(fp, **kwargs)
     image = fix_image(image)
 
@@ -857,6 +881,7 @@ def read(fp, **kwargs):
 
 
 def fix_image(image: Image.Image):
+        """TODO: Add docstring."""
     if image is None:
         return None
 
@@ -870,6 +895,7 @@ def fix_image(image: Image.Image):
 
 
 def fix_png_transparency(image: Image.Image):
+        """TODO: Add docstring."""
     if image.mode not in ("RGB", "P") or not isinstance(image.info.get("transparency"), bytes):
         return image
 

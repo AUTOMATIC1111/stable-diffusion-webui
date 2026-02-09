@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import html
 import sys
 
@@ -7,67 +8,79 @@ from modules.shared_cmd_options import cmd_opts
 
 
 def realesrgan_models_names():
+        """TODO: Add docstring."""
     import modules.realesrgan_model
     return [x.name for x in modules.realesrgan_model.get_realesrgan_models(None)]
 
 
 def dat_models_names():
+        """TODO: Add docstring."""
     import modules.dat_model
     return [x.name for x in modules.dat_model.get_dat_models(None)]
 
 
 def postprocessing_scripts():
+        """TODO: Add docstring."""
     import modules.scripts
 
     return modules.scripts.scripts_postproc.scripts
 
 
 def sd_vae_items():
+        """TODO: Add docstring."""
     import modules.sd_vae
 
     return ["Automatic", "None"] + list(modules.sd_vae.vae_dict)
 
 
 def refresh_vae_list():
+        """TODO: Add docstring."""
     import modules.sd_vae
 
     modules.sd_vae.refresh_vae_list()
 
 
 def cross_attention_optimizations():
+        """TODO: Add docstring."""
     import modules.sd_hijack
 
     return ["Automatic"] + [x.title() for x in modules.sd_hijack.optimizers] + ["None"]
 
 
 def sd_unet_items():
+        """TODO: Add docstring."""
     import modules.sd_unet
 
     return ["Automatic"] + [x.label for x in modules.sd_unet.unet_options] + ["None"]
 
 
 def refresh_unet_list():
+        """TODO: Add docstring."""
     import modules.sd_unet
 
     modules.sd_unet.list_unets()
 
 
 def list_checkpoint_tiles(use_short=False):
+        """TODO: Add docstring."""
     import modules.sd_models
     return modules.sd_models.checkpoint_tiles(use_short)
 
 
 def refresh_checkpoints():
+        """TODO: Add docstring."""
     import modules.sd_models
     return modules.sd_models.list_models()
 
 
 def list_samplers():
+        """TODO: Add docstring."""
     import modules.sd_samplers
     return modules.sd_samplers.all_samplers
 
 
 def reload_hypernetworks():
+        """TODO: Add docstring."""
     from modules.hypernetworks import hypernetwork
     from modules import shared
 
@@ -75,6 +88,7 @@ def reload_hypernetworks():
 
 
 def get_infotext_names():
+        """TODO: Add docstring."""
     from modules import infotext_utils, shared
     res = {}
 
@@ -107,6 +121,7 @@ ui_reorder_categories_builtin_items = [
 
 
 def ui_reorder_categories():
+        """TODO: Add docstring."""
     from modules import scripts
 
     yield from ui_reorder_categories_builtin_items
@@ -122,6 +137,7 @@ def ui_reorder_categories():
 
 
 def callbacks_order_settings():
+        """TODO: Add docstring."""
     options = {
         "sd_vae_explanation": OptionHTML("""
     For categories below, callbacks added to dropdowns happen before others, in order listed.
@@ -170,12 +186,14 @@ class Shared(sys.modules[__name__].__class__):
 
     @property
     def sd_model(self):
+            """TODO: Add docstring."""
         import modules.sd_models
 
         return modules.sd_models.model_data.get_sd_model()
 
     @sd_model.setter
     def sd_model(self, value):
+            """TODO: Add docstring."""
         import modules.sd_models
 
         modules.sd_models.model_data.set_sd_model(value)

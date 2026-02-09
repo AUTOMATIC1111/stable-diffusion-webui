@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import json
 import os
 
@@ -8,6 +9,7 @@ from modules.ui_components import ToolButton, InputAccordion
 
 
 def radio_choices(comp):  # gradio 3.41 changes choices from list of values to list of pairs
+        """TODO: Add docstring."""
     return [x[0] if isinstance(x, tuple) else x for x in getattr(comp, 'choices', [])]
 
 
@@ -15,6 +17,7 @@ class UiLoadsave:
     """allows saving and restoring default values for gradio components"""
 
     def __init__(self, filename):
+            """TODO: Add docstring."""
         self.filename = filename
         self.ui_settings = {}
         self.component_mapping = {}
@@ -39,6 +42,7 @@ class UiLoadsave:
         assert not self.finalized_ui
 
         def apply_field(obj, field, condition=None, init_field=None):
+                """TODO: Add docstring."""
             key = f"{path}/{field}"
 
             if getattr(obj, 'custom_script_source', None) is not None:
@@ -95,6 +99,7 @@ class UiLoadsave:
 
         if type(x) == gr.Dropdown:
             def check_dropdown(val):
+                    """TODO: Add docstring."""
                 choices = radio_choices(x)
                 if getattr(x, 'multiselect', False):
                     return all(value in choices for value in val)
@@ -112,6 +117,7 @@ class UiLoadsave:
             apply_field(x.accordion, 'value')
 
         def check_tab_id(tab_id):
+                """TODO: Add docstring."""
             tab_items = list(filter(lambda e: isinstance(e, gr.TabItem), x.children))
             if type(tab_id) == str:
                 tab_ids = [t.id for t in tab_items]
@@ -139,10 +145,12 @@ class UiLoadsave:
             self.add_component(f"{path}/{x.value}", x)
 
     def read_from_file(self):
+            """TODO: Add docstring."""
         with open(self.filename, "r", encoding="utf8") as file:
             return json.load(file)
 
     def write_to_file(self, current_ui_settings):
+            """TODO: Add docstring."""
         with open(self.filename, "w", encoding="utf8") as file:
             json.dump(current_ui_settings, file, indent=4, ensure_ascii=False)
 
@@ -182,6 +190,7 @@ class UiLoadsave:
             yield path, old_value, new_value
 
     def ui_view(self, *values):
+            """TODO: Add docstring."""
         text = ["<table><thead><tr><th>Path</th><th>Old value</th><th>New value</th></thead><tbody>"]
 
         for path, old_value, new_value in self.iter_changes(self.read_from_file(), values):
@@ -197,6 +206,7 @@ class UiLoadsave:
         return "".join(text)
 
     def ui_apply(self, *values):
+            """TODO: Add docstring."""
         num_changed = 0
 
         current_ui_settings = self.read_from_file()

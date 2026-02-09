@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 import re
 
@@ -6,19 +7,23 @@ from modules.paths_internal import script_path, cwd
 
 
 def natural_sort_key(s, regex=re.compile('([0-9]+)')):
+        """TODO: Add docstring."""
     return [int(text) if text.isdigit() else text.lower() for text in regex.split(s)]
 
 
 def listfiles(dirname):
+        """TODO: Add docstring."""
     filenames = [os.path.join(dirname, x) for x in sorted(os.listdir(dirname), key=natural_sort_key) if not x.startswith(".")]
     return [file for file in filenames if os.path.isfile(file)]
 
 
 def html_path(filename):
+        """TODO: Add docstring."""
     return os.path.join(script_path, "html", filename)
 
 
 def html(filename):
+        """TODO: Add docstring."""
     path = html_path(filename)
 
     try:
@@ -29,6 +34,7 @@ def html(filename):
 
 
 def walk_files(path, allowed_extensions=None):
+        """TODO: Add docstring."""
     if not os.path.exists(path):
         return
 
@@ -52,6 +58,7 @@ def walk_files(path, allowed_extensions=None):
 
 
 def ldm_print(*args, **kwargs):
+        """TODO: Add docstring."""
     if shared.opts.hide_ldm_prints:
         return
 
@@ -59,6 +66,7 @@ def ldm_print(*args, **kwargs):
 
 
 def truncate_path(target_path, base_path=cwd):
+        """TODO: Add docstring."""
     abs_target, abs_base = os.path.abspath(target_path), os.path.abspath(base_path)
     try:
         if os.path.commonpath([abs_target, abs_base]) == abs_base:
@@ -72,6 +80,7 @@ class MassFileListerCachedDir:
     """A class that caches file metadata for a specific directory."""
 
     def __init__(self, dirname):
+            """TODO: Add docstring."""
         self.files = None
         self.files_cased = None
         self.dirname = dirname
@@ -97,6 +106,7 @@ class MassFileLister:
     """A class that provides a way to check for the existence and mtime/ctile of files without doing more than one stat call per file."""
 
     def __init__(self):
+            """TODO: Add docstring."""
         self.cached_dirs = {}
 
     def find(self, path):
@@ -163,6 +173,7 @@ def topological_sort(dependencies):
     result = []
 
     def inner(name):
+            """TODO: Add docstring."""
         visited[name] = True
 
         for dep in dependencies.get(name, []):

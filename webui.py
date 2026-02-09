@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from __future__ import annotations
 
 import os
@@ -16,6 +17,7 @@ initialize.check_versions()
 
 
 def create_api(app):
+        """TODO: Add docstring."""
     from modules.api.api import Api
     from modules.call_queue import queue_lock
 
@@ -24,6 +26,7 @@ def create_api(app):
 
 
 def api_only():
+        """TODO: Add docstring."""
     from fastapi import FastAPI
     from modules.shared_cmd_options import cmd_opts
 
@@ -46,6 +49,7 @@ def api_only():
 
 
 def webui():
+        """TODO: Add docstring."""
     from modules.shared_cmd_options import cmd_opts
 
     launch_api = cmd_opts.api

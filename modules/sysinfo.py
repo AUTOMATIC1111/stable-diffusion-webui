@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import json
 import os
 import sys
@@ -36,6 +37,7 @@ environment_whitelist = {
 
 
 def pretty_bytes(num, suffix="B"):
+        """TODO: Add docstring."""
     for unit in ["", "K", "M", "G", "T", "P", "E", "Z", "Y"]:
         if abs(num) < 1024 or unit == 'Y':
             return f"{num:.0f}{unit}{suffix}"
@@ -43,6 +45,7 @@ def pretty_bytes(num, suffix="B"):
 
 
 def get():
+        """TODO: Add docstring."""
     res = get_dict()
 
     text = json.dumps(res, ensure_ascii=False, indent=4)
@@ -57,6 +60,7 @@ re_checksum = re.compile(r'"Checksum": "([0-9a-fA-F]{64})"')
 
 
 def check(x):
+        """TODO: Add docstring."""
     m = re.search(re_checksum, x)
     if not m:
         return False
@@ -68,6 +72,7 @@ def check(x):
 
 
 def get_cpu_info():
+        """TODO: Add docstring."""
     cpu_info = {"model": platform.processor()}
     try:
         import psutil
@@ -79,6 +84,7 @@ def get_cpu_info():
 
 
 def get_ram_info():
+        """TODO: Add docstring."""
     try:
         import psutil
         ram = psutil.virtual_memory()
@@ -88,6 +94,7 @@ def get_ram_info():
 
 
 def get_packages():
+        """TODO: Add docstring."""
     try:
         return subprocess.check_output([sys.executable, '-m', 'pip', 'freeze', '--all']).decode("utf8").splitlines()
     except Exception as pip_error:
@@ -100,6 +107,7 @@ def get_packages():
 
 
 def get_dict():
+        """TODO: Add docstring."""
     config = get_config()
     res = {
         "Platform": platform.platform(),
@@ -128,10 +136,12 @@ def get_dict():
 
 
 def get_environment():
+        """TODO: Add docstring."""
     return {k: os.environ[k] for k in sorted(os.environ) if k in environment_whitelist}
 
 
 def get_argv():
+        """TODO: Add docstring."""
     res = []
 
     for v in sys.argv:
@@ -152,6 +162,7 @@ re_newline = re.compile(r"\r*\n")
 
 
 def get_torch_sysinfo():
+        """TODO: Add docstring."""
     try:
         import torch.utils.collect_env
         info = torch.utils.collect_env.get_env_info()._asdict()
@@ -162,6 +173,7 @@ def get_torch_sysinfo():
 
 
 def run_git(path, *args):
+        """TODO: Add docstring."""
     try:
         return subprocess.check_output([launch_utils.git, '-C', path, *args], shell=False, encoding='utf8').strip()
     except Exception as e:
@@ -169,11 +181,13 @@ def run_git(path, *args):
 
 
 def git_status(path):
+        """TODO: Add docstring."""
     if (Path(path) / '.git').is_dir():
         return run_git(paths_internal.script_path, 'status')
 
 
 def get_info_from_repo_path(path: Path):
+        """TODO: Add docstring."""
     is_repo = (path / '.git').is_dir()
     return {
         'name': path.name,
@@ -185,10 +199,12 @@ def get_info_from_repo_path(path: Path):
 
 
 def get_extensions(*, enabled, fallback_disabled_extensions=None):
+        """TODO: Add docstring."""
     try:
         from modules import extensions
         if extensions.extensions:
             def to_json(x: extensions.Extension):
+                    """TODO: Add docstring."""
                 return {
                     "name": x.name,
                     "path": x.path,
@@ -204,6 +220,7 @@ def get_extensions(*, enabled, fallback_disabled_extensions=None):
 
 
 def get_config():
+        """TODO: Add docstring."""
     try:
         from modules import shared
         return shared.opts.data

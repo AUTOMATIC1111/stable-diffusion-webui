@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from __future__ import annotations
 import os
 from collections import namedtuple
@@ -15,6 +16,7 @@ metadata_tags_order = {"ss_sd_model_name": 1, "ss_resolution": 2, "ss_clip_skip"
 
 
 class SdVersion(enum.Enum):
+        """TODO: Add docstring."""
     Unknown = 1
     SD1 = 2
     SD2 = 3
@@ -23,12 +25,14 @@ class SdVersion(enum.Enum):
 
 class NetworkOnDisk:
     def __init__(self, name, filename):
+            """TODO: Add docstring."""
         self.name = name
         self.filename = filename
         self.metadata = {}
         self.is_safetensors = os.path.splitext(filename)[1].lower() == ".safetensors"
 
         def read_metadata():
+                """TODO: Add docstring."""
             metadata = sd_models.read_metadata_from_safetensors(filename)
 
             return metadata
@@ -59,6 +63,7 @@ class NetworkOnDisk:
         self.sd_version = self.detect_version()
 
     def detect_version(self):
+            """TODO: Add docstring."""
         if str(self.metadata.get('ss_base_model_version', "")).startswith("sdxl_"):
             return SdVersion.SDXL
         elif str(self.metadata.get('ss_v2', "")) == "True":
@@ -69,6 +74,7 @@ class NetworkOnDisk:
         return SdVersion.Unknown
 
     def set_hash(self, v):
+            """TODO: Add docstring."""
         self.hash = v
         self.shorthash = self.hash[0:12]
 
@@ -77,10 +83,12 @@ class NetworkOnDisk:
             networks.available_network_hash_lookup[self.shorthash] = self
 
     def read_hash(self):
+            """TODO: Add docstring."""
         if not self.hash:
             self.set_hash(hashes.sha256(self.filename, "lora/" + self.name, use_addnet_hash=self.is_safetensors) or '')
 
     def get_alias(self):
+            """TODO: Add docstring."""
         import networks
         if shared.opts.lora_preferred_name == "Filename" or self.alias.lower() in networks.forbidden_network_aliases:
             return self.name
@@ -90,6 +98,7 @@ class NetworkOnDisk:
 
 class Network:  # LoraModule
     def __init__(self, name, network_on_disk: NetworkOnDisk):
+            """TODO: Add docstring."""
         self.name = name
         self.network_on_disk = network_on_disk
         self.te_multiplier = 1.0
@@ -105,11 +114,13 @@ class Network:  # LoraModule
 
 class ModuleType:
     def create_module(self, net: Network, weights: NetworkWeights) -> Network | None:
+            """TODO: Add docstring."""
         return None
 
 
 class NetworkModule:
     def __init__(self, net: Network, weights: NetworkWeights):
+            """TODO: Add docstring."""
         self.network = net
         self.network_key = weights.network_key
         self.sd_key = weights.sd_key
@@ -159,12 +170,14 @@ class NetworkModule:
         self.dora_norm_dims = len(self.shape) - 1
 
     def multiplier(self):
+            """TODO: Add docstring."""
         if 'transformer' in self.sd_key[:20]:
             return self.network.te_multiplier
         else:
             return self.network.unet_multiplier
 
     def calc_scale(self):
+            """TODO: Add docstring."""
         if self.scale is not None:
             return self.scale
         if self.dim is not None and self.alpha is not None:
@@ -173,6 +186,7 @@ class NetworkModule:
         return 1.0
 
     def apply_weight_decompose(self, updown, orig_weight):
+            """TODO: Add docstring."""
         # Match the device/dtype
         orig_weight = orig_weight.to(updown.dtype)
         dora_scale = self.dora_scale.to(device=orig_weight.device, dtype=updown.dtype)
@@ -194,6 +208,7 @@ class NetworkModule:
         return final_updown
 
     def finalize_updown(self, updown, orig_weight, output_shape, ex_bias=None):
+            """TODO: Add docstring."""
         if self.bias is not None:
             updown = updown.reshape(self.bias.shape)
             updown += self.bias.to(orig_weight.device, dtype=updown.dtype)
@@ -216,6 +231,7 @@ class NetworkModule:
         return updown * self.multiplier(), ex_bias
 
     def calc_updown(self, target):
+            """TODO: Add docstring."""
         raise NotImplementedError()
 
     def forward(self, x, y):

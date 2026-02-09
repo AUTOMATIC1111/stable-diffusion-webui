@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import torch
 import inspect
 import sys
@@ -24,22 +25,27 @@ samplers_data_timesteps = [
 
 class CompVisTimestepsDenoiser(torch.nn.Module):
     def __init__(self, model, *args, **kwargs):
+            """TODO: Add docstring."""
         super().__init__(*args, **kwargs)
         self.inner_model = model
 
     def forward(self, input, timesteps, **kwargs):
+            """TODO: Add docstring."""
         return self.inner_model.apply_model(input, timesteps, **kwargs)
 
 
 class CompVisTimestepsVDenoiser(torch.nn.Module):
     def __init__(self, model, *args, **kwargs):
+            """TODO: Add docstring."""
         super().__init__(*args, **kwargs)
         self.inner_model = model
 
     def predict_eps_from_z_and_v(self, x_t, t, v):
+            """TODO: Add docstring."""
         return torch.sqrt(self.inner_model.alphas_cumprod)[t.to(torch.int), None, None, None] * v + torch.sqrt(1 - self.inner_model.alphas_cumprod)[t.to(torch.int), None, None, None] * x_t
 
     def forward(self, input, timesteps, **kwargs):
+            """TODO: Add docstring."""
         model_output = self.inner_model.apply_model(input, timesteps, **kwargs)
         e_t = self.predict_eps_from_z_and_v(input, timesteps, model_output)
         return e_t
@@ -48,12 +54,14 @@ class CompVisTimestepsVDenoiser(torch.nn.Module):
 class CFGDenoiserTimesteps(CFGDenoiser):
 
     def __init__(self, sampler):
+            """TODO: Add docstring."""
         super().__init__(sampler)
 
         self.alphas = shared.sd_model.alphas_cumprod
         self.mask_before_denoising = True
 
     def get_pred_x0(self, x_in, x_out, sigma):
+            """TODO: Add docstring."""
         ts = sigma.to(dtype=int)
 
         a_t = self.alphas[ts][:, None, None, None]
@@ -65,6 +73,7 @@ class CFGDenoiserTimesteps(CFGDenoiser):
 
     @property
     def inner_model(self):
+            """TODO: Add docstring."""
         if self.model_wrap is None:
             denoiser = CompVisTimestepsVDenoiser if shared.sd_model.parameterization == "v" else CompVisTimestepsDenoiser
             self.model_wrap = denoiser(shared.sd_model)
@@ -74,6 +83,7 @@ class CFGDenoiserTimesteps(CFGDenoiser):
 
 class CompVisSampler(sd_samplers_common.Sampler):
     def __init__(self, funcname, sd_model):
+            """TODO: Add docstring."""
         super().__init__(funcname)
 
         self.eta_option_field = 'eta_ddim'
@@ -84,6 +94,7 @@ class CompVisSampler(sd_samplers_common.Sampler):
         self.model_wrap = self.model_wrap_cfg.inner_model
 
     def get_timesteps(self, p, steps):
+            """TODO: Add docstring."""
         discard_next_to_last_sigma = self.config is not None and self.config.options.get('discard_next_to_last_sigma', False)
         if opts.always_discard_next_to_last_sigma and not discard_next_to_last_sigma:
             discard_next_to_last_sigma = True
@@ -96,6 +107,7 @@ class CompVisSampler(sd_samplers_common.Sampler):
         return timesteps
 
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
+            """TODO: Add docstring."""
         steps, t_enc = sd_samplers_common.setup_img2img_steps(p, steps)
 
         timesteps = self.get_timesteps(p, steps)
@@ -139,6 +151,7 @@ class CompVisSampler(sd_samplers_common.Sampler):
         return samples
 
     def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
+            """TODO: Add docstring."""
         steps = steps or p.steps
         timesteps = self.get_timesteps(p, steps)
 

@@ -1,8 +1,10 @@
+    """TODO: Add docstring."""
 import gradio as gr
 
 
 class FormComponent:
     def get_expected_parent(self):
+            """TODO: Add docstring."""
         return gr.components.Form
 
 
@@ -13,10 +15,12 @@ class ToolButton(FormComponent, gr.Button):
     """Small button with single emoji as text, fits inside gradio forms"""
 
     def __init__(self, *args, **kwargs):
+            """TODO: Add docstring."""
         classes = kwargs.pop("elem_classes", [])
         super().__init__(*args, elem_classes=["tool", *classes], **kwargs)
 
     def get_block_name(self):
+            """TODO: Add docstring."""
         return "button"
 
 
@@ -24,11 +28,13 @@ class ResizeHandleRow(gr.Row):
     """Same as gr.Row but fits inside gradio forms"""
 
     def __init__(self, **kwargs):
+            """TODO: Add docstring."""
         super().__init__(**kwargs)
 
         self.elem_classes.append("resize-handle-row")
 
     def get_block_name(self):
+            """TODO: Add docstring."""
         return "row"
 
 
@@ -36,6 +42,7 @@ class FormRow(FormComponent, gr.Row):
     """Same as gr.Row but fits inside gradio forms"""
 
     def get_block_name(self):
+            """TODO: Add docstring."""
         return "row"
 
 
@@ -43,6 +50,7 @@ class FormColumn(FormComponent, gr.Column):
     """Same as gr.Column but fits inside gradio forms"""
 
     def get_block_name(self):
+            """TODO: Add docstring."""
         return "column"
 
 
@@ -50,6 +58,7 @@ class FormGroup(FormComponent, gr.Group):
     """Same as gr.Group but fits inside gradio forms"""
 
     def get_block_name(self):
+            """TODO: Add docstring."""
         return "group"
 
 
@@ -57,6 +66,7 @@ class FormHTML(FormComponent, gr.HTML):
     """Same as gr.HTML but fits inside gradio forms"""
 
     def get_block_name(self):
+            """TODO: Add docstring."""
         return "html"
 
 
@@ -64,24 +74,29 @@ class FormColorPicker(FormComponent, gr.ColorPicker):
     """Same as gr.ColorPicker but fits inside gradio forms"""
 
     def get_block_name(self):
+            """TODO: Add docstring."""
         return "colorpicker"
 
 
 class DropdownMulti(FormComponent, gr.Dropdown):
     """Same as gr.Dropdown but always multiselect"""
     def __init__(self, **kwargs):
+            """TODO: Add docstring."""
         super().__init__(multiselect=True, **kwargs)
 
     def get_block_name(self):
+            """TODO: Add docstring."""
         return "dropdown"
 
 
 class DropdownEditable(FormComponent, gr.Dropdown):
     """Same as gr.Dropdown but allows editing value"""
     def __init__(self, **kwargs):
+            """TODO: Add docstring."""
         super().__init__(allow_custom_value=True, **kwargs)
 
     def get_block_name(self):
+            """TODO: Add docstring."""
         return "dropdown"
 
 
@@ -94,6 +109,7 @@ class InputAccordion(gr.Checkbox):
     global_index = 0
 
     def __init__(self, value, **kwargs):
+            """TODO: Add docstring."""
         self.accordion_id = kwargs.get('elem_id')
         if self.accordion_id is None:
             self.accordion_id = f"input-accordion-{InputAccordion.global_index}"
@@ -134,12 +150,15 @@ class InputAccordion(gr.Checkbox):
         return gr.Column(elem_id=self.accordion_id + '-extra', elem_classes='input-accordion-extra', min_width=0)
 
     def __enter__(self):
+            """TODO: Add docstring."""
         self.accordion.__enter__()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+            """TODO: Add docstring."""
         self.accordion.__exit__(exc_type, exc_val, exc_tb)
 
     def get_block_name(self):
+            """TODO: Add docstring."""
         return "checkbox"
 

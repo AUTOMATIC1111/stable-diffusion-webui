@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 
 import network
@@ -10,12 +11,15 @@ from ui_edit_user_metadata import LoraUserMetadataEditor
 
 class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
     def __init__(self):
+            """TODO: Add docstring."""
         super().__init__('Lora')
 
     def refresh(self):
+            """TODO: Add docstring."""
         networks.list_available_networks()
 
     def create_item(self, name, index=None, enable_filter=True):
+            """TODO: Add docstring."""
         lora_on_disk = networks.available_networks.get(name)
         if lora_on_disk is None:
             return
@@ -76,6 +80,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
         return item
 
     def list_items(self):
+            """TODO: Add docstring."""
         # instantiate a list to protect against concurrent modification
         names = list(networks.available_networks)
         for index, name in enumerate(names):
@@ -84,7 +89,9 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
                 yield item
 
     def allowed_directories_for_previews(self):
+            """TODO: Add docstring."""
         return [shared.cmd_opts.lora_dir, shared.cmd_opts.lyco_dir_backcompat]
 
     def create_user_metadata_editor(self, ui, tabname):
+            """TODO: Add docstring."""
         return LoraUserMetadataEditor(ui, tabname, self)

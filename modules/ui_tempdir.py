@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 import tempfile
 from collections import namedtuple
@@ -14,6 +15,7 @@ Savedfile = namedtuple("Savedfile", ["name"])
 
 
 def register_tmp_file(gradio, filename):
+        """TODO: Add docstring."""
     if hasattr(gradio, 'temp_file_sets'):  # gradio 3.15
         gradio.temp_file_sets[0] = gradio.temp_file_sets[0] | {os.path.abspath(filename)}
 
@@ -22,6 +24,7 @@ def register_tmp_file(gradio, filename):
 
 
 def check_tmp_file(gradio, filename):
+        """TODO: Add docstring."""
     if hasattr(gradio, 'temp_file_sets'):
         return any(filename in fileset for fileset in gradio.temp_file_sets)
 
@@ -32,6 +35,7 @@ def check_tmp_file(gradio, filename):
 
 
 def save_pil_to_file(self, pil_image, dir=None, format="png"):
+        """TODO: Add docstring."""
     already_saved_as = getattr(pil_image, 'already_saved_as', None)
     if already_saved_as and os.path.isfile(already_saved_as):
         register_tmp_file(shared.demo, already_saved_as)
@@ -62,6 +66,7 @@ def install_ui_tempdir_override():
 
 
 def on_tmpdir_changed():
+        """TODO: Add docstring."""
     if shared.opts.temp_dir == "" or shared.demo is None:
         return
 
@@ -71,6 +76,7 @@ def on_tmpdir_changed():
 
 
 def cleanup_tmpdr():
+        """TODO: Add docstring."""
     temp_dir = shared.opts.temp_dir
     if temp_dir == "" or not os.path.isdir(temp_dir):
         return

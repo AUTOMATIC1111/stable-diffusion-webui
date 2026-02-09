@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -9,6 +10,7 @@ from modules import devices
 
 class DeepDanbooruModel(nn.Module):
     def __init__(self):
+            """TODO: Add docstring."""
         super(DeepDanbooruModel, self).__init__()
 
         self.tags = []
@@ -195,6 +197,7 @@ class DeepDanbooruModel(nn.Module):
         self.n_Conv_178 = nn.Conv2d(kernel_size=(1, 1), in_channels=4096, out_channels=9176, bias=False)
 
     def forward(self, *inputs):
+            """TODO: Add docstring."""
         t_358, = inputs
         t_359 = t_358.permute(*[0, 3, 1, 2])
         t_359_padded = F.pad(t_359, [2, 3, 2, 3], value=0)
@@ -672,6 +675,7 @@ class DeepDanbooruModel(nn.Module):
         return t_771
 
     def load_state_dict(self, state_dict, **kwargs):
+            """TODO: Add docstring."""
         self.tags = state_dict.get('tags', [])
 
         super(DeepDanbooruModel, self).load_state_dict({k: v for k, v in state_dict.items() if k != 'tags'})

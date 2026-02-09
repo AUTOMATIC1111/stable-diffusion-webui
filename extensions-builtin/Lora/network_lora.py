@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import torch
 
 import lyco_helpers
@@ -8,6 +9,7 @@ from modules import devices
 
 class ModuleTypeLora(network.ModuleType):
     def create_module(self, net: network.Network, weights: network.NetworkWeights):
+            """TODO: Add docstring."""
         if all(x in weights.w for x in ["lora_up.weight", "lora_down.weight"]):
             return NetworkModuleLora(net, weights)
 
@@ -23,6 +25,7 @@ class ModuleTypeLora(network.ModuleType):
 
 class NetworkModuleLora(network.NetworkModule):
     def __init__(self,  net: network.Network, weights: network.NetworkWeights):
+            """TODO: Add docstring."""
         super().__init__(net, weights)
 
         self.up_model = self.create_module(weights.w, "lora_up.weight")
@@ -32,6 +35,7 @@ class NetworkModuleLora(network.NetworkModule):
         self.dim = weights.w["lora_down.weight"].shape[0]
 
     def create_module(self, weights, key, none_ok=False):
+            """TODO: Add docstring."""
         weight = weights.get(key)
 
         if weight is None and none_ok:
@@ -69,6 +73,7 @@ class NetworkModuleLora(network.NetworkModule):
         return module
 
     def calc_updown(self, orig_weight):
+            """TODO: Add docstring."""
         up = self.up_model.weight.to(orig_weight.device)
         down = self.down_model.weight.to(orig_weight.device)
 
@@ -86,6 +91,7 @@ class NetworkModuleLora(network.NetworkModule):
         return self.finalize_updown(updown, orig_weight, output_shape)
 
     def forward(self, x, y):
+            """TODO: Add docstring."""
         self.up_model.to(device=devices.device)
         self.down_model.to(device=devices.device)
 

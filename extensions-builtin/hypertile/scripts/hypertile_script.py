@@ -1,17 +1,22 @@
+    """TODO: Add docstring."""
 import hypertile
 from modules import scripts, script_callbacks, shared
 
 
 class ScriptHypertile(scripts.Script):
+        """TODO: Add docstring."""
     name = "Hypertile"
 
     def title(self):
+            """TODO: Add docstring."""
         return self.name
 
     def show(self, is_img2img):
+            """TODO: Add docstring."""
         return scripts.AlwaysVisible
 
     def process(self, p, *args):
+            """TODO: Add docstring."""
         hypertile.set_hypertile_seed(p.all_seeds[0])
 
         configure_hypertile(p.width, p.height, enable_unet=shared.opts.hypertile_enable_unet)
@@ -35,6 +40,7 @@ class ScriptHypertile(scripts.Script):
 
     def add_infotext(self, p, add_unet_params=False):
         def option(name):
+                """TODO: Add docstring."""
             value = getattr(shared.opts, name)
             default_value = shared.opts.get_default(name)
             return None if value == default_value else value
@@ -55,6 +61,7 @@ class ScriptHypertile(scripts.Script):
 
 
 def configure_hypertile(width, height, enable_unet=True):
+        """TODO: Add docstring."""
     hypertile.hypertile_hook_model(
         shared.sd_model.first_stage_model,
         width,
@@ -78,6 +85,7 @@ def configure_hypertile(width, height, enable_unet=True):
 
 
 def on_ui_settings():
+        """TODO: Add docstring."""
     import gradio as gr
 
     options = {
@@ -104,6 +112,7 @@ def on_ui_settings():
 
 
 def add_axis_options():
+        """TODO: Add docstring."""
     xyz_grid = [x for x in scripts.scripts_data if x.script_class.__module__ == "xyz_grid.py"][0].module
     xyz_grid.axis_options.extend([
         xyz_grid.AxisOption("[Hypertile] Unet First pass Enabled", str, xyz_grid.apply_override('hypertile_enable_unet', boolean=True), choices=xyz_grid.boolean_choice(reverse=True)),

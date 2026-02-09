@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from transformers import BertPreTrainedModel,BertConfig
 import torch.nn as nn
 import torch
@@ -17,6 +18,7 @@ class BertSeriesConfig(BertConfig):
 
 class RobertaSeriesConfig(XLMRobertaConfig):
     def __init__(self, pad_token_id=1, bos_token_id=0, eos_token_id=2,project_dim=512,pooler_fn='cls',learn_encoder=False, **kwargs):
+            """TODO: Add docstring."""
         super().__init__(pad_token_id=pad_token_id, bos_token_id=bos_token_id, eos_token_id=eos_token_id, **kwargs)
         self.project_dim = project_dim
         self.pooler_fn = pooler_fn
@@ -30,6 +32,7 @@ class BertSeriesModelWithTransformation(BertPreTrainedModel):
     config_class = BertSeriesConfig
 
     def __init__(self, config=None, **kargs):
+            """TODO: Add docstring."""
         # modify initialization for autoloading
         if config is None:
             config = XLMRobertaConfig()
@@ -70,6 +73,7 @@ class BertSeriesModelWithTransformation(BertPreTrainedModel):
         self.post_init()
 
     def encode(self,c):
+            """TODO: Add docstring."""
         device = torch_utils.get_param(self).device
         text = self.tokenizer(c,
                         truncation=True,
@@ -85,6 +89,7 @@ class BertSeriesModelWithTransformation(BertPreTrainedModel):
         return features['projection_state']
 
     def forward(
+            """TODO: Add docstring."""
         self,
         input_ids: Optional[torch.Tensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
@@ -162,5 +167,6 @@ class BertSeriesModelWithTransformation(BertPreTrainedModel):
 
 
 class RobertaSeriesModelWithTransformation(BertSeriesModelWithTransformation):
+        """TODO: Add docstring."""
     base_model_prefix = 'roberta'
     config_class= RobertaSeriesConfig

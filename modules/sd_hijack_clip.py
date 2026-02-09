@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import math
 from collections import namedtuple
 
@@ -16,6 +17,7 @@ class PromptChunk:
     """
 
     def __init__(self):
+            """TODO: Add docstring."""
         self.tokens = []
         self.multipliers = []
         self.fixes = []
@@ -29,6 +31,7 @@ are applied by sd_hijack.EmbeddingsWithFixes's forward function."""
 
 class TextConditionalModel(torch.nn.Module):
     def __init__(self):
+            """TODO: Add docstring."""
         super().__init__()
 
         self.hijack = sd_hijack.model_hijack
@@ -291,6 +294,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(TextConditionalModel):
     """
 
     def __init__(self, wrapped, hijack):
+            """TODO: Add docstring."""
         super().__init__()
 
         self.hijack = hijack
@@ -306,6 +310,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(TextConditionalModel):
         self.legacy_ucg_val = None  # for sgm codebase
 
     def forward(self, texts):
+            """TODO: Add docstring."""
         if opts.use_old_emphasis_implementation:
             import modules.sd_hijack_clip_old
             return modules.sd_hijack_clip_old.forward_old(self, texts)
@@ -315,6 +320,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(TextConditionalModel):
 
 class FrozenCLIPEmbedderWithCustomWords(FrozenCLIPEmbedderWithCustomWordsBase):
     def __init__(self, wrapped, hijack):
+            """TODO: Add docstring."""
         super().__init__(wrapped, hijack)
         self.tokenizer = wrapped.tokenizer
 
@@ -344,11 +350,13 @@ class FrozenCLIPEmbedderWithCustomWords(FrozenCLIPEmbedderWithCustomWordsBase):
         self.id_pad = self.id_end
 
     def tokenize(self, texts):
+            """TODO: Add docstring."""
         tokenized = self.wrapped.tokenizer(texts, truncation=False, add_special_tokens=False)["input_ids"]
 
         return tokenized
 
     def encode_with_transformers(self, tokens):
+            """TODO: Add docstring."""
         outputs = self.wrapped.transformer(input_ids=tokens, output_hidden_states=-opts.CLIP_stop_at_last_layers)
 
         if opts.CLIP_stop_at_last_layers > 1:
@@ -360,6 +368,7 @@ class FrozenCLIPEmbedderWithCustomWords(FrozenCLIPEmbedderWithCustomWordsBase):
         return z
 
     def encode_embedding_init_text(self, init_text, nvpt):
+            """TODO: Add docstring."""
         embedding_layer = self.wrapped.transformer.text_model.embeddings
         ids = self.wrapped.tokenizer(init_text, max_length=nvpt, return_tensors="pt", add_special_tokens=False)["input_ids"]
         embedded = embedding_layer.token_embedding.wrapped(ids.to(embedding_layer.token_embedding.wrapped.weight.device)).squeeze(0)
@@ -369,9 +378,11 @@ class FrozenCLIPEmbedderWithCustomWords(FrozenCLIPEmbedderWithCustomWordsBase):
 
 class FrozenCLIPEmbedderForSDXLWithCustomWords(FrozenCLIPEmbedderWithCustomWords):
     def __init__(self, wrapped, hijack):
+            """TODO: Add docstring."""
         super().__init__(wrapped, hijack)
 
     def encode_with_transformers(self, tokens):
+            """TODO: Add docstring."""
         outputs = self.wrapped.transformer(input_ids=tokens, output_hidden_states=self.wrapped.layer == "hidden")
 
         if opts.sdxl_clip_l_skip is True:

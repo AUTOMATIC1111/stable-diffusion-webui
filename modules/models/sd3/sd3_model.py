@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import contextlib
 
 import torch
@@ -11,15 +12,18 @@ from modules import shared, devices
 
 class SD3Denoiser(k_diffusion.external.DiscreteSchedule):
     def __init__(self, inner_model, sigmas):
+            """TODO: Add docstring."""
         super().__init__(sigmas, quantize=shared.opts.enable_quantization)
         self.inner_model = inner_model
 
     def forward(self, input, sigma, **kwargs):
+            """TODO: Add docstring."""
         return self.inner_model.apply_model(input, sigma, **kwargs)
 
 
 class SD3Inferencer(torch.nn.Module):
     def __init__(self, state_dict, shift=3, use_ema=False):
+            """TODO: Add docstring."""
         super().__init__()
 
         self.shift = shift
@@ -42,35 +46,45 @@ class SD3Inferencer(torch.nn.Module):
 
     @property
     def cond_stage_model(self):
+            """TODO: Add docstring."""
         return self.text_encoders
 
     def before_load_weights(self, state_dict):
+            """TODO: Add docstring."""
         self.cond_stage_model.before_load_weights(state_dict)
 
     def ema_scope(self):
+            """TODO: Add docstring."""
         return contextlib.nullcontext()
 
     def get_learned_conditioning(self, batch: list[str]):
+            """TODO: Add docstring."""
         return self.cond_stage_model(batch)
 
     def apply_model(self, x, t, cond):
+            """TODO: Add docstring."""
         return self.model(x, t, c_crossattn=cond['crossattn'], y=cond['vector'])
 
     def decode_first_stage(self, latent):
+            """TODO: Add docstring."""
         latent = self.latent_format.process_out(latent)
         return self.first_stage_model.decode(latent)
 
     def encode_first_stage(self, image):
+            """TODO: Add docstring."""
         latent = self.first_stage_model.encode(image)
         return self.latent_format.process_in(latent)
 
     def get_first_stage_encoding(self, x):
+            """TODO: Add docstring."""
         return x
 
     def create_denoiser(self):
+            """TODO: Add docstring."""
         return SD3Denoiser(self, self.model.model_sampling.sigmas)
 
     def medvram_fields(self):
+            """TODO: Add docstring."""
         return [
             (self, 'first_stage_model'),
             (self, 'text_encoders'),
@@ -78,12 +92,15 @@ class SD3Inferencer(torch.nn.Module):
         ]
 
     def add_noise_to_latent(self, x, noise, amount):
+            """TODO: Add docstring."""
         return x * (1 - amount) + noise * amount
 
     def fix_dimensions(self, width, height):
+            """TODO: Add docstring."""
         return width // 16 * 16, height // 16 * 16
 
     def diffusers_weight_mapping(self):
+            """TODO: Add docstring."""
         for i in range(self.model.depth):
             yield f"transformer.transformer_blocks.{i}.attn.to_q", f"diffusion_model_joint_blocks_{i}_x_block_attn_qkv_q_proj"
             yield f"transformer.transformer_blocks.{i}.attn.to_k", f"diffusion_model_joint_blocks_{i}_x_block_attn_qkv_k_proj"

@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import math
 
 import gradio as gr
@@ -9,12 +10,15 @@ from modules.shared import opts, state
 
 class Script(scripts.Script):
     def title(self):
+            """TODO: Add docstring."""
         return "Loopback"
 
     def show(self, is_img2img):
+            """TODO: Add docstring."""
         return is_img2img
 
     def ui(self, is_img2img):
+            """TODO: Add docstring."""
         loops = gr.Slider(minimum=1, maximum=32, step=1, label='Loops', value=4, elem_id=self.elem_id("loops"))
         final_denoising_strength = gr.Slider(minimum=0, maximum=1, step=0.01, label='Final denoising strength', value=0.5, elem_id=self.elem_id("final_denoising_strength"))
         denoising_curve = gr.Dropdown(label="Denoising strength curve", choices=["Aggressive", "Linear", "Lazy"], value="Linear")
@@ -23,6 +27,7 @@ class Script(scripts.Script):
         return [loops, final_denoising_strength, denoising_curve, append_interrogation]
 
     def run(self, p, loops, final_denoising_strength, denoising_curve, append_interrogation):
+            """TODO: Add docstring."""
         processing.fix_seed(p)
         batch_count = p.n_iter
         p.extra_generation_params = {
@@ -48,6 +53,7 @@ class Script(scripts.Script):
         initial_color_corrections = [processing.setup_color_correction(p.init_images[0])]
 
         def calculate_denoising_strength(loop):
+                """TODO: Add docstring."""
             strength = initial_denoising_strength
 
             if loops == 1:

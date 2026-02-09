@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import base64
 import json
 import os.path
@@ -14,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 class EmbeddingEncoder(json.JSONEncoder):
     def default(self, obj):
+            """TODO: Add docstring."""
         if isinstance(obj, torch.Tensor):
             return {'TORCHTENSOR': obj.cpu().detach().numpy().tolist()}
         return json.JSONEncoder.default(self, obj)
@@ -21,37 +23,44 @@ class EmbeddingEncoder(json.JSONEncoder):
 
 class EmbeddingDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
+            """TODO: Add docstring."""
         json.JSONDecoder.__init__(self, *args, object_hook=self.object_hook, **kwargs)
 
     def object_hook(self, d):
+            """TODO: Add docstring."""
         if 'TORCHTENSOR' in d:
             return torch.from_numpy(np.array(d['TORCHTENSOR']))
         return d
 
 
 def embedding_to_b64(data):
+        """TODO: Add docstring."""
     d = json.dumps(data, cls=EmbeddingEncoder)
     return base64.b64encode(d.encode())
 
 
 def embedding_from_b64(data):
+        """TODO: Add docstring."""
     d = base64.b64decode(data)
     return json.loads(d, cls=EmbeddingDecoder)
 
 
 def lcg(m=2**32, a=1664525, c=1013904223, seed=0):
+        """TODO: Add docstring."""
     while True:
         seed = (a * seed + c) % m
         yield seed % 255
 
 
 def xor_block(block):
+        """TODO: Add docstring."""
     g = lcg()
     randblock = np.array([next(g) for _ in range(np.prod(block.shape))]).astype(np.uint8).reshape(block.shape)
     return np.bitwise_xor(block.astype(np.uint8), randblock & 0x0F)
 
 
 def style_block(block, sequence):
+        """TODO: Add docstring."""
     im = Image.new('RGB', (block.shape[1], block.shape[0]))
     draw = ImageDraw.Draw(im)
     i = 0
@@ -70,6 +79,7 @@ def style_block(block, sequence):
 
 
 def insert_image_data_embed(image, data):
+        """TODO: Add docstring."""
     d = 3
     data_compressed = zlib.compress(json.dumps(data, cls=EmbeddingEncoder).encode(), level=9)
     data_np_ = np.frombuffer(data_compressed, np.uint8).copy()
@@ -106,6 +116,7 @@ def insert_image_data_embed(image, data):
 
 
 def crop_black(img, tol=0):
+        """TODO: Add docstring."""
     mask = (img > tol).all(2)
     mask0, mask1 = mask.any(0), mask.any(1)
     col_start, col_end = mask0.argmax(), mask.shape[1]-mask0[::-1].argmax()
@@ -114,6 +125,7 @@ def crop_black(img, tol=0):
 
 
 def extract_image_data_embed(image):
+        """TODO: Add docstring."""
     d = 3
     outarr = crop_black(np.array(image.convert('RGB').getdata()).reshape(image.size[1], image.size[0], d).astype(np.uint8)) & 0x0F
     black_cols = np.where(np.sum(outarr, axis=(0, 2)) == 0)
@@ -135,6 +147,7 @@ def extract_image_data_embed(image):
 
 
 def caption_image_overlay(srcimage, title, footerLeft, footerMid, footerRight, textfont=None):
+        """TODO: Add docstring."""
     from modules.images import get_font
     if textfont:
         warnings.warn(

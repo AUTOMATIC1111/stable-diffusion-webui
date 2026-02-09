@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from __future__ import annotations
 
 import logging
@@ -40,6 +41,7 @@ def rgb_tensor_to_bgr_image(tensor: torch.Tensor, *, min_max=(0.0, 1.0)) -> np.n
 
 
 def create_face_helper(device) -> FaceRestoreHelper:
+        """TODO: Add docstring."""
     from facexlib.detection import retinaface
     from facexlib.utils.face_restoration_helper import FaceRestoreHelper
     if hasattr(retinaface, 'device'):
@@ -56,6 +58,7 @@ def create_face_helper(device) -> FaceRestoreHelper:
 
 
 def restore_with_face_helper(
+        """TODO: Add docstring."""
     np_image: np.ndarray,
     face_helper: FaceRestoreHelper,
     restore_face: Callable[[torch.Tensor], torch.Tensor],
@@ -111,11 +114,13 @@ def restore_with_face_helper(
 
 
 class CommonFaceRestoration(face_restoration.FaceRestoration):
+        """TODO: Add docstring."""
     net: torch.Module | None
     model_url: str
     model_download_name: str
 
     def __init__(self, model_path: str):
+            """TODO: Add docstring."""
         super().__init__()
         self.net = None
         self.model_path = model_path
@@ -123,9 +128,11 @@ class CommonFaceRestoration(face_restoration.FaceRestoration):
 
     @cached_property
     def face_helper(self) -> FaceRestoreHelper:
+            """TODO: Add docstring."""
         return create_face_helper(self.get_device())
 
     def send_model_to(self, device):
+            """TODO: Add docstring."""
         if self.net:
             logger.debug("Sending %s to %s", self.net, device)
             self.net.to(device)
@@ -135,12 +142,15 @@ class CommonFaceRestoration(face_restoration.FaceRestoration):
             self.face_helper.face_parse.to(device)
 
     def get_device(self):
+            """TODO: Add docstring."""
         raise NotImplementedError("get_device must be implemented by subclasses")
 
     def load_net(self) -> torch.Module:
+            """TODO: Add docstring."""
         raise NotImplementedError("load_net must be implemented by subclasses")
 
     def restore_with_helper(
+            """TODO: Add docstring."""
         self,
         np_image: np.ndarray,
         restore_face: Callable[[torch.Tensor], torch.Tensor],
@@ -161,6 +171,7 @@ class CommonFaceRestoration(face_restoration.FaceRestoration):
 
 
 def patch_facexlib(dirname: str) -> None:
+        """TODO: Add docstring."""
     import facexlib.detection
     import facexlib.parsing
 
@@ -168,12 +179,15 @@ def patch_facexlib(dirname: str) -> None:
     par_facex_load_file_from_url = facexlib.parsing.load_file_from_url
 
     def update_kwargs(kwargs):
+            """TODO: Add docstring."""
         return dict(kwargs, save_dir=dirname, model_dir=None)
 
     def facex_load_file_from_url(**kwargs):
+            """TODO: Add docstring."""
         return det_facex_load_file_from_url(**update_kwargs(kwargs))
 
     def facex_load_file_from_url2(**kwargs):
+            """TODO: Add docstring."""
         return par_facex_load_file_from_url(**update_kwargs(kwargs))
 
     facexlib.detection.load_file_from_url = facex_load_file_from_url

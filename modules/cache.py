@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import json
 import os
 import os.path
@@ -21,6 +22,7 @@ def dump_cache():
 
 
 def make_cache(subsection: str) -> diskcache.Cache:
+        """TODO: Add docstring."""
     return diskcache.Cache(
         os.path.join(cache_dir, subsection),
         size_limit=2**32,  # 4 GB, culling oldest first
@@ -29,6 +31,7 @@ def make_cache(subsection: str) -> diskcache.Cache:
 
 
 def convert_old_cached_data():
+        """TODO: Add docstring."""
     try:
         with open(cache_filename, "r", encoding="utf8") as file:
             data = json.load(file)

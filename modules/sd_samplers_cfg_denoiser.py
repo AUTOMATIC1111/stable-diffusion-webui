@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import torch
 from modules import prompt_parser, sd_samplers_common
 
@@ -9,6 +10,7 @@ from modules.script_callbacks import AfterCFGCallbackParams, cfg_after_cfg_callb
 
 
 def catenate_conds(conds):
+        """TODO: Add docstring."""
     if not isinstance(conds[0], dict):
         return torch.cat(conds)
 
@@ -16,6 +18,7 @@ def catenate_conds(conds):
 
 
 def subscript_cond(cond, a, b):
+        """TODO: Add docstring."""
     if not isinstance(cond, dict):
         return cond[a:b]
 
@@ -23,6 +26,7 @@ def subscript_cond(cond, a, b):
 
 
 def pad_cond(tensor, repeats, empty):
+        """TODO: Add docstring."""
     if not isinstance(tensor, dict):
         return torch.cat([tensor, empty.repeat((tensor.shape[0], repeats, 1))], axis=1)
 
@@ -39,6 +43,7 @@ class CFGDenoiser(torch.nn.Module):
     """
 
     def __init__(self, sampler):
+            """TODO: Add docstring."""
         super().__init__()
         self.model_wrap = None
         self.mask = None
@@ -69,9 +74,11 @@ class CFGDenoiser(torch.nn.Module):
 
     @property
     def inner_model(self):
+            """TODO: Add docstring."""
         raise NotImplementedError()
 
     def combine_denoised(self, x_out, conds_list, uncond, cond_scale):
+            """TODO: Add docstring."""
         denoised_uncond = x_out[-uncond.shape[0]:]
         denoised = torch.clone(denoised_uncond)
 
@@ -82,15 +89,18 @@ class CFGDenoiser(torch.nn.Module):
         return denoised
 
     def combine_denoised_for_edit_model(self, x_out, cond_scale):
+            """TODO: Add docstring."""
         out_cond, out_img_cond, out_uncond = x_out.chunk(3)
         denoised = out_uncond + cond_scale * (out_cond - out_img_cond) + self.image_cfg_scale * (out_img_cond - out_uncond)
 
         return denoised
 
     def get_pred_x0(self, x_in, x_out, sigma):
+            """TODO: Add docstring."""
         return x_out
 
     def update_inner_model(self):
+            """TODO: Add docstring."""
         self.model_wrap = None
 
         c, uc = self.p.get_conds()
@@ -98,6 +108,7 @@ class CFGDenoiser(torch.nn.Module):
         self.sampler.sampler_extra_args['uncond'] = uc
 
     def pad_cond_uncond(self, cond, uncond):
+            """TODO: Add docstring."""
         empty = shared.sd_model.cond_stage_model_empty_prompt
         num_repeats = (cond.shape[1] - uncond.shape[1]) // empty.shape[1]
 
@@ -154,6 +165,7 @@ class CFGDenoiser(torch.nn.Module):
         return cond, uncond
 
     def forward(self, x, sigma, uncond, cond, cond_scale, s_min_uncond, image_cond):
+            """TODO: Add docstring."""
         if state.interrupted or state.skipped:
             raise sd_samplers_common.InterruptedException
 
@@ -172,6 +184,7 @@ class CFGDenoiser(torch.nn.Module):
 
         # If we use masks, blending between the denoised and original latent images occurs here.
         def apply_blend(current_latent):
+                """TODO: Add docstring."""
             blended_latent = current_latent * self.nmask + self.init_latent * self.mask
 
             if self.p.scripts is not None:

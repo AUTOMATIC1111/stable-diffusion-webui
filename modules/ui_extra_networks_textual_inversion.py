@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 
 from modules import ui_extra_networks, sd_hijack, shared
@@ -6,13 +7,16 @@ from modules.ui_extra_networks import quote_js
 
 class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
     def __init__(self):
+            """TODO: Add docstring."""
         super().__init__('Textual Inversion')
         self.allow_negative_prompt = True
 
     def refresh(self):
+            """TODO: Add docstring."""
         sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)
 
     def create_item(self, name, index=None, enable_filter=True):
+            """TODO: Add docstring."""
         embedding = sd_hijack.model_hijack.embedding_db.word_embeddings.get(name)
         if embedding is None:
             return
@@ -34,6 +38,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
         }
 
     def list_items(self):
+            """TODO: Add docstring."""
         # instantiate a list to protect against concurrent modification
         names = list(sd_hijack.model_hijack.embedding_db.word_embeddings)
         for index, name in enumerate(names):
@@ -42,4 +47,5 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
                 yield item
 
     def allowed_directories_for_previews(self):
+            """TODO: Add docstring."""
         return list(sd_hijack.model_hijack.embedding_db.embedding_dirs)

@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 import re
 import shutil
@@ -14,6 +15,7 @@ import safetensors.torch
 
 
 def run_pnginfo(image):
+        """TODO: Add docstring."""
     if image is None:
         return '', '', ''
 
@@ -38,6 +40,7 @@ def run_pnginfo(image):
 
 def create_config(ckpt_result, config_source, a, b, c):
     def config(x):
+            """TODO: Add docstring."""
         res = sd_models_config.find_checkpoint_config_near_filename(x) if x else None
         return res if res != shared.sd_default_config else None
 
@@ -66,6 +69,7 @@ checkpoint_dict_skip_on_merge = ["cond_stage_model.transformer.text_model.embedd
 
 
 def to_half(tensor, enable):
+        """TODO: Add docstring."""
     if enable and tensor.dtype == torch.float:
         return tensor.half()
 
@@ -73,6 +77,7 @@ def to_half(tensor, enable):
 
 
 def read_metadata(primary_model_name, secondary_model_name, tertiary_model_name):
+        """TODO: Add docstring."""
     metadata = {}
 
     for checkpoint_name in [primary_model_name, secondary_model_name, tertiary_model_name]:
@@ -86,23 +91,29 @@ def read_metadata(primary_model_name, secondary_model_name, tertiary_model_name)
 
 
 def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_model_name, interp_method, multiplier, save_as_half, custom_name, checkpoint_format, config_source, bake_in_vae, discard_weights, save_metadata, add_merge_recipe, copy_metadata_fields, metadata_json):
+        """TODO: Add docstring."""
     shared.state.begin(job="model-merge")
 
     def fail(message):
+            """TODO: Add docstring."""
         shared.state.textinfo = message
         shared.state.end()
         return [*[gr.update() for _ in range(4)], message]
 
     def weighted_sum(theta0, theta1, alpha):
+            """TODO: Add docstring."""
         return ((1 - alpha) * theta0) + (alpha * theta1)
 
     def get_difference(theta1, theta2):
+            """TODO: Add docstring."""
         return theta1 - theta2
 
     def add_difference(theta0, theta1_2_diff, alpha):
+            """TODO: Add docstring."""
         return theta0 + (alpha * theta1_2_diff)
 
     def filename_weighted_sum():
+            """TODO: Add docstring."""
         a = primary_model_info.model_name
         b = secondary_model_info.model_name
         Ma = round(1 - multiplier, 2)
@@ -111,6 +122,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
         return f"{Ma}({a}) + {Mb}({b})"
 
     def filename_add_difference():
+            """TODO: Add docstring."""
         a = primary_model_info.model_name
         b = secondary_model_info.model_name
         c = tertiary_model_info.model_name
@@ -119,6 +131,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
         return f"{a} + {M}({b} - {c})"
 
     def filename_nothing():
+            """TODO: Add docstring."""
         return primary_model_info.model_name
 
     theta_funcs = {
@@ -292,6 +305,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
         sd_merge_models = {}
 
         def add_model_metadata(checkpoint_info):
+                """TODO: Add docstring."""
             checkpoint_info.calculate_shorthash()
             sd_merge_models[checkpoint_info.sha256] = {
                 "name": checkpoint_info.name,

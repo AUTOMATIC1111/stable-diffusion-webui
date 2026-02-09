@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 import re
 
@@ -11,9 +12,11 @@ re_special = re.compile(r'([\\()])')
 
 class DeepDanbooru:
     def __init__(self):
+            """TODO: Add docstring."""
         self.model = None
 
     def load(self):
+            """TODO: Add docstring."""
         if self.model is not None:
             return
 
@@ -31,15 +34,18 @@ class DeepDanbooru:
         self.model.to(devices.cpu, devices.dtype)
 
     def start(self):
+            """TODO: Add docstring."""
         self.load()
         self.model.to(devices.device)
 
     def stop(self):
+            """TODO: Add docstring."""
         if not shared.opts.interrogate_keep_models_in_memory:
             self.model.to(devices.cpu)
             devices.torch_gc()
 
     def tag(self, pil_image):
+            """TODO: Add docstring."""
         self.start()
         res = self.tag_multi(pil_image)
         self.stop()
@@ -47,6 +53,7 @@ class DeepDanbooru:
         return res
 
     def tag_multi(self, pil_image, force_disable_ranks=False):
+            """TODO: Add docstring."""
         threshold = shared.opts.interrogate_deepbooru_score_threshold
         use_spaces = shared.opts.deepbooru_use_spaces
         use_escape = shared.opts.deepbooru_escape

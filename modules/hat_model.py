@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 import sys
 
@@ -9,6 +10,7 @@ from modules.upscaler_utils import upscale_with_model
 
 class UpscalerHAT(Upscaler):
     def __init__(self, dirname):
+            """TODO: Add docstring."""
         self.name = "HAT"
         self.scalers = []
         self.user_path = dirname
@@ -20,6 +22,7 @@ class UpscalerHAT(Upscaler):
             self.scalers.append(scaler_data)
 
     def do_upscale(self, img, selected_model):
+            """TODO: Add docstring."""
         try:
             model = self.load_model(selected_model)
         except Exception as e:
@@ -34,6 +37,7 @@ class UpscalerHAT(Upscaler):
         )
 
     def load_model(self, path: str):
+            """TODO: Add docstring."""
         if not os.path.isfile(path):
             raise FileNotFoundError(f"Model file {path} not found")
         return modelloader.load_spandrel_model(

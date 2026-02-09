@@ -6,10 +6,12 @@ from modules.textual_inversion import autocrop
 
 
 class ScriptPostprocessingFocalCrop(scripts_postprocessing.ScriptPostprocessing):
+        """TODO: Add docstring."""
     name = "Auto focal point crop"
     order = 4010
 
     def ui(self):
+            """TODO: Add docstring."""
         with ui_components.InputAccordion(False, label="Auto focal point crop") as enable:
             face_weight = gr.Slider(label='Focal point face weight', value=0.9, minimum=0.0, maximum=1.0, step=0.05, elem_id="postprocess_focal_crop_face_weight")
             entropy_weight = gr.Slider(label='Focal point entropy weight', value=0.15, minimum=0.0, maximum=1.0, step=0.05, elem_id="postprocess_focal_crop_entropy_weight")
@@ -25,6 +27,7 @@ class ScriptPostprocessingFocalCrop(scripts_postprocessing.ScriptPostprocessing)
         }
 
     def process(self, pp: scripts_postprocessing.PostprocessedImage, enable, face_weight, entropy_weight, edges_weight, debug):
+            """TODO: Add docstring."""
         if not enable:
             return
 

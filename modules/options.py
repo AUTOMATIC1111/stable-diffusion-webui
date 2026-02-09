@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 import json
 import sys
@@ -12,6 +13,7 @@ from modules.paths_internal import script_path
 
 class OptionInfo:
     def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None, comment_before='', comment_after='', infotext=None, restrict_api=False, category_id=None):
+            """TODO: Add docstring."""
         self.default = default
         self.label = label
         self.component = component
@@ -34,38 +36,46 @@ class OptionInfo:
         """If True, the setting will not be accessible via API"""
 
     def link(self, label, url):
+            """TODO: Add docstring."""
         self.comment_before += f"[<a href='{url}' target='_blank'>{label}</a>]"
         return self
 
     def js(self, label, js_func):
+            """TODO: Add docstring."""
         self.comment_before += f"[<a onclick='{js_func}(); return false'>{label}</a>]"
         return self
 
     def info(self, info):
+            """TODO: Add docstring."""
         self.comment_after += f"<span class='info'>({info})</span>"
         return self
 
     def html(self, html):
+            """TODO: Add docstring."""
         self.comment_after += html
         return self
 
     def needs_restart(self):
+            """TODO: Add docstring."""
         self.comment_after += " <span class='info'>(requires restart)</span>"
         return self
 
     def needs_reload_ui(self):
+            """TODO: Add docstring."""
         self.comment_after += " <span class='info'>(requires Reload UI)</span>"
         return self
 
 
 class OptionHTML(OptionInfo):
     def __init__(self, text):
+            """TODO: Add docstring."""
         super().__init__(str(text).strip(), label='', component=lambda **kwargs: gr.HTML(elem_classes="settings-info", **kwargs))
 
         self.do_not_save = True
 
 
 def options_section(section_identifier, options_dict):
+        """TODO: Add docstring."""
     for v in options_dict.values():
         if len(section_identifier) == 2:
             v.section = section_identifier
@@ -80,14 +90,17 @@ options_builtin_fields = {"data_labels", "data", "restricted_opts", "typemap"}
 
 
 class Options:
+        """TODO: Add docstring."""
     typemap = {int: float}
 
     def __init__(self, data_labels: dict[str, OptionInfo], restricted_opts):
+            """TODO: Add docstring."""
         self.data_labels = data_labels
         self.data = {k: v.default for k, v in self.data_labels.items() if not v.do_not_save}
         self.restricted_opts = restricted_opts
 
     def __setattr__(self, key, value):
+            """TODO: Add docstring."""
         if key in options_builtin_fields:
             return super(Options, self).__setattr__(key, value)
 
@@ -129,6 +142,7 @@ class Options:
         return super(Options, self).__setattr__(key, value)
 
     def __getattr__(self, item):
+            """TODO: Add docstring."""
         if item in options_builtin_fields:
             return super(Options, self).__getattribute__(item)
 
@@ -180,12 +194,14 @@ class Options:
         return data_label.default
 
     def save(self, filename):
+            """TODO: Add docstring."""
         assert not cmd_opts.freeze_settings, "saving settings is disabled"
 
         with open(filename, "w", encoding="utf8") as file:
             json.dump(self.data, file, indent=4, ensure_ascii=False)
 
     def same_type(self, x, y):
+            """TODO: Add docstring."""
         if x is None or y is None:
             return True
 
@@ -195,6 +211,7 @@ class Options:
         return type_x == type_y
 
     def load(self, filename):
+            """TODO: Add docstring."""
         try:
             with open(filename, "r", encoding="utf8") as file:
                 self.data = json.load(file)
@@ -227,6 +244,7 @@ class Options:
             print(f"The program is likely to not work with bad settings.\nSettings file: {filename}\nEither fix the file, or delete it and restart.", file=sys.stderr)
 
     def onchange(self, key, func, call=True):
+            """TODO: Add docstring."""
         item = self.data_labels.get(key)
         item.onchange = func
 
@@ -234,6 +252,7 @@ class Options:
             func()
 
     def dumpjson(self):
+            """TODO: Add docstring."""
         d = {k: self.data.get(k, v.default) for k, v in self.data_labels.items()}
         d["_comments_before"] = {k: v.comment_before for k, v in self.data_labels.items() if v.comment_before is not None}
         d["_comments_after"] = {k: v.comment_after for k, v in self.data_labels.items() if v.comment_after is not None}
@@ -254,6 +273,7 @@ class Options:
         return json.dumps(d)
 
     def add_option(self, key, info):
+            """TODO: Add docstring."""
         self.data_labels[key] = info
         if key not in self.data and not info.do_not_save:
             self.data[key] = info.default
@@ -286,6 +306,7 @@ class Options:
                 category_ids[category_id] = len(category_ids)
 
         def sort_key(x):
+                """TODO: Add docstring."""
             item: OptionInfo = x[1]
             category_order = category_ids.get(item.category_id, len(category_ids))
             section_order = item.section[1]
@@ -319,14 +340,17 @@ class Options:
 
 @dataclass
 class OptionsCategory:
+        """TODO: Add docstring."""
     id: str
     label: str
 
 class OptionsCategories:
     def __init__(self):
+            """TODO: Add docstring."""
         self.mapping = {}
 
     def register_category(self, category_id, label):
+            """TODO: Add docstring."""
         if category_id in self.mapping:
             return category_id
 

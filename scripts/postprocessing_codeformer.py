@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from PIL import Image
 import numpy as np
 
@@ -6,10 +7,12 @@ import gradio as gr
 
 
 class ScriptPostprocessingCodeFormer(scripts_postprocessing.ScriptPostprocessing):
+        """TODO: Add docstring."""
     name = "CodeFormer"
     order = 3000
 
     def ui(self):
+            """TODO: Add docstring."""
         with ui_components.InputAccordion(False, label="CodeFormer") as enable:
             with gr.Row():
                 codeformer_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Visibility", value=1.0, elem_id="extras_codeformer_visibility")
@@ -22,6 +25,7 @@ class ScriptPostprocessingCodeFormer(scripts_postprocessing.ScriptPostprocessing
         }
 
     def process(self, pp: scripts_postprocessing.PostprocessedImage, enable, codeformer_visibility, codeformer_weight):
+            """TODO: Add docstring."""
         if codeformer_visibility == 0 or not enable:
             return
 

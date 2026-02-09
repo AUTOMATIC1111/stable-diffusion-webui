@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from __future__ import annotations
 
 import logging
@@ -24,9 +25,11 @@ codeformer: face_restoration.FaceRestoration | None = None
 
 class FaceRestorerCodeFormer(face_restoration_utils.CommonFaceRestoration):
     def name(self):
+            """TODO: Add docstring."""
         return "CodeFormer"
 
     def load_net(self) -> torch.Module:
+            """TODO: Add docstring."""
         for model_path in modelloader.load_models(
             model_path=self.model_path,
             model_url=model_url,
@@ -42,13 +45,16 @@ class FaceRestorerCodeFormer(face_restoration_utils.CommonFaceRestoration):
         raise ValueError("No codeformer model found")
 
     def get_device(self):
+            """TODO: Add docstring."""
         return devices.device_codeformer
 
     def restore(self, np_image, w: float | None = None):
+            """TODO: Add docstring."""
         if w is None:
             w = getattr(shared.opts, "code_former_weight", 0.5)
 
         def restore_face(cropped_face_t):
+                """TODO: Add docstring."""
             assert self.net is not None
             return self.net(cropped_face_t, weight=w, adain=True)[0]
 
@@ -56,6 +62,7 @@ class FaceRestorerCodeFormer(face_restoration_utils.CommonFaceRestoration):
 
 
 def setup_model(dirname: str) -> None:
+        """TODO: Add docstring."""
     global codeformer
     try:
         codeformer = FaceRestorerCodeFormer(dirname)

@@ -1,8 +1,10 @@
+    """TODO: Add docstring."""
 from modules import scripts, shared, script_callbacks
 import re
 
 
 def strip_comments(text):
+        """TODO: Add docstring."""
     text = re.sub('(^|\n)#[^\n]*(\n|$)', '\n', text)  # while line comment
     text = re.sub('#[^\n]*(\n|$)', '\n', text)  # in the middle of the line comment
 
@@ -11,12 +13,15 @@ def strip_comments(text):
 
 class ScriptStripComments(scripts.Script):
     def title(self):
+            """TODO: Add docstring."""
         return "Comments"
 
     def show(self, is_img2img):
+            """TODO: Add docstring."""
         return scripts.AlwaysVisible
 
     def process(self, p, *args):
+            """TODO: Add docstring."""
         if not shared.opts.enable_prompt_comments:
             return
 
@@ -35,6 +40,7 @@ class ScriptStripComments(scripts.Script):
 
 
 def before_token_counter(params: script_callbacks.BeforeTokenCounterParams):
+        """TODO: Add docstring."""
     if not shared.opts.enable_prompt_comments:
         return
 

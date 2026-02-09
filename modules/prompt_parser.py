@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from __future__ import annotations
 
 import re
@@ -73,10 +74,12 @@ def get_learned_conditioning_prompt_schedules(prompts, base_steps, hires_steps=N
         steps = hires_steps
 
     def collect_steps(steps, tree):
+            """TODO: Add docstring."""
         res = [steps]
 
         class CollectSteps(lark.Visitor):
             def scheduled(self, tree):
+                    """TODO: Add docstring."""
                 s = tree.children[-2]
                 v = float(s)
                 if use_old_scheduling:
@@ -91,6 +94,7 @@ def get_learned_conditioning_prompt_schedules(prompts, base_steps, hires_steps=N
                     res.append(tree.children[-2])
 
             def alternate(self, tree):
+                    """TODO: Add docstring."""
                 res.extend(range(1, steps+1))
 
         CollectSteps().visit(tree)
@@ -99,13 +103,16 @@ def get_learned_conditioning_prompt_schedules(prompts, base_steps, hires_steps=N
     def at_step(step, tree):
         class AtStep(lark.Transformer):
             def scheduled(self, args):
+                    """TODO: Add docstring."""
                 before, after, _, when, _ = args
                 yield before or () if step <= when else after
             def alternate(self, args):
+                    """TODO: Add docstring."""
                 args = ["" if not arg else arg for arg in args]
                 yield args[(step - 1) % len(args)]
             def start(self, args):
                 def flatten(x):
+                        """TODO: Add docstring."""
                     if isinstance(x, str):
                         yield x
                     else:
@@ -113,13 +120,16 @@ def get_learned_conditioning_prompt_schedules(prompts, base_steps, hires_steps=N
                             yield from flatten(gen)
                 return ''.join(flatten(args))
             def plain(self, args):
+                    """TODO: Add docstring."""
                 yield args[0].value
             def __default__(self, data, children, meta):
+                    """TODO: Add docstring."""
                 for child in children:
                     yield child
         return AtStep().transform(tree)
 
     def get_schedule(prompt):
+            """TODO: Add docstring."""
         try:
             tree = schedule_parser.parse(prompt)
         except lark.exceptions.LarkError:
@@ -142,6 +152,7 @@ class SdConditioning(list):
     Can also specify width and height of created image - SDXL needs it.
     """
     def __init__(self, prompts, is_negative_prompt=False, width=None, height=None, copy_from=None):
+            """TODO: Add docstring."""
         super().__init__()
         self.extend(prompts)
 
@@ -207,6 +218,7 @@ re_weight = re.compile(r"^((?:\s|.)*?)(?:\s*:\s*([-+]?(?:\d+\.?|\d*\.\d+)))?\s*$
 
 
 def get_multicond_prompt_list(prompts: SdConditioning | list[str]):
+        """TODO: Add docstring."""
     res_indexes = []
 
     prompt_indexes = {}
@@ -239,12 +251,14 @@ def get_multicond_prompt_list(prompts: SdConditioning | list[str]):
 
 class ComposableScheduledPromptConditioning:
     def __init__(self, schedules, weight=1.0):
+            """TODO: Add docstring."""
         self.schedules: list[ScheduledPromptConditioning] = schedules
         self.weight: float = weight
 
 
 class MulticondLearnedConditioning:
     def __init__(self, shape, batch):
+            """TODO: Add docstring."""
         self.shape: tuple = shape  # the shape field is needed to send this object to DDIM/PLMS
         self.batch: list[list[ComposableScheduledPromptConditioning]] = batch
 
@@ -269,15 +283,18 @@ def get_multicond_learned_conditioning(model, prompts, steps, hires_steps=None, 
 
 class DictWithShape(dict):
     def __init__(self, x, shape=None):
+            """TODO: Add docstring."""
         super().__init__()
         self.update(x)
 
     @property
     def shape(self):
+            """TODO: Add docstring."""
         return self["crossattn"].shape
 
 
 def reconstruct_cond_batch(c: list[list[ScheduledPromptConditioning]], current_step):
+        """TODO: Add docstring."""
     param = c[0][0].cond
     is_dict = isinstance(param, dict)
 
@@ -305,6 +322,7 @@ def reconstruct_cond_batch(c: list[list[ScheduledPromptConditioning]], current_s
 
 
 def stack_conds(tensors):
+        """TODO: Add docstring."""
     # if prompts have wildly different lengths above the limit we'll get tensors of different shapes
     # and won't be able to torch.stack them. So this fixes that.
     token_count = max([x.shape[0] for x in tensors])
@@ -319,6 +337,7 @@ def stack_conds(tensors):
 
 
 def reconstruct_multicond_batch(c: MulticondLearnedConditioning, current_step):
+        """TODO: Add docstring."""
     param = c.batch[0][0].schedules[0].cond
 
     tensors = []
@@ -411,6 +430,7 @@ def parse_prompt_attention(text):
     square_bracket_multiplier = 1 / 1.1
 
     def multiply_range(start_position, multiplier):
+            """TODO: Add docstring."""
         for p in range(start_position, len(res)):
             res[p][1] *= multiplier
 
@@ -462,3 +482,5 @@ if __name__ == "__main__":
     doctest.testmod(optionflags=doctest.NORMALIZE_WHITESPACE)
 else:
     import torch  # doctest faster
+
+# TODO: Consider using mixed precision training (torch.cuda.amp) for faster training

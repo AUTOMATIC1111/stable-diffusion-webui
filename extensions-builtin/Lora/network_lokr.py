@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import torch
 
 import lyco_helpers
@@ -6,6 +7,7 @@ import network
 
 class ModuleTypeLokr(network.ModuleType):
     def create_module(self, net: network.Network, weights: network.NetworkWeights):
+            """TODO: Add docstring."""
         has_1 = "lokr_w1" in weights.w or ("lokr_w1_a" in weights.w and "lokr_w1_b" in weights.w)
         has_2 = "lokr_w2" in weights.w or ("lokr_w2_a" in weights.w and "lokr_w2_b" in weights.w)
         if has_1 and has_2:
@@ -15,6 +17,7 @@ class ModuleTypeLokr(network.ModuleType):
 
 
 def make_kron(orig_shape, w1, w2):
+        """TODO: Add docstring."""
     if len(w2.shape) == 4:
         w1 = w1.unsqueeze(2).unsqueeze(2)
     w2 = w2.contiguous()
@@ -23,6 +26,7 @@ def make_kron(orig_shape, w1, w2):
 
 class NetworkModuleLokr(network.NetworkModule):
     def __init__(self,  net: network.Network, weights: network.NetworkWeights):
+            """TODO: Add docstring."""
         super().__init__(net, weights)
 
         self.w1 = weights.w.get("lokr_w1")
@@ -36,6 +40,7 @@ class NetworkModuleLokr(network.NetworkModule):
         self.t2 = weights.w.get("lokr_t2")
 
     def calc_updown(self, orig_weight):
+            """TODO: Add docstring."""
         if self.w1 is not None:
             w1 = self.w1.to(orig_weight.device)
         else:

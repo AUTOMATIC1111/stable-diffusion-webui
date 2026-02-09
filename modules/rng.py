@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import torch
 
 from modules import devices, rng_philox, shared
@@ -73,6 +74,7 @@ def manual_seed(seed):
 
 
 def create_generator(seed):
+        """TODO: Add docstring."""
     if shared.opts.randn_source == "NV":
         return rng_philox.Generator(seed)
 
@@ -83,6 +85,7 @@ def create_generator(seed):
 
 # from https://discuss.pytorch.org/t/help-regarding-slerp-function-for-generative-model-sampling/32475/3
 def slerp(val, low, high):
+        """TODO: Add docstring."""
     low_norm = low/torch.norm(low, dim=1, keepdim=True)
     high_norm = high/torch.norm(high, dim=1, keepdim=True)
     dot = (low_norm*high_norm).sum(1)
@@ -98,6 +101,7 @@ def slerp(val, low, high):
 
 class ImageRNG:
     def __init__(self, shape, seeds, subseeds=None, subseed_strength=0.0, seed_resize_from_h=0, seed_resize_from_w=0):
+            """TODO: Add docstring."""
         self.shape = tuple(map(int, shape))
         self.seeds = seeds
         self.subseeds = subseeds
@@ -110,6 +114,7 @@ class ImageRNG:
         self.is_first = True
 
     def first(self):
+            """TODO: Add docstring."""
         noise_shape = self.shape if self.seed_resize_from_h <= 0 or self.seed_resize_from_w <= 0 else (self.shape[0], int(self.seed_resize_from_h) // 8, int(self.seed_resize_from_w // 8))
 
         xs = []
@@ -151,6 +156,7 @@ class ImageRNG:
         return torch.stack(xs).to(shared.device)
 
     def next(self):
+            """TODO: Add docstring."""
         if self.is_first:
             self.is_first = False
             return self.first()

@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 
 from modules import shared, ui_extra_networks
@@ -7,12 +8,15 @@ from modules.hashes import sha256_from_cache
 
 class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
     def __init__(self):
+            """TODO: Add docstring."""
         super().__init__('Hypernetworks')
 
     def refresh(self):
+            """TODO: Add docstring."""
         shared.reload_hypernetworks()
 
     def create_item(self, name, index=None, enable_filter=True):
+            """TODO: Add docstring."""
         full_path = shared.hypernetworks.get(name)
         if full_path is None:
             return
@@ -36,6 +40,7 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
         }
 
     def list_items(self):
+            """TODO: Add docstring."""
         # instantiate a list to protect against concurrent modification
         names = list(shared.hypernetworks)
         for index, name in enumerate(names):
@@ -44,5 +49,6 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
                 yield item
 
     def allowed_directories_for_previews(self):
+            """TODO: Add docstring."""
         return [shared.cmd_opts.hypernetwork_dir]
 

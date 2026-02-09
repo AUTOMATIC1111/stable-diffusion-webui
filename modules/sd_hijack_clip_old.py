@@ -1,8 +1,10 @@
+    """TODO: Add docstring."""
 from modules import sd_hijack_clip
 from modules import shared
 
 
 def process_text_old(self: sd_hijack_clip.FrozenCLIPEmbedderWithCustomWordsBase, texts):
+        """TODO: Add docstring."""
     id_start = self.id_start
     id_end = self.id_end
     maxlen = self.wrapped.max_length  # you get to stay at 77
@@ -70,6 +72,7 @@ def process_text_old(self: sd_hijack_clip.FrozenCLIPEmbedderWithCustomWordsBase,
 
 
 def forward_old(self: sd_hijack_clip.FrozenCLIPEmbedderWithCustomWordsBase, texts):
+        """TODO: Add docstring."""
     batch_multipliers, remade_batch_tokens, used_custom_terms, hijack_comments, hijack_fixes, token_count = process_text_old(self, texts)
 
     self.hijack.comments += hijack_comments

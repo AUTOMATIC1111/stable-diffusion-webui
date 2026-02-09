@@ -5,11 +5,13 @@ import requests
 
 @pytest.fixture()
 def url_img2img(base_url):
+        """TODO: Add docstring."""
     return f"{base_url}/sdapi/v1/img2img"
 
 
 @pytest.fixture()
 def simple_img2img_request(img2img_basic_image_base64):
+        """TODO: Add docstring."""
     return {
         "batch_size": 1,
         "cfg_scale": 7,
@@ -48,21 +50,25 @@ def simple_img2img_request(img2img_basic_image_base64):
 
 
 def test_img2img_simple_performed(url_img2img, simple_img2img_request):
+        """TODO: Add docstring."""
     assert requests.post(url_img2img, json=simple_img2img_request).status_code == 200
 
 
 def test_inpainting_masked_performed(url_img2img, simple_img2img_request, mask_basic_image_base64):
+        """TODO: Add docstring."""
     simple_img2img_request["mask"] = mask_basic_image_base64
     assert requests.post(url_img2img, json=simple_img2img_request).status_code == 200
 
 
 def test_inpainting_with_inverted_masked_performed(url_img2img, simple_img2img_request, mask_basic_image_base64):
+        """TODO: Add docstring."""
     simple_img2img_request["mask"] = mask_basic_image_base64
     simple_img2img_request["inpainting_mask_invert"] = True
     assert requests.post(url_img2img, json=simple_img2img_request).status_code == 200
 
 
 def test_img2img_sd_upscale_performed(url_img2img, simple_img2img_request):
+        """TODO: Add docstring."""
     simple_img2img_request["script_name"] = "sd upscale"
     simple_img2img_request["script_args"] = ["", 8, "Lanczos", 2.0]
     assert requests.post(url_img2img, json=simple_img2img_request).status_code == 200

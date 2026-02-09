@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from __future__ import annotations
 from pathlib import Path
 from modules import errors
@@ -8,6 +9,7 @@ import shutil
 
 
 class PromptStyle(typing.NamedTuple):
+        """TODO: Add docstring."""
     name: str
     prompt: str | None
     negative_prompt: str | None
@@ -15,6 +17,7 @@ class PromptStyle(typing.NamedTuple):
 
 
 def merge_prompts(style_prompt: str, prompt: str) -> str:
+        """TODO: Add docstring."""
     if "{prompt}" in style_prompt:
         res = style_prompt.replace("{prompt}", prompt)
     else:
@@ -25,6 +28,7 @@ def merge_prompts(style_prompt: str, prompt: str) -> str:
 
 
 def apply_styles_to_prompt(prompt, styles):
+        """TODO: Add docstring."""
     for style in styles:
         prompt = merge_prompts(style, prompt)
 
@@ -81,6 +85,7 @@ def extract_original_prompts(style: PromptStyle, prompt, negative_prompt):
 
 class StyleDatabase:
     def __init__(self, paths: list[str | Path]):
+            """TODO: Add docstring."""
         self.no_style = PromptStyle("None", "", "", None)
         self.styles = {}
         self.paths = paths
@@ -130,6 +135,7 @@ class StyleDatabase:
                 self.load_from_csv(styles_file)
 
     def load_from_csv(self, path: str | Path):
+            """TODO: Add docstring."""
         try:
             with open(path, "r", encoding="utf-8-sig", newline="") as file:
                 reader = csv.DictReader(file, skipinitialspace=True)
@@ -167,22 +173,27 @@ class StyleDatabase:
         return style_paths
 
     def get_style_prompts(self, styles):
+            """TODO: Add docstring."""
         return [self.styles.get(x, self.no_style).prompt for x in styles]
 
     def get_negative_style_prompts(self, styles):
+            """TODO: Add docstring."""
         return [self.styles.get(x, self.no_style).negative_prompt for x in styles]
 
     def apply_styles_to_prompt(self, prompt, styles):
+            """TODO: Add docstring."""
         return apply_styles_to_prompt(
             prompt, [self.styles.get(x, self.no_style).prompt for x in styles]
         )
 
     def apply_negative_styles_to_prompt(self, prompt, styles):
+            """TODO: Add docstring."""
         return apply_styles_to_prompt(
             prompt, [self.styles.get(x, self.no_style).negative_prompt for x in styles]
         )
 
     def save_styles(self, path: str = None) -> None:
+            """TODO: Add docstring."""
         # The path argument is deprecated, but kept for backwards compatibility
 
         style_paths = self.get_style_paths()
@@ -208,6 +219,7 @@ class StyleDatabase:
                     )
 
     def extract_styles_from_prompt(self, prompt, negative_prompt):
+            """TODO: Add docstring."""
         extracted = []
 
         applicable_styles = list(self.styles.values())

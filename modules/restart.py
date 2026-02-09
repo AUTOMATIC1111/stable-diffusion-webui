@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 from pathlib import Path
 
@@ -22,4 +23,5 @@ def restart_program() -> None:
 
 
 def stop_program() -> None:
+        """TODO: Add docstring."""
     os._exit(0)

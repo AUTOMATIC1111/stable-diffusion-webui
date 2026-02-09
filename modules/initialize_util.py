@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import json
 import os
 import signal
@@ -8,6 +9,7 @@ from modules.timer import startup_timer
 
 
 def gradio_server_name():
+        """TODO: Add docstring."""
     from modules.shared_cmd_options import cmd_opts
 
     if cmd_opts.server_name:
@@ -17,6 +19,7 @@ def gradio_server_name():
 
 
 def fix_torch_version():
+        """TODO: Add docstring."""
     import torch
 
     # Truncate version number of nightly/local build of PyTorch to not cause exceptions with CodeFormer or Safetensors
@@ -25,6 +28,7 @@ def fix_torch_version():
         torch.__version__ = re.search(r'[\d.]+[\d]', torch.__version__).group(0)
 
 def fix_pytorch_lightning():
+        """TODO: Add docstring."""
     # Checks if pytorch_lightning.utilities.distributed already exists in the sys.modules cache
     if 'pytorch_lightning.utilities.distributed' not in sys.modules:
         import pytorch_lightning
@@ -59,6 +63,7 @@ def fix_asyncio_event_loop_policy():
         """
 
         def get_event_loop(self) -> asyncio.AbstractEventLoop:
+                """TODO: Add docstring."""
             try:
                 return super().get_event_loop()
             except (RuntimeError, AssertionError):
@@ -73,6 +78,7 @@ def fix_asyncio_event_loop_policy():
 
 
 def restore_config_state_file():
+        """TODO: Add docstring."""
     from modules import shared, config_states
 
     config_state_file = shared.opts.restore_config_state_file
@@ -93,6 +99,7 @@ def restore_config_state_file():
 
 
 def validate_tls_options():
+        """TODO: Add docstring."""
     from modules.shared_cmd_options import cmd_opts
 
     if not (cmd_opts.tls_keyfile and cmd_opts.tls_certfile):
@@ -119,6 +126,7 @@ def get_gradio_auth_creds():
     from modules.shared_cmd_options import cmd_opts
 
     def process_credential_line(s):
+            """TODO: Add docstring."""
         s = s.strip()
         if not s:
             return None
@@ -140,6 +148,7 @@ def get_gradio_auth_creds():
 
 
 def dumpstacks():
+        """TODO: Add docstring."""
     import threading
     import traceback
 
@@ -156,11 +165,13 @@ def dumpstacks():
 
 
 def configure_sigint_handler():
+        """TODO: Add docstring."""
     # make the program just exit at ctrl+c without waiting for anything
 
     from modules import shared
 
     def sigint_handler(sig, frame):
+            """TODO: Add docstring."""
         print(f'Interrupted with signal {sig} in {frame}')
 
         if shared.opts.dump_stacks_on_signal:
@@ -175,6 +186,7 @@ def configure_sigint_handler():
 
 
 def configure_opts_onchange():
+        """TODO: Add docstring."""
     from modules import shared, sd_models, sd_vae, ui_tempdir, sd_hijack
     from modules.call_queue import wrap_queued_call
 
@@ -190,6 +202,7 @@ def configure_opts_onchange():
 
 
 def setup_middleware(app):
+        """TODO: Add docstring."""
     from starlette.middleware.gzip import GZipMiddleware
 
     app.middleware_stack = None  # reset current middleware to allow modifying user provided list
@@ -199,6 +212,7 @@ def setup_middleware(app):
 
 
 def configure_cors_middleware(app):
+        """TODO: Add docstring."""
     from starlette.middleware.cors import CORSMiddleware
     from modules.shared_cmd_options import cmd_opts
 

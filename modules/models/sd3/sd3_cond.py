@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 import safetensors
 import torch
@@ -11,16 +12,20 @@ from modules.models.sd3.other_impls import SDClipModel, SDXLClipG, T5XXLModel, S
 
 class SafetensorsMapping(typing.Mapping):
     def __init__(self, file):
+            """TODO: Add docstring."""
         self.file = file
 
     def __len__(self):
+            """TODO: Add docstring."""
         return len(self.file.keys())
 
     def __iter__(self):
+            """TODO: Add docstring."""
         for key in self.file.keys():
             yield key
 
     def __getitem__(self, key):
+            """TODO: Add docstring."""
         return self.file.get_tensor(key)
 
 
@@ -55,6 +60,7 @@ T5_CONFIG = {
 
 class Sd3ClipLG(sd_hijack_clip.TextConditionalModel):
     def __init__(self, clip_l, clip_g):
+            """TODO: Add docstring."""
         super().__init__()
 
         self.clip_l = clip_l
@@ -70,9 +76,11 @@ class Sd3ClipLG(sd_hijack_clip.TextConditionalModel):
         self.return_pooled = True
 
     def tokenize(self, texts):
+            """TODO: Add docstring."""
         return self.tokenizer(texts, truncation=False, add_special_tokens=False)["input_ids"]
 
     def encode_with_transformers(self, tokens):
+            """TODO: Add docstring."""
         tokens_g = tokens.clone()
 
         for batch_pos in range(tokens_g.shape[0]):
@@ -91,11 +99,13 @@ class Sd3ClipLG(sd_hijack_clip.TextConditionalModel):
         return lg_out
 
     def encode_embedding_init_text(self, init_text, nvpt):
+            """TODO: Add docstring."""
         return torch.zeros((nvpt, 768+1280), device=devices.device) # XXX
 
 
 class Sd3T5(torch.nn.Module):
     def __init__(self, t5xxl):
+            """TODO: Add docstring."""
         super().__init__()
 
         self.t5xxl = t5xxl
@@ -106,9 +116,11 @@ class Sd3T5(torch.nn.Module):
         self.id_pad = empty[1]
 
     def tokenize(self, texts):
+            """TODO: Add docstring."""
         return self.tokenizer(texts, truncation=False, add_special_tokens=False)["input_ids"]
 
     def tokenize_line(self, line, *, target_token_count=None):
+            """TODO: Add docstring."""
         if shared.opts.emphasis != "None":
             parsed = prompt_parser.parse_prompt_attention(line)
         else:
@@ -140,6 +152,7 @@ class Sd3T5(torch.nn.Module):
         return tokens, multipliers
 
     def forward(self, texts, *, token_count):
+            """TODO: Add docstring."""
         if not self.t5xxl or not shared.opts.sd3_enable_t5:
             return torch.zeros((len(texts), token_count, 4096), device=devices.device, dtype=devices.dtype)
 
@@ -154,11 +167,13 @@ class Sd3T5(torch.nn.Module):
         return t5_out
 
     def encode_embedding_init_text(self, init_text, nvpt):
+            """TODO: Add docstring."""
         return torch.zeros((nvpt, 4096), device=devices.device) # XXX
 
 
 class SD3Cond(torch.nn.Module):
     def __init__(self, *args, **kwargs):
+            """TODO: Add docstring."""
         super().__init__(*args, **kwargs)
 
         self.tokenizer = SD3Tokenizer()
@@ -176,6 +191,7 @@ class SD3Cond(torch.nn.Module):
             self.model_t5 = Sd3T5(self.t5xxl)
 
     def forward(self, prompts: list[str]):
+            """TODO: Add docstring."""
         with devices.without_autocast():
             lg_out, vector_out = self.model_lg(prompts)
             t5_out = self.model_t5(prompts, token_count=lg_out.shape[1])
@@ -187,6 +203,7 @@ class SD3Cond(torch.nn.Module):
         }
 
     def before_load_weights(self, state_dict):
+            """TODO: Add docstring."""
         clip_path = os.path.join(shared.models_path, "CLIP")
 
         if 'text_encoders.clip_g.transformer.text_model.embeddings.position_embedding.weight' not in state_dict:
@@ -205,18 +222,23 @@ class SD3Cond(torch.nn.Module):
                 self.t5xxl.transformer.load_state_dict(SafetensorsMapping(file), strict=False)
 
     def encode_embedding_init_text(self, init_text, nvpt):
+            """TODO: Add docstring."""
         return self.model_lg.encode_embedding_init_text(init_text, nvpt)
 
     def tokenize(self, texts):
+            """TODO: Add docstring."""
         return self.model_lg.tokenize(texts)
 
     def medvram_modules(self):
+            """TODO: Add docstring."""
         return [self.clip_g, self.clip_l, self.t5xxl]
 
     def get_token_count(self, text):
+            """TODO: Add docstring."""
         _, token_count = self.model_lg.process_texts([text])
 
         return token_count
 
     def get_target_prompt_token_count(self, token_count):
+            """TODO: Add docstring."""
         return self.model_lg.get_target_prompt_token_count(token_count)

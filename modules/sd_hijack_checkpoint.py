@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from torch.utils.checkpoint import checkpoint
 
 import ldm.modules.attention
@@ -5,14 +6,17 @@ import ldm.modules.diffusionmodules.openaimodel
 
 
 def BasicTransformerBlock_forward(self, x, context=None):
+        """TODO: Add docstring."""
     return checkpoint(self._forward, x, context)
 
 
 def AttentionBlock_forward(self, x):
+        """TODO: Add docstring."""
     return checkpoint(self._forward, x)
 
 
 def ResBlock_forward(self, x, emb):
+        """TODO: Add docstring."""
     return checkpoint(self._forward, x, emb)
 
 
@@ -20,6 +24,7 @@ stored = []
 
 
 def add():
+        """TODO: Add docstring."""
     if len(stored) != 0:
         return
 
@@ -35,6 +40,7 @@ def add():
 
 
 def remove():
+        """TODO: Add docstring."""
     if len(stored) == 0:
         return
 

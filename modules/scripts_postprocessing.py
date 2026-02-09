@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import dataclasses
 import os
 import gradio as gr
@@ -7,12 +8,14 @@ from modules import errors, shared
 
 @dataclasses.dataclass
 class PostprocessedImageSharedInfo:
+        """TODO: Add docstring."""
     target_width: int = None
     target_height: int = None
 
 
 class PostprocessedImage:
     def __init__(self, image):
+            """TODO: Add docstring."""
         self.image = image
         self.info = {}
         self.shared = PostprocessedImageSharedInfo()
@@ -22,6 +25,7 @@ class PostprocessedImage:
         self.caption = None
 
     def get_suffix(self, used_suffixes=None):
+            """TODO: Add docstring."""
         used_suffixes = {} if used_suffixes is None else used_suffixes
         suffix = "-".join(self.nametags)
         if suffix:
@@ -41,6 +45,7 @@ class PostprocessedImage:
         return suffix
 
     def create_copy(self, new_image, *, nametags=None, disable_processing=False):
+            """TODO: Add docstring."""
         pp = PostprocessedImage(new_image)
         pp.shared = self.shared
         pp.nametags = self.nametags.copy()
@@ -54,6 +59,7 @@ class PostprocessedImage:
 
 
 class ScriptPostprocessing:
+        """TODO: Add docstring."""
     filename = None
     controls = None
     args_from = None
@@ -95,10 +101,12 @@ class ScriptPostprocessing:
         pass
 
     def image_changed(self):
+            """TODO: Add docstring."""
         pass
 
 
 def wrap_call(func, filename, funcname, *args, default=None, **kwargs):
+        """TODO: Add docstring."""
     try:
         res = func(*args, **kwargs)
         return res
@@ -110,10 +118,12 @@ def wrap_call(func, filename, funcname, *args, default=None, **kwargs):
 
 class ScriptPostprocessingRunner:
     def __init__(self):
+            """TODO: Add docstring."""
         self.scripts = None
         self.ui_created = False
 
     def initialize_scripts(self, scripts_data):
+            """TODO: Add docstring."""
         self.scripts = []
 
         for script_data in scripts_data:
@@ -126,6 +136,7 @@ class ScriptPostprocessingRunner:
             self.scripts.append(script)
 
     def create_script_ui(self, script, inputs):
+            """TODO: Add docstring."""
         script.args_from = len(inputs)
         script.args_to = len(inputs)
 
@@ -138,6 +149,7 @@ class ScriptPostprocessingRunner:
         script.args_to = len(inputs)
 
     def scripts_in_preferred_order(self):
+            """TODO: Add docstring."""
         if self.scripts is None:
             import modules.scripts
             self.initialize_scripts(modules.scripts.postprocessing_scripts_data)
@@ -146,6 +158,7 @@ class ScriptPostprocessingRunner:
         scripts_filter_out = set(shared.opts.postprocessing_disable_in_extras)
 
         def script_score(name):
+                """TODO: Add docstring."""
             for i, possible_match in enumerate(scripts_order):
                 if possible_match == name:
                     return i
@@ -158,6 +171,7 @@ class ScriptPostprocessingRunner:
         return sorted(filtered_scripts, key=lambda x: script_scores[x.name])
 
     def setup_ui(self):
+            """TODO: Add docstring."""
         inputs = []
 
         for script in self.scripts_in_preferred_order():
@@ -170,6 +184,7 @@ class ScriptPostprocessingRunner:
         return inputs
 
     def run(self, pp: PostprocessedImage, args):
+            """TODO: Add docstring."""
         scripts = []
 
         for script in self.scripts_in_preferred_order():
@@ -208,6 +223,7 @@ class ScriptPostprocessingRunner:
         pp.extra_images = all_images[1:]
 
     def create_args_for_run(self, scripts_args):
+            """TODO: Add docstring."""
         if not self.ui_created:
             with gr.Blocks(analytics_enabled=False):
                 self.setup_ui()
@@ -225,6 +241,7 @@ class ScriptPostprocessingRunner:
         return args
 
     def image_changed(self):
+            """TODO: Add docstring."""
         for script in self.scripts_in_preferred_order():
             script.image_changed()
 

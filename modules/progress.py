@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import base64
 import io
 import time
@@ -21,6 +22,7 @@ recorded_results_limit = 2
 
 
 def start_task(id_task):
+        """TODO: Add docstring."""
     global current_task
 
     current_task = id_task
@@ -28,6 +30,7 @@ def start_task(id_task):
 
 
 def finish_task(id_task):
+        """TODO: Add docstring."""
     global current_task
 
     if current_task == id_task:
@@ -38,31 +41,37 @@ def finish_task(id_task):
         finished_tasks.pop(0)
 
 def create_task_id(task_type):
+        """TODO: Add docstring."""
     N = 7
     res = ''.join(random.choices(string.ascii_uppercase +
     string.digits, k=N))
     return f"task({task_type}-{res})"
 
 def record_results(id_task, res):
+        """TODO: Add docstring."""
     recorded_results.append((id_task, res))
     if len(recorded_results) > recorded_results_limit:
         recorded_results.pop(0)
 
 
 def add_task_to_queue(id_job):
+        """TODO: Add docstring."""
     pending_tasks[id_job] = time.time()
 
 class PendingTasksResponse(BaseModel):
+        """TODO: Add docstring."""
     size: int = Field(title="Pending task size")
     tasks: List[str] = Field(title="Pending task ids")
 
 class ProgressRequest(BaseModel):
+        """TODO: Add docstring."""
     id_task: str = Field(default=None, title="Task ID", description="id of the task to get progress for")
     id_live_preview: int = Field(default=-1, title="Live preview image ID", description="id of last received last preview image")
     live_preview: bool = Field(default=True, title="Include live preview", description="boolean flag indicating whether to include the live preview image")
 
 
 class ProgressResponse(BaseModel):
+        """TODO: Add docstring."""
     active: bool = Field(title="Whether the task is being worked on right now")
     queued: bool = Field(title="Whether the task is in queue")
     completed: bool = Field(title="Whether the task has already finished")
@@ -74,17 +83,20 @@ class ProgressResponse(BaseModel):
 
 
 def setup_progress_api(app):
+        """TODO: Add docstring."""
     app.add_api_route("/internal/pending-tasks", get_pending_tasks, methods=["GET"])
     return app.add_api_route("/internal/progress", progressapi, methods=["POST"], response_model=ProgressResponse)
 
 
 def get_pending_tasks():
+        """TODO: Add docstring."""
     pending_tasks_ids = list(pending_tasks)
     pending_len = len(pending_tasks_ids)
     return PendingTasksResponse(size=pending_len, tasks=pending_tasks_ids)
 
 
 def progressapi(req: ProgressRequest):
+        """TODO: Add docstring."""
     active = req.id_task == current_task
     queued = req.id_task in pending_tasks
     completed = req.id_task in finished_tasks
@@ -142,6 +154,7 @@ def progressapi(req: ProgressRequest):
 
 
 def restore_progress(id_task):
+        """TODO: Add docstring."""
     while id_task == current_task or id_task in pending_tasks:
         time.sleep(0.1)
 

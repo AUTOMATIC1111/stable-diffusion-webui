@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import json
 
 import gradio as gr
@@ -10,21 +11,26 @@ from modules import infotext_utils
 
 
 class ScriptSeed(scripts.ScriptBuiltinUI):
+        """TODO: Add docstring."""
     section = "seed"
     create_group = False
 
     def __init__(self):
+            """TODO: Add docstring."""
         self.seed = None
         self.reuse_seed = None
         self.reuse_subseed = None
 
     def title(self):
+            """TODO: Add docstring."""
         return "Seed"
 
     def show(self, is_img2img):
+            """TODO: Add docstring."""
         return scripts.AlwaysVisible
 
     def ui(self, is_img2img):
+            """TODO: Add docstring."""
         with gr.Row(elem_id=self.elem_id("seed_row")):
             if cmd_opts.use_textbox_seed:
                 self.seed = gr.Textbox(label='Seed', value="", elem_id=self.elem_id("seed"), min_width=100)
@@ -67,6 +73,7 @@ class ScriptSeed(scripts.ScriptBuiltinUI):
         return self.seed, seed_checkbox, subseed, subseed_strength, seed_resize_from_w, seed_resize_from_h
 
     def setup(self, p, seed, seed_checkbox, subseed, subseed_strength, seed_resize_from_w, seed_resize_from_h):
+            """TODO: Add docstring."""
         p.seed = seed
 
         if seed_checkbox and subseed_strength > 0:
@@ -84,6 +91,7 @@ def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: 
         was 0, i.e. no variation seed was used, it copies the normal seed value instead."""
 
     def copy_seed(gen_info_string: str, index):
+            """TODO: Add docstring."""
         res = -1
         try:
             gen_info = json.loads(gen_info_string)

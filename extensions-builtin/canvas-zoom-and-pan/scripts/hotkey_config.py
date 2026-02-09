@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import gradio as gr
 from modules import shared
 

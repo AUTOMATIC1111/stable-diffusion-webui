@@ -1,8 +1,10 @@
+    """TODO: Add docstring."""
 import pytest
 import requests
 
 
 def test_options_write(base_url):
+        """TODO: Add docstring."""
     url_options = f"{base_url}/sdapi/v1/options"
     response = requests.get(url_options)
     assert response.status_code == 200
@@ -30,4 +32,5 @@ def test_options_write(base_url):
     "sdapi/v1/embeddings",
 ])
 def test_get_api_url(base_url, url):
+        """TODO: Add docstring."""
     assert requests.get(f"{base_url}/{url}").status_code == 200

@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import dataclasses
 import torch
 import k_diffusion
@@ -17,6 +18,7 @@ k_diffusion.sampling.to_d = to_d
 
 @dataclasses.dataclass
 class Scheduler:
+        """TODO: Add docstring."""
     name: str
     label: str
     function: any
@@ -27,10 +29,12 @@ class Scheduler:
 
 
 def uniform(n, sigma_min, sigma_max, inner_model, device):
+        """TODO: Add docstring."""
     return inner_model.get_sigmas(n).to(device)
 
 
 def sgm_uniform(n, sigma_min, sigma_max, inner_model, device):
+        """TODO: Add docstring."""
     start = inner_model.sigma_to_t(torch.tensor(sigma_max))
     end = inner_model.sigma_to_t(torch.tensor(sigma_min))
     sigs = [
@@ -42,6 +46,7 @@ def sgm_uniform(n, sigma_min, sigma_max, inner_model, device):
 
 
 def get_align_your_steps_sigmas(n, sigma_min, sigma_max, device):
+        """TODO: Add docstring."""
     # https://research.nvidia.com/labs/toronto-ai/AlignYourSteps/howto.html
     def loglinear_interp(t_steps, num_steps):
         """
@@ -71,6 +76,7 @@ def get_align_your_steps_sigmas(n, sigma_min, sigma_max, device):
 
 
 def kl_optimal(n, sigma_min, sigma_max, device):
+        """TODO: Add docstring."""
     alpha_min = torch.arctan(torch.tensor(sigma_min, device=device))
     alpha_max = torch.arctan(torch.tensor(sigma_max, device=device))
     step_indices = torch.arange(n + 1, device=device)
@@ -79,6 +85,7 @@ def kl_optimal(n, sigma_min, sigma_max, device):
 
 
 def simple_scheduler(n, sigma_min, sigma_max, inner_model, device):
+        """TODO: Add docstring."""
     sigs = []
     ss = len(inner_model.sigmas) / n
     for x in range(n):
@@ -88,6 +95,7 @@ def simple_scheduler(n, sigma_min, sigma_max, inner_model, device):
 
 
 def normal_scheduler(n, sigma_min, sigma_max, inner_model, device, sgm=False, floor=False):
+        """TODO: Add docstring."""
     start = inner_model.sigma_to_t(torch.tensor(sigma_max))
     end = inner_model.sigma_to_t(torch.tensor(sigma_min))
 
@@ -105,6 +113,7 @@ def normal_scheduler(n, sigma_min, sigma_max, inner_model, device, sgm=False, fl
 
 
 def ddim_scheduler(n, sigma_min, sigma_max, inner_model, device):
+        """TODO: Add docstring."""
     sigs = []
     ss = max(len(inner_model.sigmas) // n, 1)
     x = 1
@@ -117,6 +126,7 @@ def ddim_scheduler(n, sigma_min, sigma_max, inner_model, device):
 
 
 def beta_scheduler(n, sigma_min, sigma_max, inner_model, device):
+        """TODO: Add docstring."""
     # From "Beta Sampling is All You Need" [arXiv:2407.12173] (Lee et. al, 2024) """
     alpha = shared.opts.beta_dist_alpha
     beta = shared.opts.beta_dist_beta

@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import gradio as gr
 
 from modules import scripts, ui_tempdir, patches
@@ -15,6 +16,7 @@ def add_classes_to_gradio_component(comp):
 
 
 def IOComponent_init(self, *args, **kwargs):
+        """TODO: Add docstring."""
     self.webui_tooltip = kwargs.pop('tooltip', None)
 
     if scripts.scripts_current is not None:
@@ -35,6 +37,7 @@ def IOComponent_init(self, *args, **kwargs):
 
 
 def Block_get_config(self):
+        """TODO: Add docstring."""
     config = original_Block_get_config(self)
 
     webui_tooltip = getattr(self, 'webui_tooltip', None)
@@ -47,6 +50,7 @@ def Block_get_config(self):
 
 
 def BlockContext_init(self, *args, **kwargs):
+        """TODO: Add docstring."""
     if scripts.scripts_current is not None:
         scripts.scripts_current.before_component(self, **kwargs)
 
@@ -65,6 +69,7 @@ def BlockContext_init(self, *args, **kwargs):
 
 
 def Blocks_get_config_file(self, *args, **kwargs):
+        """TODO: Add docstring."""
     config = original_Blocks_get_config_file(self, *args, **kwargs)
 
     for comp_config in config["components"]:

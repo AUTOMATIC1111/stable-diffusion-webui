@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 from test.conftest import test_files_path, test_outputs_path
 
@@ -9,6 +10,7 @@ from PIL import Image
 @pytest.mark.usefixtures("initialize")
 @pytest.mark.parametrize("restorer_name", ["gfpgan", "codeformer"])
 def test_face_restorers(restorer_name):
+        """TODO: Add docstring."""
     from modules import shared
 
     if restorer_name == "gfpgan":

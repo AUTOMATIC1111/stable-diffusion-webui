@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import gradio as gr
 
 from modules import ui_extra_networks_user_metadata, sd_vae, shared
@@ -6,11 +7,13 @@ from modules.ui_common import create_refresh_button
 
 class CheckpointUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor):
     def __init__(self, ui, tabname, page):
+            """TODO: Add docstring."""
         super().__init__(ui, tabname, page)
 
         self.select_vae = None
 
     def save_user_metadata(self, name, desc, notes, vae):
+            """TODO: Add docstring."""
         user_metadata = self.get_user_metadata(name)
         user_metadata["description"] = desc
         user_metadata["notes"] = notes
@@ -19,10 +22,12 @@ class CheckpointUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataE
         self.write_user_metadata(name, user_metadata)
 
     def update_vae(self, name):
+            """TODO: Add docstring."""
         if name == shared.sd_model.sd_checkpoint_info.name_for_extra:
             sd_vae.reload_vae_weights()
 
     def put_values_into_components(self, name):
+            """TODO: Add docstring."""
         user_metadata = self.get_user_metadata(name)
         values = super().put_values_into_components(name)
 
@@ -32,6 +37,7 @@ class CheckpointUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataE
         ]
 
     def create_editor(self):
+            """TODO: Add docstring."""
         self.create_default_editor_elems()
 
         with gr.Row():

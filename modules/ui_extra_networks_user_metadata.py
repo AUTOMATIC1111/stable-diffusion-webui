@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import datetime
 import html
 import json
@@ -11,6 +12,7 @@ from modules import infotext_utils, images, sysinfo, errors, ui_extra_networks
 class UserMetadataEditor:
 
     def __init__(self, ui, tabname, page):
+            """TODO: Add docstring."""
         self.ui = ui
         self.tabname = tabname
         self.page = page
@@ -33,6 +35,7 @@ class UserMetadataEditor:
         self.button_save = None
 
     def get_user_metadata(self, name):
+            """TODO: Add docstring."""
         item = self.page.items.get(name, {})
 
         user_metadata = item.get('user_metadata', None)
@@ -43,9 +46,11 @@ class UserMetadataEditor:
         return user_metadata
 
     def create_extra_default_items_in_left_column(self):
+            """TODO: Add docstring."""
         pass
 
     def create_default_editor_elems(self):
+            """TODO: Add docstring."""
         with gr.Row():
             with gr.Column(scale=2):
                 self.edit_name = gr.HTML(elem_classes="extra-network-name")
@@ -69,6 +74,7 @@ class UserMetadataEditor:
         self.button_cancel.click(fn=None, _js="closePopup")
 
     def get_card_html(self, name):
+            """TODO: Add docstring."""
         item = self.page.items.get(name, {})
 
         preview_url = item.get("preview", None)
@@ -90,6 +96,7 @@ class UserMetadataEditor:
         return preview
 
     def relative_path(self, path):
+            """TODO: Add docstring."""
         for parent_path in self.page.allowed_directories_for_previews():
             if ui_extra_networks.path_is_parent(parent_path, path):
                 return os.path.relpath(path, parent_path)
@@ -97,6 +104,7 @@ class UserMetadataEditor:
         return os.path.basename(path)
 
     def get_metadata_table(self, name):
+            """TODO: Add docstring."""
         item = self.page.items.get(name, {})
         try:
             filename = item["filename"]
@@ -116,6 +124,7 @@ class UserMetadataEditor:
             return []
 
     def put_values_into_components(self, name):
+            """TODO: Add docstring."""
         user_metadata = self.get_user_metadata(name)
 
         try:
@@ -129,6 +138,7 @@ class UserMetadataEditor:
         return html.escape(name), user_metadata.get('description', ''), table, self.get_card_html(name), user_metadata.get('notes', '')
 
     def write_user_metadata(self, name, metadata):
+            """TODO: Add docstring."""
         item = self.page.items.get(name, {})
         filename = item.get("filename", None)
         basename, ext = os.path.splitext(filename)
@@ -139,6 +149,7 @@ class UserMetadataEditor:
         self.page.lister.update_file_entry(metadata_path)
 
     def save_user_metadata(self, name, desc, notes):
+            """TODO: Add docstring."""
         user_metadata = self.get_user_metadata(name)
         user_metadata["description"] = desc
         user_metadata["notes"] = notes
@@ -146,11 +157,13 @@ class UserMetadataEditor:
         self.write_user_metadata(name, user_metadata)
 
     def setup_save_handler(self, button, func, components):
+            """TODO: Add docstring."""
         button\
             .click(fn=func, inputs=[self.edit_name_input, *components], outputs=[])\
             .then(fn=None, _js="function(name){closePopup(); extraNetworksRefreshSingleCard(" + json.dumps(self.page.name) + "," + json.dumps(self.tabname) + ", name);}", inputs=[self.edit_name_input], outputs=[])
 
     def create_editor(self):
+            """TODO: Add docstring."""
         self.create_default_editor_elems()
 
         self.edit_notes = gr.TextArea(label='Notes', lines=4)
@@ -164,6 +177,7 @@ class UserMetadataEditor:
         self.setup_save_handler(self.button_save, self.save_user_metadata, [self.edit_description, self.edit_notes])
 
     def create_ui(self):
+            """TODO: Add docstring."""
         with gr.Box(visible=False, elem_id=self.id_part, elem_classes="edit-user-metadata") as box:
             self.box = box
 
@@ -173,6 +187,7 @@ class UserMetadataEditor:
             self.create_editor()
 
     def save_preview(self, index, gallery, name):
+            """TODO: Add docstring."""
         if len(gallery) == 0:
             return self.get_card_html(name), "There is no image in gallery to save as a preview."
 
@@ -192,6 +207,7 @@ class UserMetadataEditor:
         return self.get_card_html(name), ''
 
     def setup_ui(self, gallery):
+            """TODO: Add docstring."""
         self.button_replace_preview.click(
             fn=self.save_preview,
             _js=f"function(x, y, z){{return [selected_gallery_index_id('{self.tabname + '_gallery_container'}'), y, z]}}",

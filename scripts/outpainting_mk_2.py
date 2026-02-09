@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import math
 
 import numpy as np
@@ -14,8 +15,10 @@ from modules.shared import opts, state
 
 # this function is taken from https://github.com/parlance-zz/g-diffuser-bot
 def get_matched_noise(_np_src_image, np_mask_rgb, noise_q=1, color_variation=0.05):
+        """TODO: Add docstring."""
     # helper fft routines that keep ortho normalization and auto-shift before and after fft
     def _fft2(data):
+            """TODO: Add docstring."""
         if data.ndim > 2:  # has channels
             out_fft = np.zeros((data.shape[0], data.shape[1], data.shape[2]), dtype=np.complex128)
             for c in range(data.shape[2]):
@@ -30,6 +33,7 @@ def get_matched_noise(_np_src_image, np_mask_rgb, noise_q=1, color_variation=0.0
         return out_fft
 
     def _ifft2(data):
+            """TODO: Add docstring."""
         if data.ndim > 2:  # has channels
             out_ifft = np.zeros((data.shape[0], data.shape[1], data.shape[2]), dtype=np.complex128)
             for c in range(data.shape[2]):
@@ -44,6 +48,7 @@ def get_matched_noise(_np_src_image, np_mask_rgb, noise_q=1, color_variation=0.0
         return out_ifft
 
     def _get_gaussian_window(width, height, std=3.14, mode=0):
+            """TODO: Add docstring."""
         window_scale_x = float(width / min(width, height))
         window_scale_y = float(height / min(width, height))
 
@@ -59,6 +64,7 @@ def get_matched_noise(_np_src_image, np_mask_rgb, noise_q=1, color_variation=0.0
         return window
 
     def _get_masked_window_rgb(np_mask_grey, hardness=1.):
+            """TODO: Add docstring."""
         np_mask_rgb = np.zeros((np_mask_grey.shape[0], np_mask_grey.shape[1], 3))
         if hardness != 1.:
             hardened = np_mask_grey[:] ** hardness
@@ -120,12 +126,15 @@ def get_matched_noise(_np_src_image, np_mask_rgb, noise_q=1, color_variation=0.0
 
 class Script(scripts.Script):
     def title(self):
+            """TODO: Add docstring."""
         return "Outpainting mk2"
 
     def show(self, is_img2img):
+            """TODO: Add docstring."""
         return is_img2img
 
     def ui(self, is_img2img):
+            """TODO: Add docstring."""
         if not is_img2img:
             return None
 
@@ -140,6 +149,7 @@ class Script(scripts.Script):
         return [info, pixels, mask_blur, direction, noise_q, color_variation]
 
     def run(self, p, _, pixels, mask_blur, direction, noise_q, color_variation):
+            """TODO: Add docstring."""
         initial_seed_and_info = [None, None]
 
         process_width = p.width
@@ -185,6 +195,7 @@ class Script(scripts.Script):
             down = target_h - init_img.height - up
 
         def expand(init, count, expand_pixels, is_left=False, is_right=False, is_top=False, is_bottom=False):
+                """TODO: Add docstring."""
             is_horiz = is_left or is_right
             is_vert = is_top or is_bottom
             pixels_horiz = expand_pixels if is_horiz else 0

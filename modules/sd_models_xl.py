@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from __future__ import annotations
 
 import torch
@@ -10,6 +11,7 @@ from modules import torch_utils
 
 
 def get_learned_conditioning(self: sgm.models.diffusion.DiffusionEngine, batch: prompt_parser.SdConditioning | list[str]):
+        """TODO: Add docstring."""
     for embedder in self.conditioner.embedders:
         embedder.ucg_rate = 0.0
 
@@ -44,6 +46,7 @@ def apply_model(self: sgm.models.diffusion.DiffusionEngine, x, t, cond):
 
 
 def get_first_stage_encoding(self, x):  # SDXL's encode_first_stage does everything so get_first_stage_encoding is just there for compatibility
+        """TODO: Add docstring."""
     return x
 
 
@@ -53,6 +56,7 @@ sgm.models.diffusion.DiffusionEngine.get_first_stage_encoding = get_first_stage_
 
 
 def encode_embedding_init_text(self: sgm.modules.GeneralConditioner, init_text, nvpt):
+        """TODO: Add docstring."""
     res = []
 
     for embedder in [embedder for embedder in self.embedders if hasattr(embedder, 'encode_embedding_init_text')]:
@@ -63,6 +67,7 @@ def encode_embedding_init_text(self: sgm.modules.GeneralConditioner, init_text, 
 
 
 def tokenize(self: sgm.modules.GeneralConditioner, texts):
+        """TODO: Add docstring."""
     for embedder in [embedder for embedder in self.embedders if hasattr(embedder, 'tokenize')]:
         return embedder.tokenize(texts)
 
@@ -71,11 +76,13 @@ def tokenize(self: sgm.modules.GeneralConditioner, texts):
 
 
 def process_texts(self, texts):
+        """TODO: Add docstring."""
     for embedder in [embedder for embedder in self.embedders if hasattr(embedder, 'process_texts')]:
         return embedder.process_texts(texts)
 
 
 def get_target_prompt_token_count(self, token_count):
+        """TODO: Add docstring."""
     for embedder in [embedder for embedder in self.embedders if hasattr(embedder, 'get_target_prompt_token_count')]:
         return embedder.get_target_prompt_token_count(token_count)
 

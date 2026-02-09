@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import math
 
 import gradio as gr
@@ -6,19 +7,24 @@ from modules.ui_components import FormColumn
 
 
 class ExtraOptionsSection(scripts.Script):
+        """TODO: Add docstring."""
     section = "extra_options"
 
     def __init__(self):
+            """TODO: Add docstring."""
         self.comps = None
         self.setting_names = None
 
     def title(self):
+            """TODO: Add docstring."""
         return "Extra options"
 
     def show(self, is_img2img):
+            """TODO: Add docstring."""
         return scripts.AlwaysVisible
 
     def ui(self, is_img2img):
+            """TODO: Add docstring."""
         self.comps = []
         self.setting_names = []
         self.infotext_fields = []
@@ -56,6 +62,7 @@ class ExtraOptionsSection(scripts.Script):
                                 self.infotext_fields.append((comp, setting_infotext_name))
 
         def get_settings_values():
+                """TODO: Add docstring."""
             res = [ui_settings.get_value_for_setting(key) for key in self.setting_names]
             return res[0] if len(res) == 1 else res
 
@@ -64,6 +71,7 @@ class ExtraOptionsSection(scripts.Script):
         return self.comps
 
     def before_process(self, p, *args):
+            """TODO: Add docstring."""
         for name, value in zip(self.setting_names, args):
             if name not in p.override_settings:
                 p.override_settings[name] = value

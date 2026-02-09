@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import datetime
 import logging
 import threading
@@ -10,6 +11,7 @@ log = logging.getLogger(__name__)
 
 
 class State:
+        """TODO: Add docstring."""
     skipped = False
     interrupted = False
     stopping_generation = False
@@ -31,21 +33,25 @@ class State:
     _server_command: Optional[str] = None
 
     def __init__(self):
+            """TODO: Add docstring."""
         self.server_start = time.time()
 
     @property
     def need_restart(self) -> bool:
+            """TODO: Add docstring."""
         # Compatibility getter for need_restart.
         return self.server_command == "restart"
 
     @need_restart.setter
     def need_restart(self, value: bool) -> None:
+            """TODO: Add docstring."""
         # Compatibility setter for need_restart.
         if value:
             self.server_command = "restart"
 
     @property
     def server_command(self):
+            """TODO: Add docstring."""
         return self._server_command
 
     @server_command.setter
@@ -68,23 +74,28 @@ class State:
         return None
 
     def request_restart(self) -> None:
+            """TODO: Add docstring."""
         self.interrupt()
         self.server_command = "restart"
         log.info("Received restart request")
 
     def skip(self):
+            """TODO: Add docstring."""
         self.skipped = True
         log.info("Received skip request")
 
     def interrupt(self):
+            """TODO: Add docstring."""
         self.interrupted = True
         log.info("Received interrupt request")
 
     def stop_generating(self):
+            """TODO: Add docstring."""
         self.stopping_generation = True
         log.info("Received stop generating request")
 
     def nextjob(self):
+            """TODO: Add docstring."""
         if shared.opts.live_previews_enable and shared.opts.show_progress_every_n_steps == -1:
             self.do_set_current_image()
 
@@ -93,6 +104,7 @@ class State:
         self.current_image_sampling_step = 0
 
     def dict(self):
+            """TODO: Add docstring."""
         obj = {
             "skipped": self.skipped,
             "interrupted": self.interrupted,
@@ -108,6 +120,7 @@ class State:
         return obj
 
     def begin(self, job: str = "(unknown)"):
+            """TODO: Add docstring."""
         self.sampling_step = 0
         self.time_start = time.time()
         self.job_count = -1
@@ -127,6 +140,7 @@ class State:
         log.info("Starting job %s", job)
 
     def end(self):
+            """TODO: Add docstring."""
         duration = time.time() - self.time_start
         log.info("Ending job %s (%.2f seconds)", self.job, duration)
         self.job = ""
@@ -143,6 +157,7 @@ class State:
             self.do_set_current_image()
 
     def do_set_current_image(self):
+            """TODO: Add docstring."""
         if self.current_latent is None:
             return
 
@@ -162,6 +177,7 @@ class State:
             errors.record_exception()
 
     def assign_current_image(self, image):
+            """TODO: Add docstring."""
         if shared.opts.live_previews_image_format == 'jpeg' and image.mode in ('RGBA', 'P'):
             image = image.convert('RGB')
         self.current_image = image

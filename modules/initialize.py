@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import importlib
 import logging
 import os
@@ -9,6 +10,7 @@ from modules.timer import startup_timer
 
 
 def imports():
+        """TODO: Add docstring."""
     logging.getLogger("torch.distributed.nn").setLevel(logging.ERROR)  # sshh...
     logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
 
@@ -41,6 +43,7 @@ def imports():
 
 
 def check_versions():
+        """TODO: Add docstring."""
     from modules.shared_cmd_options import cmd_opts
 
     if not cmd_opts.skip_version_check:
@@ -49,6 +52,7 @@ def check_versions():
 
 
 def initialize():
+        """TODO: Add docstring."""
     from modules import initialize_util
     initialize_util.fix_torch_version()
     initialize_util.fix_pytorch_lightning()

@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 
 from PIL import Image
@@ -7,6 +8,7 @@ from modules.shared import opts
 
 
 def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, show_extras_results, *args, save_output: bool = True):
+        """TODO: Add docstring."""
     devices.torch_gc()
 
     shared.state.begin(job="extras")
@@ -14,6 +16,7 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
     outputs = []
 
     def get_images(extras_mode, image, image_folder, input_dir):
+            """TODO: Add docstring."""
         if extras_mode == 1:
             for img in image_folder:
                 if isinstance(img, Image.Image):
@@ -130,6 +133,7 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
 
 
 def run_postprocessing_webui(id_task, *args, **kwargs):
+        """TODO: Add docstring."""
     return run_postprocessing(*args, **kwargs)
 
 

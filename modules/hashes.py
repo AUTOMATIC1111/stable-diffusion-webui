@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import hashlib
 import os.path
 
@@ -9,6 +10,7 @@ cache = modules.cache.cache
 
 
 def calculate_sha256(filename):
+        """TODO: Add docstring."""
     hash_sha256 = hashlib.sha256()
     blksize = 1024 * 1024
 
@@ -20,6 +22,7 @@ def calculate_sha256(filename):
 
 
 def sha256_from_cache(filename, title, use_addnet_hash=False):
+        """TODO: Add docstring."""
     hashes = cache("hashes-addnet") if use_addnet_hash else cache("hashes")
     try:
         ondisk_mtime = os.path.getmtime(filename)
@@ -39,6 +42,7 @@ def sha256_from_cache(filename, title, use_addnet_hash=False):
 
 
 def sha256(filename, title, use_addnet_hash=False):
+        """TODO: Add docstring."""
     hashes = cache("hashes-addnet") if use_addnet_hash else cache("hashes")
 
     sha256_value = sha256_from_cache(filename, title, use_addnet_hash)

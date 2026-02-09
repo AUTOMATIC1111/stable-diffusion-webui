@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from modules import modelloader, devices, errors
 from modules.shared import opts
 from modules.upscaler import Upscaler, UpscalerData
@@ -6,6 +7,7 @@ from modules.upscaler_utils import upscale_with_model
 
 class UpscalerESRGAN(Upscaler):
     def __init__(self, dirname):
+            """TODO: Add docstring."""
         self.name = "ESRGAN"
         self.model_url = "https://github.com/cszn/KAIR/releases/download/v1.0/ESRGAN.pth"
         self.model_name = "ESRGAN_4x"
@@ -27,6 +29,7 @@ class UpscalerESRGAN(Upscaler):
             self.scalers.append(scaler_data)
 
     def do_upscale(self, img, selected_model):
+            """TODO: Add docstring."""
         try:
             model = self.load_model(selected_model)
         except Exception:
@@ -36,6 +39,7 @@ class UpscalerESRGAN(Upscaler):
         return esrgan_upscale(model, img)
 
     def load_model(self, path: str):
+            """TODO: Add docstring."""
         if path.startswith("http"):
             # TODO: this doesn't use `path` at all?
             filename = modelloader.load_file_from_url(
@@ -54,6 +58,7 @@ class UpscalerESRGAN(Upscaler):
 
 
 def esrgan_upscale(model, img):
+        """TODO: Add docstring."""
     return upscale_with_model(
         model,
         img,

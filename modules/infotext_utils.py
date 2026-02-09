@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from __future__ import annotations
 import base64
 import io
@@ -22,6 +23,7 @@ type_of_gr_update = type(gr.update())
 
 class ParamBinding:
     def __init__(self, paste_button, tabname, source_text_component=None, source_image_component=None, source_tabname=None, override_settings_component=None, paste_field_names=None):
+            """TODO: Add docstring."""
         self.paste_button = paste_button
         self.tabname = tabname
         self.source_text_component = source_text_component
@@ -33,9 +35,11 @@ class ParamBinding:
 
 class PasteField(tuple):
     def __new__(cls, component, target, *, api=None):
+            """TODO: Add docstring."""
         return super().__new__(cls, (component, target))
 
     def __init__(self, component, target, *, api=None):
+            """TODO: Add docstring."""
         super().__init__()
 
         self.api = api
@@ -49,11 +53,13 @@ registered_param_bindings: list[ParamBinding] = []
 
 
 def reset():
+        """TODO: Add docstring."""
     paste_fields.clear()
     registered_param_bindings.clear()
 
 
 def quote(text):
+        """TODO: Add docstring."""
     if ',' not in str(text) and '\n' not in str(text) and ':' not in str(text):
         return text
 
@@ -61,6 +67,7 @@ def quote(text):
 
 
 def unquote(text):
+        """TODO: Add docstring."""
     if len(text) == 0 or text[0] != '"' or text[-1] != '"':
         return text
 
@@ -71,6 +78,7 @@ def unquote(text):
 
 
 def image_from_url_text(filedata):
+        """TODO: Add docstring."""
     if filedata is None:
         return None
 
@@ -117,6 +125,7 @@ def add_paste_fields(tabname, init_img, fields, override_settings_component=None
 
 
 def create_buttons(tabs_list):
+        """TODO: Add docstring."""
     buttons = {}
     for tab in tabs_list:
         buttons[tab] = gr.Button(f"Send to {tab}", elem_id=f"{tab}_tab")
@@ -133,10 +142,12 @@ def bind_buttons(buttons, send_image, send_generate_info):
 
 
 def register_paste_params_button(binding: ParamBinding):
+        """TODO: Add docstring."""
     registered_param_bindings.append(binding)
 
 
 def connect_paste_params_buttons():
+        """TODO: Add docstring."""
     for binding in registered_param_bindings:
         destination_image_component = paste_fields[binding.tabname]["init_img"]
         fields = paste_fields[binding.tabname]["fields"]
@@ -184,6 +195,7 @@ def connect_paste_params_buttons():
 
 
 def send_image_and_dimensions(x):
+        """TODO: Add docstring."""
     if isinstance(x, Image.Image):
         img = x
     else:
@@ -475,6 +487,7 @@ def get_override_settings(params, *, skip_fields=None):
 
 def connect_paste(button, paste_fields, input_comp, override_settings_component, tabname):
     def paste_func(prompt):
+            """TODO: Add docstring."""
         if not prompt and not shared.cmd_opts.hide_ui_dir_config and not shared.cmd_opts.no_prompt_history:
             filename = os.path.join(data_path, "params.txt")
             try:
@@ -522,6 +535,7 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
         already_handled_fields = {key: 1 for _, key in paste_fields}
 
         def paste_settings(params):
+                """TODO: Add docstring."""
             vals = get_override_settings(params, skip_fields=already_handled_fields)
 
             vals_pairs = [f"{infotext_text}: {value}" for infotext_text, setting_name, value in vals]

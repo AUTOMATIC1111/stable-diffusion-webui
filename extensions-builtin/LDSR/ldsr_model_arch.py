@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 import gc
 import time
@@ -20,6 +21,7 @@ cached_ldsr_model: torch.nn.Module = None
 # Create LDSR Class
 class LDSR:
     def load_model_from_config(self, half_attention):
+            """TODO: Add docstring."""
         global cached_ldsr_model
 
         if shared.opts.ldsr_cached and cached_ldsr_model is not None:
@@ -52,11 +54,13 @@ class LDSR:
         return {"model": model}
 
     def __init__(self, model_path, yaml_path):
+            """TODO: Add docstring."""
         self.modelPath = model_path
         self.yamlPath = yaml_path
 
     @staticmethod
     def run(model, selected_path, custom_steps, eta):
+            """TODO: Add docstring."""
         example = get_cond(selected_path)
 
         n_runs = 1
@@ -104,6 +108,7 @@ class LDSR:
         return logs
 
     def super_resolution(self, image, steps=100, target_scale=2, half_attention=False):
+            """TODO: Add docstring."""
         model = self.load_model_from_config(half_attention)
 
         # Run settings
@@ -155,6 +160,7 @@ class LDSR:
 
 
 def get_cond(selected_path):
+        """TODO: Add docstring."""
     example = {}
     up_f = 4
     c = selected_path.convert('RGB')
@@ -174,6 +180,7 @@ def get_cond(selected_path):
 
 @torch.no_grad()
 def convsample_ddim(model, cond, steps, shape, eta=1.0, callback=None, normals_sequence=None,
+                        """TODO: Add docstring."""
                     mask=None, x0=None, quantize_x0=False, temperature=1., score_corrector=None,
                     corrector_kwargs=None, x_t=None
                     ):
@@ -192,6 +199,7 @@ def convsample_ddim(model, cond, steps, shape, eta=1.0, callback=None, normals_s
 
 @torch.no_grad()
 def make_convolutional_sample(batch, model, custom_steps=None, eta=1.0, quantize_x0=False, custom_shape=None, temperature=1., noise_dropout=0., corrector=None,
+                                  """TODO: Add docstring."""
                               corrector_kwargs=None, x_T=None, ddim_use_x0_pred=False):
     log = {}
 

@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 # Vendored from https://raw.githubusercontent.com/CompVis/taming-transformers/24268930bf1dce879235a7fddd0b2355b84d7ea6/taming/modules/vqvae/quantize.py,
 # where the license is as follows:
 #
@@ -37,6 +38,7 @@ class VectorQuantizer2(nn.Module):
     # backwards compatibility we use the buggy version by default, but you can
     # specify legacy=False to fix it.
     def __init__(self, n_e, e_dim, beta, remap=None, unknown_index="random",
+                     """TODO: Add docstring."""
                  sane_index_shape=False, legacy=True):
         super().__init__()
         self.n_e = n_e
@@ -63,6 +65,7 @@ class VectorQuantizer2(nn.Module):
         self.sane_index_shape = sane_index_shape
 
     def remap_to_used(self, inds):
+            """TODO: Add docstring."""
         ishape = inds.shape
         assert len(ishape) > 1
         inds = inds.reshape(ishape[0], -1)
@@ -77,6 +80,7 @@ class VectorQuantizer2(nn.Module):
         return new.reshape(ishape)
 
     def unmap_to_all(self, inds):
+            """TODO: Add docstring."""
         ishape = inds.shape
         assert len(ishape) > 1
         inds = inds.reshape(ishape[0], -1)
@@ -87,6 +91,7 @@ class VectorQuantizer2(nn.Module):
         return back.reshape(ishape)
 
     def forward(self, z, temp=None, rescale_logits=False, return_logits=False):
+            """TODO: Add docstring."""
         assert temp is None or temp == 1.0, "Only for interface compatible with Gumbel"
         assert rescale_logits is False, "Only for interface compatible with Gumbel"
         assert return_logits is False, "Only for interface compatible with Gumbel"
@@ -130,6 +135,7 @@ class VectorQuantizer2(nn.Module):
         return z_q, loss, (perplexity, min_encodings, min_encoding_indices)
 
     def get_codebook_entry(self, indices, shape):
+            """TODO: Add docstring."""
         # shape specifying (batch, height, width, channel)
         if self.remap is not None:
             indices = indices.reshape(shape[0], -1)  # add batch axis

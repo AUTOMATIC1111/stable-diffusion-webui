@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import html
 
 import gradio as gr
@@ -9,12 +10,14 @@ keys = [x for x in modules.hypernetworks.hypernetwork.HypernetworkModule.activat
 
 
 def create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure=None, activation_func=None, weight_init=None, add_layer_norm=False, use_dropout=False, dropout_structure=None):
+        """TODO: Add docstring."""
     filename = modules.hypernetworks.hypernetwork.create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure, activation_func, weight_init, add_layer_norm, use_dropout, dropout_structure)
 
     return gr.Dropdown.update(choices=sorted(shared.hypernetworks)), f"Created: {filename}", ""
 
 
 def train_hypernetwork(*args):
+        """TODO: Add docstring."""
     shared.loaded_hypernetworks = []
 
     assert not shared.cmd_opts.lowvram, 'Training models with lowvram is not possible'

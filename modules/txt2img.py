@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import json
 from contextlib import closing
 
@@ -12,6 +13,7 @@ import gradio as gr
 
 
 def txt2img_create_processing(id_task: str, request: gr.Request, prompt: str, negative_prompt: str, prompt_styles, n_iter: int, batch_size: int, cfg_scale: float, height: int, width: int, enable_hr: bool, denoising_strength: float, hr_scale: float, hr_upscaler: str, hr_second_pass_steps: int, hr_resize_x: int, hr_resize_y: int, hr_checkpoint_name: str, hr_sampler_name: str, hr_scheduler: str, hr_prompt: str, hr_negative_prompt, override_settings_texts, *args, force_enable_hr=False):
+        """TODO: Add docstring."""
     override_settings = create_override_settings_dict(override_settings_texts)
 
     if force_enable_hr:
@@ -56,6 +58,7 @@ def txt2img_create_processing(id_task: str, request: gr.Request, prompt: str, ne
 
 
 def txt2img_upscale(id_task: str, request: gr.Request, gallery, gallery_index, generation_info, *args):
+        """TODO: Add docstring."""
     assert len(gallery) > 0, 'No image to upscale'
     assert 0 <= gallery_index < len(gallery), f'Bad image index: {gallery_index}'
 
@@ -100,6 +103,7 @@ def txt2img_upscale(id_task: str, request: gr.Request, gallery, gallery_index, g
 
 
 def txt2img(id_task: str, request: gr.Request, *args):
+        """TODO: Add docstring."""
     p = txt2img_create_processing(id_task, request, *args)
 
     with closing(p):

@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import modules.scripts as scripts
 import gradio as gr
 import ast
@@ -8,6 +9,7 @@ from modules.shared import cmd_opts
 
 
 def convertExpr2Expression(expr):
+        """TODO: Add docstring."""
     expr.lineno = 0
     expr.col_offset = 0
     result = ast.Expression(expr.value, lineno=0, col_offset = 0)
@@ -38,12 +40,15 @@ def exec_with_return(code, module):
 class Script(scripts.Script):
 
     def title(self):
+            """TODO: Add docstring."""
         return "Custom code"
 
     def show(self, is_img2img):
+            """TODO: Add docstring."""
         return cmd_opts.allow_code
 
     def ui(self, is_img2img):
+            """TODO: Add docstring."""
         example = """from modules.processing import process_images
 
 p.width = 768
@@ -61,11 +66,13 @@ return process_images(p)
         return [code, indent_level]
 
     def run(self, p, code, indent_level):
+            """TODO: Add docstring."""
         assert cmd_opts.allow_code, '--allow-code option must be enabled'
 
         display_result_data = [[], -1, ""]
 
         def display(imgs, s=display_result_data[1], i=display_result_data[2]):
+                """TODO: Add docstring."""
             display_result_data[0] = imgs
             display_result_data[1] = s
             display_result_data[2] = i

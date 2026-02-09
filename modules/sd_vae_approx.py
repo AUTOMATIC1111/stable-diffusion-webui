@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 
 import torch
@@ -9,6 +10,7 @@ sd_vae_approx_models = {}
 
 class VAEApprox(nn.Module):
     def __init__(self, latent_channels=4):
+            """TODO: Add docstring."""
         super(VAEApprox, self).__init__()
         self.conv1 = nn.Conv2d(latent_channels, 8, (7, 7))
         self.conv2 = nn.Conv2d(8, 16, (5, 5))
@@ -20,6 +22,7 @@ class VAEApprox(nn.Module):
         self.conv8 = nn.Conv2d(8, 3, (3, 3))
 
     def forward(self, x):
+            """TODO: Add docstring."""
         extra = 11
         x = nn.functional.interpolate(x, (x.shape[2] * 2, x.shape[3] * 2))
         x = nn.functional.pad(x, (extra, extra, extra, extra))
@@ -32,6 +35,7 @@ class VAEApprox(nn.Module):
 
 
 def download_model(model_path, model_url):
+        """TODO: Add docstring."""
     if not os.path.exists(model_path):
         os.makedirs(os.path.dirname(model_path), exist_ok=True)
 
@@ -40,6 +44,7 @@ def download_model(model_path, model_url):
 
 
 def model():
+        """TODO: Add docstring."""
     if shared.sd_model.is_sd3:
         model_name = "vaeapprox-sd3.pt"
     elif shared.sd_model.is_sdxl:
@@ -68,6 +73,7 @@ def model():
 
 
 def cheap_approximation(sample):
+        """TODO: Add docstring."""
     # https://discuss.huggingface.co/t/decoding-latents-to-rgb-without-upscaling/23204/2
 
     if shared.sd_model.is_sd3:
@@ -101,3 +107,5 @@ def cheap_approximation(sample):
     x_sample = torch.einsum("...lxy,lr -> ...rxy", sample, coefs)
 
     return x_sample
+
+# TODO: Consider using mixed precision training (torch.cuda.amp) for faster training

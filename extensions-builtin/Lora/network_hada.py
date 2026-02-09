@@ -1,9 +1,11 @@
+    """TODO: Add docstring."""
 import lyco_helpers
 import network
 
 
 class ModuleTypeHada(network.ModuleType):
     def create_module(self, net: network.Network, weights: network.NetworkWeights):
+            """TODO: Add docstring."""
         if all(x in weights.w for x in ["hada_w1_a", "hada_w1_b", "hada_w2_a", "hada_w2_b"]):
             return NetworkModuleHada(net, weights)
 
@@ -12,6 +14,7 @@ class ModuleTypeHada(network.ModuleType):
 
 class NetworkModuleHada(network.NetworkModule):
     def __init__(self,  net: network.Network, weights: network.NetworkWeights):
+            """TODO: Add docstring."""
         super().__init__(net, weights)
 
         if hasattr(self.sd_module, 'weight'):
@@ -27,6 +30,7 @@ class NetworkModuleHada(network.NetworkModule):
         self.t2 = weights.w.get("hada_t2")
 
     def calc_updown(self, orig_weight):
+            """TODO: Add docstring."""
         w1a = self.w1a.to(orig_weight.device)
         w1b = self.w1b.to(orig_weight.device)
         w2a = self.w2a.to(orig_weight.device)

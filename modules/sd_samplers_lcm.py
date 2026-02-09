@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import torch
 
 from k_diffusion import utils, sampling
@@ -9,6 +10,7 @@ from modules import shared, sd_samplers_cfg_denoiser, sd_samplers_kdiffusion, sd
 
 class LCMCompVisDenoiser(DiscreteEpsDDPMDenoiser):
     def __init__(self, model):
+            """TODO: Add docstring."""
         timesteps = 1000
         original_timesteps = 50     # LCM Original Timesteps (default=50, for current version of LCM)
         self.skip_steps = timesteps // original_timesteps
@@ -21,6 +23,7 @@ class LCMCompVisDenoiser(DiscreteEpsDDPMDenoiser):
 
 
     def get_sigmas(self, n=None,):
+            """TODO: Add docstring."""
         if n is None:
             return sampling.append_zero(self.sigmas.flip(0))
 
@@ -33,21 +36,25 @@ class LCMCompVisDenoiser(DiscreteEpsDDPMDenoiser):
 
 
     def sigma_to_t(self, sigma, quantize=None):
+            """TODO: Add docstring."""
         log_sigma = sigma.log()
         dists = log_sigma - self.log_sigmas[:, None]
         return dists.abs().argmin(dim=0).view(sigma.shape) * self.skip_steps + (self.skip_steps - 1)
 
 
     def t_to_sigma(self, timestep):
+            """TODO: Add docstring."""
         t = torch.clamp(((timestep - (self.skip_steps - 1)) / self.skip_steps).float(), min=0, max=(len(self.sigmas) - 1))
         return super().t_to_sigma(t)
 
 
     def get_eps(self, *args, **kwargs):
+            """TODO: Add docstring."""
         return self.inner_model.apply_model(*args, **kwargs)
 
 
     def get_scaled_out(self, sigma, output, input):
+            """TODO: Add docstring."""
         sigma_data = 0.5
         scaled_timestep = utils.append_dims(self.sigma_to_t(sigma), output.ndim) * 10.0
 
@@ -58,12 +65,14 @@ class LCMCompVisDenoiser(DiscreteEpsDDPMDenoiser):
 
 
     def forward(self, input, sigma, **kwargs):
+            """TODO: Add docstring."""
         c_out, c_in = [utils.append_dims(x, input.ndim) for x in self.get_scalings(sigma)]
         eps = self.get_eps(input * c_in, self.sigma_to_t(sigma), **kwargs)
         return self.get_scaled_out(sigma, input + eps * c_out, input)
 
 
 def sample_lcm(model, x, sigmas, extra_args=None, callback=None, disable=None, noise_sampler=None):
+        """TODO: Add docstring."""
     extra_args = {} if extra_args is None else extra_args
     noise_sampler = default_noise_sampler(x) if noise_sampler is None else noise_sampler
     s_in = x.new_ones([x.shape[0]])
@@ -81,8 +90,10 @@ def sample_lcm(model, x, sigmas, extra_args=None, callback=None, disable=None, n
 
 
 class CFGDenoiserLCM(sd_samplers_cfg_denoiser.CFGDenoiser):
+        """TODO: Add docstring."""
     @property
     def inner_model(self):
+            """TODO: Add docstring."""
         if self.model_wrap is None:
             denoiser = LCMCompVisDenoiser
             self.model_wrap = denoiser(shared.sd_model)
@@ -92,6 +103,7 @@ class CFGDenoiserLCM(sd_samplers_cfg_denoiser.CFGDenoiser):
 
 class LCMSampler(sd_samplers_kdiffusion.KDiffusionSampler):
     def __init__(self, funcname, sd_model, options=None):
+            """TODO: Add docstring."""
         super().__init__(funcname, sd_model, options)
         self.model_wrap_cfg = CFGDenoiserLCM(self)
         self.model_wrap = self.model_wrap_cfg.inner_model

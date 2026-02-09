@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import importlib
 import torch
 
@@ -5,6 +6,7 @@ from modules import shared
 
 
 def check_for_npu():
+        """TODO: Add docstring."""
     if importlib.util.find_spec("torch_npu") is None:
         return False
     import torch_npu
@@ -18,12 +20,14 @@ def check_for_npu():
 
 
 def get_npu_device_string():
+        """TODO: Add docstring."""
     if shared.cmd_opts.device_id is not None:
         return f"npu:{shared.cmd_opts.device_id}"
     return "npu:0"
 
 
 def torch_npu_gc():
+        """TODO: Add docstring."""
     with torch.npu.device(get_npu_device_string()):
         torch.npu.empty_cache()
 

@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import open_clip.tokenizer
 import torch
 
@@ -9,6 +10,7 @@ tokenizer = open_clip.tokenizer._tokenizer
 
 class FrozenOpenCLIPEmbedderWithCustomWords(sd_hijack_clip.FrozenCLIPEmbedderWithCustomWordsBase):
     def __init__(self, wrapped, hijack):
+            """TODO: Add docstring."""
         super().__init__(wrapped, hijack)
 
         self.comma_token = [v for k, v in tokenizer.encoder.items() if k == ',</w>'][0]
@@ -17,6 +19,7 @@ class FrozenOpenCLIPEmbedderWithCustomWords(sd_hijack_clip.FrozenCLIPEmbedderWit
         self.id_pad = 0
 
     def tokenize(self, texts):
+            """TODO: Add docstring."""
         assert not opts.use_old_emphasis_implementation, 'Old emphasis implementation not supported for Open Clip'
 
         tokenized = [tokenizer.encode(text) for text in texts]
@@ -24,12 +27,14 @@ class FrozenOpenCLIPEmbedderWithCustomWords(sd_hijack_clip.FrozenCLIPEmbedderWit
         return tokenized
 
     def encode_with_transformers(self, tokens):
+            """TODO: Add docstring."""
         # set self.wrapped.layer_idx here according to opts.CLIP_stop_at_last_layers
         z = self.wrapped.encode_with_transformer(tokens)
 
         return z
 
     def encode_embedding_init_text(self, init_text, nvpt):
+            """TODO: Add docstring."""
         ids = tokenizer.encode(init_text)
         ids = torch.asarray([ids], device=devices.device, dtype=torch.int)
         embedded = self.wrapped.model.token_embedding.wrapped(ids).squeeze(0)
@@ -39,6 +44,7 @@ class FrozenOpenCLIPEmbedderWithCustomWords(sd_hijack_clip.FrozenCLIPEmbedderWit
 
 class FrozenOpenCLIPEmbedder2WithCustomWords(sd_hijack_clip.FrozenCLIPEmbedderWithCustomWordsBase):
     def __init__(self, wrapped, hijack):
+            """TODO: Add docstring."""
         super().__init__(wrapped, hijack)
 
         self.comma_token = [v for k, v in tokenizer.encoder.items() if k == ',</w>'][0]
@@ -47,6 +53,7 @@ class FrozenOpenCLIPEmbedder2WithCustomWords(sd_hijack_clip.FrozenCLIPEmbedderWi
         self.id_pad = 0
 
     def tokenize(self, texts):
+            """TODO: Add docstring."""
         assert not opts.use_old_emphasis_implementation, 'Old emphasis implementation not supported for Open Clip'
 
         tokenized = [tokenizer.encode(text) for text in texts]
@@ -54,6 +61,7 @@ class FrozenOpenCLIPEmbedder2WithCustomWords(sd_hijack_clip.FrozenCLIPEmbedderWi
         return tokenized
 
     def encode_with_transformers(self, tokens):
+            """TODO: Add docstring."""
         d = self.wrapped.encode_with_transformer(tokens)
         z = d[self.wrapped.layer]
 
@@ -64,6 +72,7 @@ class FrozenOpenCLIPEmbedder2WithCustomWords(sd_hijack_clip.FrozenCLIPEmbedderWi
         return z
 
     def encode_embedding_init_text(self, init_text, nvpt):
+            """TODO: Add docstring."""
         ids = tokenizer.encode(init_text)
         ids = torch.asarray([ids], device=devices.device, dtype=torch.int)
         embedded = self.wrapped.model.token_embedding.wrapped(ids.to(self.wrapped.model.token_embedding.wrapped.weight.device)).squeeze(0)

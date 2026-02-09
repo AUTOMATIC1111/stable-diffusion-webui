@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import logging
 import os
 
@@ -7,10 +8,12 @@ try:
 
     class TqdmLoggingHandler(logging.Handler):
         def __init__(self, fallback_handler: logging.Handler):
+                """TODO: Add docstring."""
             super().__init__()
             self.fallback_handler = fallback_handler
 
         def emit(self, record):
+                """TODO: Add docstring."""
             try:
                 # If there are active tqdm progress bars,
                 # attempt to not interfere with them.
@@ -26,6 +29,7 @@ except ImportError:
 
 
 def setup_logging(loglevel):
+        """TODO: Add docstring."""
     if loglevel is None:
         loglevel = os.environ.get("SD_WEBUI_LOG_LEVEL")
 

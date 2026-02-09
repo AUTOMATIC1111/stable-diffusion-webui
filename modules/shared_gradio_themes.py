@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 
 import gradio as gr
@@ -42,6 +43,7 @@ gradio_hf_hub_themes = [
 
 
 def reload_gradio_theme(theme_name=None):
+        """TODO: Add docstring."""
     if not theme_name:
         theme_name = shared.opts.gradio_theme
 

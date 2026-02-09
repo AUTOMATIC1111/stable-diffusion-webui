@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import torch
 import tqdm
 import k_diffusion.sampling
@@ -15,6 +16,7 @@ def restart_sampler(model, x, sigmas, extra_args=None, callback=None, disable=No
     from k_diffusion.sampling import to_d, get_sigmas_karras
 
     def heun_step(x, old_sigma, new_sigma, second_order=True):
+            """TODO: Add docstring."""
         nonlocal step_id
         denoised = model(x, old_sigma * s_in, **extra_args)
         d = to_d(x, old_sigma, denoised)

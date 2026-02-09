@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 import collections
 from dataclasses import dataclass
@@ -21,6 +22,7 @@ checkpoints_loaded = collections.OrderedDict()
 
 
 def get_loaded_vae_name():
+        """TODO: Add docstring."""
     if loaded_vae_file is None:
         return None
 
@@ -28,6 +30,7 @@ def get_loaded_vae_name():
 
 
 def get_loaded_vae_hash():
+        """TODO: Add docstring."""
     if loaded_vae_file is None:
         return None
 
@@ -37,12 +40,14 @@ def get_loaded_vae_hash():
 
 
 def get_base_vae(model):
+        """TODO: Add docstring."""
     if base_vae is not None and checkpoint_info == model.sd_checkpoint_info and model:
         return base_vae
     return None
 
 
 def store_base_vae(model):
+        """TODO: Add docstring."""
     global base_vae, checkpoint_info
     if checkpoint_info != model.sd_checkpoint_info:
         assert not loaded_vae_file, "Trying to store non-base VAE!"
@@ -51,12 +56,14 @@ def store_base_vae(model):
 
 
 def delete_base_vae():
+        """TODO: Add docstring."""
     global base_vae, checkpoint_info
     base_vae = None
     checkpoint_info = None
 
 
 def restore_base_vae(model):
+        """TODO: Add docstring."""
     global loaded_vae_file
     if base_vae is not None and checkpoint_info == model.sd_checkpoint_info:
         print("Restoring base VAE")
@@ -66,10 +73,12 @@ def restore_base_vae(model):
 
 
 def get_filename(filepath):
+        """TODO: Add docstring."""
     return os.path.basename(filepath)
 
 
 def refresh_vae_list():
+        """TODO: Add docstring."""
     vae_dict.clear()
 
     paths = [
@@ -107,6 +116,7 @@ def refresh_vae_list():
 
 
 def find_vae_near_checkpoint(checkpoint_file):
+        """TODO: Add docstring."""
     checkpoint_path = os.path.basename(checkpoint_file).rsplit('.', 1)[0]
     for vae_file in vae_dict.values():
         if os.path.basename(vae_file).startswith(checkpoint_path):
@@ -117,19 +127,23 @@ def find_vae_near_checkpoint(checkpoint_file):
 
 @dataclass
 class VaeResolution:
+        """TODO: Add docstring."""
     vae: str = None
     source: str = None
     resolved: bool = True
 
     def tuple(self):
+            """TODO: Add docstring."""
         return self.vae, self.source
 
 
 def is_automatic():
+        """TODO: Add docstring."""
     return shared.opts.sd_vae in {"Automatic", "auto"}  # "auto" for people with old config
 
 
 def resolve_vae_from_setting() -> VaeResolution:
+        """TODO: Add docstring."""
     if shared.opts.sd_vae == "None":
         return VaeResolution()
 
@@ -144,6 +158,7 @@ def resolve_vae_from_setting() -> VaeResolution:
 
 
 def resolve_vae_from_user_metadata(checkpoint_file) -> VaeResolution:
+        """TODO: Add docstring."""
     metadata = extra_networks.get_user_metadata(checkpoint_file)
     vae_metadata = metadata.get("vae", None)
     if vae_metadata is not None and vae_metadata != "Automatic":
@@ -158,6 +173,7 @@ def resolve_vae_from_user_metadata(checkpoint_file) -> VaeResolution:
 
 
 def resolve_vae_near_checkpoint(checkpoint_file) -> VaeResolution:
+        """TODO: Add docstring."""
     vae_near_checkpoint = find_vae_near_checkpoint(checkpoint_file)
     if vae_near_checkpoint is not None and (not shared.opts.sd_vae_overrides_per_model_preferences or is_automatic()):
         return VaeResolution(vae_near_checkpoint, 'found near the checkpoint')
@@ -166,6 +182,7 @@ def resolve_vae_near_checkpoint(checkpoint_file) -> VaeResolution:
 
 
 def resolve_vae(checkpoint_file) -> VaeResolution:
+        """TODO: Add docstring."""
     if shared.cmd_opts.vae_path is not None:
         return VaeResolution(shared.cmd_opts.vae_path, 'from commandline argument')
 
@@ -186,12 +203,14 @@ def resolve_vae(checkpoint_file) -> VaeResolution:
 
 
 def load_vae_dict(filename, map_location):
+        """TODO: Add docstring."""
     vae_ckpt = sd_models.read_state_dict(filename, map_location=map_location)
     vae_dict_1 = {k: v for k, v in vae_ckpt.items() if k[0:4] != "loss" and k not in vae_ignore_keys}
     return vae_dict_1
 
 
 def load_vae(model, vae_file=None, vae_source="from unknown source"):
+        """TODO: Add docstring."""
     global vae_dict, base_vae, loaded_vae_file
     # save_settings = False
 
@@ -236,11 +255,13 @@ def load_vae(model, vae_file=None, vae_source="from unknown source"):
 
 # don't call this from outside
 def _load_vae_dict(model, vae_dict_1):
+        """TODO: Add docstring."""
     model.first_stage_model.load_state_dict(vae_dict_1)
     model.first_stage_model.to(devices.dtype_vae)
 
 
 def clear_loaded_vae():
+        """TODO: Add docstring."""
     global loaded_vae_file
     loaded_vae_file = None
 
@@ -249,6 +270,7 @@ unspecified = object()
 
 
 def reload_vae_weights(sd_model=None, vae_file=unspecified):
+        """TODO: Add docstring."""
     if not sd_model:
         sd_model = shared.sd_model
 

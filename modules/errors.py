@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import sys
 import textwrap
 import traceback
@@ -7,14 +8,17 @@ exception_records = []
 
 
 def format_traceback(tb):
+        """TODO: Add docstring."""
     return [[f"{x.filename}, line {x.lineno}, {x.name}", x.line] for x in traceback.extract_tb(tb)]
 
 
 def format_exception(e, tb):
+        """TODO: Add docstring."""
     return {"exception": str(e), "traceback": format_traceback(tb)}
 
 
 def get_exceptions():
+        """TODO: Add docstring."""
     try:
         return list(reversed(exception_records))
     except Exception as e:
@@ -22,6 +26,7 @@ def get_exceptions():
 
 
 def record_exception():
+        """TODO: Add docstring."""
     _, e, tb = sys.exc_info()
     if e is None:
         return
@@ -50,6 +55,7 @@ def report(message: str, *, exc_info: bool = False) -> None:
 
 
 def print_error_explanation(message):
+        """TODO: Add docstring."""
     record_exception()
 
     lines = message.strip().split("\n")
@@ -62,6 +68,7 @@ def print_error_explanation(message):
 
 
 def display(e: Exception, task, *, full_traceback=False):
+        """TODO: Add docstring."""
     record_exception()
 
     print(f"{task or 'error'}: {type(e).__name__}", file=sys.stderr)
@@ -83,6 +90,7 @@ already_displayed = {}
 
 
 def display_once(e: Exception, task):
+        """TODO: Add docstring."""
     record_exception()
 
     if task in already_displayed:
@@ -94,6 +102,7 @@ def display_once(e: Exception, task):
 
 
 def run(code, task):
+        """TODO: Add docstring."""
     try:
         code()
     except Exception as e:
@@ -101,6 +110,7 @@ def run(code, task):
 
 
 def check_versions():
+        """TODO: Add docstring."""
     from packaging import version
     from modules import shared
 

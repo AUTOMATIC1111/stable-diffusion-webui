@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from collections import namedtuple
 
 import torch
@@ -9,6 +10,7 @@ cpu = torch.device("cpu")
 ModuleWithParent = namedtuple('ModuleWithParent', ['module', 'parent'], defaults=['None'])
 
 def send_everything_to_cpu():
+        """TODO: Add docstring."""
     global module_in_gpu
 
     if module_in_gpu is not None:
@@ -18,10 +20,12 @@ def send_everything_to_cpu():
 
 
 def is_needed(sd_model):
+        """TODO: Add docstring."""
     return shared.cmd_opts.lowvram or shared.cmd_opts.medvram or shared.cmd_opts.medvram_sdxl and hasattr(sd_model, 'conditioner')
 
 
 def apply(sd_model):
+        """TODO: Add docstring."""
     enable = is_needed(sd_model)
     shared.parallel_processing_allowed = not enable
 
@@ -32,6 +36,7 @@ def apply(sd_model):
 
 
 def setup_for_low_vram(sd_model, use_medvram):
+        """TODO: Add docstring."""
     if getattr(sd_model, 'lowvram', False):
         return
 
@@ -66,10 +71,12 @@ def setup_for_low_vram(sd_model, use_medvram):
     first_stage_model_decode = sd_model.first_stage_model.decode
 
     def first_stage_model_encode_wrap(x):
+            """TODO: Add docstring."""
         send_me_to_gpu(first_stage_model, None)
         return first_stage_model_encode(x)
 
     def first_stage_model_decode_wrap(z):
+            """TODO: Add docstring."""
         send_me_to_gpu(first_stage_model, None)
         return first_stage_model_decode(z)
 
@@ -162,4 +169,5 @@ def setup_for_low_vram(sd_model, use_medvram):
 
 
 def is_enabled(sd_model):
+        """TODO: Add docstring."""
     return sd_model.lowvram

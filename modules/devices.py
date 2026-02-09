@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import sys
 import contextlib
 from functools import lru_cache
@@ -13,10 +14,12 @@ if shared.cmd_opts.use_ipex:
 
 
 def has_xpu() -> bool:
+        """TODO: Add docstring."""
     return shared.cmd_opts.use_ipex and xpu_specific.has_xpu
 
 
 def has_mps() -> bool:
+        """TODO: Add docstring."""
     if sys.platform != "darwin":
         return False
     else:
@@ -24,6 +27,7 @@ def has_mps() -> bool:
 
 
 def cuda_no_autocast(device_id=None) -> bool:
+        """TODO: Add docstring."""
     if device_id is None:
         device_id = get_cuda_device_id()
     return (
@@ -33,6 +37,7 @@ def cuda_no_autocast(device_id=None) -> bool:
 
 
 def get_cuda_device_id():
+        """TODO: Add docstring."""
     return (
         int(shared.cmd_opts.device_id)
         if shared.cmd_opts.device_id is not None and shared.cmd_opts.device_id.isdigit()
@@ -41,6 +46,7 @@ def get_cuda_device_id():
 
 
 def get_cuda_device_string():
+        """TODO: Add docstring."""
     if shared.cmd_opts.device_id is not None:
         return f"cuda:{shared.cmd_opts.device_id}"
 
@@ -48,6 +54,7 @@ def get_cuda_device_string():
 
 
 def get_optimal_device_name():
+        """TODO: Add docstring."""
     if torch.cuda.is_available():
         return get_cuda_device_string()
 
@@ -64,10 +71,12 @@ def get_optimal_device_name():
 
 
 def get_optimal_device():
+        """TODO: Add docstring."""
     return torch.device(get_optimal_device_name())
 
 
 def get_device_for(task):
+        """TODO: Add docstring."""
     if task in shared.cmd_opts.use_cpu or "all" in shared.cmd_opts.use_cpu:
         return cpu
 
@@ -93,12 +102,14 @@ def torch_gc():
 
 
 def torch_npu_set_device():
+        """TODO: Add docstring."""
     # Work around due to bug in torch_npu, revert me after fixed, @see https://gitee.com/ascend/pytorch/issues/I8KECW?from=project-issue
     if npu_specific.has_npu:
         torch.npu.set_device(0)
 
 
 def enable_tf32():
+        """TODO: Add docstring."""
     if torch.cuda.is_available():
 
         # enabling benchmark option seems to enable a range of cards to do fp16 when they otherwise can't
@@ -130,12 +141,14 @@ unet_needs_upcast = False
 
 
 def cond_cast_unet(input):
+        """TODO: Add docstring."""
     if force_fp16:
         return input.to(torch.float16)
     return input.to(dtype_unet) if unet_needs_upcast else input
 
 
 def cond_cast_float(input):
+        """TODO: Add docstring."""
     return input.float() if unet_needs_upcast else input
 
 
@@ -151,6 +164,7 @@ patch_module_list = [
 
 def manual_cast_forward(target_dtype):
     def forward_wrapper(self, *args, **kwargs):
+            """TODO: Add docstring."""
         if any(
             isinstance(arg, torch.Tensor) and arg.dtype != target_dtype
             for arg in args
@@ -186,6 +200,7 @@ def manual_cast_forward(target_dtype):
 
 @contextlib.contextmanager
 def manual_cast(target_dtype):
+        """TODO: Add docstring."""
     applied = False
     for module_type in patch_module_list:
         if hasattr(module_type, "org_forward"):
@@ -208,6 +223,7 @@ def manual_cast(target_dtype):
 
 
 def autocast(disable=False):
+        """TODO: Add docstring."""
     if disable:
         return contextlib.nullcontext()
 
@@ -232,14 +248,17 @@ def autocast(disable=False):
 
 
 def without_autocast(disable=False):
+        """TODO: Add docstring."""
     return torch.autocast("cuda", enabled=False) if torch.is_autocast_enabled() and not disable else contextlib.nullcontext()
 
 
 class NansException(Exception):
+        """TODO: Add docstring."""
     pass
 
 
 def test_for_nans(x, where):
+        """TODO: Add docstring."""
     if shared.cmd_opts.disable_nan_check:
         return
 
@@ -293,3 +312,5 @@ def force_model_fp16():
     sgm_util.GroupNorm32 = torch.nn.GroupNorm
     ldm_util.GroupNorm32 = torch.nn.GroupNorm
     print("ldm/sgm GroupNorm32 replaced with normal torch.nn.GroupNorm due to `--precision half`.")
+
+# TODO: Consider using mixed precision training (torch.cuda.amp) for faster training

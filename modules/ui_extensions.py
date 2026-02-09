@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import json
 import os
 import threading
@@ -20,10 +21,12 @@ STYLE_PRIMARY = ' style="color: var(--primary-400)"'
 
 
 def check_access():
+        """TODO: Add docstring."""
     assert not shared.cmd_opts.disable_extension_access, "extension access disabled because of command line flags"
 
 
 def apply_and_restart(disable_list, update_list, disable_all):
+        """TODO: Add docstring."""
     check_access()
 
     disabled = json.loads(disable_list)
@@ -57,6 +60,7 @@ def apply_and_restart(disable_list, update_list, disable_all):
 
 
 def save_config_state(name):
+        """TODO: Add docstring."""
     current_config_state = config_states.get_config()
 
     name = os.path.basename(name or "Config")
@@ -74,6 +78,7 @@ def save_config_state(name):
 
 
 def restore_config_state(confirmed, config_state_name, restore_type):
+        """TODO: Add docstring."""
     if config_state_name == "Current":
         return "<span>Select a config to restore from.</span>"
     if not confirmed:
@@ -98,6 +103,7 @@ def restore_config_state(confirmed, config_state_name, restore_type):
 
 
 def check_updates(id_task, disable_list):
+        """TODO: Add docstring."""
     check_access()
 
     disabled = json.loads(disable_list)
@@ -123,6 +129,7 @@ def check_updates(id_task, disable_list):
 
 
 def make_commit_link(commit_hash, remote, text=None):
+        """TODO: Add docstring."""
     if text is None:
         text = commit_hash[:8]
     if remote.startswith("https://github.com/"):
@@ -135,6 +142,7 @@ def make_commit_link(commit_hash, remote, text=None):
 
 
 def extension_table():
+        """TODO: Add docstring."""
     code = f"""<!-- {time.time()} -->
     <table id="extensions">
         <thead>
@@ -192,6 +200,7 @@ def extension_table():
 
 
 def update_config_states_table(state_name):
+        """TODO: Add docstring."""
     if state_name == "Current":
         config_state = config_states.get_config()
     else:
@@ -329,6 +338,7 @@ def update_config_states_table(state_name):
 
 
 def normalize_git_url(url):
+        """TODO: Add docstring."""
     if url is None:
         return ""
 
@@ -337,11 +347,13 @@ def normalize_git_url(url):
 
 
 def get_extension_dirname_from_url(url):
+        """TODO: Add docstring."""
     *parts, last_part = url.split('/')
     return normalize_git_url(last_part)
 
 
 def install_extension_from_url(dirname, url, branch_name=None):
+        """TODO: Add docstring."""
     check_access()
 
     if isinstance(dirname, str):
@@ -397,6 +409,7 @@ def install_extension_from_url(dirname, url, branch_name=None):
 
 
 def install_extension_from_index(url, selected_tags, showing_type, filtering_type, sort_column, filter_text):
+        """TODO: Add docstring."""
     ext_table, message = install_extension_from_url(None, url)
 
     code, _ = refresh_available_extensions_from_data(selected_tags, showing_type, filtering_type, sort_column, filter_text)
@@ -405,6 +418,7 @@ def install_extension_from_index(url, selected_tags, showing_type, filtering_typ
 
 
 def refresh_available_extensions(url, selected_tags, showing_type, filtering_type, sort_column):
+        """TODO: Add docstring."""
     global available_extensions
 
     import urllib.request
@@ -419,12 +433,14 @@ def refresh_available_extensions(url, selected_tags, showing_type, filtering_typ
 
 
 def refresh_available_extensions_for_tags(selected_tags, showing_type, filtering_type, sort_column, filter_text):
+        """TODO: Add docstring."""
     code, _ = refresh_available_extensions_from_data(selected_tags, showing_type, filtering_type, sort_column, filter_text)
 
     return code, ''
 
 
 def search_extensions(filter_text, selected_tags, showing_type, filtering_type, sort_column):
+        """TODO: Add docstring."""
     code, _ = refresh_available_extensions_from_data(selected_tags, showing_type, filtering_type, sort_column, filter_text)
 
     return code, ''
@@ -444,6 +460,7 @@ sort_ordering = [
 
 
 def get_date(info: dict, key):
+        """TODO: Add docstring."""
     try:
         return datetime.strptime(info.get(key), "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc).astimezone().strftime("%Y-%m-%d")
     except (ValueError, TypeError):
@@ -451,6 +468,7 @@ def get_date(info: dict, key):
 
 
 def refresh_available_extensions_from_data(selected_tags, showing_type, filtering_type, sort_column, filter_text=""):
+        """TODO: Add docstring."""
     extlist = available_extensions["extensions"]
     installed_extensions = {extension.name for extension in extensions.extensions}
     installed_extension_urls = {normalize_git_url(extension.remote) for extension in extensions.extensions if extension.remote is not None}
@@ -537,11 +555,13 @@ def refresh_available_extensions_from_data(selected_tags, showing_type, filterin
 
 
 def preload_extensions_git_metadata():
+        """TODO: Add docstring."""
     for extension in extensions.extensions:
         extension.read_info_from_repo()
 
 
 def create_ui():
+        """TODO: Add docstring."""
     import modules.ui
 
     config_states.list_config_states()

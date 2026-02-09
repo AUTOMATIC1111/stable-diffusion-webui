@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import json
 import os
 import re
@@ -11,25 +12,30 @@ extra_network_aliases = {}
 
 
 def initialize():
+        """TODO: Add docstring."""
     extra_network_registry.clear()
     extra_network_aliases.clear()
 
 
 def register_extra_network(extra_network):
+        """TODO: Add docstring."""
     extra_network_registry[extra_network.name] = extra_network
 
 
 def register_extra_network_alias(extra_network, alias):
+        """TODO: Add docstring."""
     extra_network_aliases[alias] = extra_network
 
 
 def register_default_extra_networks():
+        """TODO: Add docstring."""
     from modules.extra_networks_hypernet import ExtraNetworkHypernet
     register_extra_network(ExtraNetworkHypernet())
 
 
 class ExtraNetworkParams:
     def __init__(self, items=None):
+            """TODO: Add docstring."""
         self.items = items or []
         self.positional = []
         self.named = {}
@@ -42,11 +48,13 @@ class ExtraNetworkParams:
                 self.positional.append(item)
 
     def __eq__(self, other):
+            """TODO: Add docstring."""
         return self.items == other.items
 
 
 class ExtraNetwork:
     def __init__(self, name):
+            """TODO: Add docstring."""
         self.name = name
 
     def activate(self, p, params_list):
@@ -176,9 +184,11 @@ re_extra_net = re.compile(r"<(\w+):([^>]+)>")
 
 
 def parse_prompt(prompt):
+        """TODO: Add docstring."""
     res = defaultdict(list)
 
     def found(m):
+            """TODO: Add docstring."""
         name = m.group(1)
         args = m.group(2)
 
@@ -192,6 +202,7 @@ def parse_prompt(prompt):
 
 
 def parse_prompts(prompts):
+        """TODO: Add docstring."""
     res = []
     extra_data = None
 
@@ -207,6 +218,7 @@ def parse_prompts(prompts):
 
 
 def get_user_metadata(filename, lister=None):
+        """TODO: Add docstring."""
     if filename is None:
         return {}
 

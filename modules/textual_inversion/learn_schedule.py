@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import tqdm
 
 
@@ -37,9 +38,11 @@ class LearnScheduleIterator:
 
 
     def __iter__(self):
+            """TODO: Add docstring."""
         return self
 
     def __next__(self):
+            """TODO: Add docstring."""
         if self.it < self.maxit:
             self.it += 1
             return self.rates[self.it - 1]
@@ -49,6 +52,7 @@ class LearnScheduleIterator:
 
 class LearnRateScheduler:
     def __init__(self, learn_rate, max_steps, cur_step=0, verbose=True):
+            """TODO: Add docstring."""
         self.schedules = LearnScheduleIterator(learn_rate, max_steps, cur_step)
         (self.learn_rate,  self.end_step) = next(self.schedules)
         self.verbose = verbose
@@ -59,6 +63,7 @@ class LearnRateScheduler:
         self.finished = False
 
     def step(self, step_number):
+            """TODO: Add docstring."""
         if step_number < self.end_step:
             return False
 
@@ -70,6 +75,7 @@ class LearnRateScheduler:
         return True
 
     def apply(self, optimizer, step_number):
+            """TODO: Add docstring."""
         if not self.step(step_number):
             return
 

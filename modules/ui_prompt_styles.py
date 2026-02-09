@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import gradio as gr
 
 from modules import shared, ui_common, ui_components, styles
@@ -8,6 +9,7 @@ styles_copy_symbol = '\U0001f4dd'  # 📝
 
 
 def select_style(name):
+        """TODO: Add docstring."""
     style = shared.prompt_styles.styles.get(name)
     existing = style is not None
     empty = not name
@@ -19,6 +21,7 @@ def select_style(name):
 
 
 def save_style(name, prompt, negative_prompt):
+        """TODO: Add docstring."""
     if not name:
         return gr.update(visible=False)
 
@@ -33,6 +36,7 @@ def save_style(name, prompt, negative_prompt):
 
 
 def delete_style(name):
+        """TODO: Add docstring."""
     if name == "":
         return
 
@@ -43,6 +47,7 @@ def delete_style(name):
 
 
 def materialize_styles(prompt, negative_prompt, styles):
+        """TODO: Add docstring."""
     prompt = shared.prompt_styles.apply_styles_to_prompt(prompt, styles)
     negative_prompt = shared.prompt_styles.apply_negative_styles_to_prompt(negative_prompt, styles)
 
@@ -50,11 +55,13 @@ def materialize_styles(prompt, negative_prompt, styles):
 
 
 def refresh_styles():
+        """TODO: Add docstring."""
     return gr.update(choices=list(shared.prompt_styles.styles)), gr.update(choices=list(shared.prompt_styles.styles))
 
 
 class UiPromptStyles:
     def __init__(self, tabname, main_ui_prompt, main_ui_negative_prompt):
+            """TODO: Add docstring."""
         self.tabname = tabname
         self.main_ui_prompt = main_ui_prompt
         self.main_ui_negative_prompt = main_ui_negative_prompt
@@ -115,6 +122,7 @@ class UiPromptStyles:
         ui_common.setup_dialog(button_show=edit_button, dialog=styles_dialog, button_close=self.close)
 
     def setup_apply_button(self, button):
+            """TODO: Add docstring."""
         button.click(
             fn=materialize_styles,
             inputs=[self.main_ui_prompt, self.main_ui_negative_prompt, self.dropdown],

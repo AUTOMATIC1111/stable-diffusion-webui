@@ -14,27 +14,33 @@ sd_vae_taesd_models = {}
 
 
 def conv(n_in, n_out, **kwargs):
+        """TODO: Add docstring."""
     return nn.Conv2d(n_in, n_out, 3, padding=1, **kwargs)
 
 
 class Clamp(nn.Module):
+        """TODO: Add docstring."""
     @staticmethod
     def forward(x):
+            """TODO: Add docstring."""
         return torch.tanh(x / 3) * 3
 
 
 class Block(nn.Module):
     def __init__(self, n_in, n_out):
+            """TODO: Add docstring."""
         super().__init__()
         self.conv = nn.Sequential(conv(n_in, n_out), nn.ReLU(), conv(n_out, n_out), nn.ReLU(), conv(n_out, n_out))
         self.skip = nn.Conv2d(n_in, n_out, 1, bias=False) if n_in != n_out else nn.Identity()
         self.fuse = nn.ReLU()
 
     def forward(self, x):
+            """TODO: Add docstring."""
         return self.fuse(self.conv(x) + self.skip(x))
 
 
 def decoder(latent_channels=4):
+        """TODO: Add docstring."""
     return nn.Sequential(
         Clamp(), conv(latent_channels, 64), nn.ReLU(),
         Block(64, 64), Block(64, 64), Block(64, 64), nn.Upsample(scale_factor=2), conv(64, 64, bias=False),
@@ -45,6 +51,7 @@ def decoder(latent_channels=4):
 
 
 def encoder(latent_channels=4):
+        """TODO: Add docstring."""
     return nn.Sequential(
         conv(3, 64), Block(64, 64),
         conv(64, 64, stride=2, bias=False), Block(64, 64), Block(64, 64), Block(64, 64),
@@ -55,6 +62,7 @@ def encoder(latent_channels=4):
 
 
 class TAESDDecoder(nn.Module):
+        """TODO: Add docstring."""
     latent_magnitude = 3
     latent_shift = 0.5
 
@@ -71,6 +79,7 @@ class TAESDDecoder(nn.Module):
 
 
 class TAESDEncoder(nn.Module):
+        """TODO: Add docstring."""
     latent_magnitude = 3
     latent_shift = 0.5
 
@@ -87,6 +96,7 @@ class TAESDEncoder(nn.Module):
 
 
 def download_model(model_path, model_url):
+        """TODO: Add docstring."""
     if not os.path.exists(model_path):
         os.makedirs(os.path.dirname(model_path), exist_ok=True)
 
@@ -95,6 +105,7 @@ def download_model(model_path, model_url):
 
 
 def decoder_model():
+        """TODO: Add docstring."""
     if shared.sd_model.is_sd3:
         model_name = "taesd3_decoder.pth"
     elif shared.sd_model.is_sdxl:
@@ -120,6 +131,7 @@ def decoder_model():
 
 
 def encoder_model():
+        """TODO: Add docstring."""
     if shared.sd_model.is_sd3:
         model_name = "taesd3_encoder.pth"
     elif shared.sd_model.is_sdxl:
@@ -142,3 +154,5 @@ def encoder_model():
             raise FileNotFoundError('TAESD model not found')
 
     return loaded_model.encoder
+
+# TODO: Consider using mixed precision training (torch.cuda.amp) for faster training

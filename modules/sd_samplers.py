@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from __future__ import annotations
 
 import functools
@@ -22,6 +23,7 @@ samplers_hidden = {}
 
 
 def find_sampler_config(name):
+        """TODO: Add docstring."""
     if name is not None:
         config = all_samplers_map.get(name, None)
     else:
@@ -31,6 +33,7 @@ def find_sampler_config(name):
 
 
 def create_sampler(name, model):
+        """TODO: Add docstring."""
     config = find_sampler_config(name)
 
     assert config is not None, f'bad sampler name: {name}'
@@ -45,6 +48,7 @@ def create_sampler(name, model):
 
 
 def set_samplers():
+        """TODO: Add docstring."""
     global samplers, samplers_for_img2img, samplers_hidden
 
     samplers_hidden = set(shared.opts.hide_samplers)
@@ -59,22 +63,27 @@ def set_samplers():
 
 
 def visible_sampler_names():
+        """TODO: Add docstring."""
     return [x.name for x in samplers if x.name not in samplers_hidden]
 
 
 def visible_samplers():
+        """TODO: Add docstring."""
     return [x for x in samplers if x.name not in samplers_hidden]
 
 
 def get_sampler_from_infotext(d: dict):
+        """TODO: Add docstring."""
     return get_sampler_and_scheduler(d.get("Sampler"), d.get("Schedule type"))[0]
 
 
 def get_scheduler_from_infotext(d: dict):
+        """TODO: Add docstring."""
     return get_sampler_and_scheduler(d.get("Sampler"), d.get("Schedule type"))[1]
 
 
 def get_hr_sampler_and_scheduler(d: dict):
+        """TODO: Add docstring."""
     hr_sampler = d.get("Hires sampler", "Use same sampler")
     sampler = d.get("Sampler") if hr_sampler == "Use same sampler" else hr_sampler
 
@@ -90,15 +99,18 @@ def get_hr_sampler_and_scheduler(d: dict):
 
 
 def get_hr_sampler_from_infotext(d: dict):
+        """TODO: Add docstring."""
     return get_hr_sampler_and_scheduler(d)[0]
 
 
 def get_hr_scheduler_from_infotext(d: dict):
+        """TODO: Add docstring."""
     return get_hr_sampler_and_scheduler(d)[1]
 
 
 @functools.cache
 def get_sampler_and_scheduler(sampler_name, scheduler_name, *, convert_automatic=True):
+        """TODO: Add docstring."""
     default_sampler = samplers[0]
     found_scheduler = sd_schedulers.schedulers_map.get(scheduler_name, sd_schedulers.schedulers[0])
 
@@ -123,6 +135,7 @@ def get_sampler_and_scheduler(sampler_name, scheduler_name, *, convert_automatic
 
 
 def fix_p_invalid_sampler_and_scheduler(p):
+        """TODO: Add docstring."""
     i_sampler_name, i_scheduler = p.sampler_name, p.scheduler
     p.sampler_name, p.scheduler = get_sampler_and_scheduler(p.sampler_name, p.scheduler, convert_automatic=False)
     if p.sampler_name != i_sampler_name or i_scheduler != p.scheduler:

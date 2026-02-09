@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 # this code is adapted from the script contributed by anon from /h/
 
 import pickle
@@ -16,14 +17,17 @@ from modules import errors
 TypedStorage = torch.storage.TypedStorage if hasattr(torch.storage, 'TypedStorage') else torch.storage._TypedStorage
 
 def encode(*args):
+        """TODO: Add docstring."""
     out = _codecs.encode(*args)
     return out
 
 
 class RestrictedUnpickler(pickle.Unpickler):
+        """TODO: Add docstring."""
     extra_handler = None
 
     def persistent_load(self, saved_id):
+            """TODO: Add docstring."""
         assert saved_id[0] == 'storage'
 
         try:
@@ -32,6 +36,7 @@ class RestrictedUnpickler(pickle.Unpickler):
             return TypedStorage()  # PyTorch before 2.0 does not have the _internal argument
 
     def find_class(self, module, name):
+            """TODO: Add docstring."""
         if self.extra_handler is not None:
             res = self.extra_handler(module, name)
             if res is not None:
@@ -69,6 +74,7 @@ allowed_zip_names_re = re.compile(r"^([^/]+)/((data/\d+)|version|byteorder|.data
 data_pkl_re = re.compile(r"^([^/]+)/data\.pkl$")
 
 def check_zip_filenames(filename, names):
+        """TODO: Add docstring."""
     for name in names:
         if allowed_zip_names_re.match(name):
             continue
@@ -77,6 +83,7 @@ def check_zip_filenames(filename, names):
 
 
 def check_pt(filename, extra_handler):
+        """TODO: Add docstring."""
     try:
 
         # new pytorch format is a zip file
@@ -105,6 +112,7 @@ def check_pt(filename, extra_handler):
 
 
 def load(filename, *args, **kwargs):
+        """TODO: Add docstring."""
     return load_with_extra(filename, *args, extra_handler=global_extra_handler, **kwargs)
 
 
@@ -118,6 +126,7 @@ def load_with_extra(filename, extra_handler=None, *args, **kwargs):
 
     ```python
     def extra(module, name):
+            """TODO: Add docstring."""
         if module == 'collections' and name == 'OrderedDict':
             return collections.OrderedDict
 
@@ -166,6 +175,7 @@ import torch
 from modules import safe
 
 def handler(module, name):
+        """TODO: Add docstring."""
     if module == 'torch' and name in ['float64', 'float16']:
         return getattr(torch, name)
 
@@ -177,15 +187,18 @@ with safe.Extra(handler):
     """
 
     def __init__(self, handler):
+            """TODO: Add docstring."""
         self.handler = handler
 
     def __enter__(self):
+            """TODO: Add docstring."""
         global global_extra_handler
 
         assert global_extra_handler is None, 'already inside an Extra() block'
         global_extra_handler = self.handler
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+            """TODO: Add docstring."""
         global global_extra_handler
 
         global_extra_handler = None

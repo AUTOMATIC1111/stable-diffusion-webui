@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import base64
 import os
 
@@ -8,12 +9,14 @@ test_outputs_path = os.path.dirname(__file__) + "/test_outputs"
 
 
 def pytest_configure(config):
+        """TODO: Add docstring."""
     # We don't want to fail on Py.test command line arguments being
     # parsed by webui:
     os.environ.setdefault("IGNORE_CMD_ARGS_ERRORS", "1")
 
 
 def file_to_base64(filename):
+        """TODO: Add docstring."""
     with open(filename, "rb") as file:
         data = file.read()
 
@@ -23,14 +26,17 @@ def file_to_base64(filename):
 
 @pytest.fixture(scope="session")  # session so we don't read this over and over
 def img2img_basic_image_base64() -> str:
+        """TODO: Add docstring."""
     return file_to_base64(os.path.join(test_files_path, "img2img_basic.png"))
 
 
 @pytest.fixture(scope="session")  # session so we don't read this over and over
 def mask_basic_image_base64() -> str:
+        """TODO: Add docstring."""
     return file_to_base64(os.path.join(test_files_path, "mask_basic.png"))
 
 
 @pytest.fixture(scope="session")
 def initialize() -> None:
+        """TODO: Add docstring."""
     import webui  # noqa: F401

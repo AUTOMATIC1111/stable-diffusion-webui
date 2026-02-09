@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import sys
 
 import PIL.Image
@@ -8,6 +9,7 @@ from modules import devices, errors, modelloader, script_callbacks, shared, upsc
 
 class UpscalerScuNET(modules.upscaler.Upscaler):
     def __init__(self, dirname):
+            """TODO: Add docstring."""
         self.name = "ScuNET"
         self.model_name = "ScuNET GAN"
         self.model_name2 = "ScuNET PSNR"
@@ -36,6 +38,7 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
         self.scalers = scalers
 
     def do_upscale(self, img: PIL.Image.Image, selected_file):
+            """TODO: Add docstring."""
         devices.torch_gc()
         try:
             model = self.load_model(selected_file)
@@ -55,6 +58,7 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
         return img
 
     def load_model(self, path: str):
+            """TODO: Add docstring."""
         device = devices.get_device_for('scunet')
         if path.startswith("http"):
             # TODO: this doesn't use `path` at all?
@@ -65,6 +69,7 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
 
 
 def on_ui_settings():
+        """TODO: Add docstring."""
     import gradio as gr
 
     shared.opts.add_option("SCUNET_tile", shared.OptionInfo(256, "Tile size for SCUNET upscalers.", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}, section=('upscaling', "Upscaling")).info("0 = no tiling"))

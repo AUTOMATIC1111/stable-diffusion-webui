@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import gradio as gr
 
 from modules import shared, ui_prompt_styles
@@ -36,6 +37,7 @@ class Toprow:
     submit_box = None
 
     def __init__(self, is_img2img, is_compact=False, id_part=None):
+            """TODO: Add docstring."""
         if id_part is None:
             id_part = "img2img" if is_img2img else "txt2img"
 
@@ -50,6 +52,7 @@ class Toprow:
             self.create_submit_box()
 
     def create_classic_toprow(self):
+            """TODO: Add docstring."""
         self.create_prompts()
 
         with gr.Column(scale=1, elem_id=f"{self.id_part}_actions_column"):
@@ -60,6 +63,7 @@ class Toprow:
             self.create_styles_ui()
 
     def create_inline_toprow_prompts(self):
+            """TODO: Add docstring."""
         if not self.is_compact:
             return
 
@@ -72,12 +76,14 @@ class Toprow:
                 self.create_styles_ui()
 
     def create_inline_toprow_image(self):
+            """TODO: Add docstring."""
         if not self.is_compact:
             return
 
         self.submit_box.render()
 
     def create_prompts(self):
+            """TODO: Add docstring."""
         with gr.Column(elem_id=f"{self.id_part}_prompt_container", elem_classes=["prompt-container-compact"] if self.is_compact else [], scale=6):
             with gr.Row(elem_id=f"{self.id_part}_prompt_row", elem_classes=["prompt-row"]):
                 self.prompt = gr.Textbox(label="Prompt", elem_id=f"{self.id_part}_prompt", show_label=False, lines=3, placeholder="Prompt\n(Press Ctrl+Enter to generate, Alt+Enter to skip, Esc to interrupt)", elem_classes=["prompt"])
@@ -94,6 +100,7 @@ class Toprow:
         )
 
     def create_submit_box(self):
+            """TODO: Add docstring."""
         with gr.Row(elem_id=f"{self.id_part}_generate_box", elem_classes=["generate-box"] + (["generate-box-compact"] if self.is_compact else []), render=not self.is_compact) as submit_box:
             self.submit_box = submit_box
 
@@ -103,6 +110,7 @@ class Toprow:
             self.submit = gr.Button('Generate', elem_id=f"{self.id_part}_generate", variant='primary', tooltip="Right click generate forever menu")
 
             def interrupt_function():
+                    """TODO: Add docstring."""
                 if not shared.state.stopping_generation and shared.state.job_count > 1 and shared.opts.interrupt_after_current:
                     shared.state.stop_generating()
                     gr.Info("Generation will stop after finishing this image, click again to stop immediately.")
@@ -114,6 +122,7 @@ class Toprow:
             self.interrupting.click(fn=interrupt_function)
 
     def create_tools_row(self):
+            """TODO: Add docstring."""
         with gr.Row(elem_id=f"{self.id_part}_tools"):
             from modules.ui import paste_symbol, clear_prompt_symbol, restore_progress_symbol
 
@@ -140,5 +149,6 @@ class Toprow:
             )
 
     def create_styles_ui(self):
+            """TODO: Add docstring."""
         self.ui_styles = ui_prompt_styles.UiPromptStyles(self.id_part, self.prompt, self.negative_prompt)
         self.ui_styles.setup_apply_button(self.apply_styles)

@@ -1,12 +1,15 @@
+    """TODO: Add docstring."""
 from modules import extra_networks, shared
 from modules.hypernetworks import hypernetwork
 
 
 class ExtraNetworkHypernet(extra_networks.ExtraNetwork):
     def __init__(self):
+            """TODO: Add docstring."""
         super().__init__('hypernet')
 
     def activate(self, p, params_list):
+            """TODO: Add docstring."""
         additional = shared.opts.sd_hypernetwork
 
         if additional != "None" and additional in shared.hypernetworks and not any(x for x in params_list if x.items[0] == additional):
@@ -25,4 +28,5 @@ class ExtraNetworkHypernet(extra_networks.ExtraNetwork):
         hypernetwork.load_hypernetworks(names, multipliers)
 
     def deactivate(self, p):
+            """TODO: Add docstring."""
         pass

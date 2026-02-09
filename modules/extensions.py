@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from __future__ import annotations
 
 import configparser
@@ -19,6 +20,7 @@ os.makedirs(extensions_dir, exist_ok=True)
 
 
 def active():
+        """TODO: Add docstring."""
     if shared.cmd_opts.disable_all_extensions or shared.opts.disable_all_extensions == "all":
         return []
     elif shared.cmd_opts.disable_extra_extensions or shared.opts.disable_all_extensions == "extra":
@@ -29,18 +31,21 @@ def active():
 
 @dataclasses.dataclass
 class CallbackOrderInfo:
+        """TODO: Add docstring."""
     name: str
     before: list
     after: list
 
 
 class ExtensionMetadata:
+        """TODO: Add docstring."""
     filename = "metadata.ini"
     config: configparser.ConfigParser
     canonical_name: str
     requires: list
 
     def __init__(self, path, canonical_name):
+            """TODO: Add docstring."""
         self.config = configparser.ConfigParser()
 
         filepath = os.path.join(path, self.filename)
@@ -86,6 +91,7 @@ class ExtensionMetadata:
         return [x for x in re.split(r"[,\s]+", text.strip()) if x]
 
     def list_callback_order_instructions(self):
+            """TODO: Add docstring."""
         for section in self.config.sections():
             if not section.startswith("callbacks/"):
                 continue
@@ -103,11 +109,13 @@ class ExtensionMetadata:
 
 
 class Extension:
+        """TODO: Add docstring."""
     lock = threading.Lock()
     cached_fields = ['remote', 'commit_date', 'branch', 'commit_hash', 'version']
     metadata: ExtensionMetadata
 
     def __init__(self, name, path, enabled=True, is_builtin=False, metadata=None):
+            """TODO: Add docstring."""
         self.name = name
         self.path = path
         self.enabled = enabled
@@ -124,17 +132,21 @@ class Extension:
         self.canonical_name = metadata.canonical_name
 
     def to_dict(self):
+            """TODO: Add docstring."""
         return {x: getattr(self, x) for x in self.cached_fields}
 
     def from_dict(self, d):
+            """TODO: Add docstring."""
         for field in self.cached_fields:
             setattr(self, field, d[field])
 
     def read_info_from_repo(self):
+            """TODO: Add docstring."""
         if self.is_builtin or self.have_info_from_repo:
             return
 
         def read_from_repo():
+                """TODO: Add docstring."""
             with self.lock:
                 if self.have_info_from_repo:
                     return
@@ -151,6 +163,7 @@ class Extension:
         self.status = 'unknown' if self.status == '' else self.status
 
     def do_read_info_from_repo(self):
+            """TODO: Add docstring."""
         repo = None
         try:
             if os.path.exists(os.path.join(self.path, ".git")):
@@ -177,6 +190,7 @@ class Extension:
         self.have_info_from_repo = True
 
     def list_files(self, subdir, extension):
+            """TODO: Add docstring."""
         dirpath = os.path.join(self.path, subdir)
         if not os.path.isdir(dirpath):
             return []
@@ -190,6 +204,7 @@ class Extension:
         return res
 
     def check_updates(self):
+            """TODO: Add docstring."""
         repo = Repo(self.path)
         branch_name = f'{repo.remote().name}/{self.branch}'
         for fetch in repo.remote().fetch(dry_run=True):
@@ -215,6 +230,7 @@ class Extension:
         self.status = "latest"
 
     def fetch_and_reset_hard(self, commit=None):
+            """TODO: Add docstring."""
         repo = Repo(self.path)
         if commit is None:
             commit = f'{repo.remote().name}/{self.branch}'
@@ -226,6 +242,7 @@ class Extension:
 
 
 def list_extensions():
+        """TODO: Add docstring."""
     extensions.clear()
     extension_paths.clear()
     loaded_extensions.clear()
@@ -285,6 +302,7 @@ def list_extensions():
 
 
 def find_extension(filename):
+        """TODO: Add docstring."""
     parentdir = os.path.dirname(os.path.realpath(filename))
 
     while parentdir != filename:

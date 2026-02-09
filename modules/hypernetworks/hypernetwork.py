@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import datetime
 import glob
 import html
@@ -23,6 +24,7 @@ from statistics import stdev, mean
 optimizer_dict = {optim_name : cls_obj for optim_name, cls_obj in inspect.getmembers(torch.optim, inspect.isclass) if optim_name != "Optimizer"}
 
 class HypernetworkModule(torch.nn.Module):
+        """TODO: Add docstring."""
     activation_dict = {
         "linear": torch.nn.Identity,
         "relu": torch.nn.ReLU,
@@ -35,6 +37,7 @@ class HypernetworkModule(torch.nn.Module):
     activation_dict.update({cls_name.lower(): cls_obj for cls_name, cls_obj in inspect.getmembers(torch.nn.modules.activation) if inspect.isclass(cls_obj) and cls_obj.__module__ == 'torch.nn.modules.activation'})
 
     def __init__(self, dim, state_dict=None, layer_structure=None, activation_func=None, weight_init='Normal',
+                     """TODO: Add docstring."""
                  add_layer_norm=False, activate_output=False, dropout_structure=None):
         super().__init__()
 
@@ -99,6 +102,7 @@ class HypernetworkModule(torch.nn.Module):
         self.to(devices.device)
 
     def fix_old_state_dict(self, state_dict):
+            """TODO: Add docstring."""
         changes = {
             'linear1.bias': 'linear.0.bias',
             'linear1.weight': 'linear.0.weight',
@@ -115,9 +119,11 @@ class HypernetworkModule(torch.nn.Module):
             state_dict[to] = x
 
     def forward(self, x):
+            """TODO: Add docstring."""
         return x + self.linear(x) * (self.multiplier if not self.training else 1)
 
     def trainables(self):
+            """TODO: Add docstring."""
         layer_structure = []
         for layer in self.linear:
             if type(layer) == torch.nn.Linear or type(layer) == torch.nn.LayerNorm:
@@ -127,6 +133,7 @@ class HypernetworkModule(torch.nn.Module):
 
 #param layer_structure : sequence used for length, use_dropout : controlling boolean, last_layer_dropout : for compatibility check.
 def parse_dropout_structure(layer_structure, use_dropout, last_layer_dropout):
+        """TODO: Add docstring."""
     if layer_structure is None:
         layer_structure = [1, 2, 1]
     if not use_dropout:
@@ -142,10 +149,12 @@ def parse_dropout_structure(layer_structure, use_dropout, last_layer_dropout):
 
 
 class Hypernetwork:
+        """TODO: Add docstring."""
     filename = None
     name = None
 
     def __init__(self, name=None, enable_sizes=None, layer_structure=None, activation_func=None, weight_init=None, add_layer_norm=False, use_dropout=False, activate_output=False, **kwargs):
+            """TODO: Add docstring."""
         self.filename = None
         self.name = name
         self.layers = {}
@@ -176,6 +185,7 @@ class Hypernetwork:
         self.eval()
 
     def weights(self):
+            """TODO: Add docstring."""
         res = []
         for layers in self.layers.values():
             for layer in layers:
@@ -183,6 +193,7 @@ class Hypernetwork:
         return res
 
     def train(self, mode=True):
+            """TODO: Add docstring."""
         for layers in self.layers.values():
             for layer in layers:
                 layer.train(mode=mode)
@@ -190,6 +201,7 @@ class Hypernetwork:
                     param.requires_grad = mode
 
     def to(self, device):
+            """TODO: Add docstring."""
         for layers in self.layers.values():
             for layer in layers:
                 layer.to(device)
@@ -197,6 +209,7 @@ class Hypernetwork:
         return self
 
     def set_multiplier(self, multiplier):
+            """TODO: Add docstring."""
         for layers in self.layers.values():
             for layer in layers:
                 layer.multiplier = multiplier
@@ -204,6 +217,7 @@ class Hypernetwork:
         return self
 
     def eval(self):
+            """TODO: Add docstring."""
         for layers in self.layers.values():
             for layer in layers:
                 layer.eval()
@@ -211,6 +225,7 @@ class Hypernetwork:
                     param.requires_grad = False
 
     def save(self, filename):
+            """TODO: Add docstring."""
         state_dict = {}
         optimizer_saved_dict = {}
 
@@ -241,6 +256,7 @@ class Hypernetwork:
             torch.save(optimizer_saved_dict, filename + '.optim')
 
     def load(self, filename):
+            """TODO: Add docstring."""
         self.filename = filename
         if self.name is None:
             self.name = os.path.splitext(os.path.basename(filename))[0]
@@ -304,12 +320,14 @@ class Hypernetwork:
         self.eval()
 
     def shorthash(self):
+            """TODO: Add docstring."""
         sha256 = hashes.sha256(self.filename, f'hypernet/{self.name}')
 
         return sha256[0:10] if sha256 else None
 
 
 def list_hypernetworks(path):
+        """TODO: Add docstring."""
     res = {}
     for filename in sorted(glob.iglob(os.path.join(path, '**/*.pt'), recursive=True), key=str.lower):
         name = os.path.splitext(os.path.basename(filename))[0]
@@ -320,6 +338,7 @@ def list_hypernetworks(path):
 
 
 def load_hypernetwork(name):
+        """TODO: Add docstring."""
     path = shared.hypernetworks.get(name, None)
 
     if path is None:
@@ -335,6 +354,7 @@ def load_hypernetwork(name):
 
 
 def load_hypernetworks(names, multipliers=None):
+        """TODO: Add docstring."""
     already_loaded = {}
 
     for hypernetwork in shared.loaded_hypernetworks:
@@ -356,6 +376,7 @@ def load_hypernetworks(names, multipliers=None):
 
 
 def apply_single_hypernetwork(hypernetwork, context_k, context_v, layer=None):
+        """TODO: Add docstring."""
     hypernetwork_layers = (hypernetwork.layers if hypernetwork is not None else {}).get(context_k.shape[2], None)
 
     if hypernetwork_layers is None:
@@ -371,6 +392,7 @@ def apply_single_hypernetwork(hypernetwork, context_k, context_v, layer=None):
 
 
 def apply_hypernetworks(hypernetworks, context, layer=None):
+        """TODO: Add docstring."""
     context_k = context
     context_v = context
     for hypernetwork in hypernetworks:
@@ -380,6 +402,7 @@ def apply_hypernetworks(hypernetworks, context, layer=None):
 
 
 def attention_CrossAttention_forward(self, x, context=None, mask=None, **kwargs):
+        """TODO: Add docstring."""
     h = self.heads
 
     q = self.to_q(x)
@@ -408,6 +431,7 @@ def attention_CrossAttention_forward(self, x, context=None, mask=None, **kwargs)
 
 
 def stack_conds(conds):
+        """TODO: Add docstring."""
     if len(conds) == 1:
         return torch.stack(conds)
 
@@ -423,6 +447,7 @@ def stack_conds(conds):
 
 
 def statistics(data):
+        """TODO: Add docstring."""
     if len(data) < 2:
         std = 0
     else:
@@ -438,6 +463,7 @@ def statistics(data):
 
 
 def create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure=None, activation_func=None, weight_init=None, add_layer_norm=False, use_dropout=False, dropout_structure=None):
+        """TODO: Add docstring."""
     # Remove illegal characters from name.
     name = "".join( x for x in name if (x.isalnum() or x in "._- "))
     assert name, "Name cannot be empty!"
@@ -470,6 +496,7 @@ def create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure=None,
 
 
 def train_hypernetwork(id_task, hypernetwork_name: str, learn_rate: float, batch_size: int, gradient_step: int, data_root: str, log_directory: str, training_width: int, training_height: int, varsize: bool, steps: int, clip_grad_mode: str, clip_grad_value: float, shuffle_tags: bool, tag_drop_out: bool, latent_sampling_method: str, use_weight: bool, create_image_every: int, save_hypernetwork_every: int, template_filename: str, preview_from_txt2img: bool, preview_prompt: str, preview_negative_prompt: str, preview_steps: int, preview_sampler_name: str, preview_cfg_scale: float, preview_seed: int, preview_width: int, preview_height: int):
+        """TODO: Add docstring."""
     from modules import images, processing
 
     save_hypernetwork_every = save_hypernetwork_every or 0
@@ -768,6 +795,7 @@ Last saved image: {html.escape(last_saved_image)}<br/>
     return hypernetwork, filename
 
 def save_hypernetwork(hypernetwork, checkpoint, hypernetwork_name, filename):
+        """TODO: Add docstring."""
     old_hypernetwork_name = hypernetwork.name
     old_sd_checkpoint = hypernetwork.sd_checkpoint if hasattr(hypernetwork, "sd_checkpoint") else None
     old_sd_checkpoint_name = hypernetwork.sd_checkpoint_name if hasattr(hypernetwork, "sd_checkpoint_name") else None

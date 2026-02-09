@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 import importlib.util
 
@@ -8,6 +9,7 @@ loaded_scripts = {}
 
 
 def load_module(path):
+        """TODO: Add docstring."""
     module_spec = importlib.util.spec_from_file_location(os.path.basename(path), path)
     module = importlib.util.module_from_spec(module_spec)
     module_spec.loader.exec_module(module)
@@ -17,6 +19,7 @@ def load_module(path):
 
 
 def preload_extensions(extensions_dir, parser, extension_list=None):
+        """TODO: Add docstring."""
     if not os.path.isdir(extensions_dir):
         return
 

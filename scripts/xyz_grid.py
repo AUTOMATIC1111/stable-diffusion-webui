@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from collections import namedtuple
 from copy import copy
 from itertools import permutations, chain
@@ -29,12 +30,14 @@ AxisInfo = namedtuple('AxisInfo', ['axis', 'values'])
 
 def apply_field(field):
     def fun(p, x, xs):
+            """TODO: Add docstring."""
         setattr(p, field, x)
 
     return fun
 
 
 def apply_prompt(p, x, xs):
+        """TODO: Add docstring."""
     if xs[0] not in p.prompt and xs[0] not in p.negative_prompt:
         raise RuntimeError(f"Prompt S/R did not find {xs[0]} in prompt or negative prompt.")
 
@@ -43,6 +46,7 @@ def apply_prompt(p, x, xs):
 
 
 def apply_order(p, x, xs):
+        """TODO: Add docstring."""
     token_order = []
 
     # Initially grab the tokens from the prompt, so they can be replaced in order of earliest seen
@@ -68,12 +72,14 @@ def apply_order(p, x, xs):
 
 
 def confirm_samplers(p, xs):
+        """TODO: Add docstring."""
     for x in xs:
         if x.lower() not in sd_samplers.samplers_map:
             raise RuntimeError(f"Unknown sampler: {x}")
 
 
 def apply_checkpoint(p, x, xs):
+        """TODO: Add docstring."""
     info = modules.sd_models.get_closet_checkpoint_match(x)
     if info is None:
         raise RuntimeError(f"Unknown checkpoint: {x}")
@@ -81,12 +87,14 @@ def apply_checkpoint(p, x, xs):
 
 
 def confirm_checkpoints(p, xs):
+        """TODO: Add docstring."""
     for x in xs:
         if modules.sd_models.get_closet_checkpoint_match(x) is None:
             raise RuntimeError(f"Unknown checkpoint: {x}")
 
 
 def confirm_checkpoints_or_none(p, xs):
+        """TODO: Add docstring."""
     for x in xs:
         if x in (None, "", "None", "none"):
             continue
@@ -99,6 +107,7 @@ def confirm_range(min_val, max_val, axis_label):
     """Generates a AxisOption.confirm() function that checks all values are within the specified range."""
 
     def confirm_range_fun(p, xs):
+            """TODO: Add docstring."""
         for x in xs:
             if not (max_val >= x >= min_val):
                 raise ValueError(f'{axis_label} value "{x}" out of range [{min_val}, {max_val}]')
@@ -107,6 +116,7 @@ def confirm_range(min_val, max_val, axis_label):
 
 
 def apply_size(p, x: str, xs) -> None:
+        """TODO: Add docstring."""
     try:
         width, _, height = x.partition('x')
         width = int(width.strip())
@@ -118,6 +128,7 @@ def apply_size(p, x: str, xs) -> None:
 
 
 def find_vae(name: str):
+        """TODO: Add docstring."""
     if (name := name.strip().lower()) in ('auto', 'automatic'):
         return 'Automatic'
     elif name == 'none':
@@ -126,18 +137,22 @@ def find_vae(name: str):
 
 
 def apply_vae(p, x, xs):
+        """TODO: Add docstring."""
     p.override_settings['sd_vae'] = find_vae(x)
 
 
 def apply_styles(p: StableDiffusionProcessingTxt2Img, x: str, _):
+        """TODO: Add docstring."""
     p.styles.extend(x.split(','))
 
 
 def apply_uni_pc_order(p, x, xs):
+        """TODO: Add docstring."""
     p.override_settings['uni_pc_order'] = min(x, p.steps - 1)
 
 
 def apply_face_restore(p, opt, x):
+        """TODO: Add docstring."""
     opt = opt.lower()
     if opt == 'codeformer':
         is_active = True
@@ -153,6 +168,7 @@ def apply_face_restore(p, opt, x):
 
 def apply_override(field, boolean: bool = False):
     def fun(p, x, xs):
+            """TODO: Add docstring."""
         if boolean:
             x = True if x.lower() == "true" else False
         p.override_settings[field] = x
@@ -162,12 +178,14 @@ def apply_override(field, boolean: bool = False):
 
 def boolean_choice(reverse: bool = False):
     def choice():
+            """TODO: Add docstring."""
         return ["False", "True"] if reverse else ["True", "False"]
 
     return choice
 
 
 def format_value_add_label(p, opt, x):
+        """TODO: Add docstring."""
     if type(x) == float:
         x = round(x, 8)
 
@@ -175,24 +193,29 @@ def format_value_add_label(p, opt, x):
 
 
 def format_value(p, opt, x):
+        """TODO: Add docstring."""
     if type(x) == float:
         x = round(x, 8)
     return x
 
 
 def format_value_join_list(p, opt, x):
+        """TODO: Add docstring."""
     return ", ".join(x)
 
 
 def do_nothing(p, x, xs):
+        """TODO: Add docstring."""
     pass
 
 
 def format_nothing(p, opt, x):
+        """TODO: Add docstring."""
     return ""
 
 
 def format_remove_path(p, opt, x):
+        """TODO: Add docstring."""
     return os.path.basename(x)
 
 
@@ -202,17 +225,20 @@ def str_permutations(x):
 
 
 def list_to_csv_string(data_list):
+        """TODO: Add docstring."""
     with StringIO() as o:
         csv.writer(o).writerow(data_list)
         return o.getvalue().strip()
 
 
 def csv_string_to_list_strip(data_str):
+        """TODO: Add docstring."""
     return list(map(str.strip, chain.from_iterable(csv.reader(StringIO(data_str), skipinitialspace=True))))
 
 
 class AxisOption:
     def __init__(self, label, type, apply, format_value=format_value_add_label, confirm=None, cost=0.0, choices=None, prepare=None):
+            """TODO: Add docstring."""
         self.label = label
         self.type = type
         self.apply = apply
@@ -225,12 +251,14 @@ class AxisOption:
 
 class AxisOptionImg2Img(AxisOption):
     def __init__(self, *args, **kwargs):
+            """TODO: Add docstring."""
         super().__init__(*args, **kwargs)
         self.is_img2img = True
 
 
 class AxisOptionTxt2Img(AxisOption):
     def __init__(self, *args, **kwargs):
+            """TODO: Add docstring."""
         super().__init__(*args, **kwargs)
         self.is_img2img = False
 
@@ -285,6 +313,7 @@ axis_options = [
 
 
 def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend, include_lone_images, include_sub_grids, first_axes_processed, second_axes_processed, margin_size):
+        """TODO: Add docstring."""
     hor_texts = [[images.GridAnnotation(x)] for x in x_labels]
     ver_texts = [[images.GridAnnotation(y)] for y in y_labels]
     title_texts = [[images.GridAnnotation(z)] for z in z_labels]
@@ -296,9 +325,11 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
     state.job_count = list_size * p.n_iter
 
     def process_cell(x, y, z, ix, iy, iz):
+            """TODO: Add docstring."""
         nonlocal processed_result
 
         def index(ix, iy, iz):
+                """TODO: Add docstring."""
             return ix + iy * len(xs) + iz * len(xs) * len(ys)
 
         state.job = f"{index(ix, iy, iz) + 1} out of {list_size}"
@@ -398,9 +429,11 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
 
 class SharedSettingsStackHelper(object):
     def __enter__(self):
+            """TODO: Add docstring."""
         pass
 
     def __exit__(self, exc_type, exc_value, tb):
+            """TODO: Add docstring."""
         modules.sd_models.reload_model_weights()
         modules.sd_vae.reload_vae_weights()
 
@@ -414,9 +447,11 @@ re_range_count_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+
 
 class Script(scripts.Script):
     def title(self):
+            """TODO: Add docstring."""
         return "X/Y/Z plot"
 
     def ui(self, is_img2img):
+            """TODO: Add docstring."""
         self.current_axis_options = [x for x in axis_options if type(x) == AxisOption or x.is_img2img == is_img2img]
 
         with gr.Row():
@@ -460,6 +495,7 @@ class Script(scripts.Script):
             swap_xz_axes_button = gr.Button(value="Swap X/Z axes", elem_id="xz_grid_swap_axes_button")
 
         def swap_axes(axis1_type, axis1_values, axis1_values_dropdown, axis2_type, axis2_values, axis2_values_dropdown):
+                """TODO: Add docstring."""
             return self.current_axis_options[axis2_type].label, axis2_values, axis2_values_dropdown, self.current_axis_options[axis1_type].label, axis1_values, axis1_values_dropdown
 
         xy_swap_args = [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown]
@@ -470,6 +506,7 @@ class Script(scripts.Script):
         swap_xz_axes_button.click(swap_axes, inputs=xz_swap_args, outputs=xz_swap_args)
 
         def fill(axis_type, csv_mode):
+                """TODO: Add docstring."""
             axis = self.current_axis_options[axis_type]
             if axis.choices:
                 if csv_mode:
@@ -484,6 +521,7 @@ class Script(scripts.Script):
         fill_z_button.click(fn=fill, inputs=[z_type, csv_mode], outputs=[z_values, z_values_dropdown])
 
         def select_axis(axis_type, axis_values, axis_values_dropdown, csv_mode):
+                """TODO: Add docstring."""
             axis_type = axis_type or 0  # if axle type is None set to 0
 
             choices = self.current_axis_options[axis_type].choices
@@ -508,6 +546,7 @@ class Script(scripts.Script):
         z_type.change(fn=select_axis, inputs=[z_type, z_values, z_values_dropdown, csv_mode], outputs=[fill_z_button, z_values, z_values_dropdown])
 
         def change_choice_mode(csv_mode, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown):
+                """TODO: Add docstring."""
             _fill_x_button, _x_values, _x_values_dropdown = select_axis(x_type, x_values, x_values_dropdown, csv_mode)
             _fill_y_button, _y_values, _y_values_dropdown = select_axis(y_type, y_values, y_values_dropdown, csv_mode)
             _fill_z_button, _z_values, _z_values_dropdown = select_axis(z_type, z_values, z_values_dropdown, csv_mode)
@@ -516,6 +555,7 @@ class Script(scripts.Script):
         csv_mode.change(fn=change_choice_mode, inputs=[csv_mode, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown], outputs=[fill_x_button, x_values, x_values_dropdown, fill_y_button, y_values, y_values_dropdown, fill_z_button, z_values, z_values_dropdown])
 
         def get_dropdown_update_from_params(axis, params):
+                """TODO: Add docstring."""
             val_key = f"{axis} Values"
             vals = params.get(val_key, "")
             valslist = csv_string_to_list_strip(vals)
@@ -536,6 +576,7 @@ class Script(scripts.Script):
         return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode]
 
     def run(self, p, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode):
+            """TODO: Add docstring."""
         x_type, y_type, z_type = x_type or 0, y_type or 0, z_type or 0  # if axle type is None set to 0
 
         if not no_fixed_seeds:
@@ -545,6 +586,7 @@ class Script(scripts.Script):
             p.batch_size = 1
 
         def process_axis(opt, vals, vals_dropdown):
+                """TODO: Add docstring."""
             if opt.label == 'Nothing':
                 return [0]
 
@@ -635,6 +677,7 @@ class Script(scripts.Script):
         assert grid_mp < opts.img_max_size_mp, f'Error: Resulting grid would be too large ({grid_mp} MPixels) (max configured size is {opts.img_max_size_mp} MPixels)'
 
         def fix_axis_seeds(axis_opt, axis_list):
+                """TODO: Add docstring."""
             if axis_opt.label in ['Seed', 'Var. seed']:
                 return [int(random.randrange(4294967294)) if val is None or val == '' or val == -1 else val for val in axis_list]
             else:
@@ -705,6 +748,7 @@ class Script(scripts.Script):
         grid_infotext = [None] * (1 + len(zs))
 
         def cell(x, y, z, ix, iy, iz):
+                """TODO: Add docstring."""
             if shared.state.interrupted or state.stopping_generation:
                 return Processed(p, [], p.seed, "")
 

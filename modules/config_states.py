@@ -16,6 +16,7 @@ all_config_states = {}
 
 
 def list_config_states():
+        """TODO: Add docstring."""
     global all_config_states
 
     all_config_states.clear()
@@ -46,6 +47,7 @@ def list_config_states():
 
 
 def get_webui_config():
+        """TODO: Add docstring."""
     webui_repo = None
 
     try:
@@ -78,6 +80,7 @@ def get_webui_config():
 
 
 def get_extension_config():
+        """TODO: Add docstring."""
     ext_config = {}
 
     for ext in extensions.extensions:
@@ -101,6 +104,7 @@ def get_extension_config():
 
 
 def get_config():
+        """TODO: Add docstring."""
     creation_time = datetime.now().timestamp()
     webui_config = get_webui_config()
     ext_config = get_extension_config()
@@ -113,6 +117,7 @@ def get_config():
 
 
 def restore_webui_config(config):
+        """TODO: Add docstring."""
     print("* Restoring webui state...")
 
     if "webui" not in config:
@@ -144,6 +149,7 @@ def restore_webui_config(config):
 
 
 def restore_extension_config(config):
+        """TODO: Add docstring."""
     print("* Restoring extension state...")
 
     if "extensions" not in config:

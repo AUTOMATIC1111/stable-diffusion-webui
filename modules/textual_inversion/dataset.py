@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 import numpy as np
 import PIL
@@ -19,6 +20,7 @@ re_numbers_at_start = re.compile(r"^[-\d]+\s*")
 
 class DatasetEntry:
     def __init__(self, filename=None, filename_text=None, latent_dist=None, latent_sample=None, cond=None, cond_text=None, pixel_values=None, weight=None):
+            """TODO: Add docstring."""
         self.filename = filename
         self.filename_text = filename_text
         self.weight = weight
@@ -31,6 +33,7 @@ class DatasetEntry:
 
 class PersonalizedBase(Dataset):
     def __init__(self, data_root, width, height, repeats, flip_p=0.5, placeholder_token="*", model=None, cond_model=None, device=None, template_file=None, include_cond=False, batch_size=1, gradient_step=1, shuffle_tags=False, tag_drop_out=0, latent_sampling_method='once', varsize=False, use_weight=False):
+            """TODO: Add docstring."""
         re_word = re.compile(shared.opts.dataset_filename_word_regex) if shared.opts.dataset_filename_word_regex else None
 
         self.placeholder_token = placeholder_token
@@ -150,6 +153,7 @@ class PersonalizedBase(Dataset):
             print()
 
     def create_text(self, filename_text):
+            """TODO: Add docstring."""
         text = random.choice(self.lines)
         tags = filename_text.split(',')
         if self.tag_drop_out != 0:
@@ -161,9 +165,11 @@ class PersonalizedBase(Dataset):
         return text
 
     def __len__(self):
+            """TODO: Add docstring."""
         return self.length
 
     def __getitem__(self, i):
+            """TODO: Add docstring."""
         entry = self.dataset[i]
         if self.tag_drop_out != 0 or self.shuffle_tags:
             entry.cond_text = self.create_text(entry.filename_text)
@@ -174,6 +180,7 @@ class PersonalizedBase(Dataset):
 
 class GroupedBatchSampler(Sampler):
     def __init__(self, data_source: PersonalizedBase, batch_size: int):
+            """TODO: Add docstring."""
         super().__init__(data_source)
 
         n = len(data_source)
@@ -186,9 +193,11 @@ class GroupedBatchSampler(Sampler):
         self.batch_size = batch_size
 
     def __len__(self):
+            """TODO: Add docstring."""
         return self.len
 
     def __iter__(self):
+            """TODO: Add docstring."""
         b = self.batch_size
 
         for g in self.groups:
@@ -208,6 +217,7 @@ class GroupedBatchSampler(Sampler):
 
 class PersonalizedDataLoader(DataLoader):
     def __init__(self, dataset, latent_sampling_method="once", batch_size=1, pin_memory=False):
+            """TODO: Add docstring."""
         super(PersonalizedDataLoader, self).__init__(dataset, batch_sampler=GroupedBatchSampler(dataset, batch_size), pin_memory=pin_memory)
         if latent_sampling_method == "random":
             self.collate_fn = collate_wrapper_random
@@ -217,6 +227,7 @@ class PersonalizedDataLoader(DataLoader):
 
 class BatchLoader:
     def __init__(self, data):
+            """TODO: Add docstring."""
         self.cond_text = [entry.cond_text for entry in data]
         self.cond = [entry.cond for entry in data]
         self.latent_sample = torch.stack([entry.latent_sample for entry in data]).squeeze(1)
@@ -228,18 +239,23 @@ class BatchLoader:
         #print(self.latent_sample.device)
 
     def pin_memory(self):
+            """TODO: Add docstring."""
         self.latent_sample = self.latent_sample.pin_memory()
         return self
 
 def collate_wrapper(batch):
+        """TODO: Add docstring."""
     return BatchLoader(batch)
 
 class BatchLoaderRandom(BatchLoader):
     def __init__(self, data):
+            """TODO: Add docstring."""
         super().__init__(data)
 
     def pin_memory(self):
+            """TODO: Add docstring."""
         return self
 
 def collate_wrapper_random(batch):
+        """TODO: Add docstring."""
     return BatchLoaderRandom(batch)

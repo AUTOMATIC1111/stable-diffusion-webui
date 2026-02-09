@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import threading
 import time
 from collections import defaultdict
@@ -6,6 +7,7 @@ import torch
 
 
 class MemUsageMonitor(threading.Thread):
+        """TODO: Add docstring."""
     run_flag = None
     device = None
     disabled = False
@@ -13,6 +15,7 @@ class MemUsageMonitor(threading.Thread):
     data = None
 
     def __init__(self, name, device, opts):
+            """TODO: Add docstring."""
         threading.Thread.__init__(self)
         self.name = name
         self.device = device
@@ -30,10 +33,12 @@ class MemUsageMonitor(threading.Thread):
             self.disabled = True
 
     def cuda_mem_get_info(self):
+            """TODO: Add docstring."""
         index = self.device.index if self.device.index is not None else torch.cuda.current_device()
         return torch.cuda.mem_get_info(index)
 
     def run(self):
+            """TODO: Add docstring."""
         if self.disabled:
             return
 
@@ -56,6 +61,7 @@ class MemUsageMonitor(threading.Thread):
                 time.sleep(1 / self.opts.memmon_poll_rate)
 
     def dump_debug(self):
+            """TODO: Add docstring."""
         print(self, 'recorded data:')
         for k, v in self.read().items():
             print(k, -(v // -(1024 ** 2)))
@@ -70,9 +76,11 @@ class MemUsageMonitor(threading.Thread):
         print(torch.cuda.memory_summary())
 
     def monitor(self):
+            """TODO: Add docstring."""
         self.run_flag.set()
 
     def read(self):
+            """TODO: Add docstring."""
         if not self.disabled:
             free, total = self.cuda_mem_get_info()
             self.data["free"] = free
@@ -88,5 +96,8 @@ class MemUsageMonitor(threading.Thread):
         return self.data
 
     def stop(self):
+            """TODO: Add docstring."""
         self.run_flag.clear()
         return self.read()
+
+# TODO: Consider using mixed precision training (torch.cuda.amp) for faster training

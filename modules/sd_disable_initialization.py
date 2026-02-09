@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import ldm.modules.encoders.modules
 import open_clip
 import torch
@@ -8,9 +9,11 @@ from modules import shared
 
 class ReplaceHelper:
     def __init__(self):
+            """TODO: Add docstring."""
         self.replaced = []
 
     def replace(self, obj, field, func):
+            """TODO: Add docstring."""
         original = getattr(obj, field, None)
         if original is None:
             return None
@@ -21,6 +24,7 @@ class ReplaceHelper:
         return original
 
     def restore(self):
+            """TODO: Add docstring."""
         for obj, field, original in self.replaced:
             setattr(obj, field, original)
 
@@ -44,10 +48,12 @@ class DisableInitialization(ReplaceHelper):
     """
 
     def __init__(self, disable_clip=True):
+            """TODO: Add docstring."""
         super().__init__()
         self.disable_clip = disable_clip
 
     def replace(self, obj, field, func):
+            """TODO: Add docstring."""
         original = getattr(obj, field, None)
         if original is None:
             return None
@@ -59,17 +65,21 @@ class DisableInitialization(ReplaceHelper):
 
     def __enter__(self):
         def do_nothing(*args, **kwargs):
+                """TODO: Add docstring."""
             pass
 
         def create_model_and_transforms_without_pretrained(*args, pretrained=None, **kwargs):
+                """TODO: Add docstring."""
             return self.create_model_and_transforms(*args, pretrained=None, **kwargs)
 
         def CLIPTextModel_from_pretrained(pretrained_model_name_or_path, *model_args, **kwargs):
+                """TODO: Add docstring."""
             res = self.CLIPTextModel_from_pretrained(None, *model_args, config=pretrained_model_name_or_path, state_dict={}, **kwargs)
             res.name_or_path = pretrained_model_name_or_path
             return res
 
         def transformers_modeling_utils_load_pretrained_model(*args, **kwargs):
+                """TODO: Add docstring."""
             args = args[0:3] + ('/', ) + args[4:]  # resolved_archive_file; must set it to something to prevent what seems to be a bug
             return self.transformers_modeling_utils_load_pretrained_model(*args, **kwargs)
 
@@ -88,12 +98,15 @@ class DisableInitialization(ReplaceHelper):
                 return original(url, *args, local_files_only=False, **kwargs)
 
         def transformers_utils_hub_get_from_cache(url, *args, local_files_only=False, **kwargs):
+                """TODO: Add docstring."""
             return transformers_utils_hub_get_file_from_cache(self.transformers_utils_hub_get_from_cache, url, *args, **kwargs)
 
         def transformers_tokenization_utils_base_cached_file(url, *args, local_files_only=False, **kwargs):
+                """TODO: Add docstring."""
             return transformers_utils_hub_get_file_from_cache(self.transformers_tokenization_utils_base_cached_file, url, *args, **kwargs)
 
         def transformers_configuration_utils_cached_file(url, *args, local_files_only=False, **kwargs):
+                """TODO: Add docstring."""
             return transformers_utils_hub_get_file_from_cache(self.transformers_configuration_utils_cached_file, url, *args, **kwargs)
 
         self.replace(torch.nn.init, 'kaiming_uniform_', do_nothing)
@@ -109,6 +122,7 @@ class DisableInitialization(ReplaceHelper):
             self.transformers_utils_hub_get_from_cache = self.replace(transformers.utils.hub, 'get_from_cache', transformers_utils_hub_get_from_cache)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+            """TODO: Add docstring."""
         self.restore()
 
 
@@ -126,10 +140,12 @@ class InitializeOnMeta(ReplaceHelper):
     """
 
     def __enter__(self):
+            """TODO: Add docstring."""
         if shared.cmd_opts.disable_model_loading_ram_optimization:
             return
 
         def set_device(x):
+                """TODO: Add docstring."""
             x["device"] = "meta"
             return x
 
@@ -139,6 +155,7 @@ class InitializeOnMeta(ReplaceHelper):
         self.replace(torch.nn.Module, 'to', lambda *args, **kwargs: None)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+            """TODO: Add docstring."""
         self.restore()
 
 
@@ -156,6 +173,7 @@ class LoadStateDictOnMeta(ReplaceHelper):
     """
 
     def __init__(self, state_dict, device, weight_dtype_conversion=None):
+            """TODO: Add docstring."""
         super().__init__()
         self.state_dict = state_dict
         self.device = device
@@ -163,10 +181,12 @@ class LoadStateDictOnMeta(ReplaceHelper):
         self.default_dtype = self.weight_dtype_conversion.get('')
 
     def get_weight_dtype(self, key):
+            """TODO: Add docstring."""
         key_first_term, _ = key.split('.', 1)
         return self.weight_dtype_conversion.get(key_first_term, self.default_dtype)
 
     def __enter__(self):
+            """TODO: Add docstring."""
         if shared.cmd_opts.disable_model_loading_ram_optimization:
             return
 
@@ -174,6 +194,7 @@ class LoadStateDictOnMeta(ReplaceHelper):
         device = self.device
 
         def load_from_state_dict(original, module, state_dict, prefix, *args, **kwargs):
+                """TODO: Add docstring."""
             used_param_keys = []
 
             for name, param in module._parameters.items():
@@ -229,4 +250,5 @@ class LoadStateDictOnMeta(ReplaceHelper):
         group_norm_load_from_state_dict = self.replace(torch.nn.GroupNorm, '_load_from_state_dict', lambda *args, **kwargs: load_from_state_dict(group_norm_load_from_state_dict, *args, **kwargs))
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+            """TODO: Add docstring."""
         self.restore()

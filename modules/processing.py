@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from __future__ import annotations
 import json
 import logging
@@ -41,12 +42,14 @@ opt_f = 8
 
 
 def setup_color_correction(image):
+        """TODO: Add docstring."""
     logging.info("Calibrating color correction.")
     correction_target = cv2.cvtColor(np.asarray(image.copy()), cv2.COLOR_RGB2LAB)
     return correction_target
 
 
 def apply_color_correction(correction, original_image):
+        """TODO: Add docstring."""
     logging.info("Applying color correction.")
     image = Image.fromarray(cv2.cvtColor(exposure.match_histograms(
         cv2.cvtColor(
@@ -63,6 +66,7 @@ def apply_color_correction(correction, original_image):
 
 
 def uncrop(image, dest_size, paste_loc):
+        """TODO: Add docstring."""
     x, y, w, h = paste_loc
     base_image = Image.new('RGBA', dest_size)
     image = images.resize_image(1, image, w, h)
@@ -73,6 +77,7 @@ def uncrop(image, dest_size, paste_loc):
 
 
 def apply_overlay(image, paste_loc, overlay):
+        """TODO: Add docstring."""
     if overlay is None:
         return image, image.copy()
 
@@ -88,6 +93,7 @@ def apply_overlay(image, paste_loc, overlay):
     return image, original_denoised_image
 
 def create_binary_mask(image, round=True):
+        """TODO: Add docstring."""
     if image.mode == 'RGBA' and image.getextrema()[-1] != (255, 255):
         if round:
             image = image.split()[-1].convert("L").point(lambda x: 255 if x > 128 else 0)
@@ -98,6 +104,7 @@ def create_binary_mask(image, round=True):
     return image
 
 def txt2img_image_conditioning(sd_model, x, width, height):
+        """TODO: Add docstring."""
     if sd_model.model.conditioning_key in {'hybrid', 'concat'}: # Inpainting models
 
         # The "masked-image" in this case will just be all 0.5 since the entire image is masked.
@@ -135,6 +142,7 @@ def txt2img_image_conditioning(sd_model, x, width, height):
 
 @dataclass(repr=False)
 class StableDiffusionProcessing:
+        """TODO: Add docstring."""
     sd_model: object = None
     outpath_samples: str = None
     outpath_grids: str = None
@@ -226,6 +234,7 @@ class StableDiffusionProcessing:
     is_api: bool = field(default=False, init=False)
 
     def __post_init__(self):
+            """TODO: Add docstring."""
         if self.sampler_index is not None:
             print("sampler_index argument for StableDiffusionProcessing does not do anything; use sampler_name", file=sys.stderr)
 
@@ -252,6 +261,7 @@ class StableDiffusionProcessing:
         self.cached_c = StableDiffusionProcessing.cached_c
 
     def fill_fields_from_opts(self):
+            """TODO: Add docstring."""
         self.s_min_uncond = self.s_min_uncond if self.s_min_uncond is not None else opts.s_min_uncond
         self.s_churn = self.s_churn if self.s_churn is not None else opts.s_churn
         self.s_tmin = self.s_tmin if self.s_tmin is not None else opts.s_tmin
@@ -260,18 +270,22 @@ class StableDiffusionProcessing:
 
     @property
     def sd_model(self):
+            """TODO: Add docstring."""
         return shared.sd_model
 
     @sd_model.setter
     def sd_model(self, value):
+            """TODO: Add docstring."""
         pass
 
     @property
     def scripts(self):
+            """TODO: Add docstring."""
         return self.scripts_value
 
     @scripts.setter
     def scripts(self, value):
+            """TODO: Add docstring."""
         self.scripts_value = value
 
         if self.scripts_value and self.script_args_value and not self.scripts_setup_complete:
@@ -279,29 +293,35 @@ class StableDiffusionProcessing:
 
     @property
     def script_args(self):
+            """TODO: Add docstring."""
         return self.script_args_value
 
     @script_args.setter
     def script_args(self, value):
+            """TODO: Add docstring."""
         self.script_args_value = value
 
         if self.scripts_value and self.script_args_value and not self.scripts_setup_complete:
             self.setup_scripts()
 
     def setup_scripts(self):
+            """TODO: Add docstring."""
         self.scripts_setup_complete = True
 
         self.scripts.setup_scrips(self, is_ui=not self.is_api)
 
     def comment(self, text):
+            """TODO: Add docstring."""
         self.comments[text] = 1
 
     def txt2img_image_conditioning(self, x, width=None, height=None):
+            """TODO: Add docstring."""
         self.is_using_inpainting_conditioning = self.sd_model.model.conditioning_key in {'hybrid', 'concat'}
 
         return txt2img_image_conditioning(self.sd_model, x, width or self.width, height or self.height)
 
     def depth2img_image_conditioning(self, source_image):
+            """TODO: Add docstring."""
         # Use the AddMiDaS helper to Format our source image to suit the MiDaS model
         transformer = AddMiDaS(model_type="dpt_hybrid")
         transformed = transformer({"jpg": rearrange(source_image[0], "c h w -> h w c")})
@@ -321,11 +341,13 @@ class StableDiffusionProcessing:
         return conditioning
 
     def edit_image_conditioning(self, source_image):
+            """TODO: Add docstring."""
         conditioning_image = shared.sd_model.encode_first_stage(source_image).mode()
 
         return conditioning_image
 
     def unclip_image_conditioning(self, source_image):
+            """TODO: Add docstring."""
         c_adm = self.sd_model.embedder(source_image)
         if self.sd_model.noise_augmentor is not None:
             noise_level = 0 # TODO: Allow other noise levels?
@@ -334,6 +356,7 @@ class StableDiffusionProcessing:
         return c_adm
 
     def inpainting_image_conditioning(self, source_image, latent_image, image_mask=None, round_image_mask=True):
+            """TODO: Add docstring."""
         self.is_using_inpainting_conditioning = True
 
         # Handle the different mask inputs
@@ -373,6 +396,7 @@ class StableDiffusionProcessing:
         return image_conditioning
 
     def img2img_image_conditioning(self, source_image, latent_image, image_mask=None, round_image_mask=True):
+            """TODO: Add docstring."""
         source_image = devices.cond_cast_float(source_image)
 
         # HACK: Using introspection as the Depth2Image model doesn't appear to uniquely
@@ -396,12 +420,15 @@ class StableDiffusionProcessing:
         return latent_image.new_zeros(latent_image.shape[0], 5, 1, 1)
 
     def init(self, all_prompts, all_seeds, all_subseeds):
+            """TODO: Add docstring."""
         pass
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
+            """TODO: Add docstring."""
         raise NotImplementedError()
 
     def close(self):
+            """TODO: Add docstring."""
         self.sampler = None
         self.c = None
         self.uc = None
@@ -410,12 +437,14 @@ class StableDiffusionProcessing:
             StableDiffusionProcessing.cached_uc = [None, None]
 
     def get_token_merging_ratio(self, for_hr=False):
+            """TODO: Add docstring."""
         if for_hr:
             return self.token_merging_ratio_hr or opts.token_merging_ratio_hr or self.token_merging_ratio or opts.token_merging_ratio
 
         return self.token_merging_ratio or opts.token_merging_ratio
 
     def setup_prompts(self):
+            """TODO: Add docstring."""
         if isinstance(self.prompt,list):
             self.all_prompts = self.prompt
         elif isinstance(self.negative_prompt, list):
@@ -491,6 +520,7 @@ class StableDiffusionProcessing:
         return cache[1]
 
     def setup_conds(self):
+            """TODO: Add docstring."""
         prompts = prompt_parser.SdConditioning(self.prompts, width=self.width, height=self.height)
         negative_prompts = prompt_parser.SdConditioning(self.negative_prompts, width=self.width, height=self.height, is_negative_prompt=True)
 
@@ -503,9 +533,11 @@ class StableDiffusionProcessing:
         self.c = self.get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, total_steps, [self.cached_c], self.extra_network_data)
 
     def get_conds(self):
+            """TODO: Add docstring."""
         return self.c, self.uc
 
     def parse_extra_network_prompts(self):
+            """TODO: Add docstring."""
         self.prompts, self.extra_network_data = extra_networks.parse_prompts(self.prompts)
 
     def save_samples(self) -> bool:
@@ -515,6 +547,7 @@ class StableDiffusionProcessing:
 
 class Processed:
     def __init__(self, p: StableDiffusionProcessing, images_list, seed=-1, info="", subseed=None, all_prompts=None, all_negative_prompts=None, all_seeds=None, all_subseeds=None, index_of_first_image=0, infotexts=None, comments=""):
+            """TODO: Add docstring."""
         self.images = images_list
         self.prompt = p.prompt
         self.negative_prompt = p.negative_prompt
@@ -569,6 +602,7 @@ class Processed:
         self.version = program_version()
 
     def js(self):
+            """TODO: Add docstring."""
         obj = {
             "prompt": self.all_prompts[0],
             "all_prompts": self.all_prompts,
@@ -607,22 +641,27 @@ class Processed:
         return json.dumps(obj, default=lambda o: None)
 
     def infotext(self, p: StableDiffusionProcessing, index):
+            """TODO: Add docstring."""
         return create_infotext(p, self.all_prompts, self.all_seeds, self.all_subseeds, comments=[], position_in_batch=index % self.batch_size, iteration=index // self.batch_size)
 
     def get_token_merging_ratio(self, for_hr=False):
+            """TODO: Add docstring."""
         return self.token_merging_ratio_hr if for_hr else self.token_merging_ratio
 
 
 def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, seed_resize_from_h=0, seed_resize_from_w=0, p=None):
+        """TODO: Add docstring."""
     g = rng.ImageRNG(shape, seeds, subseeds=subseeds, subseed_strength=subseed_strength, seed_resize_from_h=seed_resize_from_h, seed_resize_from_w=seed_resize_from_w)
     return g.next()
 
 
 class DecodedSamples(list):
+        """TODO: Add docstring."""
     already_decoded = True
 
 
 def decode_latent_batch(model, batch, target_device=None, check_for_nans=False):
+        """TODO: Add docstring."""
     samples = DecodedSamples()
 
     if check_for_nans:
@@ -673,6 +712,7 @@ def decode_latent_batch(model, batch, target_device=None, check_for_nans=False):
 
 
 def get_fixed_seed(seed):
+        """TODO: Add docstring."""
     if seed == '' or seed is None:
         seed = -1
     elif isinstance(seed, str):
@@ -688,11 +728,13 @@ def get_fixed_seed(seed):
 
 
 def fix_seed(p):
+        """TODO: Add docstring."""
     p.seed = get_fixed_seed(p.seed)
     p.subseed = get_fixed_seed(p.subseed)
 
 
 def program_version():
+        """TODO: Add docstring."""
     import launch
 
     res = launch.git_tag()
@@ -817,6 +859,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
 
 
 def process_images(p: StableDiffusionProcessing) -> Processed:
+        """TODO: Add docstring."""
     if p.scripts is not None:
         p.scripts.before_process(p)
 
@@ -1024,6 +1067,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 x_samples_ddim = batch_params.images
 
             def infotext(index=0, use_main_prompt=False):
+                    """TODO: Add docstring."""
                 return create_infotext(p, p.prompts, p.seeds, p.subseeds, use_main_prompt=use_main_prompt, index=index, all_negative_prompts=p.negative_prompts)
 
             save_samples = p.save_samples()
@@ -1164,6 +1208,7 @@ def old_hires_fix_first_pass_dimensions(width, height):
 
 @dataclass(repr=False)
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
+        """TODO: Add docstring."""
     enable_hr: bool = False
     denoising_strength: float = 0.75
     firstphase_width: int = 0
@@ -1199,6 +1244,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     hr_extra_network_data: list = field(default=None, init=False)
 
     def __post_init__(self):
+            """TODO: Add docstring."""
         super().__post_init__()
 
         if self.firstphase_width != 0 or self.firstphase_height != 0:
@@ -1211,6 +1257,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.cached_hr_c = StableDiffusionProcessingTxt2Img.cached_hr_c
 
     def calculate_target_resolution(self):
+            """TODO: Add docstring."""
         if opts.use_old_hires_fix_width_height and self.applied_old_hires_behavior_to != (self.width, self.height):
             self.hr_resize_x = self.width
             self.hr_resize_y = self.height
@@ -1250,6 +1297,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 self.truncate_y = (self.hr_upscale_to_y - target_h) // opt_f
 
     def init(self, all_prompts, all_seeds, all_subseeds):
+            """TODO: Add docstring."""
         if self.enable_hr:
             self.extra_generation_params["Denoising strength"] = self.denoising_strength
 
@@ -1265,10 +1313,12 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 self.extra_generation_params["Hires sampler"] = self.hr_sampler_name
 
             def get_hr_prompt(p, index, prompt_text, **kwargs):
+                    """TODO: Add docstring."""
                 hr_prompt = p.all_hr_prompts[index]
                 return hr_prompt if hr_prompt != prompt_text else None
 
             def get_hr_negative_prompt(p, index, negative_prompt, **kwargs):
+                    """TODO: Add docstring."""
                 hr_negative_prompt = p.all_hr_negative_prompts[index]
                 return hr_negative_prompt if hr_negative_prompt != negative_prompt else None
 
@@ -1305,6 +1355,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 self.extra_generation_params["Hires upscaler"] = self.hr_upscaler
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
+            """TODO: Add docstring."""
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
 
         if self.firstpass_image is not None and self.enable_hr:
@@ -1362,6 +1413,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         return self.sample_hr_pass(samples, decoded_samples, seeds, subseeds, subseed_strength, prompts)
 
     def sample_hr_pass(self, samples, decoded_samples, seeds, subseeds, subseed_strength, prompts):
+            """TODO: Add docstring."""
         if shared.state.interrupted:
             return samples
 
@@ -1464,6 +1516,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         return decoded_samples
 
     def close(self):
+            """TODO: Add docstring."""
         super().close()
         self.hr_c = None
         self.hr_uc = None
@@ -1472,6 +1525,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             StableDiffusionProcessingTxt2Img.cached_hr_c = [None, None]
 
     def setup_prompts(self):
+            """TODO: Add docstring."""
         super().setup_prompts()
 
         if not self.enable_hr:
@@ -1497,6 +1551,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.all_hr_negative_prompts = [shared.prompt_styles.apply_negative_styles_to_prompt(x, self.styles) for x in self.all_hr_negative_prompts]
 
     def calculate_hr_conds(self):
+            """TODO: Add docstring."""
         if self.hr_c is not None:
             return
 
@@ -1511,6 +1566,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.hr_c = self.get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, hr_prompts, self.firstpass_steps, [self.cached_hr_c, self.cached_c], self.hr_extra_network_data, total_steps)
 
     def setup_conds(self):
+            """TODO: Add docstring."""
         if self.is_hr_pass:
             # if we are in hr pass right now, the call is being made from the refiner, and we don't need to setup firstpass cons or switch model
             self.hr_c = None
@@ -1536,12 +1592,14 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                     extra_networks.activate(self, self.extra_network_data)
 
     def get_conds(self):
+            """TODO: Add docstring."""
         if self.is_hr_pass:
             return self.hr_c, self.hr_uc
 
         return super().get_conds()
 
     def parse_extra_network_prompts(self):
+            """TODO: Add docstring."""
         res = super().parse_extra_network_prompts()
 
         if self.enable_hr:
@@ -1555,6 +1613,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
 @dataclass(repr=False)
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
+        """TODO: Add docstring."""
     init_images: list = None
     resize_mode: int = 0
     denoising_strength: float = 0.75
@@ -1581,6 +1640,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     init_latent: torch.Tensor = field(default=None, init=False)
 
     def __post_init__(self):
+            """TODO: Add docstring."""
         super().__post_init__()
 
         self.image_mask = self.mask
@@ -1589,17 +1649,20 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
     @property
     def mask_blur(self):
+            """TODO: Add docstring."""
         if self.mask_blur_x == self.mask_blur_y:
             return self.mask_blur_x
         return None
 
     @mask_blur.setter
     def mask_blur(self, value):
+            """TODO: Add docstring."""
         if isinstance(value, int):
             self.mask_blur_x = value
             self.mask_blur_y = value
 
     def init(self, all_prompts, all_seeds, all_subseeds):
+            """TODO: Add docstring."""
         self.extra_generation_params["Denoising strength"] = self.denoising_strength
 
         self.image_cfg_scale: float = self.image_cfg_scale if shared.sd_model.cond_stage_key == "edit" else None
@@ -1757,6 +1820,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.image_conditioning = self.img2img_image_conditioning(image * 2 - 1, self.init_latent, image_mask, self.mask_round)
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
+            """TODO: Add docstring."""
         x = self.rng.next()
 
         if self.initial_noise_multiplier != 1.0:
@@ -1789,4 +1853,5 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         return samples
 
     def get_token_merging_ratio(self, for_hr=False):
+            """TODO: Add docstring."""
         return self.token_merging_ratio or ("token_merging_ratio" in self.override_settings and opts.token_merging_ratio) or opts.token_merging_ratio_img2img or opts.token_merging_ratio

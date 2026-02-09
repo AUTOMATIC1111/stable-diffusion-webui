@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import threading
 import collections
 
@@ -5,11 +6,13 @@ import collections
 # reference: https://gist.github.com/vitaliyp/6d54dd76ca2c3cdfc1149d33007dc34a
 class FIFOLock(object):
     def __init__(self):
+            """TODO: Add docstring."""
         self._lock = threading.Lock()
         self._inner_lock = threading.Lock()
         self._pending_threads = collections.deque()
 
     def acquire(self, blocking=True):
+            """TODO: Add docstring."""
         with self._inner_lock:
             lock_acquired = self._lock.acquire(False)
             if lock_acquired:
@@ -24,6 +27,7 @@ class FIFOLock(object):
         return self._lock.acquire()
 
     def release(self):
+            """TODO: Add docstring."""
         with self._inner_lock:
             if self._pending_threads:
                 release_event = self._pending_threads.popleft()
@@ -34,4 +38,5 @@ class FIFOLock(object):
     __enter__ = acquire
 
     def __exit__(self, t, v, tb):
+            """TODO: Add docstring."""
         self.release()

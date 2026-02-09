@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 import re
 import sys
@@ -15,6 +16,7 @@ AlwaysVisible = object()
 
 class MaskBlendArgs:
     def __init__(self, current_latent, nmask, init_latent, mask, blended_latent, denoiser=None, sigma=None):
+            """TODO: Add docstring."""
         self.current_latent = current_latent
         self.nmask = nmask
         self.init_latent = init_latent
@@ -27,29 +29,35 @@ class MaskBlendArgs:
 
 class PostSampleArgs:
     def __init__(self, samples):
+            """TODO: Add docstring."""
         self.samples = samples
 
 class PostprocessImageArgs:
     def __init__(self, image):
+            """TODO: Add docstring."""
         self.image = image
 
 class PostProcessMaskOverlayArgs:
     def __init__(self, index, mask_for_overlay, overlay_image):
+            """TODO: Add docstring."""
         self.index = index
         self.mask_for_overlay = mask_for_overlay
         self.overlay_image = overlay_image
 
 class PostprocessBatchListArgs:
     def __init__(self, images):
+            """TODO: Add docstring."""
         self.images = images
 
 
 @dataclass
 class OnComponent:
+        """TODO: Add docstring."""
     component: gr.blocks.Block
 
 
 class Script:
+        """TODO: Add docstring."""
     name = None
     """script's internal name derived from title"""
 
@@ -349,6 +357,7 @@ class Script:
 
 
 class ScriptBuiltinUI(Script):
+        """TODO: Add docstring."""
     setup_for_ui_only = True
 
     def elem_id(self, item_id):
@@ -360,6 +369,7 @@ class ScriptBuiltinUI(Script):
         return f'{tabname}{item_id}'
 
     def show(self, is_img2img):
+            """TODO: Add docstring."""
         return AlwaysVisible
 
 
@@ -383,6 +393,7 @@ ScriptClassData = namedtuple("ScriptClassData", ["script_class", "path", "basedi
 
 @dataclass
 class ScriptWithDependencies:
+        """TODO: Add docstring."""
     script_canonical_name: str
     file: ScriptFile
     requires: list
@@ -391,6 +402,7 @@ class ScriptWithDependencies:
 
 
 def list_scripts(scriptdirname, extension, *, include_extensions=True):
+        """TODO: Add docstring."""
     scripts = {}
 
     loaded_extensions = {ext.canonical_name: ext for ext in extensions.active()}
@@ -469,6 +481,7 @@ def list_scripts(scriptdirname, extension, *, include_extensions=True):
 
 
 def list_files_with_name(filename):
+        """TODO: Add docstring."""
     res = []
 
     dirs = [paths.script_path] + [ext.path for ext in extensions.active()]
@@ -485,6 +498,7 @@ def list_files_with_name(filename):
 
 
 def load_scripts():
+        """TODO: Add docstring."""
     global current_basedir
     scripts_data.clear()
     postprocessing_scripts_data.clear()
@@ -495,6 +509,7 @@ def load_scripts():
     syspath = sys.path
 
     def register_scripts_from_module(module):
+            """TODO: Add docstring."""
         for script_class in module.__dict__.values():
             if not inspect.isclass(script_class):
                 continue
@@ -531,6 +546,7 @@ def load_scripts():
 
 
 def wrap_call(func, filename, funcname, *args, default=None, **kwargs):
+        """TODO: Add docstring."""
     try:
         return func(*args, **kwargs)
     except Exception:
@@ -541,6 +557,7 @@ def wrap_call(func, filename, funcname, *args, default=None, **kwargs):
 
 class ScriptRunner:
     def __init__(self):
+            """TODO: Add docstring."""
         self.scripts = []
         self.selectable_scripts = []
         self.alwayson_scripts = []
@@ -576,6 +593,7 @@ class ScriptRunner:
         """dict of callbacks to be called after an element is created; key=elem_id, value=list of callbacks"""
 
     def initialize_scripts(self, is_img2img):
+            """TODO: Add docstring."""
         from modules import scripts_auto_postprocessing
 
         self.scripts.clear()
@@ -612,6 +630,7 @@ class ScriptRunner:
         self.apply_on_before_component_callbacks()
 
     def apply_on_before_component_callbacks(self):
+            """TODO: Add docstring."""
         for script in self.scripts:
             on_before = script.on_before_component_elem_id or []
             on_after = script.on_after_component_elem_id or []
@@ -642,6 +661,7 @@ class ScriptRunner:
             errors.report(f"Error creating UI for {script.name}: ", exc_info=True)
 
     def create_script_ui_inner(self, script):
+            """TODO: Add docstring."""
         import modules.api.models as api_models
 
         controls = wrap_call(script.ui, script.filename, "ui", script.is_img2img)
@@ -687,6 +707,7 @@ class ScriptRunner:
         script.args_to = len(self.inputs)
 
     def setup_ui_for_section(self, section, scriptlist=None):
+            """TODO: Add docstring."""
         if scriptlist is None:
             scriptlist = self.alwayson_scripts
 
@@ -703,9 +724,11 @@ class ScriptRunner:
                 self.create_script_ui(script)
 
     def prepare_ui(self):
+            """TODO: Add docstring."""
         self.inputs = [None]
 
     def setup_ui(self):
+            """TODO: Add docstring."""
         all_titles = [wrap_call(script.title, script.filename, "title") or script.filename for script in self.scripts]
         self.title_map = {title.lower(): script for title, script in zip(all_titles, self.scripts)}
         self.titles = [wrap_call(script.title, script.filename, "title") or f"{script.filename} [error]" for script in self.selectable_scripts]
@@ -718,6 +741,7 @@ class ScriptRunner:
         self.setup_ui_for_section(None, self.selectable_scripts)
 
         def select_script(script_index):
+                """TODO: Add docstring."""
             if script_index is None:
                 script_index = 0
             selected_script = self.selectable_scripts[script_index - 1] if script_index>0 else None
@@ -744,6 +768,7 @@ class ScriptRunner:
         self.script_load_ctr = 0
 
         def onload_script_visibility(params):
+                """TODO: Add docstring."""
             title = params.get('Script', None)
             if title:
                 try:
@@ -766,6 +791,7 @@ class ScriptRunner:
         return self.inputs
 
     def run(self, p, *args):
+            """TODO: Add docstring."""
         script_index = args[0]
 
         if script_index == 0 or script_index is None:
@@ -784,12 +810,14 @@ class ScriptRunner:
         return processed
 
     def list_scripts_for_method(self, method_name):
+            """TODO: Add docstring."""
         if method_name in ('before_component', 'after_component'):
             return self.scripts
         else:
             return self.alwayson_scripts
 
     def create_ordered_callbacks_list(self,  method_name, *, enable_user_sort=True):
+            """TODO: Add docstring."""
         script_list = self.list_scripts_for_method(method_name)
         category = f'script_{method_name}'
         callbacks = []
@@ -803,6 +831,7 @@ class ScriptRunner:
         return script_callbacks.sort_callbacks(category, callbacks, enable_user_sort=enable_user_sort)
 
     def ordered_callbacks(self, method_name, *, enable_user_sort=True):
+            """TODO: Add docstring."""
         script_list = self.list_scripts_for_method(method_name)
         category = f'script_{method_name}'
 
@@ -815,9 +844,11 @@ class ScriptRunner:
         return callbacks
 
     def ordered_scripts(self, method_name):
+            """TODO: Add docstring."""
         return [x.callback for x in self.ordered_callbacks(method_name)]
 
     def before_process(self, p):
+            """TODO: Add docstring."""
         for script in self.ordered_scripts('before_process'):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
@@ -826,6 +857,7 @@ class ScriptRunner:
                 errors.report(f"Error running before_process: {script.filename}", exc_info=True)
 
     def process(self, p):
+            """TODO: Add docstring."""
         for script in self.ordered_scripts('process'):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
@@ -834,6 +866,7 @@ class ScriptRunner:
                 errors.report(f"Error running process: {script.filename}", exc_info=True)
 
     def process_before_every_sampling(self, p, **kwargs):
+            """TODO: Add docstring."""
         for script in self.ordered_scripts('process_before_every_sampling'):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
@@ -842,6 +875,7 @@ class ScriptRunner:
                 errors.report(f"Error running process_before_every_sampling: {script.filename}", exc_info=True)
 
     def before_process_batch(self, p, **kwargs):
+            """TODO: Add docstring."""
         for script in self.ordered_scripts('before_process_batch'):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
@@ -850,6 +884,7 @@ class ScriptRunner:
                 errors.report(f"Error running before_process_batch: {script.filename}", exc_info=True)
 
     def after_extra_networks_activate(self, p, **kwargs):
+            """TODO: Add docstring."""
         for script in self.ordered_scripts('after_extra_networks_activate'):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
@@ -858,6 +893,7 @@ class ScriptRunner:
                 errors.report(f"Error running after_extra_networks_activate: {script.filename}", exc_info=True)
 
     def process_batch(self, p, **kwargs):
+            """TODO: Add docstring."""
         for script in self.ordered_scripts('process_batch'):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
@@ -866,6 +902,7 @@ class ScriptRunner:
                 errors.report(f"Error running process_batch: {script.filename}", exc_info=True)
 
     def postprocess(self, p, processed):
+            """TODO: Add docstring."""
         for script in self.ordered_scripts('postprocess'):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
@@ -874,6 +911,7 @@ class ScriptRunner:
                 errors.report(f"Error running postprocess: {script.filename}", exc_info=True)
 
     def postprocess_batch(self, p, images, **kwargs):
+            """TODO: Add docstring."""
         for script in self.ordered_scripts('postprocess_batch'):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
@@ -882,6 +920,7 @@ class ScriptRunner:
                 errors.report(f"Error running postprocess_batch: {script.filename}", exc_info=True)
 
     def postprocess_batch_list(self, p, pp: PostprocessBatchListArgs, **kwargs):
+            """TODO: Add docstring."""
         for script in self.ordered_scripts('postprocess_batch_list'):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
@@ -890,6 +929,7 @@ class ScriptRunner:
                 errors.report(f"Error running postprocess_batch_list: {script.filename}", exc_info=True)
 
     def post_sample(self, p, ps: PostSampleArgs):
+            """TODO: Add docstring."""
         for script in self.ordered_scripts('post_sample'):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
@@ -898,6 +938,7 @@ class ScriptRunner:
                 errors.report(f"Error running post_sample: {script.filename}", exc_info=True)
 
     def on_mask_blend(self, p, mba: MaskBlendArgs):
+            """TODO: Add docstring."""
         for script in self.ordered_scripts('on_mask_blend'):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
@@ -906,6 +947,7 @@ class ScriptRunner:
                 errors.report(f"Error running post_sample: {script.filename}", exc_info=True)
 
     def postprocess_image(self, p, pp: PostprocessImageArgs):
+            """TODO: Add docstring."""
         for script in self.ordered_scripts('postprocess_image'):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
@@ -914,6 +956,7 @@ class ScriptRunner:
                 errors.report(f"Error running postprocess_image: {script.filename}", exc_info=True)
 
     def postprocess_maskoverlay(self, p, ppmo: PostProcessMaskOverlayArgs):
+            """TODO: Add docstring."""
         for script in self.ordered_scripts('postprocess_maskoverlay'):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
@@ -922,6 +965,7 @@ class ScriptRunner:
                 errors.report(f"Error running postprocess_image: {script.filename}", exc_info=True)
 
     def postprocess_image_after_composite(self, p, pp: PostprocessImageArgs):
+            """TODO: Add docstring."""
         for script in self.ordered_scripts('postprocess_image_after_composite'):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
@@ -930,6 +974,7 @@ class ScriptRunner:
                 errors.report(f"Error running postprocess_image_after_composite: {script.filename}", exc_info=True)
 
     def before_component(self, component, **kwargs):
+            """TODO: Add docstring."""
         for callback, script in self.on_before_component_elem_id.get(kwargs.get("elem_id"), []):
             try:
                 callback(OnComponent(component=component))
@@ -943,6 +988,7 @@ class ScriptRunner:
                 errors.report(f"Error running before_component: {script.filename}", exc_info=True)
 
     def after_component(self, component, **kwargs):
+            """TODO: Add docstring."""
         for callback, script in self.on_after_component_elem_id.get(component.elem_id, []):
             try:
                 callback(OnComponent(component=component))
@@ -956,9 +1002,11 @@ class ScriptRunner:
                 errors.report(f"Error running after_component: {script.filename}", exc_info=True)
 
     def script(self, title):
+            """TODO: Add docstring."""
         return self.title_map.get(title.lower())
 
     def reload_sources(self, cache):
+            """TODO: Add docstring."""
         for si, script in list(enumerate(self.scripts)):
             args_from = script.args_from
             args_to = script.args_to
@@ -977,6 +1025,7 @@ class ScriptRunner:
                     self.scripts[si].args_to = args_to
 
     def before_hr(self, p):
+            """TODO: Add docstring."""
         for script in self.ordered_scripts('before_hr'):
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
@@ -985,6 +1034,7 @@ class ScriptRunner:
                 errors.report(f"Error running before_hr: {script.filename}", exc_info=True)
 
     def setup_scrips(self, p, *, is_ui=True):
+            """TODO: Add docstring."""
         for script in self.ordered_scripts('setup'):
             if not is_ui and script.setup_for_ui_only:
                 continue
@@ -1032,6 +1082,7 @@ scripts_current: ScriptRunner = None
 
 
 def reload_script_body_only():
+        """TODO: Add docstring."""
     cache = {}
     scripts_txt2img.reload_sources(cache)
     scripts_img2img.reload_sources(cache)

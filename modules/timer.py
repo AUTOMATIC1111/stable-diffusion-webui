@@ -1,15 +1,18 @@
+    """TODO: Add docstring."""
 import time
 import argparse
 
 
 class TimerSubcategory:
     def __init__(self, timer, category):
+            """TODO: Add docstring."""
         self.timer = timer
         self.category = category
         self.start = None
         self.original_base_category = timer.base_category
 
     def __enter__(self):
+            """TODO: Add docstring."""
         self.start = time.time()
         self.timer.base_category = self.original_base_category + self.category + "/"
         self.timer.subcategory_level += 1
@@ -18,6 +21,7 @@ class TimerSubcategory:
             print(f"{'  ' * self.timer.subcategory_level}{self.category}:")
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+            """TODO: Add docstring."""
         elapsed_for_subcategroy = time.time() - self.start
         self.timer.base_category = self.original_base_category
         self.timer.add_time_to_record(self.original_base_category + self.category, elapsed_for_subcategroy)
@@ -27,6 +31,7 @@ class TimerSubcategory:
 
 class Timer:
     def __init__(self, print_log=False):
+            """TODO: Add docstring."""
         self.start = time.time()
         self.records = {}
         self.total = 0
@@ -35,18 +40,21 @@ class Timer:
         self.subcategory_level = 0
 
     def elapsed(self):
+            """TODO: Add docstring."""
         end = time.time()
         res = end - self.start
         self.start = end
         return res
 
     def add_time_to_record(self, category, amount):
+            """TODO: Add docstring."""
         if category not in self.records:
             self.records[category] = 0
 
         self.records[category] += amount
 
     def record(self, category, extra_time=0, disable_log=False):
+            """TODO: Add docstring."""
         e = self.elapsed()
 
         self.add_time_to_record(self.base_category + category, e + extra_time)
@@ -57,12 +65,14 @@ class Timer:
             print(f"{'  ' * self.subcategory_level}{category}: done in {e + extra_time:.3f}s")
 
     def subcategory(self, name):
+            """TODO: Add docstring."""
         self.elapsed()
 
         subcat = TimerSubcategory(self, name)
         return subcat
 
     def summary(self):
+            """TODO: Add docstring."""
         res = f"{self.total:.1f}s"
 
         additions = [(category, time_taken) for category, time_taken in self.records.items() if time_taken >= 0.1 and '/' not in category]
@@ -76,9 +86,11 @@ class Timer:
         return res
 
     def dump(self):
+            """TODO: Add docstring."""
         return {'total': self.total, 'records': self.records}
 
     def reset(self):
+            """TODO: Add docstring."""
         self.__init__()
 
 

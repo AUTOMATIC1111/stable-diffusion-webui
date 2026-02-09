@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from PIL import ImageOps, Image
 
 from modules import scripts_postprocessing, ui_components
@@ -5,10 +6,12 @@ import gradio as gr
 
 
 class ScriptPostprocessingCreateFlippedCopies(scripts_postprocessing.ScriptPostprocessing):
+        """TODO: Add docstring."""
     name = "Create flipped copies"
     order = 4030
 
     def ui(self):
+            """TODO: Add docstring."""
         with ui_components.InputAccordion(False, label="Create flipped copies") as enable:
             with gr.Row():
                 option = gr.CheckboxGroup(value=["Horizontal"], choices=["Horizontal", "Vertical", "Both"], show_label=False)
@@ -19,6 +22,7 @@ class ScriptPostprocessingCreateFlippedCopies(scripts_postprocessing.ScriptPostp
         }
 
     def process(self, pp: scripts_postprocessing.PostprocessedImage, enable, option):
+            """TODO: Add docstring."""
         if not enable:
             return
 

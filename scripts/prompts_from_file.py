@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import copy
 import random
 import shlex
@@ -11,24 +12,29 @@ from modules.shared import state
 
 
 def process_model_tag(tag):
+        """TODO: Add docstring."""
     info = sd_models.get_closet_checkpoint_match(tag)
     assert info is not None, f'Unknown checkpoint: {tag}'
     return info.name
 
 
 def process_string_tag(tag):
+        """TODO: Add docstring."""
     return tag
 
 
 def process_int_tag(tag):
+        """TODO: Add docstring."""
     return int(tag)
 
 
 def process_float_tag(tag):
+        """TODO: Add docstring."""
     return float(tag)
 
 
 def process_boolean_tag(tag):
+        """TODO: Add docstring."""
     return True if (tag == "true") else False
 
 
@@ -61,6 +67,7 @@ prompt_tags = {
 
 
 def cmdargs(line):
+        """TODO: Add docstring."""
     args = shlex.split(line)
     pos = 0
     res = {}
@@ -100,6 +107,7 @@ def cmdargs(line):
 
 
 def load_prompt_file(file):
+        """TODO: Add docstring."""
     if file is None:
         return None, gr.update(), gr.update(lines=7)
     else:
@@ -109,9 +117,11 @@ def load_prompt_file(file):
 
 class Script(scripts.Script):
     def title(self):
+            """TODO: Add docstring."""
         return "Prompts from file or textbox"
 
     def ui(self, is_img2img):
+            """TODO: Add docstring."""
         checkbox_iterate = gr.Checkbox(label="Iterate seed every line", value=False, elem_id=self.elem_id("checkbox_iterate"))
         checkbox_iterate_batch = gr.Checkbox(label="Use same random seed for all lines", value=False, elem_id=self.elem_id("checkbox_iterate_batch"))
         prompt_position = gr.Radio(["start", "end"], label="Insert prompts at the", elem_id=self.elem_id("prompt_position"), value="start")
@@ -128,6 +138,7 @@ class Script(scripts.Script):
         return [checkbox_iterate, checkbox_iterate_batch, prompt_position, prompt_txt]
 
     def run(self, p, checkbox_iterate, checkbox_iterate_batch, prompt_position, prompt_txt: str):
+            """TODO: Add docstring."""
         lines = [x for x in (x.strip() for x in prompt_txt.splitlines()) if x]
 
         p.do_not_save_grid = True

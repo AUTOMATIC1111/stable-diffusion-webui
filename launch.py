@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from modules import launch_utils
 
 args = launch_utils.args
@@ -25,6 +26,7 @@ start = launch_utils.start
 
 
 def main():
+        """TODO: Add docstring."""
     if args.dump_sysinfo:
         filename = launch_utils.dump_sysinfo()
 

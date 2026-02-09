@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os.path
 from functools import wraps
 import html
@@ -9,7 +10,8 @@ queue_lock = fifo_lock.FIFOLock()
 
 
 def wrap_queued_call(func):
-    def f(*args, **kwargs):
+    def function(*args, **kwargs):
+            """TODO: Add docstring."""
         with queue_lock:
             res = func(*args, **kwargs)
 
@@ -19,8 +21,9 @@ def wrap_queued_call(func):
 
 
 def wrap_gradio_gpu_call(func, extra_outputs=None):
+        """TODO: Add docstring."""
     @wraps(func)
-    def f(*args, **kwargs):
+    def function(*args, **kwargs):
 
         # if the first argument is a string that says "task(...)", it is treated as a job id
         if args and type(args[0]) == str and args[0].startswith("task(") and args[0].endswith(")"):
@@ -47,8 +50,10 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 
 
 def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
+        """TODO: Add docstring."""
     @wraps(func)
-    def f(*args, **kwargs):
+    def function(*args, **kwargs):
+            """TODO: Add docstring."""
         try:
             res = func(*args, **kwargs)
         finally:
@@ -63,8 +68,10 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
 
 
 def wrap_gradio_call_no_job(func, extra_outputs=None, add_stats=False):
+        """TODO: Add docstring."""
     @wraps(func)
-    def f(*args, extra_outputs_array=extra_outputs, **kwargs):
+    def function(*args, extra_outputs_array=extra_outputs, **kwargs):
+            """TODO: Add docstring."""
         run_memmon = shared.opts.memmon_poll_rate > 0 and not shared.mem_mon.disabled and add_stats
         if run_memmon:
             shared.mem_mon.monitor()

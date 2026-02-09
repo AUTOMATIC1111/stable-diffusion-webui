@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from PIL import Image, ImageFilter, ImageOps
 
 

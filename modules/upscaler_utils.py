@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import logging
 from typing import Callable
 
@@ -12,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def pil_image_to_torch_bgr(img: Image.Image) -> torch.Tensor:
+        """TODO: Add docstring."""
     img = np.array(img.convert("RGB"))
     img = img[:, :, ::-1]  # flip RGB to BGR
     img = np.transpose(img, (2, 0, 1))  # HWC to CHW
@@ -20,6 +22,7 @@ def pil_image_to_torch_bgr(img: Image.Image) -> torch.Tensor:
 
 
 def torch_bgr_to_pil_image(tensor: torch.Tensor) -> Image.Image:
+        """TODO: Add docstring."""
     if tensor.ndim == 4:
         # If we're given a tensor with a batch dimension, squeeze it out
         # (but only if it's a batch of size 1).
@@ -49,6 +52,7 @@ def upscale_pil_patch(model, img: Image.Image) -> Image.Image:
 
 
 def upscale_with_model(
+        """TODO: Add docstring."""
     model: Callable[[torch.Tensor], torch.Tensor],
     img: Image.Image,
     *,
@@ -89,6 +93,7 @@ def upscale_with_model(
 
 
 def tiled_upscale_2(
+        """TODO: Add docstring."""
     img: torch.Tensor,
     model,
     *,
@@ -163,6 +168,7 @@ def tiled_upscale_2(
 
 
 def upscale_2(
+        """TODO: Add docstring."""
     img: Image.Image,
     model,
     *,

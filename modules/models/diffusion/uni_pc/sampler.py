@@ -8,6 +8,7 @@ from modules import shared, devices
 
 class UniPCSampler(object):
     def __init__(self, model, **kwargs):
+            """TODO: Add docstring."""
         super().__init__()
         self.model = model
         to_torch = lambda x: x.clone().detach().to(torch.float32).to(model.device)
@@ -16,18 +17,21 @@ class UniPCSampler(object):
         self.register_buffer('alphas_cumprod', to_torch(model.alphas_cumprod))
 
     def register_buffer(self, name, attr):
+            """TODO: Add docstring."""
         if type(attr) == torch.Tensor:
             if attr.device != devices.device:
                 attr = attr.to(devices.device)
         setattr(self, name, attr)
 
     def set_hooks(self, before_sample, after_sample, after_update):
+            """TODO: Add docstring."""
         self.before_sample = before_sample
         self.after_sample = after_sample
         self.after_update = after_update
 
     @torch.no_grad()
     def sample(self,
+                   """TODO: Add docstring."""
                S,
                batch_size,
                shape,

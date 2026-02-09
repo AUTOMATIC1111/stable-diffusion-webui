@@ -20,6 +20,7 @@ from einops import rearrange
 
 @dataclass
 class HypertileParams:
+        """TODO: Add docstring."""
     depth = 0
     layer_name = ""
     tile_size: int = 0
@@ -215,6 +216,7 @@ def random_divisor(value: int, min_value: int, /, max_options: int = 1) -> int:
 
 
 def set_hypertile_seed(seed: int) -> None:
+        """TODO: Add docstring."""
     RNG_INSTANCE.seed(seed)
 
 
@@ -270,6 +272,7 @@ def self_attn_forward(params: HypertileParams, scale_depth=True) -> Callable:
 
     @wraps(params.forward)
     def wrapper(*args, **kwargs):
+            """TODO: Add docstring."""
         if not params.enabled:
             return params.forward(*args, **kwargs)
 
@@ -316,6 +319,7 @@ def self_attn_forward(params: HypertileParams, scale_depth=True) -> Callable:
 
 
 def hypertile_hook_model(model: nn.Module, width, height, *, enable=False, tile_size_max=128, swap_size=1, max_depth=3, is_sdxl=False):
+        """TODO: Add docstring."""
     hypertile_layers = getattr(model, "__webui_hypertile_layers", None)
     if hypertile_layers is None:
         if not enable:

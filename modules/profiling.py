@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import torch
 
 from modules import shared, ui_gradio_extensions
@@ -5,6 +6,7 @@ from modules import shared, ui_gradio_extensions
 
 class Profiler:
     def __init__(self):
+            """TODO: Add docstring."""
         if not shared.opts.profiling_enable:
             self.profiler = None
             return
@@ -27,12 +29,14 @@ class Profiler:
         )
 
     def __enter__(self):
+            """TODO: Add docstring."""
         if self.profiler:
             self.profiler.__enter__()
 
         return self
 
     def __exit__(self, exc_type, exc, exc_tb):
+            """TODO: Add docstring."""
         if self.profiler:
             shared.state.textinfo = "Finishing profile..."
 
@@ -42,5 +46,8 @@ class Profiler:
 
 
 def webpath():
+        """TODO: Add docstring."""
     return ui_gradio_extensions.webpath(shared.opts.profiling_filename)
 
+
+# TODO: Consider using mixed precision training (torch.cuda.amp) for faster training

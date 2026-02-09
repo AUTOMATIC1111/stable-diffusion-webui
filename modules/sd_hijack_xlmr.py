@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import torch
 
 from modules import sd_hijack_clip, devices
@@ -5,6 +6,7 @@ from modules import sd_hijack_clip, devices
 
 class FrozenXLMREmbedderWithCustomWords(sd_hijack_clip.FrozenCLIPEmbedderWithCustomWords):
     def __init__(self, wrapped, hijack):
+            """TODO: Add docstring."""
         super().__init__(wrapped, hijack)
 
         self.id_start = wrapped.config.bos_token_id
@@ -14,6 +16,7 @@ class FrozenXLMREmbedderWithCustomWords(sd_hijack_clip.FrozenCLIPEmbedderWithCus
         self.comma_token = self.tokenizer.get_vocab().get(',', None)  # alt diffusion doesn't have </w> bits for comma
 
     def encode_with_transformers(self, tokens):
+            """TODO: Add docstring."""
         # there's no CLIP Skip here because all hidden layers have size of 1024 and the last one uses a
         # trained layer to transform those 1024 into 768 for unet; so you can't choose which transformer
         # layer to work with - you have to use the last
@@ -25,6 +28,7 @@ class FrozenXLMREmbedderWithCustomWords(sd_hijack_clip.FrozenCLIPEmbedderWithCus
         return z
 
     def encode_embedding_init_text(self, init_text, nvpt):
+            """TODO: Add docstring."""
         embedding_layer = self.wrapped.roberta.embeddings
         ids = self.wrapped.tokenizer(init_text, max_length=nvpt, return_tensors="pt", add_special_tokens=False)["input_ids"]
         embedded = embedding_layer.token_embedding.wrapped(ids.to(devices.device)).squeeze(0)

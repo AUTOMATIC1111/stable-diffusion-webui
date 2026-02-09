@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 import sys
 from collections import namedtuple
@@ -20,10 +21,12 @@ Category = namedtuple("Category", ["name", "topn", "items"])
 re_topn = re.compile(r"\.top(\d+)$")
 
 def category_types():
+        """TODO: Add docstring."""
     return [f.stem for f in Path(shared.interrogator.content_dir).glob('*.txt')]
 
 
 def download_default_clip_interrogate_categories(content_dir):
+        """TODO: Add docstring."""
     print("Downloading CLIP categories...")
 
     tmpdir = f"{content_dir}_tmp"
@@ -43,6 +46,7 @@ def download_default_clip_interrogate_categories(content_dir):
 
 
 class InterrogateModels:
+        """TODO: Add docstring."""
     blip_model = None
     clip_model = None
     clip_preprocess = None
@@ -50,12 +54,14 @@ class InterrogateModels:
     running_on_cpu = None
 
     def __init__(self, content_dir):
+            """TODO: Add docstring."""
         self.loaded_categories = None
         self.skip_categories = []
         self.content_dir = content_dir
         self.running_on_cpu = devices.device_interrogate == torch.device("cpu")
 
     def categories(self):
+            """TODO: Add docstring."""
         if not os.path.exists(self.content_dir):
             download_default_clip_interrogate_categories(self.content_dir)
 
@@ -83,11 +89,13 @@ class InterrogateModels:
     def create_fake_fairscale(self):
         class FakeFairscale:
             def checkpoint_wrapper(self):
+                    """TODO: Add docstring."""
                 pass
 
         sys.modules["fairscale.nn.checkpoint.checkpoint_activations"] = FakeFairscale
 
     def load_blip_model(self):
+            """TODO: Add docstring."""
         self.create_fake_fairscale()
         import models.blip
 
@@ -104,6 +112,7 @@ class InterrogateModels:
         return blip_model
 
     def load_clip_model(self):
+            """TODO: Add docstring."""
         import clip
 
         if self.running_on_cpu:
@@ -117,6 +126,7 @@ class InterrogateModels:
         return model, preprocess
 
     def load(self):
+            """TODO: Add docstring."""
         if self.blip_model is None:
             self.blip_model = self.load_blip_model()
             if not shared.cmd_opts.no_half and not self.running_on_cpu:
@@ -134,22 +144,26 @@ class InterrogateModels:
         self.dtype = torch_utils.get_param(self.clip_model).dtype
 
     def send_clip_to_ram(self):
+            """TODO: Add docstring."""
         if not shared.opts.interrogate_keep_models_in_memory:
             if self.clip_model is not None:
                 self.clip_model = self.clip_model.to(devices.cpu)
 
     def send_blip_to_ram(self):
+            """TODO: Add docstring."""
         if not shared.opts.interrogate_keep_models_in_memory:
             if self.blip_model is not None:
                 self.blip_model = self.blip_model.to(devices.cpu)
 
     def unload(self):
+            """TODO: Add docstring."""
         self.send_clip_to_ram()
         self.send_blip_to_ram()
 
         devices.torch_gc()
 
     def rank(self, image_features, text_array, top_count=1):
+            """TODO: Add docstring."""
         import clip
 
         devices.torch_gc()
@@ -171,6 +185,7 @@ class InterrogateModels:
         return [(text_array[top_labels[0][i].numpy()], (top_probs[0][i].numpy()*100)) for i in range(top_count)]
 
     def generate_caption(self, pil_image):
+            """TODO: Add docstring."""
         gpu_image = transforms.Compose([
             transforms.Resize((blip_image_eval_size, blip_image_eval_size), interpolation=InterpolationMode.BICUBIC),
             transforms.ToTensor(),
@@ -183,6 +198,7 @@ class InterrogateModels:
         return caption[0]
 
     def interrogate(self, pil_image):
+            """TODO: Add docstring."""
         res = ""
         shared.state.begin(job="interrogate")
         try:

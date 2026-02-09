@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 ### Impls of the SD3 core diffusion model and VAE
 
 import torch
@@ -15,6 +16,7 @@ from PIL import Image
 class ModelSamplingDiscreteFlow(torch.nn.Module):
     """Helper for sampler scheduling (ie timestep/sigma calculations) for Discrete Flow models"""
     def __init__(self, shift=1.0):
+            """TODO: Add docstring."""
         super().__init__()
         self.shift = shift
         timesteps = 1000
@@ -23,32 +25,39 @@ class ModelSamplingDiscreteFlow(torch.nn.Module):
 
     @property
     def sigma_min(self):
+            """TODO: Add docstring."""
         return self.sigmas[0]
 
     @property
     def sigma_max(self):
+            """TODO: Add docstring."""
         return self.sigmas[-1]
 
     def timestep(self, sigma):
+            """TODO: Add docstring."""
         return sigma * 1000
 
     def sigma(self, timestep: torch.Tensor):
+            """TODO: Add docstring."""
         timestep = timestep / 1000.0
         if self.shift == 1.0:
             return timestep
         return self.shift * timestep / (1 + (self.shift - 1) * timestep)
 
     def calculate_denoised(self, sigma, model_output, model_input):
+            """TODO: Add docstring."""
         sigma = sigma.view(sigma.shape[:1] + (1,) * (model_output.ndim - 1))
         return model_input - model_output * sigma
 
     def noise_scaling(self, sigma, noise, latent_image, max_denoise=False):
+            """TODO: Add docstring."""
         return sigma * noise + (1.0 - sigma) * latent_image
 
 
 class BaseModel(torch.nn.Module):
     """Wrapper around the core MM-DiT model"""
     def __init__(self, shift=1.0, device=None, dtype=torch.float32, state_dict=None, prefix=""):
+            """TODO: Add docstring."""
         super().__init__()
         # Important configuration values can be quickly determined by checking shapes in the source file
         # Some of these will vary between models (eg 2B vs 8B primarily differ in their depth, but also other details change)
@@ -70,25 +79,30 @@ class BaseModel(torch.nn.Module):
         self.depth = depth
 
     def apply_model(self, x, sigma, c_crossattn=None, y=None):
+            """TODO: Add docstring."""
         dtype = self.get_dtype()
         timestep = self.model_sampling.timestep(sigma).float()
         model_output = self.diffusion_model(x.to(dtype), timestep, context=c_crossattn.to(dtype), y=y.to(dtype)).float()
         return self.model_sampling.calculate_denoised(sigma, model_output, x)
 
     def forward(self, *args, **kwargs):
+            """TODO: Add docstring."""
         return self.apply_model(*args, **kwargs)
 
     def get_dtype(self):
+            """TODO: Add docstring."""
         return self.diffusion_model.dtype
 
 
 class CFGDenoiser(torch.nn.Module):
     """Helper for applying CFG Scaling to diffusion outputs"""
     def __init__(self, model):
+            """TODO: Add docstring."""
         super().__init__()
         self.model = model
 
     def forward(self, x, timestep, cond, uncond, cond_scale):
+            """TODO: Add docstring."""
         # Run cond and uncond in a batch together
         batched = self.model.apply_model(torch.cat([x, x]), torch.cat([timestep, timestep]), c_crossattn=torch.cat([cond["c_crossattn"], uncond["c_crossattn"]]), y=torch.cat([cond["y"], uncond["y"]]))
         # Then split and apply CFG Scaling
@@ -100,13 +114,16 @@ class CFGDenoiser(torch.nn.Module):
 class SD3LatentFormat:
     """Latents are slightly shifted from center - this class must be called after VAE Decode to correct for the shift"""
     def __init__(self):
+            """TODO: Add docstring."""
         self.scale_factor = 1.5305
         self.shift_factor = 0.0609
 
     def process_in(self, latent):
+            """TODO: Add docstring."""
         return (latent - self.shift_factor) * self.scale_factor
 
     def process_out(self, latent):
+            """TODO: Add docstring."""
         return (latent / self.scale_factor) + self.shift_factor
 
     def decode_latent_to_preview(self, x0):
@@ -169,11 +186,13 @@ def sample_euler(model, x, sigmas, extra_args=None):
 
 
 def Normalize(in_channels, num_groups=32, dtype=torch.float32, device=None):
+        """TODO: Add docstring."""
     return torch.nn.GroupNorm(num_groups=num_groups, num_channels=in_channels, eps=1e-6, affine=True, dtype=dtype, device=device)
 
 
 class ResnetBlock(torch.nn.Module):
     def __init__(self, *, in_channels, out_channels=None, dtype=torch.float32, device=None):
+            """TODO: Add docstring."""
         super().__init__()
         self.in_channels = in_channels
         out_channels = in_channels if out_channels is None else out_channels
@@ -190,6 +209,7 @@ class ResnetBlock(torch.nn.Module):
         self.swish = torch.nn.SiLU(inplace=True)
 
     def forward(self, x):
+            """TODO: Add docstring."""
         hidden = x
         hidden = self.norm1(hidden)
         hidden = self.swish(hidden)
@@ -204,6 +224,7 @@ class ResnetBlock(torch.nn.Module):
 
 class AttnBlock(torch.nn.Module):
     def __init__(self, in_channels, dtype=torch.float32, device=None):
+            """TODO: Add docstring."""
         super().__init__()
         self.norm = Normalize(in_channels, dtype=dtype, device=device)
         self.q = torch.nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, padding=0, dtype=dtype, device=device)
@@ -212,6 +233,7 @@ class AttnBlock(torch.nn.Module):
         self.proj_out = torch.nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, padding=0, dtype=dtype, device=device)
 
     def forward(self, x):
+            """TODO: Add docstring."""
         hidden = self.norm(x)
         q = self.q(hidden)
         k = self.k(hidden)
@@ -226,10 +248,12 @@ class AttnBlock(torch.nn.Module):
 
 class Downsample(torch.nn.Module):
     def __init__(self, in_channels, dtype=torch.float32, device=None):
+            """TODO: Add docstring."""
         super().__init__()
         self.conv = torch.nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=2, padding=0, dtype=dtype, device=device)
 
     def forward(self, x):
+            """TODO: Add docstring."""
         pad = (0,1,0,1)
         x = torch.nn.functional.pad(x, pad, mode="constant", value=0)
         x = self.conv(x)
@@ -238,10 +262,12 @@ class Downsample(torch.nn.Module):
 
 class Upsample(torch.nn.Module):
     def __init__(self, in_channels, dtype=torch.float32, device=None):
+            """TODO: Add docstring."""
         super().__init__()
         self.conv = torch.nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1, dtype=dtype, device=device)
 
     def forward(self, x):
+            """TODO: Add docstring."""
         x = torch.nn.functional.interpolate(x, scale_factor=2.0, mode="nearest")
         x = self.conv(x)
         return x
@@ -249,6 +275,7 @@ class Upsample(torch.nn.Module):
 
 class VAEEncoder(torch.nn.Module):
     def __init__(self, ch=128, ch_mult=(1,2,4,4), num_res_blocks=2, in_channels=3, z_channels=16, dtype=torch.float32, device=None):
+            """TODO: Add docstring."""
         super().__init__()
         self.num_resolutions = len(ch_mult)
         self.num_res_blocks = num_res_blocks
@@ -282,6 +309,7 @@ class VAEEncoder(torch.nn.Module):
         self.swish = torch.nn.SiLU(inplace=True)
 
     def forward(self, x):
+            """TODO: Add docstring."""
         # downsampling
         hs = [self.conv_in(x)]
         for i_level in range(self.num_resolutions):
@@ -304,6 +332,7 @@ class VAEEncoder(torch.nn.Module):
 
 class VAEDecoder(torch.nn.Module):
     def __init__(self, ch=128, out_ch=3, ch_mult=(1, 2, 4, 4), num_res_blocks=2, resolution=256, z_channels=16, dtype=torch.float32, device=None):
+            """TODO: Add docstring."""
         super().__init__()
         self.num_resolutions = len(ch_mult)
         self.num_res_blocks = num_res_blocks
@@ -336,6 +365,7 @@ class VAEDecoder(torch.nn.Module):
         self.swish = torch.nn.SiLU(inplace=True)
 
     def forward(self, z):
+            """TODO: Add docstring."""
         # z to block_in
         hidden = self.conv_in(z)
         # middle
@@ -357,18 +387,23 @@ class VAEDecoder(torch.nn.Module):
 
 class SDVAE(torch.nn.Module):
     def __init__(self, dtype=torch.float32, device=None):
+            """TODO: Add docstring."""
         super().__init__()
         self.encoder = VAEEncoder(dtype=dtype, device=device)
         self.decoder = VAEDecoder(dtype=dtype, device=device)
 
     @torch.autocast("cuda", dtype=torch.float16)
     def decode(self, latent):
+            """TODO: Add docstring."""
         return self.decoder(latent)
 
     @torch.autocast("cuda", dtype=torch.float16)
     def encode(self, image):
+            """TODO: Add docstring."""
         hidden = self.encoder(image)
         mean, logvar = torch.chunk(hidden, 2, dim=1)
         logvar = torch.clamp(logvar, -30.0, 20.0)
         std = torch.exp(0.5 * logvar)
         return mean + std * torch.randn_like(mean)
+
+# TODO: Consider using mixed precision training (torch.cuda.amp) for faster training

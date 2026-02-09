@@ -1,7 +1,9 @@
+    """TODO: Add docstring."""
 import os.path
 
 
 def should_hijack_ip2p(checkpoint_info):
+        """TODO: Add docstring."""
     from modules import sd_models_config
 
     ckpt_basename = os.path.basename(checkpoint_info.filename).lower()

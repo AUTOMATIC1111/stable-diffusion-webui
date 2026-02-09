@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import torch
 
 import networks
@@ -6,6 +7,7 @@ from modules import patches
 
 class LoraPatches:
     def __init__(self):
+            """TODO: Add docstring."""
         self.Linear_forward = patches.patch(__name__, torch.nn.Linear, 'forward', networks.network_Linear_forward)
         self.Linear_load_state_dict = patches.patch(__name__, torch.nn.Linear, '_load_from_state_dict', networks.network_Linear_load_state_dict)
         self.Conv2d_forward = patches.patch(__name__, torch.nn.Conv2d, 'forward', networks.network_Conv2d_forward)
@@ -18,6 +20,7 @@ class LoraPatches:
         self.MultiheadAttention_load_state_dict = patches.patch(__name__, torch.nn.MultiheadAttention, '_load_from_state_dict', networks.network_MultiheadAttention_load_state_dict)
 
     def undo(self):
+            """TODO: Add docstring."""
         self.Linear_forward = patches.undo(__name__, torch.nn.Linear, 'forward')
         self.Linear_load_state_dict = patches.undo(__name__, torch.nn.Linear, '_load_from_state_dict')
         self.Conv2d_forward = patches.undo(__name__, torch.nn.Conv2d, 'forward')

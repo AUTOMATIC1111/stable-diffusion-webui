@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from __future__ import annotations
 
 import io
@@ -12,9 +13,11 @@ class Git(git.Git):
     """
 
     def _get_persistent_cmd(self, attr_name, cmd_name, *args, **kwargs):
+            """TODO: Add docstring."""
         raise NotImplementedError(f"Refusing to use persistent process: {attr_name} ({cmd_name} {args} {kwargs})")
 
     def get_object_header(self, ref: str | bytes) -> tuple[str, str, int]:
+            """TODO: Add docstring."""
         ret = subprocess.check_output(
             [self.GIT_PYTHON_GIT_EXECUTABLE, "cat-file", "--batch-check"],
             input=self._prepare_ref(ref),
@@ -24,6 +27,7 @@ class Git(git.Git):
         return self._parse_object_header(ret)
 
     def stream_object_data(self, ref: str) -> tuple[str, str, int, Git.CatFileContentStream]:
+            """TODO: Add docstring."""
         # Not really streaming, per se; this buffers the entire object in memory.
         # Shouldn't be a problem for our use case, since we're only using this for
         # object headers (commit objects).
@@ -39,4 +43,5 @@ class Git(git.Git):
 
 
 class Repo(git.Repo):
+        """TODO: Add docstring."""
     GitCommandWrapperType = Git

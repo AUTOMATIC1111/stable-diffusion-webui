@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 import gradio as gr
 
@@ -6,10 +7,12 @@ from modules.paths import script_path, data_path
 
 
 def webpath(fn):
+        """TODO: Add docstring."""
     return f'file={util.truncate_path(fn)}?{os.path.getmtime(fn)}'
 
 
 def javascript_html():
+        """TODO: Add docstring."""
     # Ensure localization is in `window` before scripts
     head = f'<script type="text/javascript">{localization.localization_js(shared.opts.localization)}</script>\n'
 
@@ -29,9 +32,11 @@ def javascript_html():
 
 
 def css_html():
+        """TODO: Add docstring."""
     head = ""
 
     def stylesheet(fn):
+            """TODO: Add docstring."""
         return f'<link rel="stylesheet" property="stylesheet" href="{webpath(fn)}">'
 
     for cssfile in scripts.list_files_with_name("style.css"):
@@ -50,10 +55,12 @@ def css_html():
 
 
 def reload_javascript():
+        """TODO: Add docstring."""
     js = javascript_html()
     css = css_html()
 
     def template_response(*args, **kwargs):
+            """TODO: Add docstring."""
         res = shared.GradioTemplateResponseOriginal(*args, **kwargs)
         res.body = res.body.replace(b'</head>', f'{js}<meta name="referrer" content="no-referrer"/></head>'.encode("utf8"))
         res.body = res.body.replace(b'</body>', f'{css}</body>'.encode("utf8"))

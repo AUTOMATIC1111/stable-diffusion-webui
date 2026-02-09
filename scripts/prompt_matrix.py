@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import math
 
 import modules.scripts as scripts
@@ -10,6 +11,7 @@ import modules.sd_samplers
 
 
 def draw_xy_grid(xs, ys, x_label, y_label, cell):
+        """TODO: Add docstring."""
     res = []
 
     ver_texts = [[images.GridAnnotation(y_label(y))] for y in ys]
@@ -39,9 +41,11 @@ def draw_xy_grid(xs, ys, x_label, y_label, cell):
 
 class Script(scripts.Script):
     def title(self):
+            """TODO: Add docstring."""
         return "Prompt matrix"
 
     def ui(self, is_img2img):
+            """TODO: Add docstring."""
         gr.HTML('<br />')
         with gr.Row():
             with gr.Column():
@@ -56,6 +60,7 @@ class Script(scripts.Script):
         return [put_at_start, different_seeds, prompt_type, variations_delimiter, margin_size]
 
     def run(self, p, put_at_start, different_seeds, prompt_type, variations_delimiter, margin_size):
+            """TODO: Add docstring."""
         modules.processing.fix_seed(p)
         # Raise error if promp type is not positive or negative
         if prompt_type not in ["positive", "negative"]:

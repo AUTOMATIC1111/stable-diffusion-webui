@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import gradio as gr
 
 from modules import scripts, sd_samplers, sd_schedulers, shared
@@ -6,17 +7,21 @@ from modules.ui_components import FormRow, FormGroup
 
 
 class ScriptSampler(scripts.ScriptBuiltinUI):
+        """TODO: Add docstring."""
     section = "sampler"
 
     def __init__(self):
+            """TODO: Add docstring."""
         self.steps = None
         self.sampler_name = None
         self.scheduler = None
 
     def title(self):
+            """TODO: Add docstring."""
         return "Sampler"
 
     def ui(self, is_img2img):
+            """TODO: Add docstring."""
         sampler_names = [x.name for x in sd_samplers.visible_samplers()]
         scheduler_names = [x.label for x in sd_schedulers.schedulers]
 
@@ -40,6 +45,7 @@ class ScriptSampler(scripts.ScriptBuiltinUI):
         return self.steps, self.sampler_name, self.scheduler
 
     def setup(self, p, steps, sampler_name, scheduler):
+            """TODO: Add docstring."""
         p.steps = steps
         p.sampler_name = sampler_name
         p.scheduler = scheduler

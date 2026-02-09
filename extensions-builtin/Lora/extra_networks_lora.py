@@ -1,9 +1,11 @@
+    """TODO: Add docstring."""
 from modules import extra_networks, shared
 import networks
 
 
 class ExtraNetworkLora(extra_networks.ExtraNetwork):
     def __init__(self):
+            """TODO: Add docstring."""
         super().__init__('lora')
 
         self.errors = {}
@@ -12,6 +14,7 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
     remove_symbols = str.maketrans('', '', ":,")
 
     def activate(self, p, params_list):
+            """TODO: Add docstring."""
         additional = shared.opts.sd_lora
 
         self.errors.clear()
@@ -56,6 +59,7 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
                 p.extra_generation_params["Lora hashes"] = ', '.join(f'{k}: {v}' for k, v in p.lora_hashes.items())
 
     def deactivate(self, p):
+            """TODO: Add docstring."""
         if self.errors:
             p.comment("Networks with errors: " + ", ".join(f"{k} ({v})" for k, v in self.errors.items()))
 

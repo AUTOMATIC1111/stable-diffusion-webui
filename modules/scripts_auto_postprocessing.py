@@ -1,22 +1,28 @@
+    """TODO: Add docstring."""
 from modules import scripts, scripts_postprocessing, shared
 
 
 class ScriptPostprocessingForMainUI(scripts.Script):
     def __init__(self, script_postproc):
+            """TODO: Add docstring."""
         self.script: scripts_postprocessing.ScriptPostprocessing = script_postproc
         self.postprocessing_controls = None
 
     def title(self):
+            """TODO: Add docstring."""
         return self.script.name
 
     def show(self, is_img2img):
+            """TODO: Add docstring."""
         return scripts.AlwaysVisible
 
     def ui(self, is_img2img):
+            """TODO: Add docstring."""
         self.postprocessing_controls = self.script.ui()
         return self.postprocessing_controls.values()
 
     def postprocess_image(self, p, script_pp, *args):
+            """TODO: Add docstring."""
         args_dict = dict(zip(self.postprocessing_controls, args))
 
         pp = scripts_postprocessing.PostprocessedImage(script_pp.image)
@@ -27,6 +33,7 @@ class ScriptPostprocessingForMainUI(scripts.Script):
 
 
 def create_auto_preprocessing_script_data():
+        """TODO: Add docstring."""
     from modules import scripts
 
     res = []

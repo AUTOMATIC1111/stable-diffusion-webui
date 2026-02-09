@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from __future__ import annotations
 import math
 import psutil
@@ -23,24 +24,29 @@ sgm_diffusionmodules_model_AttnBlock_forward = sgm.modules.diffusionmodules.mode
 
 
 class SdOptimization:
+        """TODO: Add docstring."""
     name: str = None
     label: str | None = None
     cmd_opt: str | None = None
     priority: int = 0
 
     def title(self):
+            """TODO: Add docstring."""
         if self.label is None:
             return self.name
 
         return f"{self.name} - {self.label}"
 
     def is_available(self):
+            """TODO: Add docstring."""
         return True
 
     def apply(self):
+            """TODO: Add docstring."""
         pass
 
     def undo(self):
+            """TODO: Add docstring."""
         ldm.modules.attention.CrossAttention.forward = hypernetwork.attention_CrossAttention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = diffusionmodules_model_AttnBlock_forward
 
@@ -49,14 +55,17 @@ class SdOptimization:
 
 
 class SdOptimizationXformers(SdOptimization):
+        """TODO: Add docstring."""
     name = "xformers"
     cmd_opt = "xformers"
     priority = 100
 
     def is_available(self):
+            """TODO: Add docstring."""
         return shared.cmd_opts.force_enable_xformers or (shared.xformers_available and torch.cuda.is_available() and (6, 0) <= torch.cuda.get_device_capability(shared.device) <= (9, 0))
 
     def apply(self):
+            """TODO: Add docstring."""
         ldm.modules.attention.CrossAttention.forward = xformers_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = xformers_attnblock_forward
         sgm.modules.attention.CrossAttention.forward = xformers_attention_forward
@@ -64,15 +73,18 @@ class SdOptimizationXformers(SdOptimization):
 
 
 class SdOptimizationSdpNoMem(SdOptimization):
+        """TODO: Add docstring."""
     name = "sdp-no-mem"
     label = "scaled dot product without memory efficient attention"
     cmd_opt = "opt_sdp_no_mem_attention"
     priority = 80
 
     def is_available(self):
+            """TODO: Add docstring."""
         return hasattr(torch.nn.functional, "scaled_dot_product_attention") and callable(torch.nn.functional.scaled_dot_product_attention)
 
     def apply(self):
+            """TODO: Add docstring."""
         ldm.modules.attention.CrossAttention.forward = scaled_dot_product_no_mem_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sdp_no_mem_attnblock_forward
         sgm.modules.attention.CrossAttention.forward = scaled_dot_product_no_mem_attention_forward
@@ -80,12 +92,14 @@ class SdOptimizationSdpNoMem(SdOptimization):
 
 
 class SdOptimizationSdp(SdOptimizationSdpNoMem):
+        """TODO: Add docstring."""
     name = "sdp"
     label = "scaled dot product"
     cmd_opt = "opt_sdp_attention"
     priority = 70
 
     def apply(self):
+            """TODO: Add docstring."""
         ldm.modules.attention.CrossAttention.forward = scaled_dot_product_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sdp_attnblock_forward
         sgm.modules.attention.CrossAttention.forward = scaled_dot_product_attention_forward
@@ -93,14 +107,17 @@ class SdOptimizationSdp(SdOptimizationSdpNoMem):
 
 
 class SdOptimizationSubQuad(SdOptimization):
+        """TODO: Add docstring."""
     name = "sub-quadratic"
     cmd_opt = "opt_sub_quad_attention"
 
     @property
     def priority(self):
+            """TODO: Add docstring."""
         return 1000 if shared.device.type == 'mps' else 10
 
     def apply(self):
+            """TODO: Add docstring."""
         ldm.modules.attention.CrossAttention.forward = sub_quad_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sub_quad_attnblock_forward
         sgm.modules.attention.CrossAttention.forward = sub_quad_attention_forward
@@ -108,35 +125,42 @@ class SdOptimizationSubQuad(SdOptimization):
 
 
 class SdOptimizationV1(SdOptimization):
+        """TODO: Add docstring."""
     name = "V1"
     label = "original v1"
     cmd_opt = "opt_split_attention_v1"
     priority = 10
 
     def apply(self):
+            """TODO: Add docstring."""
         ldm.modules.attention.CrossAttention.forward = split_cross_attention_forward_v1
         sgm.modules.attention.CrossAttention.forward = split_cross_attention_forward_v1
 
 
 class SdOptimizationInvokeAI(SdOptimization):
+        """TODO: Add docstring."""
     name = "InvokeAI"
     cmd_opt = "opt_split_attention_invokeai"
 
     @property
     def priority(self):
+            """TODO: Add docstring."""
         return 1000 if shared.device.type != 'mps' and not torch.cuda.is_available() else 10
 
     def apply(self):
+            """TODO: Add docstring."""
         ldm.modules.attention.CrossAttention.forward = split_cross_attention_forward_invokeAI
         sgm.modules.attention.CrossAttention.forward = split_cross_attention_forward_invokeAI
 
 
 class SdOptimizationDoggettx(SdOptimization):
+        """TODO: Add docstring."""
     name = "Doggettx"
     cmd_opt = "opt_split_attention"
     priority = 90
 
     def apply(self):
+            """TODO: Add docstring."""
         ldm.modules.attention.CrossAttention.forward = split_cross_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = cross_attention_attnblock_forward
         sgm.modules.attention.CrossAttention.forward = split_cross_attention_forward
@@ -144,6 +168,7 @@ class SdOptimizationDoggettx(SdOptimization):
 
 
 def list_optimizers(res):
+        """TODO: Add docstring."""
     res.extend([
         SdOptimizationXformers(),
         SdOptimizationSdpNoMem(),
@@ -164,6 +189,7 @@ if shared.cmd_opts.xformers or shared.cmd_opts.force_enable_xformers:
 
 
 def get_available_vram():
+        """TODO: Add docstring."""
     if shared.device.type == 'cuda':
         stats = torch.cuda.memory_stats(shared.device)
         mem_active = stats['active_bytes.all.current']
@@ -178,6 +204,7 @@ def get_available_vram():
 
 # see https://github.com/basujindal/stable-diffusion/pull/117 for discussion
 def split_cross_attention_forward_v1(self, x, context=None, mask=None, **kwargs):
+        """TODO: Add docstring."""
     h = self.heads
 
     q_in = self.to_q(x)
@@ -219,6 +246,7 @@ def split_cross_attention_forward_v1(self, x, context=None, mask=None, **kwargs)
 
 # taken from https://github.com/Doggettx/stable-diffusion and modified
 def split_cross_attention_forward(self, x, context=None, mask=None, **kwargs):
+        """TODO: Add docstring."""
     h = self.heads
 
     q_in = self.to_q(x)
@@ -286,12 +314,14 @@ mem_total_gb = psutil.virtual_memory().total // (1 << 30)
 
 
 def einsum_op_compvis(q, k, v):
+        """TODO: Add docstring."""
     s = einsum('b i d, b j d -> b i j', q, k)
     s = s.softmax(dim=-1, dtype=s.dtype)
     return einsum('b i j, b j d -> b i d', s, v)
 
 
 def einsum_op_slice_0(q, k, v, slice_size):
+        """TODO: Add docstring."""
     r = torch.zeros(q.shape[0], q.shape[1], v.shape[2], device=q.device, dtype=q.dtype)
     for i in range(0, q.shape[0], slice_size):
         end = i + slice_size
@@ -300,6 +330,7 @@ def einsum_op_slice_0(q, k, v, slice_size):
 
 
 def einsum_op_slice_1(q, k, v, slice_size):
+        """TODO: Add docstring."""
     r = torch.zeros(q.shape[0], q.shape[1], v.shape[2], device=q.device, dtype=q.dtype)
     for i in range(0, q.shape[1], slice_size):
         end = i + slice_size
@@ -308,6 +339,7 @@ def einsum_op_slice_1(q, k, v, slice_size):
 
 
 def einsum_op_mps_v1(q, k, v):
+        """TODO: Add docstring."""
     if q.shape[0] * q.shape[1] <= 2**16: # (512x512) max q.shape[1]: 4096
         return einsum_op_compvis(q, k, v)
     else:
@@ -318,6 +350,7 @@ def einsum_op_mps_v1(q, k, v):
 
 
 def einsum_op_mps_v2(q, k, v):
+        """TODO: Add docstring."""
     if mem_total_gb > 8 and q.shape[0] * q.shape[1] <= 2**16:
         return einsum_op_compvis(q, k, v)
     else:
@@ -325,6 +358,7 @@ def einsum_op_mps_v2(q, k, v):
 
 
 def einsum_op_tensor_mem(q, k, v, max_tensor_mb):
+        """TODO: Add docstring."""
     size_mb = q.shape[0] * q.shape[1] * k.shape[1] * q.element_size() // (1 << 20)
     if size_mb <= max_tensor_mb:
         return einsum_op_compvis(q, k, v)
@@ -335,6 +369,7 @@ def einsum_op_tensor_mem(q, k, v, max_tensor_mb):
 
 
 def einsum_op_cuda(q, k, v):
+        """TODO: Add docstring."""
     stats = torch.cuda.memory_stats(q.device)
     mem_active = stats['active_bytes.all.current']
     mem_reserved = stats['reserved_bytes.all.current']
@@ -346,6 +381,7 @@ def einsum_op_cuda(q, k, v):
 
 
 def einsum_op(q, k, v):
+        """TODO: Add docstring."""
     if q.device.type == 'cuda':
         return einsum_op_cuda(q, k, v)
 
@@ -360,6 +396,7 @@ def einsum_op(q, k, v):
 
 
 def split_cross_attention_forward_invokeAI(self, x, context=None, mask=None, **kwargs):
+        """TODO: Add docstring."""
     h = self.heads
 
     q = self.to_q(x)
@@ -388,6 +425,7 @@ def split_cross_attention_forward_invokeAI(self, x, context=None, mask=None, **k
 # Based on Birch-san's modified implementation of sub-quadratic attention from https://github.com/Birch-san/diffusers/pull/1
 # The sub_quad_attention_forward function is under the MIT License listed under Memory Efficient Attention in the Licenses section of the web UI interface
 def sub_quad_attention_forward(self, x, context=None, mask=None, **kwargs):
+        """TODO: Add docstring."""
     assert mask is None, "attention-mask not currently implemented for SubQuadraticCrossAttnProcessor."
 
     h = self.heads
@@ -425,6 +463,7 @@ def sub_quad_attention_forward(self, x, context=None, mask=None, **kwargs):
 
 
 def sub_quad_attention(q, k, v, q_chunk_size=1024, kv_chunk_size=None, kv_chunk_size_min=None, chunk_threshold=None, use_checkpoint=True):
+        """TODO: Add docstring."""
     bytes_per_token = torch.finfo(q.dtype).bits//8
     batch_x_heads, q_tokens, _ = q.shape
     _, k_tokens, _ = k.shape
@@ -463,6 +502,7 @@ def sub_quad_attention(q, k, v, q_chunk_size=1024, kv_chunk_size=None, kv_chunk_
 
 
 def get_xformers_flash_attention_op(q, k, v):
+        """TODO: Add docstring."""
     if not shared.cmd_opts.xformers_flash_attention:
         return None
 
@@ -478,6 +518,7 @@ def get_xformers_flash_attention_op(q, k, v):
 
 
 def xformers_attention_forward(self, x, context=None, mask=None, **kwargs):
+        """TODO: Add docstring."""
     h = self.heads
     q_in = self.to_q(x)
     context = default(context, x)
@@ -506,6 +547,7 @@ def xformers_attention_forward(self, x, context=None, mask=None, **kwargs):
 # Based on Diffusers usage of scaled dot product attention from https://github.com/huggingface/diffusers/blob/c7da8fd23359a22d0df2741688b5b4f33c26df21/src/diffusers/models/cross_attention.py
 # The scaled_dot_product_attention_forward function contains parts of code under Apache-2.0 license listed under Scaled Dot Product Attention in the Licenses section of the web UI interface
 def scaled_dot_product_attention_forward(self, x, context=None, mask=None, **kwargs):
+        """TODO: Add docstring."""
     batch_size, sequence_length, inner_dim = x.shape
 
     if mask is not None:
@@ -547,11 +589,13 @@ def scaled_dot_product_attention_forward(self, x, context=None, mask=None, **kwa
 
 
 def scaled_dot_product_no_mem_attention_forward(self, x, context=None, mask=None, **kwargs):
+        """TODO: Add docstring."""
     with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=False):
         return scaled_dot_product_attention_forward(self, x, context, mask)
 
 
 def cross_attention_attnblock_forward(self, x):
+            """TODO: Add docstring."""
         h_ = x
         h_ = self.norm(h_)
         q1 = self.q(h_)
@@ -611,6 +655,7 @@ def cross_attention_attnblock_forward(self, x):
 
 
 def xformers_attnblock_forward(self, x):
+        """TODO: Add docstring."""
     try:
         h_ = x
         h_ = self.norm(h_)
@@ -635,6 +680,7 @@ def xformers_attnblock_forward(self, x):
 
 
 def sdp_attnblock_forward(self, x):
+        """TODO: Add docstring."""
     h_ = x
     h_ = self.norm(h_)
     q = self.q(h_)
@@ -656,11 +702,13 @@ def sdp_attnblock_forward(self, x):
 
 
 def sdp_no_mem_attnblock_forward(self, x):
+        """TODO: Add docstring."""
     with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=False):
         return sdp_attnblock_forward(self, x)
 
 
 def sub_quad_attnblock_forward(self, x):
+        """TODO: Add docstring."""
     h_ = x
     h_ = self.norm(h_)
     q = self.q(h_)
@@ -675,3 +723,5 @@ def sub_quad_attnblock_forward(self, x):
     out = rearrange(out, 'b (h w) c -> b c h w', h=h)
     out = self.proj_out(out)
     return x + out
+
+# TODO: Consider using mixed precision training (torch.cuda.amp) for faster training

@@ -1,8 +1,10 @@
+    """TODO: Add docstring."""
 import network
 
 
 class ModuleTypeNorm(network.ModuleType):
     def create_module(self, net: network.Network, weights: network.NetworkWeights):
+            """TODO: Add docstring."""
         if all(x in weights.w for x in ["w_norm", "b_norm"]):
             return NetworkModuleNorm(net, weights)
 
@@ -11,12 +13,14 @@ class ModuleTypeNorm(network.ModuleType):
 
 class NetworkModuleNorm(network.NetworkModule):
     def __init__(self,  net: network.Network, weights: network.NetworkWeights):
+            """TODO: Add docstring."""
         super().__init__(net, weights)
 
         self.w_norm = weights.w.get("w_norm")
         self.b_norm = weights.w.get("b_norm")
 
     def calc_updown(self, orig_weight):
+            """TODO: Add docstring."""
         output_shape = self.w_norm.shape
         updown = self.w_norm.to(orig_weight.device)
 

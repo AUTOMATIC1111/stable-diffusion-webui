@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import datetime
 import html
 import random
@@ -9,6 +10,7 @@ from modules import ui_extra_networks_user_metadata
 
 
 def is_non_comma_tagset(tags):
+        """TODO: Add docstring."""
     average_tag_length = sum(len(x) for x in tags.keys()) / len(tags)
 
     return average_tag_length >= 16
@@ -19,6 +21,7 @@ re_comma = re.compile(r" *, *")
 
 
 def build_tags(metadata):
+        """TODO: Add docstring."""
     tags = {}
 
     ss_tag_frequency = metadata.get("ss_tag_frequency", {})
@@ -47,6 +50,7 @@ def build_tags(metadata):
 
 class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor):
     def __init__(self, ui, tabname, page):
+            """TODO: Add docstring."""
         super().__init__(ui, tabname, page)
 
         self.select_sd_version = None
@@ -57,6 +61,7 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
         self.edit_notes = None
 
     def save_lora_user_metadata(self, name, desc, sd_version, activation_text, preferred_weight, negative_text, notes):
+            """TODO: Add docstring."""
         user_metadata = self.get_user_metadata(name)
         user_metadata["description"] = desc
         user_metadata["sd version"] = sd_version
@@ -68,6 +73,7 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
         self.write_user_metadata(name, user_metadata)
 
     def get_metadata_table(self, name):
+            """TODO: Add docstring."""
         table = super().get_metadata_table(name)
         item = self.page.items.get(name, {})
         metadata = item.get("metadata") or {}
@@ -115,6 +121,7 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
         return table
 
     def put_values_into_components(self, name):
+            """TODO: Add docstring."""
         user_metadata = self.get_user_metadata(name)
         values = super().put_values_into_components(name)
 
@@ -136,6 +143,7 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
         ]
 
     def generate_random_prompt(self, name):
+            """TODO: Add docstring."""
         item = self.page.items.get(name, {})
         metadata = item.get("metadata") or {}
         tags = build_tags(metadata)
@@ -143,6 +151,7 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
         return self.generate_random_prompt_from_tags(tags)
 
     def generate_random_prompt_from_tags(self, tags):
+            """TODO: Add docstring."""
         max_count = None
         res = []
         for tag, count in tags:
@@ -163,6 +172,7 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
         self.select_sd_version = gr.Dropdown(['SD1', 'SD2', 'SDXL', 'Unknown'], value='Unknown', label='Stable Diffusion version', interactive=True)
 
     def create_editor(self):
+            """TODO: Add docstring."""
         self.create_default_editor_elems()
 
         self.taginfo = gr.HighlightedText(label="Training dataset tags")
@@ -181,6 +191,7 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
         generate_random_prompt.click(fn=self.generate_random_prompt, inputs=[self.edit_name_input], outputs=[random_prompt], show_progress=False)
 
         def select_tag(activation_text, evt: gr.SelectData):
+                """TODO: Add docstring."""
             tag = evt.value[0]
 
             words = re.split(re_comma, activation_text)

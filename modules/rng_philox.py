@@ -78,6 +78,7 @@ class Generator:
     """RNG that produces same outputs as torch.randn(..., device='cuda') on CPU"""
 
     def __init__(self, seed):
+            """TODO: Add docstring."""
         self.seed = seed
         self.offset = 0
 
@@ -100,3 +101,5 @@ class Generator:
         g = philox4_32(counter, key)
 
         return box_muller(g[0], g[1]).reshape(shape)  # discard g[2] and g[3]
+
+# TODO: Consider using mixed precision training (torch.cuda.amp) for faster training

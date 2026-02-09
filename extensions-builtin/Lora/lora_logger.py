@@ -1,9 +1,11 @@
+    """TODO: Add docstring."""
 import sys
 import copy
 import logging
 
 
 class ColoredFormatter(logging.Formatter):
+        """TODO: Add docstring."""
     COLORS = {
         "DEBUG": "\033[0;36m",  # CYAN
         "INFO": "\033[0;32m",  # GREEN
@@ -14,6 +16,7 @@ class ColoredFormatter(logging.Formatter):
     }
 
     def format(self, record):
+            """TODO: Add docstring."""
         colored_record = copy.copy(record)
         levelname = colored_record.levelname
         seq = self.COLORS.get(levelname, self.COLORS["RESET"])

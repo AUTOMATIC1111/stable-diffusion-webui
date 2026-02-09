@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import datetime
 import mimetypes
 import os
@@ -60,6 +61,7 @@ if cmd_opts.ngrok is not None:
 
 
 def gr_show(visible=True):
+        """TODO: Add docstring."""
     return {"visible": visible, "__type__": "update"}
 
 
@@ -85,12 +87,14 @@ plaintext_to_html = ui_common.plaintext_to_html
 
 
 def send_gradio_gallery_to_image(x):
+        """TODO: Add docstring."""
     if len(x) == 0:
         return None
     return image_from_url_text(x[0])
 
 
 def calc_resolution_hires(enable, width, height, hr_scale, hr_resize_x, hr_resize_y):
+        """TODO: Add docstring."""
     if not enable:
         return ""
 
@@ -101,6 +105,7 @@ def calc_resolution_hires(enable, width, height, hr_scale, hr_resize_x, hr_resiz
 
 
 def resize_from_to_html(width, height, scale_by):
+        """TODO: Add docstring."""
     target_width = int(width * scale_by)
     target_height = int(height * scale_by)
 
@@ -111,6 +116,7 @@ def resize_from_to_html(width, height, scale_by):
 
 
 def process_interrogate(interrogation_function, mode, ii_input_dir, ii_output_dir, *ii_singles):
+        """TODO: Add docstring."""
     if mode in {0, 1, 3, 4}:
         return [interrogation_function(ii_singles[mode]), None]
     elif mode == 2:
@@ -134,11 +140,13 @@ def process_interrogate(interrogation_function, mode, ii_input_dir, ii_output_di
 
 
 def interrogate(image):
+        """TODO: Add docstring."""
     prompt = shared.interrogator.interrogate(image.convert("RGB"))
     return gr.update() if prompt is None else prompt
 
 
 def interrogate_deepbooru(image):
+        """TODO: Add docstring."""
     prompt = deepbooru.model.tag(image)
     return gr.update() if prompt is None else prompt
 
@@ -154,6 +162,7 @@ def connect_clear_prompt(button):
 
 
 def update_token_counter(text, steps, styles, *, is_positive=True):
+        """TODO: Add docstring."""
     params = script_callbacks.BeforeTokenCounterParams(text, steps, styles, is_positive=is_positive)
     script_callbacks.before_token_counter_callback(params)
     text = params.prompt
@@ -187,14 +196,17 @@ def update_token_counter(text, steps, styles, *, is_positive=True):
 
 
 def update_negative_prompt_token_counter(*args):
+        """TODO: Add docstring."""
     return update_token_counter(*args, is_positive=False)
 
 
 def setup_progressbar(*args, **kwargs):
+        """TODO: Add docstring."""
     pass
 
 
 def apply_setting(key, value):
+        """TODO: Add docstring."""
     if value is None:
         return gr.update()
 
@@ -228,10 +240,12 @@ def apply_setting(key, value):
 
 
 def create_output_panel(tabname, outdir, toprow=None):
+        """TODO: Add docstring."""
     return ui_common.create_output_panel(tabname, outdir, toprow)
 
 
 def ordered_ui_categories():
+        """TODO: Add docstring."""
     user_order = {x.strip(): i * 2 + 1 for i, x in enumerate(shared.opts.ui_reorder_list)}
 
     for _, category in sorted(enumerate(shared_items.ui_reorder_categories()), key=lambda x: user_order.get(x[1], x[0] * 2 + 0)):
@@ -239,6 +253,7 @@ def ordered_ui_categories():
 
 
 def create_override_settings_dropdown(tabname, row):
+        """TODO: Add docstring."""
     dropdown = gr.Dropdown([], label="Override settings", visible=False, elem_id=f"{tabname}_override_settings", multiselect=True)
 
     dropdown.change(
@@ -251,6 +266,7 @@ def create_override_settings_dropdown(tabname, row):
 
 
 def create_ui():
+        """TODO: Add docstring."""
     import modules.img2img
     import modules.txt2img
 
@@ -515,6 +531,7 @@ def create_ui():
                 copy_image_destinations = {}
 
                 def add_copy_image_controls(tab_name, elem):
+                        """TODO: Add docstring."""
                     with gr.Row(variant="compact", elem_id=f"img2img_copy_to_{tab_name}"):
                         gr.HTML("Copy image to: ", elem_id=f"img2img_label_copy_to_{tab_name}")
 
@@ -555,6 +572,7 @@ def create_ui():
                                 add_copy_image_controls('inpaint_sketch', inpaint_color_sketch)
 
                                 def update_orig(image, state):
+                                        """TODO: Add docstring."""
                                     if image is not None:
                                         same_size = state is not None and state.size == image.size
                                         has_exact_match = np.any(np.all(np.array(image) == np.array(state), axis=-1))
@@ -596,6 +614,7 @@ def create_ui():
                                 tab.select(fn=lambda tabnum=i: tabnum, inputs=[], outputs=[img2img_selected_tab])
 
                         def copy_image(img):
+                                """TODO: Add docstring."""
                             if isinstance(img, dict) and 'image' in img:
                                 return img['image']
 
@@ -718,6 +737,7 @@ def create_ui():
                 component.change(fn=lambda: None, _js="updateImg2imgResizeToTextAfterChangingImage", inputs=[], outputs=[], show_progress=False)
 
             def select_img2img_tab(tab):
+                    """TODO: Add docstring."""
                 return gr.update(visible=tab in [2, 3, 4]), gr.update(visible=tab == 3),
 
             for i, elem in enumerate(img2img_tabs):
@@ -935,6 +955,7 @@ def create_ui():
                             create_hypernetwork = gr.Button(value="Create hypernetwork", variant='primary', elem_id="train_create_hypernetwork")
 
                 def get_textual_inversion_template_names():
+                        """TODO: Add docstring."""
                     return sorted(textual_inversion.textual_inversion_templates)
 
                 with gr.Tab(label="Train", id="train"):
@@ -1176,6 +1197,7 @@ def create_ui():
 
 
 def versions_html():
+        """TODO: Add docstring."""
     import torch
     import launch
 
@@ -1205,13 +1227,16 @@ checkpoint: <a id="sd_checkpoint_hash">N/A</a>
 
 
 def setup_ui_api(app):
+        """TODO: Add docstring."""
     from pydantic import BaseModel, Field
 
     class QuicksettingsHint(BaseModel):
+            """TODO: Add docstring."""
         name: str = Field(title="Name of the quicksettings field")
         label: str = Field(title="Label of the quicksettings field")
 
     def quicksettings_hint():
+            """TODO: Add docstring."""
         return [QuicksettingsHint(name=k, label=v.label) for k, v in opts.data_labels.items()]
 
     app.add_api_route("/internal/quicksettings-hint", quicksettings_hint, methods=["GET"], response_model=list[QuicksettingsHint])
@@ -1221,6 +1246,7 @@ def setup_ui_api(app):
     app.add_api_route("/internal/profile-startup", lambda: timer.startup_record, methods=["GET"])
 
     def download_sysinfo(attachment=False):
+            """TODO: Add docstring."""
         from fastapi.responses import PlainTextResponse
 
         text = sysinfo.get()

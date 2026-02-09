@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 # This script is copied from the compvis/stable-diffusion repo (aka the SD V1 repo)
 # Original filename: ldm/models/diffusion/ddpm.py
 # The purpose to reinstate the old DDPM logic which works with VQ, whereas the V2 one doesn't
@@ -37,12 +38,15 @@ def disabled_train(self, mode=True):
 
 
 def uniform_on_device(r1, r2, shape, device):
+        """TODO: Add docstring."""
     return (r1 - r2) * torch.rand(*shape, device=device) + r2
 
 
 class DDPMV1(pl.LightningModule):
+        """TODO: Add docstring."""
     # classic DDPM with Gaussian diffusion, in image space
     def __init__(self,
+                     """TODO: Add docstring."""
                  unet_config,
                  timesteps=1000,
                  beta_schedule="linear",
@@ -114,6 +118,7 @@ class DDPMV1(pl.LightningModule):
 
 
     def register_schedule(self, given_betas=None, beta_schedule="linear", timesteps=1000,
+                              """TODO: Add docstring."""
                           linear_start=1e-4, linear_end=2e-2, cosine_s=8e-3):
         if exists(given_betas):
             betas = given_betas
@@ -169,6 +174,7 @@ class DDPMV1(pl.LightningModule):
 
     @contextmanager
     def ema_scope(self, context=None):
+            """TODO: Add docstring."""
         if self.use_ema:
             self.model_ema.store(self.model.parameters())
             self.model_ema.copy_to(self.model)
@@ -183,6 +189,7 @@ class DDPMV1(pl.LightningModule):
                     print(f"{context}: Restored training weights")
 
     def init_from_ckpt(self, path, ignore_keys=None, only_model=False):
+            """TODO: Add docstring."""
         sd = torch.load(path, map_location="cpu")
         if "state_dict" in list(sd.keys()):
             sd = sd["state_dict"]
@@ -213,12 +220,14 @@ class DDPMV1(pl.LightningModule):
         return mean, variance, log_variance
 
     def predict_start_from_noise(self, x_t, t, noise):
+            """TODO: Add docstring."""
         return (
                 extract_into_tensor(self.sqrt_recip_alphas_cumprod, t, x_t.shape) * x_t -
                 extract_into_tensor(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape) * noise
         )
 
     def q_posterior(self, x_start, x_t, t):
+            """TODO: Add docstring."""
         posterior_mean = (
                 extract_into_tensor(self.posterior_mean_coef1, t, x_t.shape) * x_start +
                 extract_into_tensor(self.posterior_mean_coef2, t, x_t.shape) * x_t
@@ -228,6 +237,7 @@ class DDPMV1(pl.LightningModule):
         return posterior_mean, posterior_variance, posterior_log_variance_clipped
 
     def p_mean_variance(self, x, t, clip_denoised: bool):
+            """TODO: Add docstring."""
         model_out = self.model(x, t)
         if self.parameterization == "eps":
             x_recon = self.predict_start_from_noise(x, t=t, noise=model_out)
@@ -241,6 +251,7 @@ class DDPMV1(pl.LightningModule):
 
     @torch.no_grad()
     def p_sample(self, x, t, clip_denoised=True, repeat_noise=False):
+            """TODO: Add docstring."""
         b, *_, device = *x.shape, x.device
         model_mean, _, model_log_variance = self.p_mean_variance(x=x, t=t, clip_denoised=clip_denoised)
         noise = noise_like(x.shape, device, repeat_noise)
@@ -250,6 +261,7 @@ class DDPMV1(pl.LightningModule):
 
     @torch.no_grad()
     def p_sample_loop(self, shape, return_intermediates=False):
+            """TODO: Add docstring."""
         device = self.betas.device
         b = shape[0]
         img = torch.randn(shape, device=device)
@@ -265,17 +277,20 @@ class DDPMV1(pl.LightningModule):
 
     @torch.no_grad()
     def sample(self, batch_size=16, return_intermediates=False):
+            """TODO: Add docstring."""
         image_size = self.image_size
         channels = self.channels
         return self.p_sample_loop((batch_size, channels, image_size, image_size),
                                   return_intermediates=return_intermediates)
 
     def q_sample(self, x_start, t, noise=None):
+            """TODO: Add docstring."""
         noise = default(noise, lambda: torch.randn_like(x_start))
         return (extract_into_tensor(self.sqrt_alphas_cumprod, t, x_start.shape) * x_start +
                 extract_into_tensor(self.sqrt_one_minus_alphas_cumprod, t, x_start.shape) * noise)
 
     def get_loss(self, pred, target, mean=True):
+            """TODO: Add docstring."""
         if self.loss_type == 'l1':
             loss = (target - pred).abs()
             if mean:
@@ -291,6 +306,7 @@ class DDPMV1(pl.LightningModule):
         return loss
 
     def p_losses(self, x_start, t, noise=None):
+            """TODO: Add docstring."""
         noise = default(noise, lambda: torch.randn_like(x_start))
         x_noisy = self.q_sample(x_start=x_start, t=t, noise=noise)
         model_out = self.model(x_noisy, t)
@@ -320,12 +336,14 @@ class DDPMV1(pl.LightningModule):
         return loss, loss_dict
 
     def forward(self, x, *args, **kwargs):
+            """TODO: Add docstring."""
         # b, c, h, w, device, img_size, = *x.shape, x.device, self.image_size
         # assert h == img_size and w == img_size, f'height and width of image must be {img_size}'
         t = torch.randint(0, self.num_timesteps, (x.shape[0],), device=self.device).long()
         return self.p_losses(x, t, *args, **kwargs)
 
     def get_input(self, batch, k):
+            """TODO: Add docstring."""
         x = batch[k]
         if len(x.shape) == 3:
             x = x[..., None]
@@ -334,11 +352,13 @@ class DDPMV1(pl.LightningModule):
         return x
 
     def shared_step(self, batch):
+            """TODO: Add docstring."""
         x = self.get_input(batch, self.first_stage_key)
         loss, loss_dict = self(x)
         return loss, loss_dict
 
     def training_step(self, batch, batch_idx):
+            """TODO: Add docstring."""
         loss, loss_dict = self.shared_step(batch)
 
         self.log_dict(loss_dict, prog_bar=True,
@@ -355,6 +375,7 @@ class DDPMV1(pl.LightningModule):
 
     @torch.no_grad()
     def validation_step(self, batch, batch_idx):
+            """TODO: Add docstring."""
         _, loss_dict_no_ema = self.shared_step(batch)
         with self.ema_scope():
             _, loss_dict_ema = self.shared_step(batch)
@@ -363,10 +384,12 @@ class DDPMV1(pl.LightningModule):
         self.log_dict(loss_dict_ema, prog_bar=False, logger=True, on_step=False, on_epoch=True)
 
     def on_train_batch_end(self, *args, **kwargs):
+            """TODO: Add docstring."""
         if self.use_ema:
             self.model_ema(self.model)
 
     def _get_rows_from_list(self, samples):
+            """TODO: Add docstring."""
         n_imgs_per_row = len(samples)
         denoise_grid = rearrange(samples, 'n b c h w -> b n c h w')
         denoise_grid = rearrange(denoise_grid, 'b n c h w -> (b n) c h w')
@@ -375,6 +398,7 @@ class DDPMV1(pl.LightningModule):
 
     @torch.no_grad()
     def log_images(self, batch, N=8, n_row=2, sample=True, return_keys=None, **kwargs):
+            """TODO: Add docstring."""
         log = {}
         x = self.get_input(batch, self.first_stage_key)
         N = min(x.shape[0], N)
@@ -412,6 +436,7 @@ class DDPMV1(pl.LightningModule):
         return log
 
     def configure_optimizers(self):
+            """TODO: Add docstring."""
         lr = self.learning_rate
         params = list(self.model.parameters())
         if self.learn_logvar:
@@ -423,6 +448,7 @@ class DDPMV1(pl.LightningModule):
 class LatentDiffusionV1(DDPMV1):
     """main class"""
     def __init__(self,
+                     """TODO: Add docstring."""
                  first_stage_config,
                  cond_stage_config,
                  num_timesteps_cond=None,
@@ -468,6 +494,7 @@ class LatentDiffusionV1(DDPMV1):
             self.restarted_from_ckpt = True
 
     def make_cond_schedule(self, ):
+            """TODO: Add docstring."""
         self.cond_ids = torch.full(size=(self.num_timesteps,), fill_value=self.num_timesteps - 1, dtype=torch.long)
         ids = torch.round(torch.linspace(0, self.num_timesteps - 1, self.num_timesteps_cond)).long()
         self.cond_ids[:self.num_timesteps_cond] = ids
@@ -475,6 +502,7 @@ class LatentDiffusionV1(DDPMV1):
     @rank_zero_only
     @torch.no_grad()
     def on_train_batch_start(self, batch, batch_idx, dataloader_idx):
+            """TODO: Add docstring."""
         # only for very first batch
         if self.scale_by_std and self.current_epoch == 0 and self.global_step == 0 and batch_idx == 0 and not self.restarted_from_ckpt:
             assert self.scale_factor == 1., 'rather not use custom rescaling and std-rescaling simultaneously'
@@ -490,6 +518,7 @@ class LatentDiffusionV1(DDPMV1):
             print("### USING STD-RESCALING ###")
 
     def register_schedule(self,
+                              """TODO: Add docstring."""
                           given_betas=None, beta_schedule="linear", timesteps=1000,
                           linear_start=1e-4, linear_end=2e-2, cosine_s=8e-3):
         super().register_schedule(given_betas, beta_schedule, timesteps, linear_start, linear_end, cosine_s)
@@ -499,6 +528,7 @@ class LatentDiffusionV1(DDPMV1):
             self.make_cond_schedule()
 
     def instantiate_first_stage(self, config):
+            """TODO: Add docstring."""
         model = instantiate_from_config(config)
         self.first_stage_model = model.eval()
         self.first_stage_model.train = disabled_train
@@ -506,6 +536,7 @@ class LatentDiffusionV1(DDPMV1):
             param.requires_grad = False
 
     def instantiate_cond_stage(self, config):
+            """TODO: Add docstring."""
         if not self.cond_stage_trainable:
             if config == "__is_first_stage__":
                 print("Using first stage also as cond stage.")
@@ -527,6 +558,7 @@ class LatentDiffusionV1(DDPMV1):
             self.cond_stage_model = model
 
     def _get_denoise_row_from_list(self, samples, desc='', force_no_decoder_quantization=False):
+            """TODO: Add docstring."""
         denoise_row = []
         for zd in tqdm(samples, desc=desc):
             denoise_row.append(self.decode_first_stage(zd.to(self.device),
@@ -539,6 +571,7 @@ class LatentDiffusionV1(DDPMV1):
         return denoise_grid
 
     def get_first_stage_encoding(self, encoder_posterior):
+            """TODO: Add docstring."""
         if isinstance(encoder_posterior, DiagonalGaussianDistribution):
             z = encoder_posterior.sample()
         elif isinstance(encoder_posterior, torch.Tensor):
@@ -548,6 +581,7 @@ class LatentDiffusionV1(DDPMV1):
         return self.scale_factor * z
 
     def get_learned_conditioning(self, c):
+            """TODO: Add docstring."""
         if self.cond_stage_forward is None:
             if hasattr(self.cond_stage_model, 'encode') and callable(self.cond_stage_model.encode):
                 c = self.cond_stage_model.encode(c)
@@ -561,6 +595,7 @@ class LatentDiffusionV1(DDPMV1):
         return c
 
     def meshgrid(self, h, w):
+            """TODO: Add docstring."""
         y = torch.arange(0, h).view(h, 1, 1).repeat(1, w, 1)
         x = torch.arange(0, w).view(1, w, 1).repeat(h, 1, 1)
 
@@ -582,6 +617,7 @@ class LatentDiffusionV1(DDPMV1):
         return edge_dist
 
     def get_weighting(self, h, w, Ly, Lx, device):
+            """TODO: Add docstring."""
         weighting = self.delta_border(h, w)
         weighting = torch.clip(weighting, self.split_input_params["clip_min_weight"],
                                self.split_input_params["clip_max_weight"], )
@@ -651,6 +687,7 @@ class LatentDiffusionV1(DDPMV1):
 
     @torch.no_grad()
     def get_input(self, batch, k, return_first_stage_outputs=False, force_c_encode=False,
+                      """TODO: Add docstring."""
                   cond_key=None, return_original_cond=False, bs=None):
         x = super().get_input(batch, k)
         if bs is not None:
@@ -703,6 +740,7 @@ class LatentDiffusionV1(DDPMV1):
 
     @torch.no_grad()
     def decode_first_stage(self, z, predict_cids=False, force_not_quantize=False):
+            """TODO: Add docstring."""
         if predict_cids:
             if z.dim() == 4:
                 z = torch.argmax(z.exp(), dim=1).long()
@@ -763,6 +801,7 @@ class LatentDiffusionV1(DDPMV1):
 
     # same as above but without decorator
     def differentiable_decode_first_stage(self, z, predict_cids=False, force_not_quantize=False):
+            """TODO: Add docstring."""
         if predict_cids:
             if z.dim() == 4:
                 z = torch.argmax(z.exp(), dim=1).long()
@@ -823,6 +862,7 @@ class LatentDiffusionV1(DDPMV1):
 
     @torch.no_grad()
     def encode_first_stage(self, x):
+            """TODO: Add docstring."""
         if hasattr(self, "split_input_params"):
             if self.split_input_params["patch_distributed_vq"]:
                 ks = self.split_input_params["ks"]  # eg. (128, 128)
@@ -862,11 +902,13 @@ class LatentDiffusionV1(DDPMV1):
             return self.first_stage_model.encode(x)
 
     def shared_step(self, batch, **kwargs):
+            """TODO: Add docstring."""
         x, c = self.get_input(batch, self.first_stage_key)
         loss = self(x, c)
         return loss
 
     def forward(self, x, c, *args, **kwargs):
+            """TODO: Add docstring."""
         t = torch.randint(0, self.num_timesteps, (x.shape[0],), device=self.device).long()
         if self.model.conditioning_key is not None:
             assert c is not None
@@ -981,6 +1023,7 @@ class LatentDiffusionV1(DDPMV1):
             return x_recon
 
     def _predict_eps_from_xstart(self, x_t, t, pred_xstart):
+            """TODO: Add docstring."""
         return (extract_into_tensor(self.sqrt_recip_alphas_cumprod, t, x_t.shape) * x_t - pred_xstart) / \
                extract_into_tensor(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape)
 
@@ -999,6 +1042,7 @@ class LatentDiffusionV1(DDPMV1):
         return mean_flat(kl_prior) / np.log(2.0)
 
     def p_losses(self, x_start, cond, t, noise=None):
+            """TODO: Add docstring."""
         noise = default(noise, lambda: torch.randn_like(x_start))
         x_noisy = self.q_sample(x_start=x_start, t=t, noise=noise)
         model_output = self.apply_model(x_noisy, t, cond)
@@ -1034,6 +1078,7 @@ class LatentDiffusionV1(DDPMV1):
         return loss, loss_dict
 
     def p_mean_variance(self, x, c, t, clip_denoised: bool, return_codebook_ids=False, quantize_denoised=False,
+                            """TODO: Add docstring."""
                         return_x0=False, score_corrector=None, corrector_kwargs=None):
         t_in = t
         model_out = self.apply_model(x, t_in, c, return_ids=return_codebook_ids)
@@ -1066,6 +1111,7 @@ class LatentDiffusionV1(DDPMV1):
 
     @torch.no_grad()
     def p_sample(self, x, c, t, clip_denoised=False, repeat_noise=False,
+                     """TODO: Add docstring."""
                  return_codebook_ids=False, quantize_denoised=False, return_x0=False,
                  temperature=1., noise_dropout=0., score_corrector=None, corrector_kwargs=None):
         b, *_, device = *x.shape, x.device
@@ -1097,6 +1143,7 @@ class LatentDiffusionV1(DDPMV1):
 
     @torch.no_grad()
     def progressive_denoising(self, cond, shape, verbose=True, callback=None, quantize_denoised=False,
+                                  """TODO: Add docstring."""
                               img_callback=None, mask=None, x0=None, temperature=1., noise_dropout=0.,
                               score_corrector=None, corrector_kwargs=None, batch_size=None, x_T=None, start_T=None,
                               log_every_t=None):
@@ -1155,6 +1202,7 @@ class LatentDiffusionV1(DDPMV1):
 
     @torch.no_grad()
     def p_sample_loop(self, cond, shape, return_intermediates=False,
+                          """TODO: Add docstring."""
                       x_T=None, verbose=True, callback=None, timesteps=None, quantize_denoised=False,
                       mask=None, x0=None, img_callback=None, start_T=None,
                       log_every_t=None):
@@ -1208,6 +1256,7 @@ class LatentDiffusionV1(DDPMV1):
 
     @torch.no_grad()
     def sample(self, cond, batch_size=16, return_intermediates=False, x_T=None,
+                   """TODO: Add docstring."""
                verbose=True, timesteps=None, quantize_denoised=False,
                mask=None, x0=None, shape=None,**kwargs):
         if shape is None:
@@ -1242,6 +1291,7 @@ class LatentDiffusionV1(DDPMV1):
 
     @torch.no_grad()
     def log_images(self, batch, N=8, n_row=4, sample=True, ddim_steps=200, ddim_eta=1., return_keys=None,
+                       """TODO: Add docstring."""
                    quantize_denoised=True, inpaint=True, plot_denoise_rows=False, plot_progressive_rows=True,
                    plot_diffusion_rows=True, **kwargs):
 
@@ -1352,6 +1402,7 @@ class LatentDiffusionV1(DDPMV1):
         return log
 
     def configure_optimizers(self):
+            """TODO: Add docstring."""
         lr = self.learning_rate
         params = list(self.model.parameters())
         if self.cond_stage_trainable:
@@ -1377,6 +1428,7 @@ class LatentDiffusionV1(DDPMV1):
 
     @torch.no_grad()
     def to_rgb(self, x):
+            """TODO: Add docstring."""
         x = x.float()
         if not hasattr(self, "colorize"):
             self.colorize = torch.randn(3, x.shape[1], 1, 1).to(x)
@@ -1387,12 +1439,14 @@ class LatentDiffusionV1(DDPMV1):
 
 class DiffusionWrapperV1(pl.LightningModule):
     def __init__(self, diff_model_config, conditioning_key):
+            """TODO: Add docstring."""
         super().__init__()
         self.diffusion_model = instantiate_from_config(diff_model_config)
         self.conditioning_key = conditioning_key
         assert self.conditioning_key in [None, 'concat', 'crossattn', 'hybrid', 'adm']
 
     def forward(self, x, t, c_concat: list = None, c_crossattn: list = None):
+            """TODO: Add docstring."""
         if self.conditioning_key is None:
             out = self.diffusion_model(x, t)
         elif self.conditioning_key == 'concat':
@@ -1415,12 +1469,15 @@ class DiffusionWrapperV1(pl.LightningModule):
 
 
 class Layout2ImgDiffusionV1(LatentDiffusionV1):
+        """TODO: Add docstring."""
     # TODO: move all layout-specific hacks to this class
     def __init__(self, cond_stage_key, *args, **kwargs):
+            """TODO: Add docstring."""
         assert cond_stage_key == 'coordinates_bbox', 'Layout2ImgDiffusion only for cond_stage_key="coordinates_bbox"'
         super().__init__(*args, cond_stage_key=cond_stage_key, **kwargs)
 
     def log_images(self, batch, N=8, *args, **kwargs):
+            """TODO: Add docstring."""
         logs = super().log_images(*args, batch=batch, N=N, **kwargs)
 
         key = 'train' if self.training else 'validation'

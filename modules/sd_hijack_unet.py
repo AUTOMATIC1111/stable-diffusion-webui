@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import torch
 from packaging import version
 from einops import repeat
@@ -14,6 +15,7 @@ class TorchHijackForUnet:
     """
 
     def __getattr__(self, item):
+            """TODO: Add docstring."""
         if item == 'cat':
             return self.cat
 
@@ -23,6 +25,7 @@ class TorchHijackForUnet:
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{item}'")
 
     def cat(self, tensors, *args, **kwargs):
+            """TODO: Add docstring."""
         if len(tensors) == 2:
             a, b = tensors
             if a.shape[-2:] != b.shape[-2:]:
@@ -81,6 +84,7 @@ def timestep_embedding(_, timesteps, dim, max_period=10000, repeat_only=False):
 # Monkey patch to SpatialTransformer removing unnecessary contiguous calls.
 # Prevents a lot of unnecessary aten::copy_ calls
 def spatial_transformer_forward(_, self, x: torch.Tensor, context=None):
+        """TODO: Add docstring."""
     # note: if no context is given, cross-attention defaults to self-attention
     if not isinstance(context, list):
         context = [context]
@@ -104,8 +108,10 @@ def spatial_transformer_forward(_, self, x: torch.Tensor, context=None):
 
 class GELUHijack(torch.nn.GELU, torch.nn.Module):
     def __init__(self, *args, **kwargs):
+            """TODO: Add docstring."""
         torch.nn.GELU.__init__(self, *args, **kwargs)
     def forward(self, x):
+            """TODO: Add docstring."""
         if devices.unet_needs_upcast:
             return torch.nn.GELU.forward(self.float(), x.float()).to(devices.dtype_unet)
         else:
@@ -114,6 +120,7 @@ class GELUHijack(torch.nn.GELU, torch.nn.Module):
 
 ddpm_edit_hijack = None
 def hijack_ddpm_edit():
+        """TODO: Add docstring."""
     global ddpm_edit_hijack
     if not ddpm_edit_hijack:
         CondFunc('modules.models.diffusion.ddpm_edit.LatentDiffusion.decode_first_stage', first_stage_sub, first_stage_cond)
@@ -143,6 +150,7 @@ CondFunc('sgm.modules.diffusionmodules.wrappers.OpenAIWrapper.forward', apply_mo
 
 
 def timestep_embedding_cast_result(orig_func, timesteps, *args, **kwargs):
+        """TODO: Add docstring."""
     if devices.unet_needs_upcast and timesteps.dtype == torch.int64:
         dtype = torch.float32
     else:
@@ -152,3 +160,5 @@ def timestep_embedding_cast_result(orig_func, timesteps, *args, **kwargs):
 
 CondFunc('ldm.modules.diffusionmodules.openaimodel.timestep_embedding', timestep_embedding_cast_result)
 CondFunc('sgm.modules.diffusionmodules.openaimodel.timestep_embedding', timestep_embedding_cast_result)
+
+# TODO: Consider using mixed precision training (torch.cuda.amp) for faster training

@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from __future__ import annotations
 
 import logging
@@ -22,12 +23,15 @@ gfpgan_face_restorer: face_restoration.FaceRestoration | None = None
 
 class FaceRestorerGFPGAN(face_restoration_utils.CommonFaceRestoration):
     def name(self):
+            """TODO: Add docstring."""
         return "GFPGAN"
 
     def get_device(self):
+            """TODO: Add docstring."""
         return devices.device_gfpgan
 
     def load_net(self) -> torch.Module:
+            """TODO: Add docstring."""
         for model_path in modelloader.load_models(
             model_path=self.model_path,
             model_url=model_url,
@@ -45,6 +49,7 @@ class FaceRestorerGFPGAN(face_restoration_utils.CommonFaceRestoration):
 
     def restore(self, np_image):
         def restore_face(cropped_face_t):
+                """TODO: Add docstring."""
             assert self.net is not None
             return self.net(cropped_face_t, return_rgb=False)[0]
 
@@ -52,6 +57,7 @@ class FaceRestorerGFPGAN(face_restoration_utils.CommonFaceRestoration):
 
 
 def gfpgan_fix_faces(np_image):
+        """TODO: Add docstring."""
     if gfpgan_face_restorer:
         return gfpgan_face_restorer.restore(np_image)
     logger.warning("GFPGAN face restorer not set up")
@@ -59,6 +65,7 @@ def gfpgan_fix_faces(np_image):
 
 
 def setup_model(dirname: str) -> None:
+        """TODO: Add docstring."""
     global gfpgan_face_restorer
 
     try:

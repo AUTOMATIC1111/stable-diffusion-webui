@@ -1,12 +1,15 @@
+    """TODO: Add docstring."""
 import torch
 
 
 def make_weight_cp(t, wa, wb):
+        """TODO: Add docstring."""
     temp = torch.einsum('i j k l, j r -> i r k l', t, wb)
     return torch.einsum('i j k l, i r -> r j k l', temp, wa)
 
 
 def rebuild_conventional(up, down, shape, dyn_dim=None):
+        """TODO: Add docstring."""
     up = up.reshape(up.size(0), -1)
     down = down.reshape(down.size(0), -1)
     if dyn_dim is not None:
@@ -16,6 +19,7 @@ def rebuild_conventional(up, down, shape, dyn_dim=None):
 
 
 def rebuild_cp_decomposition(up, down, mid):
+        """TODO: Add docstring."""
     up = up.reshape(up.size(0), -1)
     down = down.reshape(down.size(0), -1)
     return torch.einsum('n m k l, i n, m j -> i j k l', mid, up, down)
@@ -23,6 +27,7 @@ def rebuild_cp_decomposition(up, down, mid):
 
 # copied from https://github.com/KohakuBlueleaf/LyCORIS/blob/dev/lycoris/modules/lokr.py
 def factorization(dimension: int, factor:int=-1) -> tuple[int, int]:
+        """TODO: Add docstring."""
     '''
     return a tuple of two value of input dimension decomposed by the number closest to factor
     second value is higher or equal than first value.

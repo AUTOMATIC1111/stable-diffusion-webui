@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 from ldm.models.diffusion.ddpm import LatentDiffusion
 from typing import TYPE_CHECKING
 

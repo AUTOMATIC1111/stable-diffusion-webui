@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import logging
 
 import torch
@@ -15,6 +16,7 @@ log = logging.getLogger(__name__)
 # in torch version 1.13, backends.mps.is_available() and backends.mps.is_built() are introduced in to check mps availability,
 # since torch 2.0.1+ nightly build, getattr(torch, 'has_mps', False) was deprecated, see https://github.com/pytorch/pytorch/pull/103279
 def check_for_mps() -> bool:
+        """TODO: Add docstring."""
     if version.parse(torch.__version__) <= version.parse("2.0.1"):
         if not getattr(torch, 'has_mps', False):
             return False
@@ -31,6 +33,7 @@ has_mps = check_for_mps()
 
 
 def torch_mps_gc() -> None:
+        """TODO: Add docstring."""
     try:
         if shared.state.current_latent is not None:
             log.debug("`current_latent` is set, skipping MPS garbage collection")
@@ -43,6 +46,7 @@ def torch_mps_gc() -> None:
 
 # MPS workaround for https://github.com/pytorch/pytorch/issues/89784
 def cumsum_fix(input, cumsum_func, *args, **kwargs):
+        """TODO: Add docstring."""
     if input.device.type == 'mps':
         output_dtype = kwargs.get('dtype', input.dtype)
         if output_dtype == torch.int64:
@@ -54,6 +58,7 @@ def cumsum_fix(input, cumsum_func, *args, **kwargs):
 
 # MPS workaround for https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14046
 def interpolate_with_fp32_fallback(orig_func, *args, **kwargs) -> Tensor:
+        """TODO: Add docstring."""
     try:
         return orig_func(*args, **kwargs)
     except RuntimeError as e:

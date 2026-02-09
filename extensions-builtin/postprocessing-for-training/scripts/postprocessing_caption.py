@@ -1,12 +1,15 @@
+    """TODO: Add docstring."""
 from modules import scripts_postprocessing, ui_components, deepbooru, shared
 import gradio as gr
 
 
 class ScriptPostprocessingCeption(scripts_postprocessing.ScriptPostprocessing):
+        """TODO: Add docstring."""
     name = "Caption"
     order = 4040
 
     def ui(self):
+            """TODO: Add docstring."""
         with ui_components.InputAccordion(False, label="Caption") as enable:
             option = gr.CheckboxGroup(value=["Deepbooru"], choices=["Deepbooru", "BLIP"], show_label=False)
 
@@ -16,6 +19,7 @@ class ScriptPostprocessingCeption(scripts_postprocessing.ScriptPostprocessing):
         }
 
     def process(self, pp: scripts_postprocessing.PostprocessedImage, enable, option):
+            """TODO: Add docstring."""
         if not enable:
             return
 

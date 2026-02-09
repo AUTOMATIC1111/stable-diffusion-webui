@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import os
 
 from modules import modelloader, errors
@@ -8,6 +9,7 @@ from modules.upscaler_utils import upscale_with_model
 
 class UpscalerDAT(Upscaler):
     def __init__(self, user_path):
+            """TODO: Add docstring."""
         self.name = "DAT"
         self.user_path = user_path
         self.scalers = []
@@ -23,6 +25,7 @@ class UpscalerDAT(Upscaler):
                 self.scalers.append(model)
 
     def do_upscale(self, img, path):
+            """TODO: Add docstring."""
         try:
             info = self.load_model(path)
         except Exception:
@@ -43,6 +46,7 @@ class UpscalerDAT(Upscaler):
         )
 
     def load_model(self, path):
+            """TODO: Add docstring."""
         for scaler in self.scalers:
             if scaler.data_path == path:
                 if scaler.local_data_path.startswith("http"):
@@ -57,6 +61,7 @@ class UpscalerDAT(Upscaler):
 
 
 def get_dat_models(scaler):
+        """TODO: Add docstring."""
     return [
         UpscalerData(
             name="DAT x2",

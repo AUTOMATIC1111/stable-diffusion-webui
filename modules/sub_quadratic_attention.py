@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 # original source:
 #   https://github.com/AminRezaei0x443/memory-efficient-attention/blob/1bc0d9e6ac5f82ea43a375135c4e1d3896ee1694/memory_efficient_attention/attention_torch.py
 # license:
@@ -19,6 +20,7 @@ from typing import Optional, NamedTuple
 
 
 def narrow_trunc(
+        """TODO: Add docstring."""
     input: Tensor,
     dim: int,
     start: int,
@@ -28,14 +30,17 @@ def narrow_trunc(
 
 
 class AttnChunk(NamedTuple):
+        """TODO: Add docstring."""
     exp_values: Tensor
     exp_weights_sum: Tensor
     max_score: Tensor
 
 
 class SummarizeChunk:
+        """TODO: Add docstring."""
     @staticmethod
     def __call__(
+            """TODO: Add docstring."""
         query: Tensor,
         key: Tensor,
         value: Tensor,
@@ -43,8 +48,10 @@ class SummarizeChunk:
 
 
 class ComputeQueryChunkAttn:
+        """TODO: Add docstring."""
     @staticmethod
     def __call__(
+            """TODO: Add docstring."""
         query: Tensor,
         key: Tensor,
         value: Tensor,
@@ -52,6 +59,7 @@ class ComputeQueryChunkAttn:
 
 
 def _summarize_chunk(
+        """TODO: Add docstring."""
     query: Tensor,
     key: Tensor,
     value: Tensor,
@@ -73,6 +81,7 @@ def _summarize_chunk(
 
 
 def _query_chunk_attention(
+        """TODO: Add docstring."""
     query: Tensor,
     key: Tensor,
     value: Tensor,
@@ -83,6 +92,7 @@ def _query_chunk_attention(
     _, _, v_channels_per_head = value.shape
 
     def chunk_scanner(chunk_idx: int) -> AttnChunk:
+            """TODO: Add docstring."""
         key_chunk = narrow_trunc(
             key,
             1,
@@ -115,6 +125,7 @@ def _query_chunk_attention(
 
 # TODO: refactor CrossAttention#get_attention_scores to share code with this
 def _get_attention_scores_no_kv_chunking(
+        """TODO: Add docstring."""
     query: Tensor,
     key: Tensor,
     value: Tensor,
@@ -134,11 +145,13 @@ def _get_attention_scores_no_kv_chunking(
 
 
 class ScannedChunk(NamedTuple):
+        """TODO: Add docstring."""
     chunk_idx: int
     attn_chunk: AttnChunk
 
 
 def efficient_dot_product_attention(
+        """TODO: Add docstring."""
     query: Tensor,
     key: Tensor,
     value: Tensor,
@@ -173,6 +186,7 @@ def efficient_dot_product_attention(
         kv_chunk_size = max(kv_chunk_size, kv_chunk_size_min)
 
     def get_query_chunk(chunk_idx: int) -> Tensor:
+            """TODO: Add docstring."""
         return narrow_trunc(
             query,
             1,

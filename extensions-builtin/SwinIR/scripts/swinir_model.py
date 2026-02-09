@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import logging
 import sys
 
@@ -14,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 class UpscalerSwinIR(Upscaler):
     def __init__(self, dirname):
+            """TODO: Add docstring."""
         self._cached_model = None           # keep the model when SWIN_torch_compile is on to prevent re-compile every runs
         self._cached_model_config = None    # to clear '_cached_model' when changing model (v1/v2) or settings
         self.name = "SwinIR"
@@ -33,6 +35,7 @@ class UpscalerSwinIR(Upscaler):
         self.scalers = scalers
 
     def do_upscale(self, img: Image.Image, model_file: str) -> Image.Image:
+            """TODO: Add docstring."""
         current_config = (model_file, shared.opts.SWIN_tile)
 
         if self._cached_model_config == current_config:
@@ -58,6 +61,7 @@ class UpscalerSwinIR(Upscaler):
         return img
 
     def load_model(self, path, scale=4):
+            """TODO: Add docstring."""
         if path.startswith("http"):
             filename = modelloader.load_file_from_url(
                 url=path,
@@ -81,10 +85,12 @@ class UpscalerSwinIR(Upscaler):
         return model_descriptor
 
     def _get_device(self):
+            """TODO: Add docstring."""
         return devices.get_device_for('swinir')
 
 
 def on_ui_settings():
+        """TODO: Add docstring."""
     import gradio as gr
 
     shared.opts.add_option("SWIN_tile", shared.OptionInfo(192, "Tile size for all SwinIR.", gr.Slider, {"minimum": 16, "maximum": 512, "step": 16}, section=('upscaling', "Upscaling")))

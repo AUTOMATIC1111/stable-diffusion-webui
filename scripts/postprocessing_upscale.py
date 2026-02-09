@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import re
 
 from PIL import Image
@@ -13,6 +14,7 @@ upscale_cache = {}
 
 
 def limit_size_by_one_dimention(w, h, limit):
+        """TODO: Add docstring."""
     if h > w and h > limit:
         w = limit * w // h
         h = limit
@@ -24,10 +26,12 @@ def limit_size_by_one_dimention(w, h, limit):
 
 
 class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
+        """TODO: Add docstring."""
     name = "Upscale"
     order = 1000
 
     def ui(self):
+            """TODO: Add docstring."""
         selected_tab = gr.Number(value=0, visible=False)
 
         with InputAccordion(True, label="Upscale", elem_id="extras_upscale") as upscale_enabled:
@@ -57,6 +61,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
                                 upscaling_crop = gr.Checkbox(label='Crop to fit', value=True, elem_id="extras_upscaling_crop")
 
         def on_selected_upscale_method(upscale_method):
+                """TODO: Add docstring."""
             if not shared.opts.set_scale_by_when_changing_upscaler:
                 return gr.update()
 
@@ -86,6 +91,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
         }
 
     def upscale(self, image, info, upscaler, upscale_mode, upscale_by, max_side_length, upscale_to_width, upscale_to_height, upscale_crop):
+            """TODO: Add docstring."""
         if upscale_mode == 1:
             upscale_by = max(upscale_to_width/image.width, upscale_to_height/image.height)
             info["Postprocess upscale to"] = f"{upscale_to_width}x{upscale_to_height}"
@@ -119,6 +125,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
         return image
 
     def process_firstpass(self, pp: scripts_postprocessing.PostprocessedImage, upscale_enabled=True, upscale_mode=1, upscale_by=2.0, max_side_length=0, upscale_to_width=None, upscale_to_height=None, upscale_crop=False, upscaler_1_name=None, upscaler_2_name=None, upscaler_2_visibility=0.0):
+            """TODO: Add docstring."""
         if upscale_mode == 1:
             pp.shared.target_width = upscale_to_width
             pp.shared.target_height = upscale_to_height
@@ -129,6 +136,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
             pp.shared.target_width, pp.shared.target_height = limit_size_by_one_dimention(pp.shared.target_width, pp.shared.target_height, max_side_length)
 
     def process(self, pp: scripts_postprocessing.PostprocessedImage, upscale_enabled=True, upscale_mode=1, upscale_by=2.0, max_side_length=0, upscale_to_width=None, upscale_to_height=None, upscale_crop=False, upscaler_1_name=None, upscaler_2_name=None, upscaler_2_visibility=0.0):
+            """TODO: Add docstring."""
         if not upscale_enabled:
             return
 
@@ -163,14 +171,17 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
         pp.image = upscaled_image
 
     def image_changed(self):
+            """TODO: Add docstring."""
         upscale_cache.clear()
 
 
 class ScriptPostprocessingUpscaleSimple(ScriptPostprocessingUpscale):
+        """TODO: Add docstring."""
     name = "Simple Upscale"
     order = 900
 
     def ui(self):
+            """TODO: Add docstring."""
         with FormRow():
             upscaler_name = gr.Dropdown(label='Upscaler', choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name)
             upscale_by = gr.Slider(minimum=0.05, maximum=8.0, step=0.05, label="Upscale by", value=2)
@@ -181,10 +192,12 @@ class ScriptPostprocessingUpscaleSimple(ScriptPostprocessingUpscale):
         }
 
     def process_firstpass(self, pp: scripts_postprocessing.PostprocessedImage, upscale_by=2.0, upscaler_name=None):
+            """TODO: Add docstring."""
         pp.shared.target_width = int(pp.image.width * upscale_by)
         pp.shared.target_height = int(pp.image.height * upscale_by)
 
     def process(self, pp: scripts_postprocessing.PostprocessedImage, upscale_by=2.0, upscaler_name=None):
+            """TODO: Add docstring."""
         if upscaler_name is None or upscaler_name == "None":
             return
 

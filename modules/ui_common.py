@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import csv
 import dataclasses
 import json
@@ -18,6 +19,7 @@ refresh_symbol = '\U0001f504'  # 🔄
 
 
 def update_generation_info(generation_info, html_info, img_index):
+        """TODO: Add docstring."""
     try:
         generation_info = json.loads(generation_info)
         if img_index < 0 or img_index >= len(generation_info["infotexts"]):
@@ -30,6 +32,7 @@ def update_generation_info(generation_info, html_info, img_index):
 
 
 def plaintext_to_html(text, classname=None):
+        """TODO: Add docstring."""
     content = "<br>\n".join(html.escape(x) for x in text.split('\n'))
 
     return f"<p class='{classname}'>{content}</p>" if classname else f"<p>{content}</p>"
@@ -62,6 +65,7 @@ def update_logfile(logfile_path, fields):
 
 
 def save_files(js_data, images, do_make_zip, index):
+        """TODO: Add docstring."""
     filenames = []
     fullfns = []
     parsed_infotexts = []
@@ -69,6 +73,7 @@ def save_files(js_data, images, do_make_zip, index):
     # quick dictionary to class object conversion. Its necessary due apply_filename_pattern requiring it
     class MyObject:
         def __init__(self, d=None):
+                """TODO: Add docstring."""
             if d is not None:
                 for key, value in d.items():
                     setattr(self, key, value)
@@ -154,6 +159,7 @@ def save_files(js_data, images, do_make_zip, index):
 
 @dataclasses.dataclass
 class OutputPanel:
+        """TODO: Add docstring."""
     gallery = None
     generation_info = None
     infotext = None
@@ -162,9 +168,11 @@ class OutputPanel:
 
 
 def create_output_panel(tabname, outdir, toprow=None):
+        """TODO: Add docstring."""
     res = OutputPanel()
 
     def open_folder(f, images=None, index=None):
+            """TODO: Add docstring."""
         if shared.cmd_opts.hide_ui_dir_config:
             return
 
@@ -282,6 +290,7 @@ def create_output_panel(tabname, outdir, toprow=None):
 
 
 def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
+        """TODO: Add docstring."""
     refresh_components = refresh_component if isinstance(refresh_component, list) else [refresh_component]
 
     label = None
@@ -291,6 +300,7 @@ def create_refresh_button(refresh_component, refresh_method, refreshed_args, ele
             break
 
     def refresh():
+            """TODO: Add docstring."""
         refresh_method()
         args = refreshed_args() if callable(refreshed_args) else refreshed_args
 

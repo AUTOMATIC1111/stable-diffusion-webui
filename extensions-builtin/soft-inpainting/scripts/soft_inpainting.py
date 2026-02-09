@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import numpy as np
 import gradio as gr
 import math
@@ -8,6 +9,7 @@ from modules.torch_utils import float64
 
 class SoftInpaintingSettings:
     def __init__(self,
+                     """TODO: Add docstring."""
                  mask_blend_power,
                  mask_blend_scale,
                  inpaint_detail_preservation,
@@ -22,6 +24,7 @@ class SoftInpaintingSettings:
         self.composite_difference_contrast = composite_difference_contrast
 
     def add_generation_params(self, dest):
+            """TODO: Add docstring."""
         dest[enabled_gen_param_label] = True
         dest[gen_param_labels.mask_blend_power] = self.mask_blend_power
         dest[gen_param_labels.mask_blend_scale] = self.mask_blend_scale
@@ -34,6 +37,7 @@ class SoftInpaintingSettings:
 # ------------------- Methods -------------------
 
 def processing_uses_inpainting(p):
+        """TODO: Add docstring."""
     # TODO: Figure out a better way to determine if inpainting is being used by p
     if getattr(p, "image_mask", None) is not None:
         return True
@@ -125,6 +129,7 @@ def get_modified_nmask(settings, nmask, sigma):
 
 
 def apply_adaptive_masks(
+            """TODO: Add docstring."""
         settings: SoftInpaintingSettings,
         nmask,
         latent_orig,
@@ -203,6 +208,7 @@ def apply_adaptive_masks(
 
 
 def apply_masks(
+            """TODO: Add docstring."""
         settings,
         nmask,
         overlay_images,
@@ -273,12 +279,14 @@ def weighted_histogram_filter(img, kernel, kernel_center, percentile_min=0.0, pe
 
     # Converts an index tuple into a vector.
     def vec(x):
+            """TODO: Add docstring."""
         return np.array(x)
 
     kernel_min = -kernel_center
     kernel_max = vec(kernel.shape) - kernel_center
 
     def weighted_histogram_filter_single(idx):
+            """TODO: Add docstring."""
         idx = vec(idx)
         min_index = np.maximum(0, idx + kernel_min)
         max_index = np.minimum(vec(img.shape), idx + kernel_max)
@@ -291,6 +299,7 @@ def weighted_histogram_filter(img, kernel, kernel_center, percentile_min=0.0, pe
             """
 
             def __init__(self, value, weight):
+                    """TODO: Add docstring."""
                 self.value: float = value
                 self.weight: float = weight
                 self.window_min: float = 0.0
@@ -308,6 +317,7 @@ def weighted_histogram_filter(img, kernel, kernel_center, percentile_min=0.0, pe
             values.append(element)
 
         def sort_key(x: WeightedElement):
+                """TODO: Add docstring."""
             return x.value
 
         values.sort(key=sort_key)
@@ -404,10 +414,12 @@ def get_gaussian_kernel(stddev_radius=1.0, max_radius=2):
 
     # Evaluates a 0-1 normalized gaussian function for a given square distance from the mean.
     def gaussian(sqr_mag):
+            """TODO: Add docstring."""
         return math.exp(-sqr_mag / (stddev_radius * stddev_radius))
 
     # Helper function for converting a tuple to an array.
     def vec(x):
+            """TODO: Add docstring."""
         return np.array(x)
 
     """
@@ -421,6 +433,7 @@ def get_gaussian_kernel(stddev_radius=1.0, max_radius=2):
     gauss_kernel_scale = 1 / (1 - gauss_zero)
 
     def gaussian_kernel_func(coordinate):
+            """TODO: Add docstring."""
         x = coordinate[0] ** 2.0 + coordinate[1] ** 2.0
         x = gaussian(x)
         x -= gauss_zero
@@ -485,17 +498,21 @@ el_ids = SoftInpaintingSettings(
 
 class Script(scripts.Script):
     def __init__(self):
+            """TODO: Add docstring."""
         self.section = "inpaint"
         self.masks_for_overlay = None
         self.overlay_images = None
 
     def title(self):
+            """TODO: Add docstring."""
         return "Soft Inpainting"
 
     def show(self, is_img2img):
+            """TODO: Add docstring."""
         return scripts.AlwaysVisible if is_img2img else False
 
     def ui(self, is_img2img):
+            """TODO: Add docstring."""
         if not is_img2img:
             return
 
@@ -659,6 +676,7 @@ class Script(scripts.Script):
                 dif_contr]
 
     def process(self, p, enabled, power, scale, detail_preservation, mask_inf, dif_thresh, dif_contr):
+            """TODO: Add docstring."""
         if not enabled:
             return
 
@@ -674,6 +692,7 @@ class Script(scripts.Script):
         settings.add_generation_params(p.extra_generation_params)
 
     def on_mask_blend(self, p, mba: scripts.MaskBlendArgs, enabled, power, scale, detail_preservation, mask_inf,
+                          """TODO: Add docstring."""
                       dif_thresh, dif_contr):
         if not enabled:
             return
@@ -694,6 +713,7 @@ class Script(scripts.Script):
                                           get_modified_nmask(settings, mba.nmask, mba.sigma[0]))
 
     def post_sample(self, p, ps: scripts.PostSampleArgs, enabled, power, scale, detail_preservation, mask_inf,
+                        """TODO: Add docstring."""
                     dif_thresh, dif_contr):
         if not enabled:
             return
@@ -743,6 +763,7 @@ class Script(scripts.Script):
                                                           paste_to=p.paste_to)
 
     def postprocess_maskoverlay(self, p, ppmo: scripts.PostProcessMaskOverlayArgs, enabled, power, scale,
+                                    """TODO: Add docstring."""
                                 detail_preservation, mask_inf, dif_thresh, dif_contr):
         if not enabled:
             return

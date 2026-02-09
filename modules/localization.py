@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import json
 import os
 
@@ -7,6 +8,7 @@ localizations = {}
 
 
 def list_localizations(dirname):
+        """TODO: Add docstring."""
     localizations.clear()
 
     for file in os.listdir(dirname):
@@ -24,6 +26,7 @@ def list_localizations(dirname):
 
 
 def localization_js(current_localization_name: str) -> str:
+        """TODO: Add docstring."""
     fns = localizations.get(current_localization_name, None)
     data = {}
     if fns is not None:

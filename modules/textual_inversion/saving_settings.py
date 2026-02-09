@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import datetime
 import json
 import os
@@ -50,6 +51,7 @@ saved_params_previews = {
 
 
 def save_settings_to_file(log_directory, all_params):
+        """TODO: Add docstring."""
     now = datetime.datetime.now()
     params = {"datetime": now.strftime("%Y-%m-%d %H:%M:%S")}
 

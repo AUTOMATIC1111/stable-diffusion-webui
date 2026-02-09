@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import importlib
 
 
@@ -6,6 +7,7 @@ always_true_func = lambda *args, **kwargs: True
 
 class CondFunc:
     def __new__(cls, orig_func, sub_func, cond_func=always_true_func):
+            """TODO: Add docstring."""
         self = super(CondFunc, cls).__new__(cls)
         if isinstance(orig_func, str):
             func_path = orig_func.split('.')
@@ -26,10 +28,12 @@ class CondFunc:
         self.__init__(orig_func, sub_func, cond_func)
         return lambda *args, **kwargs: self(*args, **kwargs)
     def __init__(self, orig_func, sub_func, cond_func):
+            """TODO: Add docstring."""
         self.__orig_func = orig_func
         self.__sub_func = sub_func
         self.__cond_func = cond_func
     def __call__(self, *args, **kwargs):
+            """TODO: Add docstring."""
         if not self.__cond_func or self.__cond_func(self.__orig_func, *args, **kwargs):
             return self.__sub_func(self.__orig_func, *args, **kwargs)
         else:

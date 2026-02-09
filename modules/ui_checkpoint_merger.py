@@ -7,6 +7,7 @@ from modules.ui_common import create_refresh_button
 
 
 def update_interp_description(value):
+        """TODO: Add docstring."""
     interp_description_css = "<p style='margin-bottom: 2.5em'>{}</p>"
     interp_descriptions = {
         "No interpolation": interp_description_css.format("No interpolation will be used. Requires one model; A. Allows for format conversion and VAE baking."),
@@ -17,6 +18,7 @@ def update_interp_description(value):
 
 
 def modelmerger(*args):
+        """TODO: Add docstring."""
     try:
         results = extras.run_modelmerger(*args)
     except Exception as e:
@@ -28,6 +30,7 @@ def modelmerger(*args):
 
 class UiCheckpointMerger:
     def __init__(self):
+            """TODO: Add docstring."""
         with gr.Blocks(analytics_enabled=False) as modelmerger_interface:
             with gr.Row(equal_height=False):
                 with gr.Column(variant='compact'):
@@ -84,6 +87,7 @@ class UiCheckpointMerger:
         self.blocks = modelmerger_interface
 
     def setup_ui(self, dummy_component, sd_model_checkpoint_component):
+            """TODO: Add docstring."""
         self.checkpoint_format.change(lambda fmt: gr.update(visible=fmt == 'safetensors'), inputs=[self.checkpoint_format], outputs=[self.metadata_editor], show_progress=False)
 
         self.read_metadata.click(extras.read_metadata, inputs=[self.primary_model_name, self.secondary_model_name, self.tertiary_model_name], outputs=[self.metadata_json])

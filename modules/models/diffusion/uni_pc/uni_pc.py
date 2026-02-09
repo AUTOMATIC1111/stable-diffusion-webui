@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import torch
 import math
 import tqdm
@@ -5,6 +6,7 @@ import tqdm
 
 class NoiseScheduleVP:
     def __init__(
+                """TODO: Add docstring."""
             self,
             schedule='discrete',
             betas=None,
@@ -175,6 +177,7 @@ class NoiseScheduleVP:
 
 
 def model_wrapper(
+        """TODO: Add docstring."""
     model,
     noise_schedule,
     model_type="noise",
@@ -249,6 +252,7 @@ def model_wrapper(
     We wrap the model function to accept only `x` and `t_continuous` as inputs, and outputs the predicted noise:
     ``
         def model_fn(x, t_continuous) -> noise:
+                """TODO: Add docstring."""
             t_input = get_model_input_time(t_continuous)
             return noise_pred(model, x, t_input, **model_kwargs)
     ``
@@ -290,6 +294,7 @@ def model_wrapper(
             return t_continuous
 
     def noise_pred_fn(x, t_continuous, cond=None):
+            """TODO: Add docstring."""
         if t_continuous.reshape((-1,)).shape[0] == 1:
             t_continuous = t_continuous.expand((x.shape[0]))
         t_input = get_model_input_time(t_continuous)
@@ -371,6 +376,7 @@ def model_wrapper(
 
 class UniPC:
     def __init__(
+            """TODO: Add docstring."""
         self,
         model_fn,
         noise_schedule,
@@ -412,6 +418,7 @@ class UniPC:
         return x0
 
     def model(self, x, t):
+            """TODO: Add docstring."""
         cond = self.condition
         uncond = self.unconditional_condition
         if self.before_sample is not None:
@@ -511,6 +518,7 @@ class UniPC:
         return self.data_prediction_fn(x, s)
 
     def multistep_uni_pc_update(self, x, model_prev_list, t_prev_list, t, order, **kwargs):
+            """TODO: Add docstring."""
         if len(t.shape) == 0:
             t = t.view(-1)
         if 'bh' in self.variant:
@@ -520,6 +528,7 @@ class UniPC:
             return self.multistep_uni_pc_vary_update(x, model_prev_list, t_prev_list, t, order, **kwargs)
 
     def multistep_uni_pc_vary_update(self, x, model_prev_list, t_prev_list, t, order, use_corrector=True):
+            """TODO: Add docstring."""
         #print(f'using unified predictor-corrector with order {order} (solver type: vary coeff)')
         ns = self.noise_schedule
         assert order <= len(model_prev_list)
@@ -623,6 +632,7 @@ class UniPC:
         return x_t, model_t
 
     def multistep_uni_pc_bh_update(self, x, model_prev_list, t_prev_list, t, order, x_t=None, use_corrector=True):
+            """TODO: Add docstring."""
         #print(f'using unified predictor-corrector with order {order} (solver type: B(h))')
         ns = self.noise_schedule
         assert order <= len(model_prev_list)
@@ -744,6 +754,7 @@ class UniPC:
 
 
     def sample(self, x, steps=20, t_start=None, t_end=None, order=3, skip_type='time_uniform',
+            """TODO: Add docstring."""
         method='singlestep', lower_order_final=True, denoise_to_zero=False, solver_type='dpm_solver',
         atol=0.0078, rtol=0.05, corrector=False,
     ):

@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 ### This file contains impls for underlying related models (CLIP, T5, etc)
 
 import torch
@@ -22,6 +23,7 @@ class AutocastLinear(nn.Linear):
     """
 
     def forward(self, x):
+            """TODO: Add docstring."""
         return torch.nn.functional.linear(x, self.weight.to(x.dtype), self.bias.to(x.dtype) if self.bias is not None else None)
 
 
@@ -37,6 +39,7 @@ def attention(q, k, v, heads, mask=None):
 class Mlp(nn.Module):
     """ MLP as used in Vision Transformer, MLP-Mixer and related networks"""
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, bias=True, dtype=None, device=None):
+            """TODO: Add docstring."""
         super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
@@ -46,6 +49,7 @@ class Mlp(nn.Module):
         self.fc2 = nn.Linear(hidden_features, out_features, bias=bias, dtype=dtype, device=device)
 
     def forward(self, x):
+            """TODO: Add docstring."""
         x = self.fc1(x)
         x = self.act(x)
         x = self.fc2(x)
@@ -59,6 +63,7 @@ class Mlp(nn.Module):
 
 class CLIPAttention(torch.nn.Module):
     def __init__(self, embed_dim, heads, dtype, device):
+            """TODO: Add docstring."""
         super().__init__()
         self.heads = heads
         self.q_proj = nn.Linear(embed_dim, embed_dim, bias=True, dtype=dtype, device=device)
@@ -67,6 +72,7 @@ class CLIPAttention(torch.nn.Module):
         self.out_proj = nn.Linear(embed_dim, embed_dim, bias=True, dtype=dtype, device=device)
 
     def forward(self, x, mask=None):
+            """TODO: Add docstring."""
         q = self.q_proj(x)
         k = self.k_proj(x)
         v = self.v_proj(x)
@@ -81,6 +87,7 @@ ACTIVATIONS = {
 
 class CLIPLayer(torch.nn.Module):
     def __init__(self, embed_dim, heads, intermediate_size, intermediate_activation, dtype, device):
+            """TODO: Add docstring."""
         super().__init__()
         self.layer_norm1 = nn.LayerNorm(embed_dim, dtype=dtype, device=device)
         self.self_attn = CLIPAttention(embed_dim, heads, dtype, device)
@@ -89,6 +96,7 @@ class CLIPLayer(torch.nn.Module):
         self.mlp = Mlp(embed_dim, intermediate_size, embed_dim, act_layer=ACTIVATIONS[intermediate_activation], dtype=dtype, device=device)
 
     def forward(self, x, mask=None):
+            """TODO: Add docstring."""
         x += self.self_attn(self.layer_norm1(x), mask)
         x += self.mlp(self.layer_norm2(x))
         return x
@@ -96,10 +104,12 @@ class CLIPLayer(torch.nn.Module):
 
 class CLIPEncoder(torch.nn.Module):
     def __init__(self, num_layers, embed_dim, heads, intermediate_size, intermediate_activation, dtype, device):
+            """TODO: Add docstring."""
         super().__init__()
         self.layers = torch.nn.ModuleList([CLIPLayer(embed_dim, heads, intermediate_size, intermediate_activation, dtype, device) for i in range(num_layers)])
 
     def forward(self, x, mask=None, intermediate_output=None):
+            """TODO: Add docstring."""
         if intermediate_output is not None:
             if intermediate_output < 0:
                 intermediate_output = len(self.layers) + intermediate_output
@@ -113,16 +123,19 @@ class CLIPEncoder(torch.nn.Module):
 
 class CLIPEmbeddings(torch.nn.Module):
     def __init__(self, embed_dim, vocab_size=49408, num_positions=77, dtype=None, device=None, textual_inversion_key="clip_l"):
+            """TODO: Add docstring."""
         super().__init__()
         self.token_embedding = sd_hijack.TextualInversionEmbeddings(vocab_size, embed_dim, dtype=dtype, device=device, textual_inversion_key=textual_inversion_key)
         self.position_embedding = torch.nn.Embedding(num_positions, embed_dim, dtype=dtype, device=device)
 
     def forward(self, input_tokens):
+            """TODO: Add docstring."""
         return self.token_embedding(input_tokens) + self.position_embedding.weight
 
 
 class CLIPTextModel_(torch.nn.Module):
     def __init__(self, config_dict, dtype, device):
+            """TODO: Add docstring."""
         num_layers = config_dict["num_hidden_layers"]
         embed_dim = config_dict["hidden_size"]
         heads = config_dict["num_attention_heads"]
@@ -134,6 +147,7 @@ class CLIPTextModel_(torch.nn.Module):
         self.final_layer_norm = nn.LayerNorm(embed_dim, dtype=dtype, device=device)
 
     def forward(self, input_tokens, intermediate_output=None, final_layer_norm_intermediate=True):
+            """TODO: Add docstring."""
         x = self.embeddings(input_tokens)
         causal_mask = torch.empty(x.shape[1], x.shape[1], dtype=x.dtype, device=x.device).fill_(float("-inf")).triu_(1)
         x, i = self.encoder(x, mask=causal_mask, intermediate_output=intermediate_output)
@@ -146,6 +160,7 @@ class CLIPTextModel_(torch.nn.Module):
 
 class CLIPTextModel(torch.nn.Module):
     def __init__(self, config_dict, dtype, device):
+            """TODO: Add docstring."""
         super().__init__()
         self.num_layers = config_dict["num_hidden_layers"]
         self.text_model = CLIPTextModel_(config_dict, dtype, device)
@@ -155,12 +170,15 @@ class CLIPTextModel(torch.nn.Module):
         self.dtype = dtype
 
     def get_input_embeddings(self):
+            """TODO: Add docstring."""
         return self.text_model.embeddings.token_embedding
 
     def set_input_embeddings(self, embeddings):
+            """TODO: Add docstring."""
         self.text_model.embeddings.token_embedding = embeddings
 
     def forward(self, *args, **kwargs):
+            """TODO: Add docstring."""
         x = self.text_model(*args, **kwargs)
         out = self.text_projection(x[2])
         return (x[0], x[1], out, x[2])
@@ -168,6 +186,7 @@ class CLIPTextModel(torch.nn.Module):
 
 class SDTokenizer:
     def __init__(self, max_length=77, pad_with_end=True, tokenizer=None, has_start_token=True, pad_to_max_length=True, min_length=None):
+            """TODO: Add docstring."""
         self.tokenizer = tokenizer
         self.max_length = max_length
         self.min_length = min_length
@@ -210,17 +229,20 @@ class SDTokenizer:
 
 class SDXLClipGTokenizer(SDTokenizer):
     def __init__(self, tokenizer):
+            """TODO: Add docstring."""
         super().__init__(pad_with_end=False, tokenizer=tokenizer)
 
 
 class SD3Tokenizer:
     def __init__(self):
+            """TODO: Add docstring."""
         clip_tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
         self.clip_l = SDTokenizer(tokenizer=clip_tokenizer)
         self.clip_g = SDXLClipGTokenizer(clip_tokenizer)
         self.t5xxl = T5XXLTokenizer()
 
     def tokenize_with_weights(self, text:str):
+            """TODO: Add docstring."""
         out = {}
         out["g"] = self.clip_g.tokenize_with_weights(text)
         out["l"] = self.clip_l.tokenize_with_weights(text)
@@ -230,6 +252,7 @@ class SD3Tokenizer:
 
 class ClipTokenWeightEncoder:
     def encode_token_weights(self, token_weight_pairs):
+            """TODO: Add docstring."""
         tokens = [a[0] for a in token_weight_pairs[0]]
         out, pooled = self([tokens])
         if pooled is not None:
@@ -244,6 +267,7 @@ class SDClipModel(torch.nn.Module, ClipTokenWeightEncoder):
     """Uses the CLIP transformer encoder for text (from huggingface)"""
     LAYERS = ["last", "pooled", "hidden"]
     def __init__(self, device="cpu", max_length=77, layer="last", layer_idx=None, textmodel_json_config=None, dtype=None, model_class=CLIPTextModel,
+                     """TODO: Add docstring."""
                  special_tokens=None, layer_norm_hidden_state=True, return_projected_pooled=True):
         super().__init__()
         assert layer in self.LAYERS
@@ -266,6 +290,7 @@ class SDClipModel(torch.nn.Module, ClipTokenWeightEncoder):
         self.options_default = (self.layer, self.layer_idx, self.return_projected_pooled)
 
     def set_clip_options(self, options):
+            """TODO: Add docstring."""
         layer_idx = options.get("layer", self.layer_idx)
         self.return_projected_pooled = options.get("projected_pooled", self.return_projected_pooled)
         if layer_idx is None or abs(layer_idx) > self.num_layers:
@@ -275,6 +300,7 @@ class SDClipModel(torch.nn.Module, ClipTokenWeightEncoder):
             self.layer_idx = layer_idx
 
     def forward(self, tokens):
+            """TODO: Add docstring."""
         backup_embeds = self.transformer.get_input_embeddings()
         tokens = torch.asarray(tokens, dtype=torch.int64, device=backup_embeds.weight.device)
         outputs = self.transformer(tokens, intermediate_output=self.layer_idx, final_layer_norm_intermediate=self.layer_norm_hidden_state)
@@ -295,6 +321,7 @@ class SDClipModel(torch.nn.Module, ClipTokenWeightEncoder):
 class SDXLClipG(SDClipModel):
     """Wraps the CLIP-G model into the SD-CLIP-Model interface"""
     def __init__(self, config, device="cpu", layer="penultimate", layer_idx=None, dtype=None):
+            """TODO: Add docstring."""
         if layer == "penultimate":
             layer="hidden"
             layer_idx=-2
@@ -304,6 +331,7 @@ class SDXLClipG(SDClipModel):
 class T5XXLModel(SDClipModel):
     """Wraps the T5-XXL model into the SD-CLIP-Model interface for convenience"""
     def __init__(self, config, device="cpu", layer="last", layer_idx=None, dtype=None):
+            """TODO: Add docstring."""
         super().__init__(device=device, layer=layer, layer_idx=layer_idx, textmodel_json_config=config, dtype=dtype, special_tokens={"end": 1, "pad": 0}, model_class=T5)
 
 
@@ -314,16 +342,19 @@ class T5XXLModel(SDClipModel):
 class T5XXLTokenizer(SDTokenizer):
     """Wraps the T5 Tokenizer from HF into the SDTokenizer interface"""
     def __init__(self):
+            """TODO: Add docstring."""
         super().__init__(pad_with_end=False, tokenizer=T5TokenizerFast.from_pretrained("google/t5-v1_1-xxl"), has_start_token=False, pad_to_max_length=False, max_length=99999999, min_length=77)
 
 
 class T5LayerNorm(torch.nn.Module):
     def __init__(self, hidden_size, eps=1e-6, dtype=None, device=None):
+            """TODO: Add docstring."""
         super().__init__()
         self.weight = torch.nn.Parameter(torch.ones(hidden_size, dtype=dtype, device=device))
         self.variance_epsilon = eps
 
     def forward(self, x):
+            """TODO: Add docstring."""
         variance = x.pow(2).mean(-1, keepdim=True)
         x = x * torch.rsqrt(variance + self.variance_epsilon)
         return self.weight.to(device=x.device, dtype=x.dtype) * x
@@ -331,12 +362,14 @@ class T5LayerNorm(torch.nn.Module):
 
 class T5DenseGatedActDense(torch.nn.Module):
     def __init__(self, model_dim, ff_dim, dtype, device):
+            """TODO: Add docstring."""
         super().__init__()
         self.wi_0 = AutocastLinear(model_dim, ff_dim, bias=False, dtype=dtype, device=device)
         self.wi_1 = AutocastLinear(model_dim, ff_dim, bias=False, dtype=dtype, device=device)
         self.wo = AutocastLinear(ff_dim, model_dim, bias=False, dtype=dtype, device=device)
 
     def forward(self, x):
+            """TODO: Add docstring."""
         hidden_gelu = torch.nn.functional.gelu(self.wi_0(x), approximate="tanh")
         hidden_linear = self.wi_1(x)
         x = hidden_gelu * hidden_linear
@@ -346,11 +379,13 @@ class T5DenseGatedActDense(torch.nn.Module):
 
 class T5LayerFF(torch.nn.Module):
     def __init__(self, model_dim, ff_dim, dtype, device):
+            """TODO: Add docstring."""
         super().__init__()
         self.DenseReluDense = T5DenseGatedActDense(model_dim, ff_dim, dtype, device)
         self.layer_norm = T5LayerNorm(model_dim, dtype=dtype, device=device)
 
     def forward(self, x):
+            """TODO: Add docstring."""
         forwarded_states = self.layer_norm(x)
         forwarded_states = self.DenseReluDense(forwarded_states)
         x += forwarded_states
@@ -359,6 +394,7 @@ class T5LayerFF(torch.nn.Module):
 
 class T5Attention(torch.nn.Module):
     def __init__(self, model_dim, inner_dim, num_heads, relative_attention_bias, dtype, device):
+            """TODO: Add docstring."""
         super().__init__()
         # Mesh TensorFlow initialization to avoid scaling before softmax
         self.q = AutocastLinear(model_dim, inner_dim, bias=False, dtype=dtype, device=device)
@@ -431,6 +467,7 @@ class T5Attention(torch.nn.Module):
         return values
 
     def forward(self, x, past_bias=None):
+            """TODO: Add docstring."""
         q = self.q(x)
         k = self.k(x)
         v = self.v(x)
@@ -449,11 +486,13 @@ class T5Attention(torch.nn.Module):
 
 class T5LayerSelfAttention(torch.nn.Module):
     def __init__(self, model_dim, inner_dim, ff_dim, num_heads, relative_attention_bias, dtype, device):
+            """TODO: Add docstring."""
         super().__init__()
         self.SelfAttention = T5Attention(model_dim, inner_dim, num_heads, relative_attention_bias, dtype, device)
         self.layer_norm = T5LayerNorm(model_dim, dtype=dtype, device=device)
 
     def forward(self, x, past_bias=None):
+            """TODO: Add docstring."""
         output, past_bias = self.SelfAttention(self.layer_norm(x), past_bias=past_bias)
         x += output
         return x, past_bias
@@ -461,12 +500,14 @@ class T5LayerSelfAttention(torch.nn.Module):
 
 class T5Block(torch.nn.Module):
     def __init__(self, model_dim, inner_dim, ff_dim, num_heads, relative_attention_bias, dtype, device):
+            """TODO: Add docstring."""
         super().__init__()
         self.layer = torch.nn.ModuleList()
         self.layer.append(T5LayerSelfAttention(model_dim, inner_dim, ff_dim, num_heads, relative_attention_bias, dtype, device))
         self.layer.append(T5LayerFF(model_dim, ff_dim, dtype, device))
 
     def forward(self, x, past_bias=None):
+            """TODO: Add docstring."""
         x, past_bias = self.layer[0](x, past_bias)
         x = self.layer[-1](x)
         return x, past_bias
@@ -474,12 +515,14 @@ class T5Block(torch.nn.Module):
 
 class T5Stack(torch.nn.Module):
     def __init__(self, num_layers, model_dim, inner_dim, ff_dim, num_heads, vocab_size, dtype, device):
+            """TODO: Add docstring."""
         super().__init__()
         self.embed_tokens = torch.nn.Embedding(vocab_size, model_dim, device=device)
         self.block = torch.nn.ModuleList([T5Block(model_dim, inner_dim, ff_dim, num_heads, relative_attention_bias=(i == 0), dtype=dtype, device=device) for i in range(num_layers)])
         self.final_layer_norm = T5LayerNorm(model_dim, dtype=dtype, device=device)
 
     def forward(self, input_ids, intermediate_output=None, final_layer_norm_intermediate=True):
+            """TODO: Add docstring."""
         intermediate = None
         x = self.embed_tokens(input_ids).to(torch.float32)  # needs float32 or else T5 returns all zeroes
         past_bias = None
@@ -495,16 +538,20 @@ class T5Stack(torch.nn.Module):
 
 class T5(torch.nn.Module):
     def __init__(self, config_dict, dtype, device):
+            """TODO: Add docstring."""
         super().__init__()
         self.num_layers = config_dict["num_layers"]
         self.encoder = T5Stack(self.num_layers, config_dict["d_model"], config_dict["d_model"], config_dict["d_ff"], config_dict["num_heads"], config_dict["vocab_size"], dtype, device)
         self.dtype = dtype
 
     def get_input_embeddings(self):
+            """TODO: Add docstring."""
         return self.encoder.embed_tokens
 
     def set_input_embeddings(self, embeddings):
+            """TODO: Add docstring."""
         self.encoder.embed_tokens = embeddings
 
     def forward(self, *args, **kwargs):
+            """TODO: Add docstring."""
         return self.encoder(*args, **kwargs)

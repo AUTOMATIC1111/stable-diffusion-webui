@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 # The content of this file comes from the ldm/models/autoencoder.py file of the compvis/stable-diffusion repo
 # The VQModel & VQModelInterface were subsequently removed from ldm/models/autoencoder.py when we moved to the stability-ai/stablediffusion repo
 # As the LDSR upscaler relies on VQModel & VQModelInterface, the hijack aims to put them back into the ldm.models.autoencoder
@@ -19,6 +20,7 @@ from packaging import version
 
 class VQModel(pl.LightningModule):
     def __init__(self,
+                     """TODO: Add docstring."""
                  ddconfig,
                  lossconfig,
                  n_embed,
@@ -68,6 +70,7 @@ class VQModel(pl.LightningModule):
 
     @contextmanager
     def ema_scope(self, context=None):
+            """TODO: Add docstring."""
         if self.use_ema:
             self.model_ema.store(self.parameters())
             self.model_ema.copy_to(self)
@@ -82,6 +85,7 @@ class VQModel(pl.LightningModule):
                     print(f"{context}: Restored training weights")
 
     def init_from_ckpt(self, path, ignore_keys=None):
+            """TODO: Add docstring."""
         sd = torch.load(path, map_location="cpu")["state_dict"]
         keys = list(sd.keys())
         for k in keys:
@@ -97,31 +101,37 @@ class VQModel(pl.LightningModule):
             print(f"Unexpected Keys: {unexpected}")
 
     def on_train_batch_end(self, *args, **kwargs):
+            """TODO: Add docstring."""
         if self.use_ema:
             self.model_ema(self)
 
     def encode(self, x):
+            """TODO: Add docstring."""
         h = self.encoder(x)
         h = self.quant_conv(h)
         quant, emb_loss, info = self.quantize(h)
         return quant, emb_loss, info
 
     def encode_to_prequant(self, x):
+            """TODO: Add docstring."""
         h = self.encoder(x)
         h = self.quant_conv(h)
         return h
 
     def decode(self, quant):
+            """TODO: Add docstring."""
         quant = self.post_quant_conv(quant)
         dec = self.decoder(quant)
         return dec
 
     def decode_code(self, code_b):
+            """TODO: Add docstring."""
         quant_b = self.quantize.embed_code(code_b)
         dec = self.decode(quant_b)
         return dec
 
     def forward(self, input, return_pred_indices=False):
+            """TODO: Add docstring."""
         quant, diff, (_,_,ind) = self.encode(input)
         dec = self.decode(quant)
         if return_pred_indices:
@@ -129,6 +139,7 @@ class VQModel(pl.LightningModule):
         return dec, diff
 
     def get_input(self, batch, k):
+            """TODO: Add docstring."""
         x = batch[k]
         if len(x.shape) == 3:
             x = x[..., None]
@@ -147,6 +158,7 @@ class VQModel(pl.LightningModule):
         return x
 
     def training_step(self, batch, batch_idx, optimizer_idx):
+            """TODO: Add docstring."""
         # https://github.com/pytorch/pytorch/issues/37142
         # try not to fool the heuristics
         x = self.get_input(batch, self.image_key)
@@ -169,12 +181,14 @@ class VQModel(pl.LightningModule):
             return discloss
 
     def validation_step(self, batch, batch_idx):
+            """TODO: Add docstring."""
         log_dict = self._validation_step(batch, batch_idx)
         with self.ema_scope():
             self._validation_step(batch, batch_idx, suffix="_ema")
         return log_dict
 
     def _validation_step(self, batch, batch_idx, suffix=""):
+            """TODO: Add docstring."""
         x = self.get_input(batch, self.image_key)
         xrec, qloss, ind = self(x, return_pred_indices=True)
         aeloss, log_dict_ae = self.loss(qloss, x, xrec, 0,
@@ -202,6 +216,7 @@ class VQModel(pl.LightningModule):
         return self.log_dict
 
     def configure_optimizers(self):
+            """TODO: Add docstring."""
         lr_d = self.learning_rate
         lr_g = self.lr_g_factor*self.learning_rate
         print("lr_d", lr_d)
@@ -235,9 +250,11 @@ class VQModel(pl.LightningModule):
         return [opt_ae, opt_disc], []
 
     def get_last_layer(self):
+            """TODO: Add docstring."""
         return self.decoder.conv_out.weight
 
     def log_images(self, batch, only_inputs=False, plot_ema=False, **kwargs):
+            """TODO: Add docstring."""
         log = {}
         x = self.get_input(batch, self.image_key)
         x = x.to(self.device)
@@ -261,6 +278,7 @@ class VQModel(pl.LightningModule):
         return log
 
     def to_rgb(self, x):
+            """TODO: Add docstring."""
         assert self.image_key == "segmentation"
         if not hasattr(self, "colorize"):
             self.register_buffer("colorize", torch.randn(3, x.shape[1], 1, 1).to(x))
@@ -271,15 +289,18 @@ class VQModel(pl.LightningModule):
 
 class VQModelInterface(VQModel):
     def __init__(self, embed_dim, *args, **kwargs):
+            """TODO: Add docstring."""
         super().__init__(*args, embed_dim=embed_dim, **kwargs)
         self.embed_dim = embed_dim
 
     def encode(self, x):
+            """TODO: Add docstring."""
         h = self.encoder(x)
         h = self.quant_conv(h)
         return h
 
     def decode(self, h, force_not_quantize=False):
+            """TODO: Add docstring."""
         # also go through quantization layer
         if not force_not_quantize:
             quant, emb_loss, info = self.quantize(h)

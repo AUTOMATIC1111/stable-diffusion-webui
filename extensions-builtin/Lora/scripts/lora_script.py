@@ -1,3 +1,4 @@
+    """TODO: Add docstring."""
 import re
 
 import gradio as gr
@@ -13,10 +14,12 @@ from modules import script_callbacks, ui_extra_networks, extra_networks, shared
 
 
 def unload():
+        """TODO: Add docstring."""
     networks.originals.undo()
 
 
 def before_ui():
+        """TODO: Add docstring."""
     ui_extra_networks.register_page(ui_extra_networks_lora.ExtraNetworksPageLora())
 
     networks.extra_network_lora = extra_networks_lora.ExtraNetworkLora()
@@ -51,6 +54,7 @@ shared.options_templates.update(shared.options_section(('compatibility', "Compat
 
 
 def create_lora_json(obj: network.NetworkOnDisk):
+        """TODO: Add docstring."""
     return {
         "name": obj.name,
         "alias": obj.alias,
@@ -60,6 +64,7 @@ def create_lora_json(obj: network.NetworkOnDisk):
 
 
 def api_networks(_: gr.Blocks, app: FastAPI):
+        """TODO: Add docstring."""
     @app.get("/sdapi/v1/loras")
     async def get_loras():
         return [create_lora_json(obj) for obj in networks.available_networks.values()]
@@ -75,6 +80,7 @@ re_lora = re.compile("<lora:([^:]+):")
 
 
 def infotext_pasted(infotext, d):
+        """TODO: Add docstring."""
     hashes = d.get("Lora hashes")
     if not hashes:
         return
@@ -83,6 +89,7 @@ def infotext_pasted(infotext, d):
     hashes = {x[0].strip().replace(",", ""): x[1].strip() for x in hashes}
 
     def network_replacement(m):
+            """TODO: Add docstring."""
         alias = m.group(1)
         shorthash = hashes.get(alias)
         if shorthash is None:
