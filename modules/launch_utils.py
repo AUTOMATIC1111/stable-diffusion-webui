@@ -422,8 +422,24 @@ def prepare_environment():
         )
     startup_timer.record("torch GPU test")
 
+    # Ensure build dependencies are installed before any package that might need them
+    def ensure_build_dependencies():
+        """Ensure essential build tools are available"""
+        if not is_installed("wheel"):
+            run_pip("install wheel", "wheel")
+        # Check setuptools version compatibility
+        try:
+            setuptools_version = run(f'"{python}" -c "import setuptools; print(setuptools.__version__)"', None, None).strip()
+            if setuptools_version >= "70":
+                run_pip("install 'setuptools<70'", "setuptools")
+        except Exception:
+            # If setuptools check fails, install compatible version
+            run_pip("install 'setuptools<70'", "setuptools")
+    # Install build dependencies early
+    ensure_build_dependencies()
+
     if not is_installed("clip"):
-        run_pip(f"install {clip_package}", "clip")
+        run_pip(f"install --no-build-isolation {clip_package}", "clip")
         startup_timer.record("install clip")
 
     if not is_installed("open_clip"):
