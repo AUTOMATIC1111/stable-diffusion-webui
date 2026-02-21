@@ -29,8 +29,6 @@ def imports():
     import ldm.modules.encoders.modules  # noqa: F401
     startup_timer.record("import ldm")
 
-    import sgm.modules.encoders.modules  # noqa: F401
-    startup_timer.record("import sgm")
 
     from modules import shared_init
     shared_init.initialize()
