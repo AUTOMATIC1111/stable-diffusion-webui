@@ -249,6 +249,8 @@ class Api:
             self.add_api_route("/sdapi/v1/server-kill", self.kill_webui, methods=["POST"])
             self.add_api_route("/sdapi/v1/server-restart", self.restart_webui, methods=["POST"])
             self.add_api_route("/sdapi/v1/server-stop", self.stop_webui, methods=["POST"])
+            self.add_api_route("/sdapi/v1/server-reload-ui", self.reload_webui, methods=["POST"])
+            self.add_api_route("/sdapi/v1/server-reload-script-bodies", self.reload_script_bodies, methods=["POST"])
 
         self.default_script_arg_txt2img = []
         self.default_script_arg_img2img = []
@@ -926,3 +928,10 @@ class Api:
         shared.state.server_command = "stop"
         return Response("Stopping.")
 
+    def reload_webui(self):
+        shared.state.request_restart()
+        return Response("Reloading.")
+
+    def reload_script_bodies(self):
+        scripts.reload_script_body_only()
+        return Response("Reload script bodies.")
