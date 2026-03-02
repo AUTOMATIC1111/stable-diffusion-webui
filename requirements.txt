@@ -32,3 +32,4 @@ torchdiffeq
 torchsde
 transformers==4.30.2
 pillow-avif-plugin==1.4.3
+typing_extensions==4.11.0
