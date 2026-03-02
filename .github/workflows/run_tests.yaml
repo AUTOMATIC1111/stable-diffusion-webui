@@ -51,6 +51,7 @@ jobs:
           --test-server
           --do-not-download-clip
           --no-half
+          --precision full
           --disable-opt-split-attention
           --use-cpu all
           --api-server-stop

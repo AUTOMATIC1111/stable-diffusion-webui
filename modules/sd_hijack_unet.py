@@ -42,12 +42,12 @@ def apply_model(orig_func, self, x_noisy, t, cond, **kwargs):
     if isinstance(cond, dict):
         for y in cond.keys():
             if isinstance(cond[y], list):
-                cond[y] = [x.to(devices.dtype_unet) if isinstance(x, torch.Tensor) else x for x in cond[y]]
+                cond[y] = [x.to(devices.dtype_inference) if isinstance(x, torch.Tensor) else x for x in cond[y]]
             else:
-                cond[y] = cond[y].to(devices.dtype_unet) if isinstance(cond[y], torch.Tensor) else cond[y]
+                cond[y] = cond[y].to(devices.dtype_inference) if isinstance(cond[y], torch.Tensor) else cond[y]
 
     with devices.autocast():
-        result = orig_func(self, x_noisy.to(devices.dtype_unet), t.to(devices.dtype_unet), cond, **kwargs)
+        result = orig_func(self, x_noisy.to(devices.dtype_inference), t.to(devices.dtype_inference), cond, **kwargs)
         if devices.unet_needs_upcast:
             return result.float()
         else:
@@ -107,7 +107,7 @@ class GELUHijack(torch.nn.GELU, torch.nn.Module):
         torch.nn.GELU.__init__(self, *args, **kwargs)
     def forward(self, x):
         if devices.unet_needs_upcast:
-            return torch.nn.GELU.forward(self.float(), x.float()).to(devices.dtype_unet)
+            return torch.nn.GELU.forward(self.float(), x.float()).to(devices.dtype_inference)
         else:
             return torch.nn.GELU.forward(self, x)
 
@@ -125,11 +125,11 @@ unet_needs_upcast = lambda *args, **kwargs: devices.unet_needs_upcast
 CondFunc('ldm.models.diffusion.ddpm.LatentDiffusion.apply_model', apply_model, unet_needs_upcast)
 CondFunc('ldm.modules.diffusionmodules.openaimodel.timestep_embedding', timestep_embedding)
 CondFunc('ldm.modules.attention.SpatialTransformer.forward', spatial_transformer_forward)
-CondFunc('ldm.modules.diffusionmodules.openaimodel.timestep_embedding', lambda orig_func, timesteps, *args, **kwargs: orig_func(timesteps, *args, **kwargs).to(torch.float32 if timesteps.dtype == torch.int64 else devices.dtype_unet), unet_needs_upcast)
+CondFunc('ldm.modules.diffusionmodules.openaimodel.timestep_embedding', lambda orig_func, timesteps, *args, **kwargs: orig_func(timesteps, *args, **kwargs).to(torch.float32 if timesteps.dtype == torch.int64 else devices.dtype_inference), unet_needs_upcast)
 
 if version.parse(torch.__version__) <= version.parse("1.13.2") or torch.cuda.is_available():
     CondFunc('ldm.modules.diffusionmodules.util.GroupNorm32.forward', lambda orig_func, self, *args, **kwargs: orig_func(self.float(), *args, **kwargs), unet_needs_upcast)
-    CondFunc('ldm.modules.attention.GEGLU.forward', lambda orig_func, self, x: orig_func(self.float(), x.float()).to(devices.dtype_unet), unet_needs_upcast)
+    CondFunc('ldm.modules.attention.GEGLU.forward', lambda orig_func, self, x: orig_func(self.float(), x.float()).to(devices.dtype_inference), unet_needs_upcast)
     CondFunc('open_clip.transformer.ResidualAttentionBlock.__init__', lambda orig_func, *args, **kwargs: kwargs.update({'act_layer': GELUHijack}) and False or orig_func(*args, **kwargs), lambda _, *args, **kwargs: kwargs.get('act_layer') is None or kwargs['act_layer'] == torch.nn.GELU)
 
 first_stage_cond = lambda _, self, *args, **kwargs: devices.unet_needs_upcast and self.model.diffusion_model.dtype == torch.float16
@@ -146,7 +146,7 @@ def timestep_embedding_cast_result(orig_func, timesteps, *args, **kwargs):
     if devices.unet_needs_upcast and timesteps.dtype == torch.int64:
         dtype = torch.float32
     else:
-        dtype = devices.dtype_unet
+        dtype = devices.dtype_inference
     return orig_func(timesteps, *args, **kwargs).to(dtype=dtype)
 
 
