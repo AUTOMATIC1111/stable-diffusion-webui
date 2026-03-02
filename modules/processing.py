@@ -763,6 +763,9 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
     prompt_text = p.main_prompt if use_main_prompt else all_prompts[index]
     negative_prompt = p.main_negative_prompt if use_main_prompt else all_negative_prompts[index]
 
+    if any(x for x in [prompt_text, negative_prompt] if "(" in x or "[" in x):
+        p.extra_generation_params["Emphasis"] = opts.emphasis
+
     uses_ensd = opts.eta_noise_seed_delta != 0
     if uses_ensd:
         uses_ensd = sd_samplers_common.is_sampler_using_eta_noise_seed_delta(p)
