@@ -139,7 +139,11 @@ class State:
         if not shared.parallel_processing_allowed:
             return
 
-        if self.sampling_step - self.current_image_sampling_step >= shared.opts.show_progress_every_n_steps and shared.opts.live_previews_enable and shared.opts.show_progress_every_n_steps != -1:
+        if (
+            (shared.opts.live_previews_enable and shared.opts.show_progress_every_n_steps != -1) and
+            (self.sampling_steps - self.sampling_step > shared.opts.show_progress_every_n_steps) and
+            (self.sampling_step - self.current_image_sampling_step >= shared.opts.show_progress_every_n_steps)
+        ):
             self.do_set_current_image()
 
     def do_set_current_image(self):
