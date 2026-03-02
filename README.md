@@ -126,7 +126,7 @@ sudo dnf install wget git python3 gperftools-libs libglvnd-glx
 # openSUSE-based:
 sudo zypper install wget git python3 libtcmalloc4 libglvnd
 # Arch-based:
-sudo pacman -S wget git python3
+sudo pacman -S --needed wget git python3 base-devel
 ```
 If your system is very new, you need to install python3.11 or python3.10:
 ```bash
@@ -136,7 +136,10 @@ sudo apt update
 sudo apt install python3.11 python3.11-venv
 
 # Manjaro/Arch
-sudo pacman -S yay
+git clone https://aur.archlinux.org/yay.git
+cd yay
+makepkg -si
+cd ..
 yay -S python311 # do not confuse with python3.11 package
 
 # Only for 3.11
