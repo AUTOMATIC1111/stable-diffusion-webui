@@ -1,12 +1,13 @@
 import gradio as gr
 
-from modules import ui_common, shared, script_callbacks, scripts, sd_models, sysinfo, timer, shared_items
+from modules import ui_common, shared, script_callbacks, scripts, sd_models, sysinfo, timer, shared_items, paths_internal, util
 from modules.call_queue import wrap_gradio_call_no_job
 from modules.options import options_section
 from modules.shared import opts
 from modules.ui_components import FormRow
 from modules.ui_gradio_extensions import reload_javascript
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 
 
 def get_value_for_setting(key):
@@ -170,7 +171,28 @@ class UiSettings:
                     loadsave.create_ui()
 
                 with gr.TabItem("Sysinfo", id="sysinfo", elem_id="settings_tab_sysinfo"):
-                    gr.HTML('<a href="./internal/sysinfo-download" class="sysinfo_big_link" download>Download system info</a><br /><a href="./internal/sysinfo" target="_blank">(or open as text in a new page)</a>', elem_id="sysinfo_download")
+                    download_sysinfo = gr.Button(value='Download system info', elem_id="internal-download-sysinfo", visible=False)
+                    open_sysinfo = gr.Button(value='Open as text in a new page', elem_id="internal-open-sysinfo", visible=False)
+                    sysinfo_html = gr.HTML('''<a class="sysinfo_big_link" onclick="gradioApp().getElementById('internal-download-sysinfo').click();">Download system info</a><br/><a onclick="gradioApp().getElementById('internal-open-sysinfo').click();">(or open as text in a new page)</a>''', elem_id="sysinfo_download")
+                    sysinfo_textbox = gr.Textbox(label='Sysinfo textarea', elem_id="internal-sysinfo-textbox", visible=False)
+
+                    def create_sysinfo():
+                        sysinfo_str = sysinfo.get()
+                        if len(sysinfo_utf8 := sysinfo_str.encode('utf8')) > 2 ** 20:  # 1MB
+                            sysinfo_path = Path(paths_internal.script_path) / 'tmp' / 'sysinfo.json'
+                            sysinfo_path.parent.mkdir(parents=True, exist_ok=True)
+                            sysinfo_path.write_bytes(sysinfo_utf8)
+                            return gr.update(), gr.update(value=f'file={util.truncate_path(sysinfo_path)}')
+                        return gr.update(), gr.update(value=sysinfo_str)
+
+                    download_sysinfo.click(
+                        fn=create_sysinfo, outputs=[sysinfo_html, sysinfo_textbox], show_progress=True).success(
+                        fn=None, _js='downloadSysinfo'
+                    )
+                    open_sysinfo.click(
+                        fn=create_sysinfo, outputs=[sysinfo_html, sysinfo_textbox], show_progress=True).success(
+                        fn=None, _js='openTabSysinfo'
+                    )
 
                     with gr.Row():
                         with gr.Column(scale=1):
@@ -313,7 +335,7 @@ class UiSettings:
 
             for method in methods:
                 method(
-                    fn=lambda value, k=k: self.run_settings_single(value, key=k),
+                    fn=lambda value, key=k: self.run_settings_single(value, key=key),
                     inputs=[component],
                     outputs=[component, self.text_settings],
                     show_progress=info.refresh is not None,

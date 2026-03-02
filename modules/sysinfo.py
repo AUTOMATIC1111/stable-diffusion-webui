@@ -213,3 +213,13 @@ def get_config():
                 return json.load(f)
         except Exception as e:
             return str(e)
+
+
+def download_sysinfo(attachment=False):
+    from fastapi.responses import PlainTextResponse
+    from datetime import datetime
+
+    text = get()
+    filename = f"sysinfo-{datetime.utcnow().strftime('%Y-%m-%d-%H-%M')}.json"
+
+    return PlainTextResponse(text, headers={'Content-Disposition': f'{"attachment" if attachment else "inline"}; filename="{filename}"'})

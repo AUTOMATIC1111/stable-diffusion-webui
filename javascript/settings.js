@@ -69,3 +69,39 @@ onOptionsChanged(function() {
     });
 });
 
+function downloadSysinfo() {
+    const pad = (n) => String(n).padStart(2, '0');
+    const now = new Date();
+    const YY = now.getFullYear();
+    const MM = pad(now.getMonth() + 1);
+    const DD = pad(now.getDate());
+    const HH = pad(now.getHours());
+    const mm = pad(now.getMinutes());
+    const link = document.createElement('a');
+    link.download = `sysinfo-${YY}-${MM}-${DD}-${HH}-${mm}.json`;
+    const sysinfo_textbox = gradioApp().querySelector('#internal-sysinfo-textbox textarea');
+    const content = sysinfo_textbox.value;
+    if (content.startsWith('file=')) {
+        link.href = content;
+    } else {
+        const blob = new Blob([content], {type: 'application/json'});
+        link.href = URL.createObjectURL(blob);
+    }
+    link.click();
+    sysinfo_textbox.value = '';
+    updateInput(sysinfo_textbox);
+}
+
+function openTabSysinfo() {
+    const sysinfo_textbox = gradioApp().querySelector('#internal-sysinfo-textbox textarea');
+    const content = sysinfo_textbox.value;
+    if (content.startsWith('file=')) {
+        window.open(content, '_blank');
+    } else {
+        const blob = new Blob([content], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+    }
+    sysinfo_textbox.value = '';
+    updateInput(sysinfo_textbox);
+}
