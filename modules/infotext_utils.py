@@ -231,6 +231,60 @@ def restore_old_hires_fix_params(res):
     res['Hires resize-2'] = height
 
 
+def split_infotext(x: str):
+    """splits infotext into prompt, negative prompt, parameters
+    every line from the beginning to the first line starting with "Negative prompt:" is treated as prompt
+    every line after that is treated as negative_prompt
+    the last_line is only treated as parameters if it has contains at least 3 parameters
+    """
+    if x is None:
+        return '', '', ''
+    prompt, negative_prompt, done_with_prompt = '', '', False
+    *lines, last_line = x.strip().split('\n')
+
+    if len(re_param.findall(last_line)) < 3:
+        lines.append(last_line)
+        last_line = ''
+
+    for line in lines:
+        line = line.strip()
+
+        if not done_with_prompt and line.startswith('Negative prompt:'):
+            done_with_prompt = True
+            line = line[16:].strip()
+        if done_with_prompt:
+            negative_prompt += '\n' + line
+        else:
+            prompt += '\n' + line
+
+    return prompt.strip(), negative_prompt.strip(), last_line
+
+
+def parameters_to_dict(parameters: str):
+    """convert parameters from string to dict"""
+    return dict(re_param.findall(parameters))
+
+
+def parse_parameters(param_dict: dict):
+    res = {}
+    for k, v in param_dict.items():
+        try:
+            if v.startswith('"') and v.endswith('"'):
+                v = unquote(v)
+
+            if (m := re_imagesize.match(v)) is not None:
+                # values matching regex r"^(\d+)x(\d+)$" will be split into two keys
+                # {size: 512x512} -> {'size-1': '512', 'size-2': '512'}
+                res[f"{k}-1"] = m.group(1)
+                res[f"{k}-2"] = m.group(2)
+            else:
+                res[k] = v
+
+        except Exception as e:
+            print(f"Error parsing \"{k}: {v}\" : {e}")
+    return res
+
+
 def parse_generation_parameters(x: str, skip_fields: list[str] | None = None):
     """parses generation parameters string, the one you see in text field under the picture in UI:
 ```
@@ -239,46 +293,21 @@ Negative prompt: ugly, fat, obese, chubby, (((deformed))), [blurry], bad anatomy
 Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model hash: 45dee52b
 ```
 
-    returns a dict with field values
+    Returns a dict with field values
+
+    Notes: issues with infotext syntax
+    1. prompt can not contains a startng line with "Negative prompt:" as it will
+    2. if the last_line contains less than 3 parameters it will be treated as part of the negative_prompt, even though it might actually be parameters
+
+    Changes:
+    1.11.0 : if a user decides to use a literal "Negative prompt:" as a part of their negative prompt at the beginning of the a line after the first line, webui will remove it from the prompt as there are treated as markers. after the fix only the fisrt "Negative prompt:" will be removed
     """
     if skip_fields is None:
         skip_fields = shared.opts.infotext_skip_pasting
 
-    res = {}
-
-    prompt = ""
-    negative_prompt = ""
-
-    done_with_prompt = False
-
-    *lines, lastline = x.strip().split("\n")
-    if len(re_param.findall(lastline)) < 3:
-        lines.append(lastline)
-        lastline = ''
-
-    for line in lines:
-        line = line.strip()
-        if line.startswith("Negative prompt:"):
-            done_with_prompt = True
-            line = line[16:].strip()
-        if done_with_prompt:
-            negative_prompt += ("" if negative_prompt == "" else "\n") + line
-        else:
-            prompt += ("" if prompt == "" else "\n") + line
-
-    for k, v in re_param.findall(lastline):
-        try:
-            if v[0] == '"' and v[-1] == '"':
-                v = unquote(v)
-
-            m = re_imagesize.match(v)
-            if m is not None:
-                res[f"{k}-1"] = m.group(1)
-                res[f"{k}-2"] = m.group(2)
-            else:
-                res[k] = v
-        except Exception:
-            print(f"Error parsing \"{k}: {v}\"")
+    prompt, negative_prompt, last_line = split_infotext(x)
+    res = parameters_to_dict(last_line)
+    res = parse_parameters(res)
 
     # Extract styles from prompt
     if shared.opts.infotext_styles != "Ignore":

@@ -212,3 +212,66 @@ function uiElementInSight(el) {
 
     return isOnScreen;
 }
+
+function uiCopyElementAnimate(el) {
+    el.classList.remove('animate');
+    setTimeout(() => {
+        el.classList.add('animate');
+    }, 0);
+    setTimeout(() => {
+        el.classList.remove('animate');
+    }, 1100);
+}
+
+function uiCopyElementText(el) {
+    var text = el.innerText;
+    if (text.startsWith('"')) {
+        text = text.substring(1, text.length - 1).replaceAll('\\n', '\n');
+    }
+
+    navigator.clipboard.writeText(text);
+    uiCopyElementAnimate(el);
+}
+
+function uiCopyRawText(elid) {
+    var el = document.getElementById(elid);
+    if (el == null) {
+        return null;
+    }
+
+    return el.innerText;
+}
+
+function uiCopyPngInfo(el, mode) {
+    var text = null;
+
+    if (mode == "Prompt") {
+        text = uiCopyRawText("pnginfo-positive");
+    } else if (mode == "Negative") {
+        text = uiCopyRawText("pnginfo-negative");
+    } else if (mode == "Settings") {
+        text = uiCopyRawText("pnginfo-settings");
+    } else if (mode == "Copy") {
+        text = "";
+        var t2 = uiCopyRawText("pnginfo-positive");
+        if (t2 != null) {
+            text += t2;
+        }
+        t2 = uiCopyRawText("pnginfo-negative");
+        if (t2 != null) {
+            text += "\nNegative prompt: " + t2;
+        }
+        t2 = uiCopyRawText("pnginfo-settings");
+        if (t2 != null) {
+            text += "\n" + t2;
+        }
+        if (text == "") {
+            text = null;
+        }
+    }
+
+    if (text != null) {
+        navigator.clipboard.writeText(text);
+        uiCopyElementAnimate(el);
+    }
+}

@@ -2,15 +2,99 @@ import os
 import re
 import shutil
 import json
-
+import html
 
 import torch
 import tqdm
 
-from modules import shared, images, sd_models, sd_vae, sd_models_config, errors
+from modules import shared, images, sd_models, sd_vae, sd_models_config, errors, infotext_utils
 from modules.ui_common import plaintext_to_html
 import gradio as gr
 import safetensors.torch
+
+
+def pnginfo_format_string(plain_text):
+    content = "<br>\n".join(html.escape(x) for x in str(plain_text).split('\n'))
+    return content
+
+
+def pnginfo_format_setting(name, value):
+    cls_name = 'geninfo-setting-string' if value.startswith('"') else 'geninfo-setting-value'
+    return f"<span class='geninfo-setting-name'>{html.escape(name)}:</span> <span class='{cls_name}' onclick='uiCopyElementText(this)'>{html.escape(value)}</span>"
+
+
+def pnginfo_format_quicklink(name):
+    return f"<span class='geninfo-quick-link' onclick='uiCopyPngInfo(this, \"{name}\")'>[{html.escape(name)}]</span>"
+
+
+def pnginfo_html_v1(geninfo, items):
+    items = {**{'parameters': geninfo}, **items}
+    info_html = ''
+    for key, text in items.items():
+        info_html += f"""<div class="infotext">
+<p><b>{plaintext_to_html(str(key))}</b></p>
+<p>{plaintext_to_html(str(text))}</p>
+</div>""".strip() + "\n"
+
+    if len(info_html) == 0:
+        message = "Nothing found in the image."
+        info_html = f"<div><p>{message}<p></div>"
+
+    return info_html
+
+
+def pnginfo_html_v2(geninfo, items):
+
+    prompt, negative_prompt, last_line = infotext_utils.split_infotext(geninfo)
+    res = infotext_utils.parameters_to_dict(last_line)
+    if not any([prompt, res, items]):
+        return pnginfo_html_v1(geninfo, items)
+
+    info_html = ''
+    if prompt:
+        info_html += f"""
+<div class='pnginfo-page'>
+<p><b>parameters</b><br>
+{pnginfo_format_quicklink("Copy")}&nbsp;{pnginfo_format_quicklink("Prompt")}"""
+        if negative_prompt:
+            info_html += f'&nbsp;{pnginfo_format_quicklink("Negative")}'
+        info_html += f"""&nbsp;{pnginfo_format_quicklink("Settings")}
+</p>
+<p id='pnginfo-positive'>{pnginfo_format_string(prompt)}</p>"""
+        if negative_prompt:
+            info_html += f"""
+<p>
+<span class='geninfo-setting-name'>Negative prompt:</span><br><span id='pnginfo-negative'>{pnginfo_format_string(negative_prompt)}</span>
+</p>
+"""
+        if res:
+            info_html += "<p id='pnginfo-settings'>"
+            first = True
+            for key, value in res.items():
+                if first:
+                    first = False
+                else:
+                    info_html += ", "
+                info_html += pnginfo_format_setting(key, value)
+            info_html += "</p>"
+        info_html += "</div>\n"
+
+    for key, text in items.items():
+        info_html += f"""
+<div class="infotext">
+<p><b>{plaintext_to_html(str(key))}</b></p>
+<p>{plaintext_to_html(str(text))}</p>
+</div>
+""".strip()+"\n"
+
+    return info_html
+
+
+pnginfo_html_map = {
+    'Default': pnginfo_html_v2,
+    'Parsed': pnginfo_html_v2,
+    'Raw': pnginfo_html_v1,
+}
 
 
 def run_pnginfo(image):
@@ -18,22 +102,13 @@ def run_pnginfo(image):
         return '', '', ''
 
     geninfo, items = images.read_info_from_image(image)
-    items = {**{'parameters': geninfo}, **items}
+    info_html = pnginfo_html_map.get(shared.opts.png_info_html_style, pnginfo_html_v2)(geninfo, items)
 
-    info = ''
-    for key, text in items.items():
-        info += f"""
-<div class="infotext">
-<p><b>{plaintext_to_html(str(key))}</b></p>
-<p>{plaintext_to_html(str(text))}</p>
-</div>
-""".strip()+"\n"
-
-    if len(info) == 0:
+    if len(info_html) == 0:
         message = "Nothing found in the image."
-        info = f"<div><p>{message}<p></div>"
+        info_html = f"<div><p>{message}<p></div>"
 
-    return '', geninfo, info
+    return '', geninfo, info_html
 
 
 def create_config(ckpt_result, config_source, a, b, c):
@@ -202,8 +277,8 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
                 if a.shape[1] == 4 and b.shape[1] == 8:
                     raise RuntimeError("When merging instruct-pix2pix model with a normal one, A must be the instruct-pix2pix model.")
 
-                if a.shape[1] == 8 and b.shape[1] == 4:#If we have an Instruct-Pix2Pix model...
-                    theta_0[key][:, 0:4, :, :] = theta_func2(a[:, 0:4, :, :], b, multiplier)#Merge only the vectors the models have in common.  Otherwise we get an error due to dimension mismatch.
+                if a.shape[1] == 8 and b.shape[1] == 4:  # If we have an Instruct-Pix2Pix model...
+                    theta_0[key][:, 0:4, :, :] = theta_func2(a[:, 0:4, :, :], b, multiplier)  # Merge only the vectors the models have in common.  Otherwise we get an error due to dimension mismatch.
                     result_is_instruct_pix2pix_model = True
                 else:
                     assert a.shape[1] == 9 and b.shape[1] == 4, f"Bad dimensions for merged layer {key}: A={a.shape}, B={b.shape}"
@@ -274,7 +349,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
 
     if save_metadata and add_merge_recipe:
         merge_recipe = {
-            "type": "webui", # indicate this model was merged with webui's built-in merger
+            "type": "webui",  # indicate this model was merged with webui's built-in merger
             "primary_model_hash": primary_model_info.sha256,
             "secondary_model_hash": secondary_model_info.sha256 if secondary_model_info else None,
             "tertiary_model_hash": tertiary_model_info.sha256 if tertiary_model_info else None,
@@ -312,7 +387,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
 
     _, extension = os.path.splitext(output_modelname)
     if extension.lower() == ".safetensors":
-        safetensors.torch.save_file(theta_0, output_modelname, metadata=metadata if len(metadata)>0 else None)
+        safetensors.torch.save_file(theta_0, output_modelname, metadata=metadata if len(metadata) > 0 else None)
     else:
         torch.save(theta_0, output_modelname)
 

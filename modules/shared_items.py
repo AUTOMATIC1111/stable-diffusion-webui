@@ -76,6 +76,11 @@ def reload_hypernetworks():
     shared.hypernetworks = hypernetwork.list_hypernetworks(cmd_opts.hypernetwork_dir)
 
 
+def list_pnginfo_html_methods():
+    from modules.extras import pnginfo_html_map
+    return list(pnginfo_html_map)
+
+
 def get_infotext_names():
     from modules import infotext_utils, shared
     res = {}
