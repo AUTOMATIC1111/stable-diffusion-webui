@@ -104,6 +104,16 @@ Alternatively, use online services (like Google Colab):
 
 - [List of Online Services](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Online-Services)
 
+### Running with Docker
+
+DISCLAIMER: This currently only works with NVIDIA GPUs
+
+You need to have [Docker](https://www.docker.com/) installed on your system. Then clone this repository and execute `docker compose up` in the root of the repository. The first time you execute this command will take a long time as all the dependencies are installed. Subsequent runs of the command should start up the webui pretty much instantly. To stop the webui press CTRL+C and wait a few seconds.
+
+Models are provided to the Docker container using a bind mount. This means that if you add a new model to the models directory it should be available in the webui after a checkpoint refresh without needing to rebuild or restart the container.
+
+The server will be accessible at [localhost:7860](localhost:7860)
+
 ### Installation on Windows 10/11 with NVidia-GPUs using release package
 1. Download `sd.webui.zip` from [v1.0.0-pre](https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases/tag/v1.0.0-pre) and extract its contents.
 2. Run `update.bat`.
