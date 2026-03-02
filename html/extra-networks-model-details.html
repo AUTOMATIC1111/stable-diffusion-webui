@@ -1,0 +1,17 @@
+<div class="extra-network-content--dets-view-model-info">
+    <div class="model-info--header">
+        <h1 class="model-info--name">{name}</h1>
+        <button class="extra-network-control model-info--close" title="Close model details">
+            <svg class="extra-network-control--icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M 2 2 L 14 14 M 2 14 L 14 2" />
+            </svg>
+        </button>
+    </div>
+    <p class="model-info--description" {description_data_attributes}>{description}</p>
+    <h3>Model Metadata</h3>
+    <table class="model-info--metadata">
+        <tbody>{metadata_table}</tbody>
+    </table>
+    {model_specific}
+</div>

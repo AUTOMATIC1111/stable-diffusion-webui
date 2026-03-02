@@ -1,9 +1,8 @@
-<div class="card" style="{style}" onclick="{card_clicked}" data-name="{name}" {sort_keys}>
-	{background_image}
-	<div class="button-row">{copy_path_button}{metadata_button}{edit_button}</div>
-	<div class="actions">
-		<div class="additional">{search_terms}</div>
-		<span class="name">{name}</span>
-		<span class="description">{description}</span>
-	</div>
+<div class="card" style="{style}" {data_attributes}>
+    {background_image}
+    {button_row}
+    <div class="actions">
+        <span class="name">{name}</span>
+        <span class="description" {description_data_attributes}>{description}</span>
+    </div>
 </div>

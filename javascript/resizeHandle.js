@@ -1,8 +1,8 @@
 (function() {
     const GRADIO_MIN_WIDTH = 320;
     const PAD = 16;
-    const DEBOUNCE_TIME = 100;
-    const DOUBLE_TAP_DELAY = 200; //ms
+    const DEBOUNCE_TIME_MS = 250;
+    const DOUBLE_TAP_DELAY_MS = 250;
 
     const R = {
         tracking: false,
@@ -18,7 +18,7 @@
     let parents = [];
 
     function setLeftColGridTemplate(el, width) {
-        el.style.gridTemplateColumns = `${width}px 16px 1fr`;
+        el.style.gridTemplateColumns = `${width}px ${PAD}px 1fr`;
     }
 
     function displayResizeHandle(parent) {
@@ -58,6 +58,9 @@
             evt.stopPropagation();
 
             parent.style.gridTemplateColumns = parent.style.originalGridTemplateColumns;
+
+            // Fire a custom event so user can perform additional tasks on double click.
+            parent.dispatchEvent(new CustomEvent("resizeHandleDblClick", {bubbles: true}));
         }
 
         const leftCol = parent.firstElementChild;
@@ -101,7 +104,7 @@
                     if (evt.changedTouches.length !== 1) return;
 
                     const currentTime = new Date().getTime();
-                    if (R.lastTapTime && currentTime - R.lastTapTime <= DOUBLE_TAP_DELAY) {
+                    if (R.lastTapTime && currentTime - R.lastTapTime <= DOUBLE_TAP_DELAY_MS) {
                         onDoubleClick(evt);
                         return;
                     }
@@ -152,7 +155,13 @@
                 } else {
                     delta = R.screenX - evt.changedTouches[0].screenX;
                 }
-                const leftColWidth = Math.max(Math.min(R.leftColStartWidth - delta, R.parent.offsetWidth - R.parent.minRightColWidth - PAD), R.parent.minLeftColWidth);
+                const leftColWidth = Math.max(
+                    Math.min(
+                        R.leftColStartWidth - delta,
+                        R.parent.offsetWidth - R.parent.minRightColWidth - PAD,
+                    ),
+                    R.parent.minLeftColWidth,
+                );
                 setLeftColGridTemplate(R.parent, leftColWidth);
             }
         });
@@ -173,6 +182,13 @@
                 R.tracking = false;
 
                 document.body.classList.remove('resizing');
+
+                // Fire a custom event at end of resizing.
+                R.parent.dispatchEvent(
+                    new CustomEvent("resizeHandleResized", {
+                        bubbles: true,
+                    }),
+                );
             }
         });
     });
@@ -185,7 +201,7 @@
             for (const parent of parents) {
                 afterResize(parent);
             }
-        }, DEBOUNCE_TIME);
+        }, DEBOUNCE_TIME_MS);
     });
 
     setupResizeHandle = setup;
