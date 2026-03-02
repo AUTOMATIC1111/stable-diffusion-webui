@@ -50,6 +50,7 @@ def check_versions():
 
 def initialize():
     from modules import initialize_util
+    initialize_util.allow_add_middleware_after_start()
     initialize_util.fix_torch_version()
     initialize_util.fix_pytorch_lightning()
     initialize_util.fix_asyncio_event_loop_policy()
