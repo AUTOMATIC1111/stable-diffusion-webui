@@ -3,7 +3,7 @@ from collections import namedtuple
 
 import torch
 
-from modules import prompt_parser, devices, sd_hijack, sd_emphasis
+from modules import prompt_parser, devices, sd_hijack, sd_emphasis, util
 from modules.shared import opts
 
 
@@ -25,6 +25,30 @@ PromptChunkFix = namedtuple('PromptChunkFix', ['offset', 'embedding'])
 """An object of this type is a marker showing that textual inversion embedding's vectors have to placed at offset in the prompt
 chunk. Those objects are found in PromptChunk.fixes and, are placed into FrozenCLIPEmbedderWithCustomWordsBase.hijack.fixes, and finally
 are applied by sd_hijack.EmbeddingsWithFixes's forward function."""
+
+
+class EmphasisMode(util.GenerationParametersList):
+    def __init__(self, emphasis_mode:str = None):
+        super().__init__()
+        self.emphasis_mode = emphasis_mode
+
+    def __call__(self, *args, **kwargs):
+        return self.emphasis_mode
+
+    def __add__(self, other):
+        if isinstance(other, EmphasisMode):
+            return self if self.emphasis_mode else other
+        elif isinstance(other, str):
+            return self.__str__() + other
+        return NotImplemented
+
+    def __radd__(self, other):
+        if isinstance(other, str):
+            return other + self.__str__()
+        return NotImplemented
+
+    def __str__(self):
+        return self.emphasis_mode if self.emphasis_mode else ''
 
 
 class TextConditionalModel(torch.nn.Module):
@@ -238,12 +262,10 @@ class TextConditionalModel(torch.nn.Module):
                 hashes.append(f"{name}: {shorthash}")
 
             if hashes:
-                if self.hijack.extra_generation_params.get("TI hashes"):
-                    hashes.append(self.hijack.extra_generation_params.get("TI hashes"))
-                self.hijack.extra_generation_params["TI hashes"] = ", ".join(hashes)
+                self.hijack.extra_generation_params["TI hashes"] = util.GenerationParametersList(hashes)
 
-        if any(x for x in texts if "(" in x or "[" in x) and opts.emphasis != "Original":
-            self.hijack.extra_generation_params["Emphasis"] = opts.emphasis
+        if opts.emphasis != 'Original' and any(x for x in texts if '(' in x or '[' in x):
+            self.hijack.extra_generation_params["Emphasis"] = EmphasisMode(opts.emphasis)
 
         if self.return_pooled:
             return torch.hstack(zs), zs[0].pooled

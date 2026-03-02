@@ -289,3 +289,49 @@ def compare_sha256(file_path: str, hash_prefix: str) -> bool:
         for chunk in iter(lambda: f.read(blksize), b""):
             hash_sha256.update(chunk)
     return hash_sha256.hexdigest().startswith(hash_prefix.strip().lower())
+
+
+class GenerationParametersList(list):
+    """A special object used in sd_hijack.StableDiffusionModelHijack for setting extra_generation_params
+    due to StableDiffusionProcessing.get_conds_with_caching
+    extra_generation_params set in StableDiffusionModelHijack will be lost when cached is used
+
+    When an extra_generation_params is set in StableDiffusionModelHijack using this object,
+    the params will be extracted by StableDiffusionModelHijack.extract_generation_params_states
+    the extracted params will be cached in StableDiffusionProcessing.get_conds_with_caching
+    and applyed to StableDiffusionProcessing.extra_generation_params by StableDiffusionProcessing.apply_generation_params_states
+
+    Example see modules.sd_hijack_clip.TextConditionalModel.hijack.extra_generation_params 'TI hashes' 'Emphasis'
+
+    Depending on the use case the methods can be overwritten.
+    In general __call__ method should return str or None, as normally it's called in modules.processing.create_infotext.
+    When called by create_infotext it will access to the locals() of the caller,
+    if return str, the value will be written to infotext, if return None will be ignored.
+    """
+
+    def __init__(self, *args, to_be_clear_before_batch=True, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._to_be_clear_before_batch = to_be_clear_before_batch
+
+    def __call__(self, *args, **kwargs):
+        return ', '.join(sorted(set(self), key=natural_sort_key))
+
+    @property
+    def to_be_clear_before_batch(self):
+        return self._to_be_clear_before_batch
+
+    def __add__(self, other):
+        if isinstance(other, GenerationParametersList):
+            return self.__class__([*self, *other])
+        elif isinstance(other, str):
+            return self.__str__() + other
+        return NotImplemented
+
+    def __radd__(self, other):
+        if isinstance(other, str):
+            return other + self.__str__()
+        return NotImplemented
+
+    def __str__(self):
+        return self.__call__()
+

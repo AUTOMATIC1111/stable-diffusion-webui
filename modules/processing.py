@@ -16,7 +16,7 @@ from skimage import exposure
 from typing import Any
 
 import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram, infotext_utils, extra_networks, sd_vae_approx, scripts, sd_samplers_common, sd_unet, errors, rng, profiling
+from modules import devices, prompt_parser, masking, sd_samplers, lowvram, infotext_utils, extra_networks, sd_vae_approx, scripts, sd_samplers_common, sd_unet, errors, rng, profiling, util
 from modules.rng import slerp # noqa: F401
 from modules.sd_hijack import model_hijack
 from modules.sd_samplers_common import images_tensor_to_samples, decode_first_stage, approximation_indexes
@@ -457,6 +457,20 @@ class StableDiffusionProcessing:
             opts.emphasis,
         )
 
+    def apply_generation_params_list(self, generation_params_states):
+        """add and apply generation_params_states to self.extra_generation_params"""
+        for key, value in generation_params_states.items():
+            if key in self.extra_generation_params and isinstance(current_value := self.extra_generation_params[key], util.GenerationParametersList):
+                self.extra_generation_params[key] = current_value + value
+            else:
+                self.extra_generation_params[key] = value
+
+    def clear_marked_generation_params(self):
+        """clears any generation parameters that are with the attribute to_be_clear_before_batch = True"""
+        for key, value in list(self.extra_generation_params.items()):
+            if getattr(value, 'to_be_clear_before_batch', False):
+                self.extra_generation_params.pop(key)
+
     def get_conds_with_caching(self, function, required_prompts, steps, caches, extra_network_data, hires_steps=None):
         """
         Returns the result of calling function(shared.sd_model, required_prompts, steps)
@@ -480,12 +494,23 @@ class StableDiffusionProcessing:
 
         for cache in caches:
             if cache[0] is not None and cached_params == cache[0]:
+                if len(cache) == 3:
+                    generation_params_states, cached_cached_params = cache[2]
+                    if cached_params == cached_cached_params:
+                        self.apply_generation_params_list(generation_params_states)
                 return cache[1]
 
         cache = caches[0]
 
         with devices.autocast():
             cache[1] = function(shared.sd_model, required_prompts, steps, hires_steps, shared.opts.use_old_scheduling)
+
+        generation_params_states = model_hijack.extract_generation_params_states()
+        self.apply_generation_params_list(generation_params_states)
+        if len(cache) == 2:
+            cache.append((generation_params_states, cached_params))
+        else:
+            cache[2] = (generation_params_states, cached_params)
 
         cache[0] = cached_params
         return cache[1]
@@ -501,6 +526,8 @@ class StableDiffusionProcessing:
 
         self.uc = self.get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, total_steps, [self.cached_uc], self.extra_network_data)
         self.c = self.get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, total_steps, [self.cached_c], self.extra_network_data)
+
+        self.extra_generation_params.update(model_hijack.extra_generation_params)
 
     def get_conds(self):
         return self.c, self.uc
@@ -801,10 +828,10 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
 
     for key, value in generation_params.items():
         try:
-            if isinstance(value, list):
-                generation_params[key] = value[index]
-            elif callable(value):
+            if callable(value):
                 generation_params[key] = value(**locals())
+            elif isinstance(value, list):
+                generation_params[key] = value[index]
         except Exception:
             errors.report(f'Error creating infotext for key "{key}"', exc_info=True)
             generation_params[key] = None
@@ -938,6 +965,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if state.interrupted or state.stopping_generation:
                 break
 
+            p.clear_marked_generation_params()  # clean up some generation params are tagged to be cleared before batch
             sd_models.reload_model_weights()  # model can be changed for example by refiner
 
             p.prompts = p.all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
@@ -964,8 +992,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 p.scripts.process_batch(p, batch_number=n, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds)
 
             p.setup_conds()
-
-            p.extra_generation_params.update(model_hijack.extra_generation_params)
 
             # params.txt should be saved after scripts.process_batch, since the
             # infotext could be modified by that callback
@@ -1512,6 +1538,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         self.hr_uc = self.get_conds_with_caching(prompt_parser.get_learned_conditioning, hr_negative_prompts, self.firstpass_steps, [self.cached_hr_uc, self.cached_uc], self.hr_extra_network_data, total_steps)
         self.hr_c = self.get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, hr_prompts, self.firstpass_steps, [self.cached_hr_c, self.cached_c], self.hr_extra_network_data, total_steps)
+
+        self.extra_generation_params.update(model_hijack.extra_generation_params)
 
     def setup_conds(self):
         if self.is_hr_pass:
