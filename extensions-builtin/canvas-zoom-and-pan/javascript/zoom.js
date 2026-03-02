@@ -226,6 +226,8 @@ onUiLoaded(async() => {
         canvas_show_tooltip: true,
         canvas_auto_expand: true,
         canvas_blur_prompt: false,
+        canvas_hotkey_undo: "KeyZ",
+        canvas_hotkey_clear: "KeyC",
     };
 
     const functionMap = {
@@ -236,7 +238,9 @@ onUiLoaded(async() => {
         "Moving canvas": "canvas_hotkey_move",
         "Fullscreen": "canvas_hotkey_fullscreen",
         "Reset Zoom": "canvas_hotkey_reset",
-        "Overlap": "canvas_hotkey_overlap"
+        "Overlap": "canvas_hotkey_overlap",
+        "Undo": "canvas_hotkey_undo",
+        "Clear": "canvas_hotkey_clear"
     };
 
     // Loading the configuration from opts
@@ -321,6 +325,8 @@ onUiLoaded(async() => {
                     action: "Adjust brush size",
                     keySuffix: " + wheel"
                 },
+                {configKey: "canvas_hotkey_undo", action: "Undo brush stroke"},
+                {configKey: "canvas_hotkey_clear", action: "Clear canvas"},
                 {configKey: "canvas_hotkey_reset", action: "Reset zoom"},
                 {
                     configKey: "canvas_hotkey_fullscreen",
@@ -464,20 +470,43 @@ onUiLoaded(async() => {
                 gradioApp().querySelector(
                     `${elemId} button[aria-label="Use brush"]`
                 );
-
             if (input) {
                 input.click();
                 if (!withoutValue) {
-                    const maxValue =
-                        parseFloat(input.getAttribute("max")) || 100;
-                    const changeAmount = maxValue * (percentage / 100);
-                    const newValue =
-                        parseFloat(input.value) +
-                        (deltaY > 0 ? -changeAmount : changeAmount);
-                    input.value = Math.min(Math.max(newValue, 0), maxValue);
+                    const maxValue = parseFloat(input.getAttribute("max")) || 100;
+                    const minValue = parseFloat(input.getAttribute("min")) || 1;
+                    // allow brush size up to 1/2 diagonal of the image, beyond gradio's arbitrary limit
+                    const canvasImg = gradioApp().querySelector(`${elemId} img`);
+                    if (canvasImg) {
+                        const maxDiameter = Math.sqrt(canvasImg.naturalWidth ** 2 + canvasImg.naturalHeight ** 2) / 2;
+                        if (maxDiameter > maxValue) {
+                            input.setAttribute("max", maxDiameter);
+                        }
+                        if (minValue > 1) {
+                            input.setAttribute("min", '1');
+                        }
+                    }
+                    const brush_factor = deltaY > 0 ? 1 - opts.canvas_hotkey_brush_factor : 1 + opts.canvas_hotkey_brush_factor;
+                    const currentRadius = parseFloat(input.value);
+                    let delta = Math.sqrt(currentRadius ** 2 * brush_factor) - currentRadius;
+                    // minimum brush size step of 1
+                    if (Math.abs(delta) < 1) {
+                        delta = deltaY > 0 ? -1 : 1;
+                    }
+                    const newValue = currentRadius + delta;
+                    input.value = Math.max(newValue, 1);
                     input.dispatchEvent(new Event("change"));
                 }
             }
+        }
+
+        // Undo the last brush stroke by clicking the undo button
+        function undoBrushStroke() {
+            gradioApp().querySelector(`${elemId} button[aria-label='Undo']`).click();
+        }
+
+        function clearCanvas() {
+            gradioApp().querySelector(`${elemId} button[aria-label='Clear']`).click();
         }
 
         // Reset zoom when uploading a new image
@@ -699,7 +728,9 @@ onUiLoaded(async() => {
                 [hotkeysConfig.canvas_hotkey_overlap]: toggleOverlap,
                 [hotkeysConfig.canvas_hotkey_fullscreen]: fitToScreen,
                 [hotkeysConfig.canvas_hotkey_shrink_brush]: () => adjustBrushSize(elemId, 10),
-                [hotkeysConfig.canvas_hotkey_grow_brush]: () => adjustBrushSize(elemId, -10)
+                [hotkeysConfig.canvas_hotkey_grow_brush]: () => adjustBrushSize(elemId, -10),
+                [hotkeysConfig.canvas_hotkey_undo]: undoBrushStroke,
+                [hotkeysConfig.canvas_hotkey_clear]: clearCanvas
             };
 
             const action = hotkeyActions[event.code];
