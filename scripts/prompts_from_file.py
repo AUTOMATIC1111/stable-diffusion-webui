@@ -11,25 +11,30 @@ from modules.shared import state
 
 
 def process_model_tag(tag):
+    """\"mode-name\""""
     info = sd_models.get_closet_checkpoint_match(tag)
     assert info is not None, f'Unknown checkpoint: {tag}'
     return info.name
 
 
 def process_string_tag(tag):
+    """\"str\""""
     return tag
 
 
 def process_int_tag(tag):
+    """int-number"""
     return int(tag)
 
 
 def process_float_tag(tag):
+    """float-number"""
     return float(tag)
 
 
 def process_boolean_tag(tag):
-    return True if (tag == "true") else False
+    """true|false"""
+    return True if (tag.lower() == "true") else False
 
 
 prompt_tags = {
@@ -60,6 +65,27 @@ prompt_tags = {
 }
 
 
+def doc_md():
+    md = '<details><summary>Usage Syntax</summary><p>\n\n'
+    for key, func in prompt_tags.items():
+        md += f'`--{key}` `{func.__doc__}`\n'
+
+    md += '''
+<details><summary>Example</summary><p>
+
+```shell
+--prompt "photo of sunset"
+--prompt "photo of sunset" --negative_prompt "orange, pink, red, sea, water, lake" --width 1024 --height 768 --sampler_name "DPM++ 2M Karras" --steps 10 --batch_size 2 --cfg_scale 3 --seed 9
+--prompt "photo of winter mountains" --steps 7 --sampler_name "DDIM"
+--prompt "photo of winter mountains" --width 1024
+```
+</p></details>
+'''
+
+    md += '</p></details>'
+    return md
+
+
 def cmdargs(line):
     args = shlex.split(line)
     pos = 0
@@ -83,7 +109,6 @@ def cmdargs(line):
                 pos += 1
             res[tag] = prompt
             continue
-
 
         func = prompt_tags.get(tag, None)
         assert func, f'unknown commandline option: {arg}'
@@ -125,6 +150,9 @@ class Script(scripts.Script):
         # We don't shrink back to 1, because that causes the control to ignore [enter], and it may
         # be unclear to the user that shift-enter is needed.
         prompt_txt.change(lambda tb: gr.update(lines=7) if ("\n" in tb) else gr.update(lines=2), inputs=[prompt_txt], outputs=[prompt_txt], show_progress=False)
+
+        gr.Markdown(doc_md())
+
         return [checkbox_iterate, checkbox_iterate_batch, prompt_position, prompt_txt]
 
     def run(self, p, checkbox_iterate, checkbox_iterate_batch, prompt_position, prompt_txt: str):
