@@ -159,6 +159,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
             upscaled_image = Image.blend(upscaled_image, second_upscale, upscaler_2_visibility)
 
             pp.info["Postprocess upscaler 2"] = upscaler2.name
+            pp.info["Postprocess Upscaler 2 visibility"] = upscaler_2_visibility
 
         pp.image = upscaled_image
 
