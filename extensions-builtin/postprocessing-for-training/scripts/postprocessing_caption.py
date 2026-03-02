@@ -2,7 +2,7 @@ from modules import scripts_postprocessing, ui_components, deepbooru, shared
 import gradio as gr
 
 
-class ScriptPostprocessingCeption(scripts_postprocessing.ScriptPostprocessing):
+class ScriptPostprocessingCaption(scripts_postprocessing.ScriptPostprocessing):
     name = "Caption"
     order = 4040
 
