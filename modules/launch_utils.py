@@ -447,7 +447,14 @@ def prepare_environment():
         startup_timer.record("install open_clip")
 
     if (not is_installed("xformers") or args.reinstall_xformers) and args.xformers:
-        run_pip(f"install -U -I --no-deps {xformers_package}", "xformers")
+        try:
+            rocm_check = subprocess.run(['rocminfo'], stdout=subprocess.PIPE, stderr=subprocess.PIPE).returncode
+        except FileNotFoundError:
+            rocm_check = 1
+        if rocm_check == 0:
+            run_pip(f"install -U -I --no-deps xformers --index-url https://download.pytorch.org/whl/rocm6.1", "xformers")
+        else:
+            run_pip(f"install -U -I --no-deps {xformers_package}", "xformers")
         startup_timer.record("install xformers")
 
     if not is_installed("ngrok") and args.ngrok:
