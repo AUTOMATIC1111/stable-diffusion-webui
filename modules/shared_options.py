@@ -105,6 +105,7 @@ options_templates.update(options_section(('upscaling', "Upscaling", "postprocess
     "DAT_tile_overlap": OptionInfo(8, "Tile overlap for DAT upscalers.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}).info("Low values = visible seam"),
     "upscaler_for_img2img": OptionInfo(None, "Upscaler for img2img", gr.Dropdown, lambda: {"choices": [x.name for x in shared.sd_upscalers]}),
     "set_scale_by_when_changing_upscaler": OptionInfo(False, "Automatically set the Scale by factor based on the name of the selected Upscaler."),
+    "upscaler_fast_prescale_threshold": OptionInfo(1.0, "Maximum threshold for fast pre-scaling of very small images.", gr.Slider, {"minimum": 1, "maximum": 8, "step": 0.01}).info("The maximum scale difference for performing fast Lanczos pre-scaling before the first upscaling step. This can prevent expensive additional steps if the source image is very small. 1 = disabled; 1.25-3.0 recommended"),
 }))
 
 options_templates.update(options_section(('face-restoration', "Face restoration", "postprocessing"), {

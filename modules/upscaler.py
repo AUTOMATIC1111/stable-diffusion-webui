@@ -6,6 +6,7 @@ from PIL import Image
 
 import modules.shared
 from modules import modelloader, shared
+import math
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 NEAREST = (Image.Resampling.NEAREST if hasattr(Image, 'Resampling') else Image.NEAREST)
@@ -55,6 +56,38 @@ class Upscaler:
         self.scale = scale
         dest_w = int((img.width * scale) // 8 * 8)
         dest_h = int((img.height * scale) // 8 * 8)
+
+        # Attempt a cheap resize of the source image, if it falls below the fixed scaling size of the upscaling model.
+        # We resize the image by the smallest amount necessary for the fixed scaling to meet the target dimensions.
+        prescale_threshold = modules.shared.opts.upscaler_fast_prescale_threshold
+        if prescale_threshold > 1 and self.name and self.name not in ["Nearest", "Lanczos"]:
+            # Get the matching upscaler
+            upscaler_data = next((x for x in self.scalers if x.data_path == selected_model), None)
+
+            if upscaler_data is not None:
+                upscaler_scale = upscaler_data.scale
+                if scale > upscaler_scale:
+
+                    # Calculate the minimum intermediate dimensions.
+                    min_intermediate_w = math.ceil(dest_w / upscaler_scale)
+                    min_intermediate_h = math.ceil(dest_h / upscaler_scale)
+
+                    # Preserve aspect ratio and make sure any adjustments don't drop us below the
+                    # minimum scaling needed.
+                    aspect_ratio = img.width / img.height
+
+                    intermediate_w = max(min_intermediate_w, int(math.ceil(min_intermediate_h * aspect_ratio)))
+                    intermediate_h = max(min_intermediate_h, int(math.ceil(min_intermediate_w / aspect_ratio)))
+
+                    if intermediate_w / aspect_ratio > intermediate_h:
+                        intermediate_w = int(math.ceil(intermediate_h * aspect_ratio))
+                    else:
+                        intermediate_h = int(math.ceil(intermediate_w / aspect_ratio))
+
+                    scale_diff = max(intermediate_w / img.width, intermediate_h / img.height)
+
+                    if scale_diff <= prescale_threshold:
+                        img = img.resize((intermediate_w, intermediate_h), resample=LANCZOS)
 
         for i in range(3):
             if img.width >= dest_w and img.height >= dest_h and (i > 0 or scale != 1):
