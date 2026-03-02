@@ -1,0 +1,9 @@
+.venv
+.che__/
+*.log
+*.git
+*.gitignore
+docker
+models/*
+embeddings/*
+extensions/*

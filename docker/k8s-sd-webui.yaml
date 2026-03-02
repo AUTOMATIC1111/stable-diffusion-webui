@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stable-diffusion-webui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stable-diffusion-webui
+  template:
+    metadata:
+      labels:
+        app: stable-diffusion-webui
+    spec:
+      containers:
+        - name: stable-diffusion-webui
+          image: $(YOUR-IMAGE-NAME) # the image name specified when doing `docker build`
+          ports:
+            - containerPort: 7860
+          volumeMounts:
+            - mountPath: /webui/models
+              name: models-volume
+            - mountPath: /webui/outputs
+              name: image-outputs
+            - mountPath: /webui/extensions
+              name: extensions-volume
+            - mountPath: /webui/embeddings
+              name: embeddings-volume
+          resources:
+            limits:
+              nvidia.com/gpu: 1  # Adjust according to your needs
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 7860
+            initialDelaySeconds: 120
+            periodSeconds: 30
+      volumes:
+        - name: models-volume
+          hostPath:
+            path: $(YOUR-LOCAL-PATH)/models  # absolute path of pre-download model on the host machine
+        - name: image-outputs
+          hostPath:
+            path: $(YOUR-LOCAL-PATH)/outputs
+        - name: extensions-volume
+          hostPath:
+            path: $(YOUR-LOCAL-PATH)/extensions # absolute path of extensions
+        - name: embeddings-volume
+          hostPath:
+            path: $(YOUR-LOCAL-PATH)/embeddings # absolute path of pre-download embeddings
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stable-diffusion-webui-service
+spec:
+  type: NodePort  # You can change this to LoadBalancer if needed
+  ports:
+    - port: 7860
+      targetPort: 7860
+  selector:
+    app: stable-diffusion-webui

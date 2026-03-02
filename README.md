@@ -104,6 +104,45 @@ Alternatively, use online services (like Google Colab):
 
 - [List of Online Services](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Online-Services)
 
+### Running with Docker
+
+#### a) Run with Docker Compose
+DISCLAIMER: This currently only works with NVIDIA GPUs
+
+You need to have [Docker](https://www.docker.com/) installed on your system. Then clone this repository and execute `docker compose -f docker/compose.yml up` in the root path of the repository. The first time you execute this command will take a long time as all the dependencies are installed. Subsequent runs of the command should start up the webui pretty much instantly. To stop the webui press CTRL+C and wait a few seconds.
+
+Models are provided to the Docker container using a bind mount. This means that if you add a new model to the models directory it should be available in the webui after a checkpoint refresh without needing to rebuild or restart the container.
+
+The server will be accessible at [localhost:7860](localhost:7860)
+
+#### b) Run with docker CLI
+```
+git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui
+cd stable-diffusion-webui
+export TAG=$(git describe --abbrev=0)        # the image tag, here example uses the latest git tag
+export IMG=AUTOMATIC1111/stable-diffusion-webui:${TAG}
+docker build -t ${IMG} -f docker/Dockerfile .
+docker run --gpus all -d -p 7860:7860 -v $(pwd)/models/:/webui/models  -v $(pwd)/embeddings:/webui/models  $IMG
+# Those `-v` mean mounting your local pre-downloaded model weights, embeddings, extensions( you can also do this for your local textual_inversion_templates, localizations..etc ) to the container, in the same manner.
+```
+
+#### c) Run on Kubernetes
+
+Prerequisite: 
+
+ - You already have a Kubernetes Cluster in place and kube.conf in your machine.
+ - build the docker images as above step (b), and load it to your K8S cluster.
+ - Modify the `YOUR-IMAGE-NAME` and `YOUR-LOCAL-PATH` in `docker/k8s-sd-webui.yaml`
+
+```
+kubectl apply -f docker/k8s-sd-webui.yaml      # Create k8s workload and nodeport service
+kubectl get po -l app=stable-diffusion-webui   # List the container
+#kubectl wait --for=condition=available endpoints/stable-diffusion-webui-service # wait for pod ready, you can CTRL+C to skip it
+kubectl get svc stable-diffusion-webui-service # To show the access NodePort port and access it thru K8S NodePort
+```
+
+To debug, you can check logs from `kubectl logs -f deploy/stable-diffusion-webui`
+
 ### Installation on Windows 10/11 with NVidia-GPUs using release package
 1. Download `sd.webui.zip` from [v1.0.0-pre](https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases/tag/v1.0.0-pre) and extract its contents.
 2. Run `update.bat`.

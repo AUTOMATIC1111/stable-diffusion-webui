@@ -1,0 +1,28 @@
+services:
+  webui:
+    build: .
+    volumes:
+      - type: bind
+        source: ./models
+        target: /webui/models
+      - type: bind
+        source: ./outputs
+        target: /webui/outputs
+      - type: bind
+        source: ./extensions
+        target: /webui/extensions
+      - type: bind
+        source: ./embeddings
+        target: /webui/embeddings
+      - type: bind
+        source: ./configs
+        target: /webui/configs
+    ports:
+      - 7860:7860
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
