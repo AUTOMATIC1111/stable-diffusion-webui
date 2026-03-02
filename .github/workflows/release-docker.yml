@@ -1,0 +1,40 @@
+name: Release Docker Images
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: AUTOMATIC1111/stable-diffusion-webui
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: 'prod'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+            file: docker/Dockerfile
+            platforms: linux/amd64
+            push: true
+            tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }} 
