@@ -19,6 +19,7 @@ class SdVersion(enum.Enum):
     SD1 = 2
     SD2 = 3
     SDXL = 4
+    SD3 = 5
 
 
 class NetworkOnDisk:
@@ -59,6 +60,7 @@ class NetworkOnDisk:
         self.sd_version = self.detect_version()
 
     def detect_version(self):
+        # TODO: SdVersion.SD3 detection
         if str(self.metadata.get('ss_base_model_version', "")).startswith("sdxl_"):
             return SdVersion.SDXL
         elif str(self.metadata.get('ss_v2', "")) == "True":

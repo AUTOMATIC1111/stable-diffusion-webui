@@ -160,7 +160,7 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
     def create_extra_default_items_in_left_column(self):
 
         # this would be a lot better as gr.Radio but I can't make it work
-        self.select_sd_version = gr.Dropdown(['SD1', 'SD2', 'SDXL', 'Unknown'], value='Unknown', label='Stable Diffusion version', interactive=True)
+        self.select_sd_version = gr.Dropdown(['SD1', 'SD2', 'SDXL', 'SD3', 'Unknown'], value='Unknown', label='Stable Diffusion version', interactive=True)
 
     def create_editor(self):
         self.create_default_editor_elems()
