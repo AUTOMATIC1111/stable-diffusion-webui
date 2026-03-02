@@ -347,8 +347,21 @@ def early_access_blackwell_wheels():
         return f'pip install {ea_whl.get(sys.version_info.minor)}'
 
 
+def get_default_torch_index_url():
+    """Choose default torch index url based on GPU CUDA Compute Capability (CC)
+    Use cu126 for CC <= 7.2, cu128 for CC > 7.2
+    PyTorch have dropped support for older GPUs on their cu128 and above wheels,
+    For Nvidia 10 series and older GPUs (CC < 7.0) should use cu126 wheels
+    Since GPUs with CC <= 7.2 are considered legacy by Nvidia
+        ref 2025-11-07 https://developer.nvidia.com/cuda-legacy-gpus
+    """
+    if get_cuda_comp_cap() <= 7.2:
+        return "https://download.pytorch.org/whl/cu126"
+    return "https://download.pytorch.org/whl/cu128"
+
+
 def prepare_environment():
-    torch_index_url = os.environ.get('TORCH_INDEX_URL', "https://download.pytorch.org/whl/cu128")
+    torch_index_url = os.environ.get('TORCH_INDEX_URL', get_default_torch_index_url())
     torch_command = os.environ.get('TORCH_COMMAND', f"pip install torch==2.7.0 torchvision==0.22.0 --extra-index-url {torch_index_url}")
     if args.use_ipex:
         if platform.system() == "Windows":
