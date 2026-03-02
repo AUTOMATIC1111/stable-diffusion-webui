@@ -213,3 +213,21 @@ def configure_cors_middleware(app):
         cors_options["allow_origin_regex"] = cmd_opts.cors_allow_origins_regex
     app.add_middleware(CORSMiddleware, **cors_options)
 
+
+def preload_malloc():
+    if os.name == 'nt':
+        import ctypes
+        # under windows we can't use LD_PRELOAD method but still we can load the libtcmalloc_minimal.dll using ctypes.cdll
+        # https://github.com/gperftools/gperftools/ (only gperftools's tcmalloc works with windows)
+        # build libtcmalloc_minimal.dll patch module and copy it into the top dir of webui
+
+        dir_path = os.path.dirname(__file__)
+        tcmallocdll = os.path.join(dir_path, "..", "libtcmalloc_minimal.dll")
+
+        if os.path.exists(tcmallocdll):
+            # load libtcmalloc_minimal.dll if it exists.
+            _tcmalloc_dll = ctypes.cdll.LoadLibrary(tcmallocdll)
+
+            return 'tcmalloc'
+
+    return None

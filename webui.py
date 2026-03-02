@@ -10,6 +10,10 @@ from modules import initialize
 startup_timer = timer.startup_timer
 startup_timer.record("launcher")
 
+malloc = initialize_util.preload_malloc()
+if malloc is not None:
+    startup_timer.record(f"{malloc}")
+
 initialize.imports()
 
 initialize.check_versions()
