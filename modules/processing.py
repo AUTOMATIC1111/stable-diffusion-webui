@@ -1642,6 +1642,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 crop_region = masking.get_crop_region_v2(mask, self.inpaint_full_res_padding)
                 if crop_region:
                     crop_region = masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
+                    if shared.opts.forbid_too_small_crop_region:
+                        crop_region = masking.expand_too_small_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
                     x1, y1, x2, y2 = crop_region
                     mask = mask.crop(crop_region)
                     image_mask = images.resize_image(2, mask, self.width, self.height)
