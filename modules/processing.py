@@ -65,8 +65,19 @@ def apply_color_correction(correction, original_image):
 def uncrop(image, dest_size, paste_loc):
     x, y, w, h = paste_loc
     base_image = Image.new('RGBA', dest_size)
+
+    if image.width > shared.opts.img2img_inpaint_correct_paste_xy_side_length_threshold:
+        paste_x = max(x - w // image.width, 0)
+    else:
+        paste_x = x
+
+    if image.height > shared.opts.img2img_inpaint_correct_paste_xy_side_length_threshold:
+        paste_y = max(y - h // image.height, 0)
+    else:
+        paste_y = y
+
     image = images.resize_image(1, image, w, h)
-    base_image.paste(image, (x, y))
+    base_image.paste(image, (paste_x, paste_y))
     image = base_image
 
     return image
