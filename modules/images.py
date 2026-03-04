@@ -22,6 +22,7 @@ import hashlib
 from modules import sd_samplers, shared, script_callbacks, errors
 from modules.paths_internal import roboto_ttf_file
 from modules.shared import opts
+from modules.colorfix import wavelet_color_fix
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
@@ -249,7 +250,7 @@ def draw_prompt_matrix(im, width, height, all_prompts, margin=0):
     return draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin)
 
 
-def resize_image(resize_mode, im, width, height, upscaler_name=None):
+def resize_image(resize_mode, im, width, height, upscaler_name=None, preserve_colors=False):
     """
     Resizes an image with the specified resize_mode, width, and height.
 
@@ -263,7 +264,7 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
         height: The height to resize the image to.
         upscaler_name: The name of the upscaler to use. If not provided, defaults to opts.upscaler_for_img2img.
     """
-
+    before_resize = im
     upscaler_name = upscaler_name or opts.upscaler_for_img2img
 
     def resize(im, w, h):
@@ -284,6 +285,9 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
 
         if im.width != w or im.height != h:
             im = im.resize((w, h), resample=LANCZOS)
+
+        if preserve_colors:
+            im = wavelet_color_fix(im, before_resize.resize(im.size))
 
         return im
 
