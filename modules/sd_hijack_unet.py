@@ -87,17 +87,18 @@ def spatial_transformer_forward(_, self, x: torch.Tensor, context=None):
     b, c, h, w = x.shape
     x_in = x
     x = self.norm(x)
-    if not self.use_linear:
+    use_linear = getattr(self, "use_linear", False)
+    if not use_linear:
         x = self.proj_in(x)
     x = x.permute(0, 2, 3, 1).reshape(b, h * w, c)
-    if self.use_linear:
+    if use_linear:
         x = self.proj_in(x)
     for i, block in enumerate(self.transformer_blocks):
         x = block(x, context=context[i])
-    if self.use_linear:
+    if use_linear:
         x = self.proj_out(x)
     x = x.view(b, h, w, c).permute(0, 3, 1, 2)
-    if not self.use_linear:
+    if not use_linear:
         x = self.proj_out(x)
     return x + x_in
 

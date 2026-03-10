@@ -3,6 +3,14 @@ A web interface for Stable Diffusion, implemented using Gradio library.
 
 ![](screenshot.png)
 
+## RTX 5090 Compatibility Fork
+
+This fork includes compatibility updates for running with RTX 5090 GPUs and recent PyTorch nightly builds.
+
+- Branch with changes: `feat/rtx5090-compat`
+- Key compatibility notes: optional guards for evolving `ldm`/CompVis APIs and startup robustness improvements
+- Full patch details: `docs/rtx5090-compatibility.md`
+
 ## Features
 [Detailed feature showcase with images](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features):
 - Original txt2img and img2img modes
