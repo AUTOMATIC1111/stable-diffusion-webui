@@ -203,3 +203,7 @@ Licenses for borrowed code can be found in `Settings -> Licenses` screen, and al
 - Hypertile - tfernd - https://github.com/tfernd/HyperTile
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - (You)
+
+grimdark diesel gothic dark fantasy, baroque oil painting style, dramatic chiaroscuro lighting, heavy brush strokes, textured canvas, deep shadows, cinematic composition, masterpiece
+ruined gothic cathedral converted into military fortress, candles and occult symbols everywhere, dark fantasy oil painting
+grimdark diesel gothic dark fantasy, occult world war atmosphere, baroque oil painting style, dramatic chiaroscuro lighting, heavy brush strokes, textured canvas, deep shadows, cinematic composition, masterpiece, ultra detailed
