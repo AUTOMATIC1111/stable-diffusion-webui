@@ -311,7 +311,7 @@ def download_and_cache_models():
     if not os.path.exists(model_file_path):
         os.makedirs(model_dir_opencv, exist_ok=True)
         print(f"downloading face detection model from '{model_url}' to '{model_file_path}'")
-        response = requests.get(model_url)
+        response = requests.get(model_url, timeout=10.0)
         with open(model_file_path, "wb") as f:
             f.write(response.content)
     return model_file_path
