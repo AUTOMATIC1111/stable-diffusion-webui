@@ -254,6 +254,7 @@ def load_file_from_url(
         parts = urlparse(url)
         file_name = os.path.basename(parts.path)
 
+    url = str.replace(url, "https://huggingface.co", shared.hf_endpoint, 1)
     cached_file = os.path.abspath(os.path.join(model_dir, file_name))
 
     if re_download or not os.path.exists(cached_file):
