@@ -249,6 +249,7 @@ function setupResolutionPasting(tabname) {
     var width = gradioApp().querySelector(`#${tabname}_width input[type=number]`);
     var height = gradioApp().querySelector(`#${tabname}_height input[type=number]`);
     for (const el of [width, height]) {
+        if (!el) continue;
         el.addEventListener('paste', function(event) {
             var pasteData = event.clipboardData.getData('text/plain');
             var parsed = pasteData.match(/^\s*(\d+)\D+(\d+)\s*$/);

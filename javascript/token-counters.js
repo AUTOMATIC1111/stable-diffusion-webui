@@ -48,6 +48,8 @@ function setupTokenCounting(id, id_counter, id_button) {
     var counter = gradioApp().getElementById(id_counter);
     var textarea = gradioApp().querySelector(`#${id} > label > textarea`);
 
+    if (!prompt || !counter) return;
+
     if (counter.parentElement == prompt.parentElement) {
         return;
     }
@@ -66,6 +68,8 @@ function setupTokenCounting(id, id_counter, id_button) {
 
 function toggleTokenCountingVisibility(id, id_counter, id_button) {
     var counter = gradioApp().getElementById(id_counter);
+
+    if (!counter) return;
 
     counter.style.display = opts.disable_token_counters ? "none" : "block";
     counter.classList.toggle("token-counter-visible", !opts.disable_token_counters);
