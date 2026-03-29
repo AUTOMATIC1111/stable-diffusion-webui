@@ -119,7 +119,7 @@ var executedOnLoaded = false;
 
 document.addEventListener("DOMContentLoaded", function() {
     var mutationObserver = new MutationObserver(function(m) {
-        if (!executedOnLoaded && gradioApp().querySelector('#txt2img_prompt')) {
+        if (!executedOnLoaded && get_uiCurrentTabContent()) {
             executedOnLoaded = true;
             executeCallbacks(uiLoadedCallbacks);
         }
