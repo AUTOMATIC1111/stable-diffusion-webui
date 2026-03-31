@@ -1,7 +1,7 @@
 import re
 
 import gradio as gr
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 import network
 import networks
@@ -60,11 +60,39 @@ def create_lora_json(obj: network.NetworkOnDisk):
 
 
 def api_networks(_: gr.Blocks, app: FastAPI):
-    @app.get("/sdapi/v1/loras")
+    from fastapi import Depends
+    from fastapi.security import HTTPBasic, HTTPBasicCredentials
+    from hmac import compare_digest
+
+    security = HTTPBasic(auto_error=False)
+
+    def check_api_auth(credentials: HTTPBasicCredentials = Depends(security)):
+        if not shared.cmd_opts.api_auth:
+            return
+        if credentials is None:
+            raise HTTPException(
+                status_code=401,
+                detail="Not authenticated",
+                headers={"WWW-Authenticate": "Basic"},
+            )
+        valid_credentials = {}
+        for auth_entry in shared.cmd_opts.api_auth.split(","):
+            user, password = auth_entry.split(":", 1)
+            valid_credentials[user.strip()] = password.strip()
+        username = credentials.username
+        if username in valid_credentials and compare_digest(credentials.password, valid_credentials[username]):
+            return
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect credentials",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+
+    @app.get("/sdapi/v1/loras", dependencies=[Depends(check_api_auth)])
     async def get_loras():
         return [create_lora_json(obj) for obj in networks.available_networks.values()]
 
-    @app.post("/sdapi/v1/refresh-loras")
+    @app.post("/sdapi/v1/refresh-loras", dependencies=[Depends(check_api_auth)])
     async def refresh_loras():
         return networks.list_available_networks()
 
