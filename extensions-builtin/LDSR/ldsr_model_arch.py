@@ -104,6 +104,7 @@ class LDSR:
         return logs
 
     def super_resolution(self, image, steps=100, target_scale=2, half_attention=False):
+        previous_clip = sd_hijack.model_hijack.clip
         model = self.load_model_from_config(half_attention)
 
         # Run settings
@@ -150,6 +151,8 @@ class LDSR:
         del model
         gc.collect()
         devices.torch_gc()
+
+        sd_hijack.model_hijack.clip = previous_clip
 
         return a
 
