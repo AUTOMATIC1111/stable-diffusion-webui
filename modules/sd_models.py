@@ -170,7 +170,7 @@ def list_models():
 
         shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
     elif cmd_ckpt is not None and cmd_ckpt != shared.default_sd_model_file:
-        print(f"Checkpoint in --ckpt argument not found (Possible it was moved to {model_path}: {cmd_ckpt}", file=sys.stderr)
+        print(f"Checkpoint in --ckpt argument not found (possible it was moved to {model_path}): {cmd_ckpt}", file=sys.stderr)
 
     for filename in model_list:
         checkpoint_info = CheckpointInfo(filename)
@@ -317,7 +317,8 @@ def read_state_dict(checkpoint_file, print_global_state=False, map_location=None
         if not shared.opts.disable_mmap_load_safetensors:
             pl_sd = safetensors.torch.load_file(checkpoint_file, device=device)
         else:
-            pl_sd = safetensors.torch.load(open(checkpoint_file, 'rb').read())
+            with open(checkpoint_file, 'rb') as f:
+                pl_sd = safetensors.torch.load(f.read())
             pl_sd = {k: v.to(device) for k, v in pl_sd.items()}
     else:
         pl_sd = torch.load(checkpoint_file, map_location=map_location or shared.weight_load_location)

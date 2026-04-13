@@ -140,7 +140,7 @@ def restore_webui_config(config):
         webui_repo.git.reset(webui_commit_hash, hard=True)
         print(f"* Restored webui to commit {webui_commit_hash}.")
     except Exception:
-        errors.report(f"Error restoring webui to commit{webui_commit_hash}")
+        errors.report(f"Error restoring webui to commit {webui_commit_hash}", exc_info=True)
 
 
 def restore_extension_config(config):

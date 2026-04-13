@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 
 import torch
 
-from modules import shared
+from modules import shared, errors
 from modules.upscaler import Upscaler, UpscalerLanczos, UpscalerNearest, UpscalerNone
 
 if TYPE_CHECKING:
@@ -85,7 +85,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
                 output.append(model_url)
 
     except Exception:
-        pass
+        errors.report("Error scanning model paths", exc_info=True)
 
     return output
 

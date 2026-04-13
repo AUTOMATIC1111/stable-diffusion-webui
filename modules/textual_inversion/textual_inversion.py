@@ -701,7 +701,7 @@ def save_embedding(embedding, optimizer, checkpoint, embedding_name, filename, r
         embedding.name = embedding_name
         embedding.optimizer_state_dict = optimizer.state_dict()
         embedding.save(filename)
-    except:
+    except Exception:
         embedding.sd_checkpoint = old_sd_checkpoint
         embedding.sd_checkpoint_name = old_sd_checkpoint_name
         embedding.name = old_embedding_name

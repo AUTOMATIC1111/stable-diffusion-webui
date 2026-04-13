@@ -776,7 +776,7 @@ def save_hypernetwork(hypernetwork, checkpoint, hypernetwork_name, filename):
         hypernetwork.sd_checkpoint_name = checkpoint.model_name
         hypernetwork.name = hypernetwork_name
         hypernetwork.save(filename)
-    except:
+    except Exception:
         hypernetwork.sd_checkpoint = old_sd_checkpoint
         hypernetwork.sd_checkpoint_name = old_sd_checkpoint_name
         hypernetwork.name = old_hypernetwork_name

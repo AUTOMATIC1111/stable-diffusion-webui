@@ -38,9 +38,9 @@ def check_python_version():
     micro = sys.version_info.micro
 
     if is_windows:
-        supported_minors = [10]
+        supported_minors = [10, 11, 12]
     else:
-        supported_minors = [7, 8, 9, 10, 11]
+        supported_minors = [7, 8, 9, 10, 11, 12]
 
     if not (major == 3 and minor in supported_minors):
         import modules.errors
@@ -54,7 +54,7 @@ or any other error regarding unsuccessful package (library) installation,
 please downgrade (or upgrade) to the latest version of 3.10 Python
 and delete current Python and "venv" folder in WebUI's directory.
 
-You can download 3.10 Python from here: https://www.python.org/downloads/release/python-3106/
+You can download the latest 3.10 Python from here: https://www.python.org/downloads/release/python-31016/
 
 {"Alternatively, use a binary release of WebUI: https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases/tag/v1.0.0-pre" if is_windows else ""}
 
@@ -195,23 +195,24 @@ def git_clone(url, dir, name, commithash=None):
         raise
 
     if commithash is not None:
-        run(f'"{git}" -C "{dir}" checkout {commithash}', None, "Couldn't checkout {name}'s hash: {commithash}")
+        run(f'"{git}" -C "{dir}" checkout {commithash}', None, f"Couldn't checkout {name}'s hash: {commithash}")
 
 
 def git_pull_recursive(dir):
     for subdir, _, _ in os.walk(dir):
         if os.path.exists(os.path.join(subdir, '.git')):
             try:
-                output = subprocess.check_output([git, '-C', subdir, 'pull', '--autostash'])
-                print(f"Pulled changes for repository in '{subdir}':\n{output.decode('utf-8').strip()}\n")
+                output = subprocess.check_output([git, '-C', subdir, 'pull', '--autostash'], encoding='utf8', errors='replace')
+                print(f"Pulled changes for repository in '{subdir}':\n{output.strip()}\n")
             except subprocess.CalledProcessError as e:
-                print(f"Couldn't perform 'git pull' on repository in '{subdir}':\n{e.output.decode('utf-8').strip()}\n")
+                output = e.output.decode('utf-8', errors='replace') if isinstance(e.output, bytes) else (e.output or '')
+                print(f"Couldn't perform 'git pull' on repository in '{subdir}':\n{output.strip()}\n")
 
 
 def version_check(commit):
     try:
         import requests
-        commits = requests.get('https://api.github.com/repos/AUTOMATIC1111/stable-diffusion-webui/branches/master').json()
+        commits = requests.get('https://api.github.com/repos/AUTOMATIC1111/stable-diffusion-webui/branches/master', timeout=10).json()
         if commit != "<none>" and commits['commit']['sha'] != commit:
             print("--------------------------------------------------------")
             print("| You are not up to date with the most recent release. |")
@@ -222,7 +223,7 @@ def version_check(commit):
         else:
             print("Not a git clone, can't perform version check.")
     except Exception as e:
-        print("version check failed", e)
+        print(f"version check failed: {e}")
 
 
 def run_extension_installer(extension_dir):
@@ -251,6 +252,7 @@ def list_extensions(settings_file):
         pass
     except Exception:
         errors.report(f'\nCould not load settings\nThe config file "{settings_file}" is likely corrupted\nIt has been moved to the "tmp/config.json"\nReverting config to default\n\n''', exc_info=True)
+        os.makedirs(os.path.join(script_path, "tmp"), exist_ok=True)
         os.replace(settings_file, os.path.join(script_path, "tmp", "config.json"))
 
     disabled_extensions = set(settings.get('disabled_extensions', []))
@@ -277,7 +279,7 @@ def run_extensions_installers(settings_file):
                 startup_timer.record(dirname_extension)
 
 
-re_requirement = re.compile(r"\s*([-_a-zA-Z0-9]+)\s*(?:==\s*([-+_.a-zA-Z0-9]+))?\s*")
+re_requirement = re.compile(r"\s*([-_a-zA-Z0-9]+)\s*(?:==\s*([-+_.a-zA-Z0-9]+))?[^#]*")
 
 
 def requirements_met(requirements_file):
@@ -414,7 +416,7 @@ def prepare_environment():
     git_clone(k_diffusion_repo, repo_dir('k-diffusion'), "K-diffusion", k_diffusion_commit_hash)
     git_clone(blip_repo, repo_dir('BLIP'), "BLIP", blip_commit_hash)
 
-    startup_timer.record("clone repositores")
+    startup_timer.record("clone repositories")
 
     if not os.path.isfile(requirements_file):
         requirements_file = os.path.join(script_path, requirements_file)
