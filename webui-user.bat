@@ -6,3 +6,4 @@ set VENV_DIR=
 set COMMANDLINE_ARGS=
 
 call webui.bat
+set COMMANDLINE_ARGS=--api --listen
