@@ -39,6 +39,7 @@ jobs:
           TORCH_INDEX_URL: https://download.pytorch.org/whl/cpu
           PIP_CONSTRAINT: .github/ci-pip-constraints.txt
           PIP_NO_BUILD_ISOLATION: "1"
+          STABLE_DIFFUSION_REPO: https://github.com/GooglePhone/stablediffusion.git
           WEBUI_LAUNCH_LIVE_OUTPUT: "1"
           PYTHONUNBUFFERED: "1"
       - name: Print installed packages
