@@ -1,9 +1,10 @@
 import os
 from test.conftest import test_files_path, test_outputs_path
 
-import numpy as np
 import pytest
-from PIL import Image
+
+np = pytest.importorskip("numpy", reason="numpy is required for face restorer integration tests")
+Image = pytest.importorskip("PIL.Image", reason="Pillow is required for face restorer integration tests")
 
 
 @pytest.mark.usefixtures("initialize")
