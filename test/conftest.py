@@ -12,6 +12,7 @@ api_integration_test_files = {
     "test_txt2img.py",
     "test_utils.py",
 }
+_server_available = None
 
 
 def pytest_configure(config):
@@ -20,18 +21,35 @@ def pytest_configure(config):
     os.environ.setdefault("IGNORE_CMD_ARGS_ERRORS", "1")
 
 
-def pytest_collection_modifyitems(config, items):
+def webui_server_available():
+    global _server_available
+
+    if _server_available is not None:
+        return _server_available
+
     host = "127.0.0.1"
     port = 7860
     server_available = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_available.settimeout(0.25)
     try:
         server_available.connect((host, port))
-        skip_api = None
-    except OSError as exc:
-        skip_api = pytest.mark.skip(reason=f"WebUI server is required for API integration tests: {exc}")
+        _server_available = True
+    except OSError:
+        _server_available = False
     finally:
         server_available.close()
+
+    return _server_available
+
+
+def pytest_ignore_collect(path, config):
+    return path.basename in api_integration_test_files and not webui_server_available()
+
+
+def pytest_collection_modifyitems(config, items):
+    skip_api = None
+    if not webui_server_available():
+        skip_api = pytest.mark.skip(reason="WebUI server is required for API integration tests")
 
     if skip_api is None:
         return

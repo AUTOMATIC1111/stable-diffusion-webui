@@ -27,7 +27,7 @@ jobs:
           path: models
           key: "2023-12-30"
       - name: Install test dependencies
-        run: pip install wait-for-it -r requirements-test.txt
+        run: pip install wait-for-it setuptools==69.5.1 wheel -r requirements-test.txt
         env:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
           PIP_PROGRESS_BAR: "off"
@@ -37,6 +37,8 @@ jobs:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
           PIP_PROGRESS_BAR: "off"
           TORCH_INDEX_URL: https://download.pytorch.org/whl/cpu
+          PIP_CONSTRAINT: .github/ci-pip-constraints.txt
+          PIP_NO_BUILD_ISOLATION: "1"
           WEBUI_LAUNCH_LIVE_OUTPUT: "1"
           PYTHONUNBUFFERED: "1"
       - name: Print installed packages
