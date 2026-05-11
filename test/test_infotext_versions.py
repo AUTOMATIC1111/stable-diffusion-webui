@@ -4,6 +4,9 @@ import types
 
 def import_infotext_versions(monkeypatch, *, auto_backcompat=True):
     shared = types.SimpleNamespace(opts=types.SimpleNamespace(auto_backcompat=auto_backcompat))
+    import modules
+
+    monkeypatch.setattr(modules, "shared", shared, raising=False)
     monkeypatch.setitem(__import__("sys").modules, "modules.shared", shared)
 
     import modules.infotext_versions as infotext_versions

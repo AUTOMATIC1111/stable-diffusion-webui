@@ -3,19 +3,32 @@ import importlib
 import pytest
 
 
-def import_timer(monkeypatch, times):
-    monkeypatch.setattr("time.time", lambda: next(times))
+class FakeClock:
+    def __init__(self, current):
+        self.current = current
 
+    def __call__(self):
+        return self.current
+
+    def advance(self, seconds):
+        self.current += seconds
+
+
+def import_timer(monkeypatch, start=0):
+    clock = FakeClock(start)
+    monkeypatch.setattr("time.time", clock)
     import modules.timer as timer
 
-    return importlib.reload(timer)
+    return importlib.reload(timer), clock
 
 
 def test_timer_records_elapsed_time_and_summary(monkeypatch):
-    timer = import_timer(monkeypatch, iter([1.0, 1.0, 1.0, 1.2, 1.25, 1.3]))
+    timer, clock = import_timer(monkeypatch, start=1.0)
 
     subject = timer.Timer()
+    clock.advance(0.2)
     subject.record("load", extra_time=0.05)
+    clock.advance(0.05)
     subject.record("small")
 
     assert subject.dump() == {
@@ -31,21 +44,24 @@ def test_timer_records_elapsed_time_and_summary(monkeypatch):
 
 
 def test_timer_subcategory_records_nested_time_and_logs(monkeypatch, capsys):
-    timer = import_timer(monkeypatch, iter([5.0, 5.0, 5.0, 5.1, 5.2, 5.5, 5.7, 5.8]))
+    timer, clock = import_timer(monkeypatch, start=5.0)
 
     subject = timer.Timer(print_log=True)
+    clock.advance(0.1)
     with subject.subcategory("model"):
         assert subject.base_category == "model/"
         assert subject.subcategory_level == 1
+        clock.advance(0.2)
         subject.record("load")
+        clock.advance(0.7)
 
     assert subject.base_category == ""
     assert subject.subcategory_level == 0
     assert subject.records == {
         "model/load": pytest.approx(0.2),
-        "model": pytest.approx(0.9),
+        "model": pytest.approx(1.6),
     }
-    assert subject.total == pytest.approx(0.7)
+    assert subject.total == pytest.approx(0.9)
     assert capsys.readouterr().out.splitlines() == [
         "  model:",
         "  load: done in 0.200s",
@@ -53,11 +69,13 @@ def test_timer_subcategory_records_nested_time_and_logs(monkeypatch, capsys):
 
 
 def test_timer_subcategory_without_logging(monkeypatch, capsys):
-    timer = import_timer(monkeypatch, iter([7.0, 7.0, 7.1, 7.2, 7.3, 7.4]))
+    timer, clock = import_timer(monkeypatch, start=7.0)
 
     subject = timer.Timer()
+    clock.advance(0.1)
     with subject.subcategory("quiet"):
+        clock.advance(0.4)
         pass
 
-    assert subject.records == {"quiet": pytest.approx(0.4)}
+    assert subject.records == {"quiet": pytest.approx(0.8)}
     assert capsys.readouterr().out == ""
