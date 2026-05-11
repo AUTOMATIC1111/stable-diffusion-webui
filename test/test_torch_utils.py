@@ -1,7 +1,8 @@
 import types
 
 import pytest
-import torch
+
+torch = pytest.importorskip("torch", reason="torch is an optional runtime dependency for these unit tests")
 
 from modules import torch_utils
 

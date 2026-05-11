@@ -1,16 +1,44 @@
 import base64
 import os
+import socket
 
 import pytest
 
 test_files_path = os.path.dirname(__file__) + "/test_files"
 test_outputs_path = os.path.dirname(__file__) + "/test_outputs"
+api_integration_test_files = {
+    "test_extras.py",
+    "test_img2img.py",
+    "test_txt2img.py",
+    "test_utils.py",
+}
 
 
 def pytest_configure(config):
     # We don't want to fail on Py.test command line arguments being
     # parsed by webui:
     os.environ.setdefault("IGNORE_CMD_ARGS_ERRORS", "1")
+
+
+def pytest_collection_modifyitems(config, items):
+    host = "127.0.0.1"
+    port = 7860
+    server_available = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_available.settimeout(0.25)
+    try:
+        server_available.connect((host, port))
+        skip_api = None
+    except OSError as exc:
+        skip_api = pytest.mark.skip(reason=f"WebUI server is required for API integration tests: {exc}")
+    finally:
+        server_available.close()
+
+    if skip_api is None:
+        return
+
+    for item in items:
+        if item.path.name in api_integration_test_files:
+            item.add_marker(skip_api)
 
 
 def file_to_base64(filename):
