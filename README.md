@@ -203,3 +203,11 @@ Licenses for borrowed code can be found in `Settings -> Licenses` screen, and al
 - Hypertile - tfernd - https://github.com/tfernd/HyperTile
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - (You)
+<p align="center">
+  <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/stargazers"><img src="https://img.shields.io/github/stars/AUTOMATIC1111/stable-diffusion-webui?style=social" alt="Stars"/></a>
+  <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License"/></a>
+</p>
+
+## Contributing
+
+We welcome contributions! Please check the existing issues and open a pull request.
