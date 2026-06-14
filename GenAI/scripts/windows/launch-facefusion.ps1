@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 param(
     [string]$ExecutionProvider = ''
 )
@@ -37,7 +37,7 @@ $providers = switch ($ExecutionProvider) {
 }
 
 if ($hostAddr -notin @('127.0.0.1', 'localhost')) {
-    Write-Warning "FaceFusion binding to $hostAddr — ensure this is intentional."
+    Write-Warning "FaceFusion binding to $hostAddr - ensure this is intentional."
 }
 
 $env:GRADIO_SERVER_NAME = $hostAddr
@@ -71,3 +71,4 @@ try {
 } finally {
     Pop-Location
 }
+

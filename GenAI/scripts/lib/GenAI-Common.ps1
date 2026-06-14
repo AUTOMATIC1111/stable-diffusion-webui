@@ -149,6 +149,9 @@ function Invoke-GitClonePinned {
         [string]$TargetDir,
         [string]$LogFile
     )
+    $prevErrorAction = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
     if (Test-Path (Join-Path $TargetDir '.git')) {
         Push-Location $TargetDir
         try {
@@ -172,6 +175,9 @@ function Invoke-GitClonePinned {
         } finally {
             Pop-Location
         }
+    }
+    } finally {
+        $ErrorActionPreference = $prevErrorAction
     }
 }
 

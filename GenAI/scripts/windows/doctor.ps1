@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 $ErrorActionPreference = 'Continue'
 . "$PSScriptRoot\..\lib\GenAI-Common.ps1"
 
@@ -41,7 +41,7 @@ if (Test-CommandExists 'nvidia-smi') {
 $drive = (Split-Path $root -Qualifier)
 $free = (Get-PSDrive ($drive.TrimEnd(':'))).Free / 1GB
 if ($free -gt 50) { $results += Get-DiagnosticLine 'Disk space' 'PASS' ("{0:N1} GB free" -f $free) }
-elseif ($free -gt 20) { $results += Get-DiagnosticLine 'Disk space' 'WARN' ("{0:N1} GB free — models need more" -f $free) }
+elseif ($free -gt 20) { $results += Get-DiagnosticLine 'Disk space' 'WARN' ("{0:N1} GB free - models need more" -f $free) }
 else { $results += Get-DiagnosticLine 'Disk space' 'FAIL' ("{0:N1} GB free" -f $free) }
 
 # ComfyUI env
@@ -121,3 +121,4 @@ foreach ($entry in @(@('ComfyUI port', $cfg.Settings['COMFYUI_PORT']), @('FaceFu
 }
 
 Write-DiagnosticReport $results
+

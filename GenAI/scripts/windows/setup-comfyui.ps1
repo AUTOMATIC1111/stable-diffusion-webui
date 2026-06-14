@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
   Bootstrap ComfyUI into GenAI/runtime with an isolated Python venv.
@@ -53,6 +53,8 @@ Invoke-PipInstall -Pip $pip -PipArgs @('install', 'torch', 'torchvision', 'torch
 
 $req = Join-Path $cloneDir 'requirements.txt'
 Invoke-PipInstall -Pip $pip -PipArgs @('install', '-r', $req) -LogFile $log -Description 'ComfyUI requirements'
+
+Invoke-PipInstall -Pip $pip -PipArgs @('install', 'requests') -LogFile $log -Description 'requests (ComfyUI startup dep not in requirements.txt)'
 
 $cudaCheck = & $python -c "import torch; print('cuda=' + str(torch.cuda.is_available()) + ';device=' + (torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'none'))"
 Write-GenAILog $log "PyTorch check: $cudaCheck"

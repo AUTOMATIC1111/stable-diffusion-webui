@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 param(
     [ValidateSet('compatibility', 'balanced', 'performance')]
     [string]$Profile = ''
@@ -40,7 +40,7 @@ switch ($Profile) {
 }
 
 if ($hostAddr -notin @('127.0.0.1', 'localhost')) {
-    Write-Warning "ComfyUI binding to $hostAddr — ensure this is intentional. Default is localhost-only."
+    Write-Warning "ComfyUI binding to $hostAddr - ensure this is intentional. Default is localhost-only."
 }
 
 $cudaInfo = & $python -c "import torch; print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU')" 2>$null
@@ -63,3 +63,4 @@ try {
 } finally {
     Pop-Location
 }
+
