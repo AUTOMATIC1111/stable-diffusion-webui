@@ -42,3 +42,19 @@ notification.mp3
 /cache
 trace.json
 /sysinfo-????-??-??-??-??.json
+
+# GenAI project (local runtime, models, media)
+/GenAI/runtime/
+/GenAI/runtime/**
+/GenAI/models/**/*
+!/GenAI/models/README.md
+/GenAI/inputs/**/*
+!/GenAI/inputs/README.md
+/GenAI/outputs/**/*
+!/GenAI/outputs/README.md
+/GenAI/logs/**/*
+!/GenAI/logs/README.md
+/GenAI/config/settings.env
+/GenAI/config/local-paths.json
+/GenAI/config/model-manifest.json
+/GenAI/config/facefusion.ini

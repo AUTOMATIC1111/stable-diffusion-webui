@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "runtimeRoot": "runtime",
+  "comfyui": {
+    "cloneDir": "runtime/comfyui",
+    "envDir": "runtime/environments/comfyui",
+    "modelsDir": "models/comfyui",
+    "inputDir": "inputs/comfyui",
+    "outputDir": "outputs/comfyui",
+    "logDir": "logs/comfyui"
+  },
+  "facefusion": {
+    "cloneDir": "runtime/facefusion",
+    "envDir": "runtime/environments/facefusion",
+    "modelsDir": "models/facefusion",
+    "inputDir": "inputs/facefusion",
+    "outputDir": "outputs/facefusion",
+    "tempDir": "runtime/facefusion-temp",
+    "logDir": "logs/facefusion"
+  }
+}

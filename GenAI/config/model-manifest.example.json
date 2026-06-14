@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "models": [
+    {
+      "displayName": "SD 1.5 Base",
+      "category": "checkpoint",
+      "source": "https://huggingface.co/runwayml/stable-diffusion-v1-5",
+      "repository": "runwayml/stable-diffusion-v1-5",
+      "version": "v1-5",
+      "filename": "v1-5-pruned-emaonly.safetensors",
+      "SHA256": "",
+      "license": "CreativeML Open RAIL-M",
+      "baseModel": "SD1.5",
+      "intendedUse": "General text-to-image starter checkpoint",
+      "obtainedAt": "",
+      "notes": "Place in models/comfyui/checkpoints/. Accept Hugging Face license manually before download."
+    }
+  ]
+}

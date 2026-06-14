@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "upstreams": {
+    "comfyui": {
+      "repository": "https://github.com/comfyanonymous/ComfyUI.git",
+      "release": "v0.9.2",
+      "commit": "8f40b43e0204d5b9780f3e9618e140e929e80594",
+      "license": "GPL-3.0",
+      "purpose": "Stable Diffusion workflow interface"
+    },
+    "facefusion": {
+      "repository": "https://github.com/facefusion/facefusion.git",
+      "release": "3.6.1",
+      "commit": "5b7d145aa7659a5997f304dc059bce5005270c1d",
+      "license": "OpenRAIL-AS",
+      "purpose": "Local image and video face manipulation"
+    }
+  },
+  "pytorch": {
+    "windows_cuda_index": "https://download.pytorch.org/whl/cu124",
+    "windows_cuda_version": "cu124",
+    "comfyui_python_min": "3.10",
+    "comfyui_python_max": "3.12",
+    "facefusion_python": "3.12"
+  }
+}

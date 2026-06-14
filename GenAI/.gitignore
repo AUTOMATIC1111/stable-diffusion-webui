@@ -1,0 +1,64 @@
+# Local configuration
+config/settings.env
+config/local-paths.json
+config/facefusion.ini
+config/model-manifest.json
+
+# Runtime clones and environments
+runtime/comfyui/
+runtime/facefusion/
+runtime/environments/
+runtime/facefusion-temp/
+
+# Models and caches
+models/**/*.ckpt
+models/**/*.safetensors
+models/**/*.onnx
+models/**/*.pth
+models/**/*.pt
+models/**/*.bin
+models/**/*.gguf
+models/**/.cache/
+**/.hf_cache/
+**/.cache/huggingface/
+
+# User media (never commit private faces or outputs)
+inputs/**/*
+!inputs/README.md
+!inputs/**/.gitkeep
+outputs/**/*
+!outputs/README.md
+!outputs/**/.gitkeep
+
+# Logs and secrets
+logs/**/*
+!logs/README.md
+!logs/**/.gitkeep
+*.env
+!config/settings.example.env
+secrets/
+tokens/
+*.pem
+*.key
+
+# Generated and temporary
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/temp/
+**/tmp/
+**/*.tmp
+benchmark/
+
+# OS and IDE
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Installers
+*.exe
+*.msi
+*.dmg
+*.pkg
