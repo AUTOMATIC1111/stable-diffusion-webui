@@ -10,7 +10,7 @@ from modules.shared import cmd_opts
 def convertExpr2Expression(expr):
     expr.lineno = 0
     expr.col_offset = 0
-    result = ast.Expression(expr.value, lineno=0, col_offset = 0)
+    result = ast.Expression(expr.value)
 
     return result
 
@@ -73,8 +73,8 @@ return process_images(p)
         from types import ModuleType
         module = ModuleType("testmodule")
         module.__dict__.update(globals())
-        module.p = p
-        module.display = display
+        module.__dict__['p'] = p
+        module.__dict__['display'] = display
 
         indent = " " * indent_level
         indented = code.replace('\n', f"\n{indent}")

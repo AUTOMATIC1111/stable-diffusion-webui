@@ -26,7 +26,7 @@ class FaceRestorerCodeFormer(face_restoration_utils.CommonFaceRestoration):
     def name(self):
         return "CodeFormer"
 
-    def load_net(self) -> torch.Module:
+    def load_net(self) -> torch.nn.Module:
         for model_path in modelloader.load_models(
             model_path=self.model_path,
             model_url=model_url,
@@ -50,7 +50,7 @@ class FaceRestorerCodeFormer(face_restoration_utils.CommonFaceRestoration):
 
         def restore_face(cropped_face_t):
             assert self.net is not None
-            return self.net(cropped_face_t, weight=w, adain=True)[0]
+            return self.net.forward(cropped_face_t, weight=w, adain=True)[0]
 
         return self.restore_with_helper(np_image, restore_face)
 

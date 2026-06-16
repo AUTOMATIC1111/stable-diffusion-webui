@@ -135,7 +135,6 @@ def txt2img_image_conditioning(sd_model, x, width, height):
 
 @dataclass(repr=False)
 class StableDiffusionProcessing:
-    sd_model: object = None
     outpath_samples: str = None
     outpath_grids: str = None
     prompt: str = ""
@@ -1562,7 +1561,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     mask: Any = None
     mask_blur_x: int = 4
     mask_blur_y: int = 4
-    mask_blur: int = None
     mask_round: bool = True
     inpainting_fill: int = 0
     inpaint_full_res: bool = True
