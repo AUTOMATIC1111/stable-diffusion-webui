@@ -140,7 +140,8 @@ class Script(scripts.Script):
         return [info, pixels, mask_blur, direction, noise_q, color_variation]
 
     def run(self, p, _, pixels, mask_blur, direction, noise_q, color_variation):
-        initial_seed_and_info = [None, None]
+        initial_seed = None
+        initial_info = None
 
         process_width = p.width
         process_height = p.height
@@ -245,9 +246,9 @@ class Script(scripts.Script):
 
             proc = process_images(p)
 
-            if initial_seed_and_info[0] is None:
-                initial_seed_and_info[0] = proc.seed
-                initial_seed_and_info[1] = proc.info
+            if initial_seed is None:
+                initial_seed = proc.seed
+                initial_info = proc.info
 
             for n in range(count):
                 output_images[n].paste(proc.images[n], (0 if is_left else output_images[n].width - proc.images[n].width, 0 if is_top else output_images[n].height - proc.images[n].height))
@@ -283,7 +284,7 @@ class Script(scripts.Script):
         if opts.return_grid and not unwanted_grid_because_of_img_count:
             all_images = [combined_grid_image] + all_processed_images
 
-        res = Processed(p, all_images, initial_seed_and_info[0], initial_seed_and_info[1])
+        res = Processed(p, all_images, initial_seed, initial_info)
 
         if opts.samples_save:
             for img in all_processed_images:

@@ -17,8 +17,9 @@ initialize.check_versions()
 
 def create_api(app):
     from modules.api.api import Api
-    from modules.call_queue import queue_lock
+    import threading
 
+    queue_lock = threading.Lock()
     api = Api(app, queue_lock)
     return api
 

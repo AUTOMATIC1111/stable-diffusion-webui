@@ -138,9 +138,10 @@ class Script(scripts.Script):
         combined_image = images.combine_grid(grid)
 
         if opts.samples_save:
-            images.save_image(combined_image, p.outpath_samples, "", initial_seed, p.prompt, opts.samples_format, info=initial_info, p=p)
+            samples_format = opts.samples_format if opts.samples_format is not None else ""
+            images.save_image(combined_image, p.outpath_samples, "", initial_seed if initial_seed is not None else p.seed, p.prompt, samples_format, info=initial_info if initial_info is not None else "", p=p)
 
-        processed = Processed(p, [combined_image], initial_seed, initial_info)
+        processed = Processed(p, [combined_image], initial_seed if initial_seed is not None else p.seed, initial_info if initial_info is not None else "")
 
         return processed
 

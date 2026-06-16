@@ -75,11 +75,11 @@ def cmdargs(line):
 
         if tag == "prompt" or tag == "negative_prompt":
             pos += 1
-            prompt = args[pos]
+            prompt = str(args[pos])
             pos += 1
             while pos < len(args) and not args[pos].startswith("--"):
                 prompt += " "
-                prompt += args[pos]
+                prompt += str(args[pos])
                 pos += 1
             res[tag] = prompt
             continue
@@ -119,12 +119,12 @@ class Script(scripts.Script):
         prompt_txt = gr.Textbox(label="List of prompt inputs", lines=1, elem_id=self.elem_id("prompt_txt"))
         file = gr.File(label="Upload prompt inputs", type='binary', elem_id=self.elem_id("file"))
 
-        file.change(fn=load_prompt_file, inputs=[file], outputs=[file, prompt_txt, prompt_txt], show_progress=False)
+        file.change(fn=load_prompt_file, inputs=[file], outputs=[file, prompt_txt, prompt_txt], show_progress="hidden")
 
         # We start at one line. When the text changes, we jump to seven lines, or two lines if no \n.
         # We don't shrink back to 1, because that causes the control to ignore [enter], and it may
         # be unclear to the user that shift-enter is needed.
-        prompt_txt.change(lambda tb: gr.update(lines=7) if ("\n" in tb) else gr.update(lines=2), inputs=[prompt_txt], outputs=[prompt_txt], show_progress=False)
+        prompt_txt.change(lambda tb: gr.update(lines=7) if ("\n" in tb) else gr.update(lines=2), inputs=[prompt_txt], outputs=[prompt_txt], show_progress="hidden")
         return [checkbox_iterate, checkbox_iterate_batch, prompt_position, prompt_txt]
 
     def run(self, p, checkbox_iterate, checkbox_iterate_batch, prompt_position, prompt_txt: str):
@@ -145,7 +145,7 @@ class Script(scripts.Script):
             else:
                 args = {"prompt": line}
 
-            job_count += args.get("n_iter", p.n_iter)
+            job_count += args.get("n_iter", p.n_iter) # pyright: ignore[reportOperatorIssue]
 
             jobs.append(args)
 

@@ -1,10 +1,10 @@
 import math
 
-import modules.scripts as scripts
+import scripts as modules 
 import gradio as gr
 
 from modules import images
-from modules.processing import process_images
+from modules.processing import fix_seed, process_images
 from modules.shared import opts, state
 import modules.sd_samplers
 
@@ -29,6 +29,9 @@ def draw_xy_grid(xs, ys, x_label, y_label, cell):
 
             res.append(processed.images[0])
 
+    if not res or first_processed is None:
+        raise ValueError("Prompt matrix generated no images.")
+
     grid = images.image_grid(res, rows=len(ys))
     grid = images.draw_grid_annotations(grid, res[0].width, res[0].height, hor_texts, ver_texts)
 
@@ -37,7 +40,7 @@ def draw_xy_grid(xs, ys, x_label, y_label, cell):
     return first_processed
 
 
-class Script(scripts.Script):
+class Script(modules.Script): # type: ignore
     def title(self):
         return "Prompt matrix"
 
@@ -56,7 +59,7 @@ class Script(scripts.Script):
         return [put_at_start, different_seeds, prompt_type, variations_delimiter, margin_size]
 
     def run(self, p, put_at_start, different_seeds, prompt_type, variations_delimiter, margin_size):
-        modules.processing.fix_seed(p)
+        fix_seed(p)
         # Raise error if promp type is not positive or negative
         if prompt_type not in ["positive", "negative"]:
             raise ValueError(f"Unknown prompt type {prompt_type}")
@@ -103,6 +106,7 @@ class Script(scripts.Script):
         processed.infotexts.insert(0, processed.infotexts[0])
 
         if opts.grid_save:
-            images.save_image(processed.images[0], p.outpath_grids, "prompt_matrix", extension=opts.grid_format, prompt=original_prompt, seed=processed.seed, grid=True, p=p)
+            extension = opts.grid_format if opts.grid_format else "png"
+            images.save_image(processed.images[0], p.outpath_grids, "prompt_matrix", extension=extension, prompt=original_prompt, seed=processed.seed, grid=True, p=p)
 
         return processed

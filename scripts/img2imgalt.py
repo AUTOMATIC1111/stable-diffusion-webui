@@ -1,4 +1,5 @@
 from collections import namedtuple
+from typing import Optional
 
 import numpy as np
 from tqdm import trange
@@ -9,7 +10,11 @@ import gradio as gr
 from modules import processing, shared, sd_samplers, sd_samplers_common
 
 import torch
-import k_diffusion as K
+try:
+    import k_diffusion as K
+except ImportError:
+    K = None
+
 
 def find_noise_for_image(p, cond, uncond, cfg_scale, steps):
     x = p.init_latent
