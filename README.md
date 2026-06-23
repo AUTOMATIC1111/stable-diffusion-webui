@@ -48,7 +48,7 @@ A web interface for Stable Diffusion, implemented using Gradio library.
 - Settings page
 - Running arbitrary python code from UI (must run with `--allow-code` to enable)
 - Mouseover hints for most UI elements
-- Possible to change defaults/mix/max/step values for UI elements via text config
+- Possible to change defaults/min/max/step values for UI elements via text config
 - Tiling support, a checkbox to create images that can be tiled like textures
 - Progress bar and live image generation preview
     - Can use a separate neural network to produce previews with almost none VRAM or compute requirement
