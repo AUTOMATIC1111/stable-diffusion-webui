@@ -466,8 +466,19 @@ def refresh_available_extensions_from_data(selected_tags, showing_type, filterin
     selected_tags = set(selected_tags)
     hidden = 0
 
+    access_disabled = shared.cmd_opts.disable_extension_access
+
     code = f"""<!-- {time.time()} -->
-    <table id="available_extensions">
+    """
+
+    if access_disabled:
+        code += f"""<div class="extension-access-warning">
+        <p><b>Warning:</b> Extension install is disabled because of command line flags.</p>
+        <p>Start the WebUI with <code>--enable-insecure-extension-access</code> to enable extension installation from this tab.</p>
+    </div>
+    """
+
+    code += f"""<table id="available_extensions">
         <thead>
             <tr>
                 <th>Extension</th>
@@ -515,7 +526,8 @@ def refresh_available_extensions_from_data(selected_tags, showing_type, filterin
                 hidden += 1
                 continue
 
-        install_code = f"""<button onclick="install_extension_from_index(this, '{html.escape(url)}')" {"disabled=disabled" if existing else ""} class="lg secondary gradio-button custom-button">{"Install" if not existing else "Installed"}</button>"""
+        disabled = existing or access_disabled
+        install_code = f"""<button onclick="install_extension_from_index(this, '{html.escape(url)}')" {"disabled=disabled" if disabled else ""} class="lg secondary gradio-button custom-button">{"Install" if not existing else "Installed"}</button>"""
 
         tags_text = ", ".join([f"<span class='extension-tag' title='{tags.get(x, '')}'>{x}</span>" for x in extension_tags])
 
@@ -622,7 +634,13 @@ def create_ui():
                     search_extensions_text = gr.Text(label="Search", container=False)
 
                 install_result = gr.HTML()
-                available_extensions_table = gr.HTML()
+                available_extensions_initial = ""
+                if shared.cmd_opts.disable_extension_access:
+                    available_extensions_initial = """<div class="extension-access-warning">
+                    <p><b>Warning:</b> Extension install is disabled because of command line flags.</p>
+                    <p>Start the WebUI with <code>--enable-insecure-extension-access</code> to enable extension installation from this tab.</p>
+                    </div>"""
+                available_extensions_table = gr.HTML(available_extensions_initial)
 
                 refresh_available_extensions_button.click(
                     fn=modules.ui.wrap_gradio_call(refresh_available_extensions, extra_outputs=[gr.update(), gr.update(), gr.update(), gr.update()]),
@@ -670,8 +688,14 @@ def create_ui():
                 install_url = gr.Text(label="URL for extension's git repository")
                 install_branch = gr.Text(label="Specific branch name", placeholder="Leave empty for default main branch")
                 install_dirname = gr.Text(label="Local directory name", placeholder="Leave empty for auto")
-                install_button = gr.Button(value="Install", variant="primary")
+                install_button = gr.Button(value="Install", variant="primary", interactive=not shared.cmd_opts.disable_extension_access)
                 install_result = gr.HTML(elem_id="extension_install_result")
+
+                if shared.cmd_opts.disable_extension_access:
+                    gr.HTML("""<div class="extension-access-warning">
+                    <p><b>Warning:</b> Extension install is disabled because of command line flags.</p>
+                    <p>Start the WebUI with <code>--enable-insecure-extension-access</code> to enable extension installation.</p>
+                    </div>""")
 
                 install_button.click(
                     fn=modules.ui.wrap_gradio_call_no_job(lambda *args: [gr.update(), *install_extension_from_url(*args)], extra_outputs=[gr.update(), gr.update()]),
