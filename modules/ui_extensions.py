@@ -472,13 +472,13 @@ def refresh_available_extensions_from_data(selected_tags, showing_type, filterin
     """
 
     if access_disabled:
-        code += f"""<div class="extension-access-warning">
+        code += """<div class="extension-access-warning">
         <p><b>Warning:</b> Extension install is disabled because of command line flags.</p>
         <p>Start the WebUI with <code>--enable-insecure-extension-access</code> to enable extension installation from this tab.</p>
     </div>
     """
 
-    code += f"""<table id="available_extensions">
+    code += """<table id="available_extensions">
         <thead>
             <tr>
                 <th>Extension</th>
