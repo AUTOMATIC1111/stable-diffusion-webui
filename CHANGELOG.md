@@ -118,12 +118,12 @@
 ## 1.9.4
 
 ### Bug Fixes:
-*  pin setuptools version to fix the startup error ([#15882](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15882)) 
+*  pin setuptools version to fix the startup error ([#15882](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15882))
 
 ## 1.9.3
 
 ### Bug Fixes:
-*  fix get_crop_region_v2 ([#15594](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15594)) 
+*  fix get_crop_region_v2 ([#15594](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15594))
 
 ## 1.9.2
 
@@ -593,7 +593,7 @@
  * use less RAM when creating models ([#11958](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/11958), [#12599](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12599))
  * textual inversion inference support for SDXL
  * extra networks UI: show metadata for SD checkpoints
- * checkpoint merger: add metadata support 
+ * checkpoint merger: add metadata support
  * prompt editing and attention: add support for whitespace after the number ([ red : green : 0.5 ]) (seed breaking change) ([#12177](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12177))
  * VAE: allow selecting own VAE for each checkpoint (in user metadata editor)
  * VAE: add selected VAE to infotext
@@ -716,7 +716,7 @@
  * hide broken image crop tool ([#12792](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12737))
  * don't show hidden samplers in dropdown for XYZ script ([#12780](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12737))
  * fix style editing dialog breaking if it's opened in both img2img and txt2img tabs
- * fix a bug allowing users to bypass gradio and API authentication (reported by vysecurity) 
+ * fix a bug allowing users to bypass gradio and API authentication (reported by vysecurity)
  * fix notification not playing when built-in webui tab is inactive ([#12834](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12834))
  * honor `--skip-install` for extension installers ([#12832](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12832))
  * don't print blank stdout in extension installers ([#12833](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12832), [#12855](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12855))
@@ -789,7 +789,7 @@
  * removed thumbs extra networks view mode (use settings tab to change width/height/scale to get thumbs)
  * add always_discard_next_to_last_sigma option to XYZ plot
  * automatically switch to 32-bit float VAE if the generated picture has NaNs without the need for `--no-half-vae` commandline flag.
- 
+
 ### Extensions and API:
  * api endpoints: /sdapi/v1/server-kill, /sdapi/v1/server-restart, /sdapi/v1/server-stop
  * allow Script to have custom metaclass
@@ -800,7 +800,7 @@
  * disable rich exception output in console for API by default, use WEBUI_RICH_EXCEPTIONS env var to enable
  * return http 404 when thumb file not found
  * allow replacing extensions index with environment variable
- 
+
 ### Bug Fixes:
  * fix for catch errors when retrieving extension index #11290
  * fix very slow loading speed of .safetensors files when reading from network drives
@@ -851,16 +851,16 @@
  * read version info form CHANGELOG.md if git version info is not available
  * link footer API to Wiki when API is not active
  * persistent conds cache (opt-in optimization)
- 
+
 ### Extensions:
- * After installing extensions, webui properly restarts the process rather than reloads the UI 
+ * After installing extensions, webui properly restarts the process rather than reloads the UI
  * Added VAE listing to web API. Via: /sdapi/v1/sd-vae
  * custom unet support
  * Add onAfterUiUpdate callback
  * refactor EmbeddingDatabase.register_embedding() to allow unregistering
  * add before_process callback for scripts
  * add ability for alwayson scripts to specify section and let user reorder those sections
- 
+
 ### Bug Fixes:
  * Fix dragging text to prompt
  * fix incorrect quoting for infotext values with colon in them
