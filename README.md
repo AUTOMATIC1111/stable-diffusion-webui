@@ -1,5 +1,5 @@
 # Stable Diffusion web UI
-A web interface for Stable Diffusion, implemented using Gradio library.
+A web interface for Stable Diffusion, implemented using the Gradio library.
 
 ![](screenshot.png)
 
