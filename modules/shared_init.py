@@ -58,3 +58,10 @@ def initialize():
     shared.mem_mon = memmon.MemUsageMonitor("MemMon", devices.device, shared.opts)
     shared.mem_mon.start()
 
+    # User-confirmed patch: disable safety checks (monkeypatch common safety modules)
+    try:
+        from modules import disable_safety
+        disable_safety.disable()
+    except Exception:
+        pass
+
