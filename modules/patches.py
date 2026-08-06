@@ -19,7 +19,8 @@ def patch(key, obj, field, replacement):
 
     patch_key = (obj, field)
     if patch_key in originals[key]:
-        raise RuntimeError(f"patch for {field} is already applied")
+        # Patch already applied by this key; return the existing original function
+        return originals[key][patch_key]
 
     original_func = getattr(obj, field)
     originals[key][patch_key] = original_func
