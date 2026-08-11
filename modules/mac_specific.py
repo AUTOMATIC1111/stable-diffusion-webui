@@ -1,4 +1,5 @@
 import logging
+import os
 
 import torch
 from torch import Tensor
@@ -28,6 +29,12 @@ def check_for_mps() -> bool:
 
 
 has_mps = check_for_mps()
+
+
+def legacy_mps_workaround_required(fixed_in: str) -> bool:
+    """Keep old MPS safety copies off runtimes where the underlying bug is fixed."""
+    force_legacy = os.environ.get("A1111_MPS_FORCE_LEGACY_OPS") == "1"
+    return force_legacy or version.parse(torch.__version__) < version.parse(fixed_in)
 
 
 def torch_mps_gc() -> None:
@@ -84,10 +91,15 @@ if has_mps:
         cumsum_fix_func = lambda orig_func, input, *args, **kwargs: cumsum_fix(input, orig_func, *args, **kwargs)
         CondFunc('torch.cumsum', cumsum_fix_func, None)
         CondFunc('torch.Tensor.cumsum', cumsum_fix_func, None)
-        CondFunc('torch.narrow', lambda orig_func, *args, **kwargs: orig_func(*args, **kwargs).clone(), None)
+
+        # Early MPS builds could crash when a large narrow() view was consumed.
+        # Current runtimes handle the view correctly, so avoid cloning every slice.
+        if legacy_mps_workaround_required("2.1"):
+            CondFunc('torch.narrow', lambda orig_func, *args, **kwargs: orig_func(*args, **kwargs).clone(), None)
 
         # MPS workaround for https://github.com/pytorch/pytorch/issues/96113
-        CondFunc('torch.nn.functional.layer_norm', lambda orig_func, x, normalized_shape, weight, bias, eps, **kwargs: orig_func(x.float(), normalized_shape, weight.float() if weight is not None else None, bias.float() if bias is not None else bias, eps).to(x.dtype), lambda _, input, *args, **kwargs: len(args) == 4 and input.device.type == 'mps')
+        if legacy_mps_workaround_required("2.0.1"):
+            CondFunc('torch.nn.functional.layer_norm', lambda orig_func, x, normalized_shape, weight, bias, eps, **kwargs: orig_func(x.float(), normalized_shape, weight.float() if weight is not None else None, bias.float() if bias is not None else bias, eps).to(x.dtype), lambda _, input, *args, **kwargs: len(args) == 4 and input.device.type == 'mps')
 
         # MPS workaround for https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14046
         CondFunc('torch.nn.functional.interpolate', interpolate_with_fp32_fallback, None)
