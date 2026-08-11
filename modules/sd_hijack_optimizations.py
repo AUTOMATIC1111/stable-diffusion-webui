@@ -9,7 +9,7 @@ from torch import einsum
 from ldm.util import default
 from einops import rearrange
 
-from modules import shared, errors, devices, sub_quadratic_attention
+from modules import shared, errors, devices, sub_quadratic_attention, mps_flash_attention, mps_utils
 from modules.hypernetworks import hypernetwork
 
 import ldm.modules.attention
@@ -92,6 +92,36 @@ class SdOptimizationSdp(SdOptimizationSdpNoMem):
         sgm.modules.diffusionmodules.model.AttnBlock.forward = sdp_attnblock_forward
 
 
+class SdOptimizationMpsAdaptive(SdOptimizationSdpNoMem):
+    name = "mps-adaptive"
+    label = "native Metal attention with a memory-safe fallback"
+    priority = 1100
+
+    def is_available(self):
+        return shared.device.type == 'mps' and super().is_available()
+
+    def apply(self):
+        ldm.modules.attention.CrossAttention.forward = mps_adaptive_attention_forward
+        ldm.modules.diffusionmodules.model.AttnBlock.forward = mps_adaptive_attnblock_forward
+        sgm.modules.attention.CrossAttention.forward = mps_adaptive_attention_forward
+        sgm.modules.diffusionmodules.model.AttnBlock.forward = mps_adaptive_attnblock_forward
+
+
+class SdOptimizationMpsFlash(SdOptimizationSdpNoMem):
+    name = "mps-flash"
+    label = "Draw Things-style Metal Flash Attention with native fallback"
+    priority = 1200
+
+    def is_available(self):
+        return shared.device.type == 'mps' and mps_flash_attention.is_available()
+
+    def apply(self):
+        ldm.modules.attention.CrossAttention.forward = mps_flash_attention_forward
+        ldm.modules.diffusionmodules.model.AttnBlock.forward = mps_flash_attnblock_forward
+        sgm.modules.attention.CrossAttention.forward = mps_flash_attention_forward
+        sgm.modules.diffusionmodules.model.AttnBlock.forward = mps_flash_attnblock_forward
+
+
 class SdOptimizationSubQuad(SdOptimization):
     name = "sub-quadratic"
     cmd_opt = "opt_sub_quad_attention"
@@ -148,6 +178,8 @@ def list_optimizers(res):
         SdOptimizationXformers(),
         SdOptimizationSdpNoMem(),
         SdOptimizationSdp(),
+        SdOptimizationMpsFlash(),
+        SdOptimizationMpsAdaptive(),
         SdOptimizationSubQuad(),
         SdOptimizationV1(),
         SdOptimizationInvokeAI(),
@@ -430,6 +462,9 @@ def sub_quad_attention(q, k, v, q_chunk_size=1024, kv_chunk_size=None, kv_chunk_
     _, k_tokens, _ = k.shape
     qk_matmul_size_bytes = batch_x_heads * bytes_per_token * q_tokens * k_tokens
 
+    if q.device.type == 'mps':
+        q_chunk_size = mps_utils.attention_query_chunk_size(q_chunk_size, batch_x_heads, k_tokens, bytes_per_token)
+
     if chunk_threshold is None:
         if q.device.type == 'mps':
             chunk_threshold_bytes = 268435456 * (2 if platform.processor() == 'i386' else bytes_per_token)
@@ -503,9 +538,50 @@ def xformers_attention_forward(self, x, context=None, mask=None, **kwargs):
     return self.to_out(out)
 
 
+_mps_sdp_fallback_warned = False
+
+
+def mps_flash_attention_forward(self, x, context=None, mask=None, **kwargs):
+    def attention_function(query, key, value, **attention_kwargs):
+        return mps_flash_attention.scaled_dot_product_attention(
+            query,
+            key,
+            value,
+            training=self.training,
+            **attention_kwargs,
+        )
+
+    return scaled_dot_product_attention_forward(
+        self,
+        x,
+        context,
+        mask,
+        _attention_function=attention_function,
+        **kwargs,
+    )
+
+
+def mps_adaptive_attention_forward(self, x, context=None, mask=None, **kwargs):
+    key_tokens = context.shape[1] if context is not None else x.shape[1]
+    element_size = 4 if shared.opts.upcast_attn else x.element_size()
+    use_sdp = mps_utils.should_use_sdp(x.shape[0], self.heads, x.shape[1], key_tokens, element_size)
+    if not use_sdp:
+        return sub_quad_attention_forward(self, x, context, mask, **kwargs)
+
+    try:
+        return scaled_dot_product_attention_forward(self, x, context, mask, **kwargs)
+    except RuntimeError as exc:
+        global _mps_sdp_fallback_warned
+        if not _mps_sdp_fallback_warned:
+            print(f"MPS scaled dot product attention failed; using sub-quadratic fallback: {exc}")
+            _mps_sdp_fallback_warned = True
+        torch.mps.empty_cache()
+        return sub_quad_attention_forward(self, x, context, mask, **kwargs)
+
+
 # Based on Diffusers usage of scaled dot product attention from https://github.com/huggingface/diffusers/blob/c7da8fd23359a22d0df2741688b5b4f33c26df21/src/diffusers/models/cross_attention.py
 # The scaled_dot_product_attention_forward function contains parts of code under Apache-2.0 license listed under Scaled Dot Product Attention in the Licenses section of the web UI interface
-def scaled_dot_product_attention_forward(self, x, context=None, mask=None, **kwargs):
+def scaled_dot_product_attention_forward(self, x, context=None, mask=None, _attention_function=None, **kwargs):
     batch_size, sequence_length, inner_dim = x.shape
 
     if mask is not None:
@@ -532,7 +608,8 @@ def scaled_dot_product_attention_forward(self, x, context=None, mask=None, **kwa
         q, k, v = q.float(), k.float(), v.float()
 
     # the output of sdp = (batch, num_heads, seq_len, head_dim)
-    hidden_states = torch.nn.functional.scaled_dot_product_attention(
+    attention_function = _attention_function or torch.nn.functional.scaled_dot_product_attention
+    hidden_states = attention_function(
         q, k, v, attn_mask=mask, dropout_p=0.0, is_causal=False
     )
 
@@ -634,7 +711,7 @@ def xformers_attnblock_forward(self, x):
         return cross_attention_attnblock_forward(self, x)
 
 
-def sdp_attnblock_forward(self, x):
+def sdp_attnblock_forward(self, x, _attention_function=None):
     h_ = x
     h_ = self.norm(h_)
     q = self.q(h_)
@@ -648,7 +725,8 @@ def sdp_attnblock_forward(self, x):
     q = q.contiguous()
     k = k.contiguous()
     v = v.contiguous()
-    out = torch.nn.functional.scaled_dot_product_attention(q, k, v, dropout_p=0.0, is_causal=False)
+    attention_function = _attention_function or torch.nn.functional.scaled_dot_product_attention
+    out = attention_function(q, k, v, dropout_p=0.0, is_causal=False)
     out = out.to(dtype)
     out = rearrange(out, 'b (h w) c -> b c h w', h=h)
     out = self.proj_out(out)
@@ -658,6 +736,37 @@ def sdp_attnblock_forward(self, x):
 def sdp_no_mem_attnblock_forward(self, x):
     with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=False):
         return sdp_attnblock_forward(self, x)
+
+
+def mps_flash_attnblock_forward(self, x):
+    def attention_function(query, key, value, **attention_kwargs):
+        return mps_flash_attention.scaled_dot_product_attention(
+            query,
+            key,
+            value,
+            training=self.training,
+            **attention_kwargs,
+        )
+
+    return sdp_attnblock_forward(self, x, _attention_function=attention_function)
+
+
+def mps_adaptive_attnblock_forward(self, x):
+    batch, _channels, height, width = x.shape
+    tokens = height * width
+    element_size = 4 if shared.opts.upcast_attn else x.element_size()
+    if not mps_utils.should_use_sdp(batch, 1, tokens, tokens, element_size):
+        return sub_quad_attnblock_forward(self, x)
+
+    try:
+        return sdp_attnblock_forward(self, x)
+    except RuntimeError as exc:
+        global _mps_sdp_fallback_warned
+        if not _mps_sdp_fallback_warned:
+            print(f"MPS scaled dot product attention failed; using sub-quadratic fallback: {exc}")
+            _mps_sdp_fallback_warned = True
+        torch.mps.empty_cache()
+        return sub_quad_attnblock_forward(self, x)
 
 
 def sub_quad_attnblock_forward(self, x):

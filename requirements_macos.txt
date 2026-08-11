@@ -1,0 +1,3 @@
+# Constraints for Apple Silicon's Python 3.10 runtime.
+# SciPy 1.15's arm64 wheel is rejected by macOS 27's stricter Mach-O loader.
+scipy==1.13.1
