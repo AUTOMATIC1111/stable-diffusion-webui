@@ -34,15 +34,13 @@ def _version_tuple(version):
 
 def should_use_mfa_shape(query_tokens, key_tokens, head_dim):
     """Return whether the measured M1 routing table favors MFA for this shape."""
-    if query_tokens < 256:
+    if query_tokens < 192:
         return False
 
-    # Dimension-40 attention wins by 2-3x and amortizes the Metal command
-    # buffer boundary. Smaller gains at dimensions 80/160 regress the full
-    # UNet because they introduce too many additional command buffers.
-    if head_dim == 40:
-        return True
-    return False
+    # These are the SD 1.x UNet head dimensions. With MFA encoded on the
+    # current command buffer, measured self- and cross-attention shapes all
+    # beat PyTorch SDPA without introducing a submission per attention call.
+    return head_dim in (40, 80, 160)
 
 
 def _run_isolated_self_test():
@@ -51,14 +49,19 @@ import torch
 import torch.nn.functional as F
 from metal_flash_sdpa import MetalFlashAttentionForward
 
-q = torch.randn((1, 8, 256, 40), device='mps', dtype=torch.float16)
-k = torch.randn_like(q)
-v = torch.randn_like(q)
-actual = MetalFlashAttentionForward.apply(q, k, v, 40 ** -0.5, False)
+source = torch.randn((1, 256, 320), device='mps', dtype=torch.float16)
+q = source.view(1, 256, 8, 40).transpose(1, 2)
+k = q.clone()
+v = q.clone()
+projection = torch.randn((320, 320), device='mps', dtype=torch.float16)
 expected = F.scaled_dot_product_attention(q, k, v)
+expected = F.linear(expected.transpose(1, 2).reshape(1, 256, 320), projection)
+torch.mps.synchronize()
+actual = MetalFlashAttentionForward.apply(q, k, v, 40 ** -0.5, False)
+actual = F.linear(actual.transpose(1, 2).reshape(1, 256, 320), projection)
 torch.mps.synchronize()
 assert torch.isfinite(actual).all().item()
-assert (actual.float() - expected.float()).abs().max().item() < 0.01
+assert (actual.float() - expected.float()).abs().max().item() < 0.05
 """
     environment = os.environ.copy()
     environment["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
@@ -95,8 +98,8 @@ def is_available():
         _extension = importlib.import_module("metal_flash_sdpa")
         if not hasattr(_extension, "MetalFlashAttentionForward"):
             raise RuntimeError("extension does not expose MetalFlashAttentionForward")
-        if _version_tuple(torch.__version__) < (2, 11) and not getattr(_extension, "A1111_MPS_STREAM_FIX", False):
-            raise RuntimeError("native extension is missing the A1111 MPS stream safety patch")
+        if _version_tuple(torch.__version__) < (2, 11) and not getattr(_extension, "A1111_MPS_DEFERRED_COMMIT", False):
+            raise RuntimeError("native extension is missing the A1111 deferred MPS commit patch")
         _run_isolated_self_test()
     except (ImportError, OSError, RuntimeError, subprocess.SubprocessError) as exc:
         _availability_error = str(exc)
@@ -105,7 +108,7 @@ def is_available():
         return False
 
     _availability = True
-    print("Metal Flash Attention native self-test passed; selective MFA routing enabled.")
+    print("Metal Flash Attention native self-test passed; deferred-commit MFA routing enabled.")
     return True
 
 

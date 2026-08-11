@@ -64,6 +64,9 @@ def patch_source(source):
         "      @autoreleasepool {\n        at::mps::getCurrentMPSStream()->endKernelCoalescing();\n        id<MTLCommandBuffer> cmdBuf = torch::mps::get_command_buffer();",
         expected_count=2,
     )
+    # Keep MFA and the following PyTorch MPSGraph work on the same Metal
+    # command buffer. PyTorch submits it when the downstream graph is encoded.
+    replace_exact(bridge, "\n\n  torch::mps::commit();", "", expected_count=2)
 
     setup = source / "setup.py"
     replace_exact(
@@ -76,7 +79,9 @@ def patch_source(source):
     replace_exact(
         package_init,
         f'__version__ = "{VERSION}"\n',
-        f'__version__ = "{VERSION}"\nA1111_MPS_STREAM_FIX = True\n',
+        f'__version__ = "{VERSION}"\n'
+        'A1111_MPS_STREAM_FIX = True\n'
+        'A1111_MPS_DEFERRED_COMMIT = True\n',
     )
 
 

@@ -25,11 +25,11 @@ def test_dimension_40_routes_self_attention_to_mfa():
     assert should_use_mfa_shape(4096, 4096, 40)
 
 
-def test_regressing_dimensions_stay_on_pytorch_sdpa():
+def test_measured_sd1_dimensions_route_to_mfa():
     assert not should_use_mfa_shape(4096, 4096, 64)
-    assert not should_use_mfa_shape(1024, 1024, 80)
-    assert not should_use_mfa_shape(1024, 77, 80)
-    assert not should_use_mfa_shape(256, 256, 160)
+    assert should_use_mfa_shape(1024, 1024, 80)
+    assert should_use_mfa_shape(1024, 77, 80)
+    assert should_use_mfa_shape(256, 256, 160)
 
 
 def test_short_attention_stays_on_pytorch_sdpa():
