@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -67,12 +68,32 @@ def patch_source(source):
     # Keep MFA and the following PyTorch MPSGraph work on the same Metal
     # command buffer. PyTorch submits it when the downstream graph is encoded.
     replace_exact(bridge, "\n\n  torch::mps::commit();", "", expected_count=2)
+    replace_exact(
+        bridge,
+        '#include "mfa/ccv_nnc_mfa_attention.hpp"\n',
+        '#include "mfa/ccv_nnc_mfa_attention.hpp"\n\n'
+        'void register_fused_ops(pybind11::module_& module);\n',
+    )
+    replace_exact(
+        bridge,
+        "PYBIND11_MODULE(_C, m) {\n",
+        "PYBIND11_MODULE(_C, m) {\n  register_fused_ops(m);\n",
+    )
+
+    fused_source = Path(__file__).with_name("mps_fused_group_norm.mm")
+    shutil.copyfile(fused_source, source / "csrc" / fused_source.name)
 
     setup = source / "setup.py"
     replace_exact(
         setup,
         "'cxx': ['-std=c++17', '-O2'],",
         "'cxx': ['-std=c++17', '-O2', '-Wno-invalid-specialization'],",
+    )
+    replace_exact(
+        setup,
+        "mm_sources = [\n    'csrc/mfa_bridge.mm',\n]",
+        "mm_sources = [\n    'csrc/mfa_bridge.mm',\n"
+        "    'csrc/mps_fused_group_norm.mm',\n]",
     )
 
     package_init = source / "metal_flash_sdpa" / "__init__.py"
@@ -81,7 +102,17 @@ def patch_source(source):
         f'__version__ = "{VERSION}"\n',
         f'__version__ = "{VERSION}"\n'
         'A1111_MPS_STREAM_FIX = True\n'
-        'A1111_MPS_DEFERRED_COMMIT = True\n',
+        'A1111_MPS_DEFERRED_COMMIT = True\n'
+        'A1111_MPS_FUSED_GROUP_NORM_SILU = True\n',
+    )
+    replace_exact(
+        package_init,
+        "from metal_flash_sdpa._C import mfa_attention_forward, mfa_attention_backward\n",
+        "from metal_flash_sdpa._C import (\n"
+        "    fused_group_norm_silu_forward,\n"
+        "    mfa_attention_backward,\n"
+        "    mfa_attention_forward,\n"
+        ")\n",
     )
 
 

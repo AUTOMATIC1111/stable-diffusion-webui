@@ -47,8 +47,9 @@ def _run_isolated_self_test():
     code = """
 import torch
 import torch.nn.functional as F
-from metal_flash_sdpa import MetalFlashAttentionForward
+from metal_flash_sdpa import MetalFlashAttentionForward, fused_group_norm_silu_forward
 
+torch.manual_seed(1)
 source = torch.randn((1, 256, 320), device='mps', dtype=torch.float16)
 q = source.view(1, 256, 8, 40).transpose(1, 2)
 k = q.clone()
@@ -62,6 +63,18 @@ actual = F.linear(actual.transpose(1, 2).reshape(1, 256, 320), projection)
 torch.mps.synchronize()
 assert torch.isfinite(actual).all().item()
 assert (actual.float() - expected.float()).abs().max().item() < 0.05
+
+norm_source = torch.randn((1, 320, 48, 80), device='mps', dtype=torch.float16)
+norm_weight = torch.randn((320,), device='mps', dtype=torch.float16)
+norm_bias = torch.randn((320,), device='mps', dtype=torch.float16)
+expected_norm = F.silu(F.group_norm(norm_source, 32, norm_weight, norm_bias, 1e-5))
+actual_norm = fused_group_norm_silu_forward(norm_source, norm_weight, norm_bias, 32, 1e-5)
+actual_norm = actual_norm + 0
+torch.mps.synchronize()
+norm_difference = (actual_norm.float() - expected_norm.float()).abs()
+assert torch.isfinite(actual_norm).all().item()
+assert norm_difference.max().item() < 0.02
+assert norm_difference.mean().item() < 0.001
 """
     environment = os.environ.copy()
     environment["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
@@ -100,6 +113,8 @@ def is_available():
             raise RuntimeError("extension does not expose MetalFlashAttentionForward")
         if _version_tuple(torch.__version__) < (2, 11) and not getattr(_extension, "A1111_MPS_DEFERRED_COMMIT", False):
             raise RuntimeError("native extension is missing the A1111 deferred MPS commit patch")
+        if not getattr(_extension, "A1111_MPS_FUSED_GROUP_NORM_SILU", False):
+            raise RuntimeError("native extension is missing fused GroupNorm+SiLU")
         _run_isolated_self_test()
     except (ImportError, OSError, RuntimeError, subprocess.SubprocessError) as exc:
         _availability_error = str(exc)
@@ -108,7 +123,7 @@ def is_available():
         return False
 
     _availability = True
-    print("Metal Flash Attention native self-test passed; deferred-commit MFA routing enabled.")
+    print("Metal self-test passed; deferred MFA and fused GroupNorm+SiLU routing enabled.")
     return True
 
 

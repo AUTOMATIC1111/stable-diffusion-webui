@@ -3,7 +3,7 @@ from packaging import version
 from einops import repeat
 import math
 
-from modules import devices
+from modules import devices, mps_fused_ops
 from modules.sd_hijack_utils import CondFunc
 
 
@@ -34,6 +34,74 @@ class TorchHijackForUnet:
 
 
 th = TorchHijackForUnet()
+
+
+def fused_resblock_condition(_, self, x, emb):
+    return (
+        x.device.type == "mps"
+        and x.dtype == torch.float16
+        and x.ndim == 4
+        and emb is not None
+        and not self.training
+        and not self.use_scale_shift_norm
+        and not getattr(self, "skip_t_emb", False)
+        and not getattr(self, "exchange_temb_dims", False)
+        and len(self.in_layers) == 3
+        and len(self.out_layers) == 4
+        and isinstance(self.in_layers[0], torch.nn.GroupNorm)
+        and isinstance(self.in_layers[1], torch.nn.SiLU)
+        and isinstance(self.out_layers[0], torch.nn.GroupNorm)
+        and isinstance(self.out_layers[1], torch.nn.SiLU)
+    )
+
+
+def fused_resblock_forward(_, self, x, emb):
+    if self.updown:
+        h = mps_fused_ops.group_norm_silu(x, self.in_layers[0])
+        h = self.h_upd(h)
+        x = self.x_upd(x)
+        h = self.in_layers[2](h)
+    else:
+        h = self.in_layers[2](mps_fused_ops.group_norm_silu(x, self.in_layers[0]))
+
+    emb_out = self.emb_layers(emb).type(h.dtype)
+    while len(emb_out.shape) < len(h.shape):
+        emb_out = emb_out[..., None]
+
+    h = h + emb_out
+    h = mps_fused_ops.group_norm_silu(h, self.out_layers[0])
+    h = self.out_layers[2](h)
+    h = self.out_layers[3](h)
+    return self.skip_connection(x) + h
+
+
+def fused_vae_resnet_condition(_, self, x, temb):
+    return (
+        x.device.type == "mps"
+        and x.dtype == torch.float16
+        and x.ndim == 4
+        and not self.training
+        and isinstance(self.norm1, torch.nn.GroupNorm)
+        and isinstance(self.norm2, torch.nn.GroupNorm)
+    )
+
+
+def fused_vae_resnet_forward(_, self, x, temb):
+    h = self.conv1(mps_fused_ops.group_norm_silu(x, self.norm1))
+
+    if temb is not None:
+        h = h + self.temb_proj(torch.nn.functional.silu(temb))[:, :, None, None]
+
+    h = self.dropout(mps_fused_ops.group_norm_silu(h, self.norm2))
+    h = self.conv2(h)
+
+    if self.in_channels != self.out_channels:
+        if self.use_conv_shortcut:
+            x = self.conv_shortcut(x)
+        else:
+            x = self.nin_shortcut(x)
+
+    return x + h
 
 
 # Below are monkey patches to enable upcasting a float16 UNet for float32 sampling
@@ -125,6 +193,10 @@ unet_needs_upcast = lambda *args, **kwargs: devices.unet_needs_upcast
 CondFunc('ldm.models.diffusion.ddpm.LatentDiffusion.apply_model', apply_model, unet_needs_upcast)
 CondFunc('ldm.modules.diffusionmodules.openaimodel.timestep_embedding', timestep_embedding)
 CondFunc('ldm.modules.attention.SpatialTransformer.forward', spatial_transformer_forward)
+CondFunc('ldm.modules.diffusionmodules.openaimodel.ResBlock._forward', fused_resblock_forward, fused_resblock_condition)
+CondFunc('sgm.modules.diffusionmodules.openaimodel.ResBlock._forward', fused_resblock_forward, fused_resblock_condition)
+CondFunc('ldm.modules.diffusionmodules.model.ResnetBlock.forward', fused_vae_resnet_forward, fused_vae_resnet_condition)
+CondFunc('sgm.modules.diffusionmodules.model.ResnetBlock.forward', fused_vae_resnet_forward, fused_vae_resnet_condition)
 CondFunc('ldm.modules.diffusionmodules.openaimodel.timestep_embedding', lambda orig_func, timesteps, *args, **kwargs: orig_func(timesteps, *args, **kwargs).to(torch.float32 if timesteps.dtype == torch.int64 else devices.dtype_unet), unet_needs_upcast)
 
 if version.parse(torch.__version__) <= version.parse("1.13.2") or torch.cuda.is_available():

@@ -439,10 +439,12 @@ def prepare_environment():
         mps_flash_installer = os.environ.get("MPS_FLASH_ATTENTION_INSTALLER", "")
         torch_version_match = re.match(r"(\d+)\.(\d+)", importlib.metadata.version("torch"))
         torch_version = tuple(map(int, torch_version_match.groups())) if torch_version_match else (0, 0)
-        has_stream_safe_mps_flash = check_run_python(
-            "import metal_flash_sdpa; assert getattr(metal_flash_sdpa, 'A1111_MPS_DEFERRED_COMMIT', False)"
+        has_current_mps_flash = check_run_python(
+            "import metal_flash_sdpa; "
+            "assert getattr(metal_flash_sdpa, 'A1111_MPS_DEFERRED_COMMIT', False); "
+            "assert getattr(metal_flash_sdpa, 'A1111_MPS_FUSED_GROUP_NORM_SILU', False)"
         )
-        if mps_flash_installer and torch_version >= (2, 3) and not has_stream_safe_mps_flash:
+        if mps_flash_installer and torch_version >= (2, 3) and not has_current_mps_flash:
             try:
                 run(
                     f'"{python}" "{mps_flash_installer}"',
