@@ -2,7 +2,7 @@
 
 An Apple Silicon performance fork of [AUTOMATIC1111/stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui), focused on faster and more memory-aware inference through PyTorch MPS and native Metal kernels.
 
-The normal Automatic1111 interface, API, checkpoint layout, samplers, LoRA syntax, and extension structure are preserved. The fork adds a selective Metal attention path, a fused GroupNorm + SiLU kernel, unified-memory-aware attention fallback, and tested macOS dependency defaults. Stable Diffusion 1.x inference—particularly short DPM++ SDE runs—is the primary optimization target.
+The normal Automatic1111 interface, API, checkpoint layout, samplers, LoRA syntax, and extension structure are preserved. The fork adds a selective Metal attention path, a fused GroupNorm + SiLU kernel, unified-memory-aware attention fallback, an M1-validated FP16 VAE path, and tested macOS dependency defaults. Stable Diffusion 1.x inference—particularly short DPM++ SDE runs—is the primary optimization target.
 
 > [!IMPORTANT]
 > This is an experimental performance fork, not a new Stable Diffusion engine. It favors measured M1 inference performance and safe fallback behavior over broad hardware tuning. If a native Metal path is unavailable or fails its startup test, the WebUI falls back to the corresponding PyTorch implementation.
@@ -128,6 +128,7 @@ The following defaults intentionally differ from the upstream `dev` branch:
 | Negative Guidance minimum sigma (NGMS) | `0.0` | `1.0` | May skip unconditional guidance late in sampling |
 | NGMS all steps | Off | On | Applies the configured NGMS rule on every eligible step |
 | `--upcast-sampling` on macOS | On | Off | Keeps more sampling work in FP16 for speed |
+| `--no-half-vae` on M1-family Macs | On | Off | Runs VAE encode/decode in FP16; Automatic1111 still retries in FP32 if VAE decode produces NaNs |
 | Cross-attention Automatic choice on MPS | Sub-quadratic | Metal Flash Attention | Uses the measured native route when available |
 | Fused GroupNorm + SiLU | Not present | On | Reduces compatible normalization/activation dispatches |
 
@@ -145,6 +146,19 @@ One recorded Apple M1 Mac mini comparison during development used the same check
 That observed run was approximately **32% lower latency**, or **1.47× as fast**. The current head adds the fused GroupNorm + SiLU path after that recorded comparison.
 
 The two recorded generations used different seeds. This makes the table a throughput comparison at matching tensor shapes, not an image-parity A/B.
+
+### M1 FP16 VAE validation
+
+A later controlled A/B isolated VAE precision on a 16 GB Apple M1 Mac mini. Both paths used checkpoint `8ecad70a19`, prompt `a dog`, seed `3163229250`, 5-step DPM++ SDE with Karras, CFG 1.15, Clip skip 2, NGMS 1/all steps, and 384×640 output. Each result below is the median of five warm runs with coarse MPS stage profiling enabled.
+
+| VAE path | End-to-end client time | Sampler stage | VAE decode + transfer |
+| --- | ---: | ---: | ---: |
+| FP32 (`--no-half-vae`) | 8.450 s | 6.715 s | 1.536 s |
+| FP16 | 7.795 s | 6.666 s | 0.972 s |
+
+FP16 reduced the measured VAE stage by about **37%** and end-to-end latency by about **7.8%**. The sampler time remained effectively unchanged, which is the expected result when only decode precision changes.
+
+Output quality was checked across three fixed-seed generations at 384×640 and 512×512. Compared with FP32 VAE output, every changed 8-bit RGB channel differed by at most 1 value, PSNR was 64.0–64.6 dB, and 97.4–97.7% of channels were byte-identical. All FP16 runs were deterministic and free of NaN, green, or corrupted output. The default is therefore enabled only on the tested M1 family; other Apple Silicon generations retain FP32 VAE until separately validated.
 
 Treat these numbers as a development result, not a universal guarantee. Timing varies with:
 
@@ -211,7 +225,7 @@ Do not commit generated `config.json`, `ui-config.json`, `params.txt`, models, o
 export COMMANDLINE_ARGS="--skip-torch-cuda-test --upcast-sampling --no-half-vae --use-cpu interrogate"
 ```
 
-The default Apple Silicon launch options retain `--no-half-vae` to avoid FP16 VAE instability and run the interrogator on CPU.
+M1-family Macs use the validated FP16 VAE path by default. Intel and other Apple Silicon generations retain `--no-half-vae`. Add `--no-half-vae` to a local `COMMANDLINE_ARGS` override at any time to force the conservative FP32 VAE path. Automatic1111's enabled-by-default VAE precision recovery also converts the VAE to FP32 and retries if an FP16 decode produces NaNs.
 
 ## Startup messages and fallback behavior
 
@@ -258,7 +272,8 @@ For an upstream-style comparison:
 3. Disable **Fuse GroupNorm and SiLU on Apple Silicon**.
 4. Select `sub-quadratic` under **Cross attention optimization**.
 5. Add `--upcast-sampling` to `COMMANDLINE_ARGS` in `webui-user.sh`.
-6. Restart the WebUI after changing launch arguments.
+6. On M1, also add `--no-half-vae`.
+7. Restart the WebUI after changing launch arguments.
 
 For diagnostics only, `A1111_MPS_FORCE_LEGACY_OPS=1` restores version-gated MPS safety copies, and `A1111_MPS_DISABLE_FUSED_GROUP_NORM_SILU=1` disables the native normalization fusion before startup.
 
@@ -287,7 +302,7 @@ The WebUI should continue on PyTorch MPS. Keep the final `Metal Flash Attention 
 
 ### Green, black, or corrupted output
 
-Keep `--no-half-vae` enabled first. Also compare with NGMS disabled, sampling upcast restored, `sub-quadratic` attention selected, and the fused GroupNorm option disabled. That separates model/VAE precision issues from the native Metal paths.
+Add `--no-half-vae` to the local launch options and restart first. Also compare with NGMS disabled, sampling upcast restored, `sub-quadratic` attention selected, and the fused GroupNorm option disabled. That separates model/VAE precision issues from the native Metal paths.
 
 ### High-resolution out-of-memory errors
 
@@ -304,10 +319,20 @@ Two standalone benchmark scripts are included:
 
 The first compares PyTorch MPS scaled dot product attention with sliced attention. The second measures representative SD 1.x convolution, GroupNorm + SiLU, linear projection, and attention shapes.
 
+For an end-to-end stage breakdown, launch with the opt-in profiler:
+
+```bash
+A1111_MPS_PROFILE=1 ./webui.sh
+```
+
+Each generation reports synchronized wall time for conditioning, sampling, VAE decode/transfer, and image processing; it also records UNet call shapes and MPS allocation snapshots in a machine-readable `MPS_PROFILE_JSON` line. Profiling is intentionally coarse because PyTorch 2.3 MPS timing events are unreliable on the tested runtime. When the environment variable is absent, the profiler adds no MPS synchronization points.
+
 Focused tests cover:
 
 - Metal Flash Attention routing and PyTorch fallback
+- M1-specific FP16 VAE launch defaults with conservative Intel and newer-chip behavior
 - Native fused GroupNorm + SiLU correctness
+- Opt-in MPS stage profiling and its zero-synchronization disabled path
 - Unified-memory attention budgeting and dynamic query tiles
 - Streaming online-softmax forward results and gradients
 
@@ -315,8 +340,10 @@ With `pytest` installed in the virtual environment:
 
 ```bash
 ./venv/bin/python -m pytest -q \
+  test/test_macos_launch_defaults.py \
   test/test_mps_flash_attention.py \
   test/test_mps_fused_ops.py \
+  test/test_mps_stage_profile.py \
   test/test_mps_utils.py \
   test/test_sub_quadratic_attention.py
 ```

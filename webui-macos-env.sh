@@ -5,12 +5,22 @@
 ####################################################################
 
 export install_dir="$HOME"
-export COMMANDLINE_ARGS="--skip-torch-cuda-test --no-half-vae --use-cpu interrogate"
+export COMMANDLINE_ARGS="--skip-torch-cuda-test --use-cpu interrogate"
 export PYTORCH_ENABLE_MPS_FALLBACK=1
 
-if [[ "$(sysctl -n machdep.cpu.brand_string)" =~ ^.*"Intel".*$ ]]; then
+mps_cpu_brand="$(sysctl -n machdep.cpu.brand_string)"
+
+if [[ "${mps_cpu_brand}" =~ ^.*"Intel".*$ ]]; then
+    export COMMANDLINE_ARGS="${COMMANDLINE_ARGS} --no-half-vae"
     export TORCH_COMMAND="pip install torch==2.1.2 torchvision==0.16.2"
 else
+    # The FP16 VAE path is measurably faster and has been validated on M1.
+    # Retain the conservative FP32 VAE default on other Apple Silicon until
+    # each family has equivalent output-quality and stability coverage.
+    if [[ "${mps_cpu_brand}" != Apple\ M1* ]]; then
+        export COMMANDLINE_ARGS="${COMMANDLINE_ARGS} --no-half-vae"
+    fi
+
     export PIP_CONSTRAINT="${SCRIPT_DIR}/requirements_macos.txt"
     # Direct Metal matrix multiplication is faster than MPSGraph for the
     # projection sizes used by Stable Diffusion 1.x on M1.
