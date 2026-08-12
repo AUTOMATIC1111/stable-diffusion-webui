@@ -1,25 +1,35 @@
-# State of Things and Next Work
+# State of Things and Native UNet Roadmap
 
 Last updated: 2026-08-11
 
 Target machine: 16 GB Apple M1 Mac mini
 
 Branch: `dev`
-Last committed head before this sprint: `771259243a5a6e9a938dcedab80999512b78f5fb`
 
-## Current result
+Current committed head before this documentation update: `6eefbb402d177ec5166dbb364ea8e313d1bdb206`
 
-This fork remains Automatic1111 with targeted MPS and Metal acceleration rather than a separate inference engine. The current optimization stack includes three measured changes from the latest sprints:
+Automatic1111 base: `1937682a20f7f0442311a1ede68f9f0cb480163b`
 
-1. An opt-in, coarse MPS stage profiler enabled with `A1111_MPS_PROFILE=1`.
-2. FP16 VAE as the tracked launch default only on M1-family Macs.
-3. An exact-parity fused Metal GEGLU path enabled by default on compatible Mac inference.
+## Current state
 
-The GEGLU kernel uses a 128 KB table generated once by PyTorch MPS to preserve every possible FP16 GELU result, then combines table lookup and multiplication in one Metal dispatch. Exact SD 1.x batch-one and batch-two tests were byte-identical to PyTorch. A fixed-process 512×512 DPM++ SDE A/B produced identical PNG hashes and saved approximately 0.12–0.27 seconds in every matched pair. An active LCM LoRA output was also byte-identical with the fusion on and off.
+This remains an Automatic1111 fork with targeted MPS and native Metal acceleration. It does not currently contain a separate diffusion engine.
 
-The normal path adds no profiler synchronization. Intel and non-M1 Apple Silicon retain `--no-half-vae` until separately validated. Automatic1111's existing NaN recovery remains enabled and retries VAE decode in FP32 if necessary.
+The active optimization stack is:
 
-## Reference workload
+1. Selective Draw Things-style Metal Flash Attention for measured SD 1.x shapes, encoded on PyTorch's current MPS command buffer.
+2. Unified-memory-aware routing to native or sub-quadratic attention.
+3. Native fused GroupNorm + SiLU for compatible FP16 UNet and VAE blocks.
+4. Exact-parity fused GEGLU using a 65,536-entry, 128 KB PyTorch-generated FP16 GELU table.
+5. Modern-PyTorch removal of obsolete MPS clones and FP32 LayerNorm workarounds.
+6. FP16 VAE as the tracked default on the tested M1 family, with Automatic1111's FP32 NaN retry retained.
+7. NGMS 1.0/all steps and Clip skip 2 as built-in defaults.
+8. An opt-in coarse profiler enabled by `A1111_MPS_PROFILE=1` with no synchronization in the disabled path.
+
+The native extension performs an isolated MPS startup test. Unsupported inputs and runtime failures retain PyTorch fallbacks.
+
+## Reference workloads
+
+Primary profiling workload:
 
 - Prompt: `a dog`
 - Negative prompt: empty
@@ -34,62 +44,169 @@ The normal path adds no profiler synchronization. Intel and non-M1 Apple Silicon
 - NGMS: 1.0, all steps
 - Batch: 1
 
-Five warm profiled runs produced these medians:
+The sampler makes nine UNet evaluations: five calls at batch two and four calls at batch one. At 384×640 the latent inputs are `2×4×80×48` and `1×4×80×48`. NGMS creates the batch-one regime.
 
-| VAE precision | Client wall time | Sampler | VAE decode + transfer |
+The recurring 512×512 validation workload uses prompt `a dog`, seed `4017012032`, and the same model, sampler, schedule, CFG, Clip skip, and NGMS settings.
+
+## Measured results
+
+### Fork versus Automatic1111 baseline
+
+At 384×640, the original Automatic1111 base recorded 12.8 seconds and an earlier fork head recorded 8.7 seconds at matching model hash and tensor shape: approximately 32% lower latency or 1.47× throughput. The paired runs used different seeds, so this is a throughput comparison rather than output parity.
+
+### FP16 VAE
+
+Five warm profiled 384×640 runs produced:
+
+| VAE precision | End-to-end median | Sampler | VAE decode + transfer |
 | --- | ---: | ---: | ---: |
 | FP32 | 8.450 s | 6.715 s | 1.536 s |
 | FP16 | 7.795 s | 6.666 s | 0.972 s |
 
-FP16 VAE saved about 0.65 seconds end to end and reduced VAE time by about 37%. The nine UNet calls were unchanged: five calls with input `2×4×80×48` and four with `1×4×80×48`, for 14 total batch elements. NGMS is responsible for the four batch-one calls.
+FP16 saved about 0.65 seconds end to end and reduced the VAE stage by about 37%. Across three fixed-seed cases, PSNR versus FP32 was 64.0–64.6 dB, every changed RGB channel moved by at most one 8-bit value, and 97.4–97.7% of channels were identical.
 
-## Output validation
+### Exact GEGLU
 
-FP32 and FP16 VAE output was compared for three fixed-seed generations at 384×640 and 512×512:
+A 512×512 alternating A/B produced identical PNG hashes and positive paired savings of approximately 0.12–0.27 seconds. An active LCM LoRA output hash was also identical with fusion enabled and disabled.
 
-| Case | Mean absolute RGB delta | PSNR | Largest 8-bit channel delta | Byte-identical channels |
-| --- | ---: | ---: | ---: | ---: |
-| `a dog` | 0.0257 | 64.02 dB | 1 | 97.43% |
-| `a dog and a cat` | 0.0229 | 64.54 dB | 1 | 97.71% |
-| `1man, batman, looking out across the city` | 0.0227 | 64.58 dB | 1 | 97.73% |
+### Current range
 
-All repeated FP16 runs were deterministic. No NaN, green, black, or corrupted images were observed. A normal `./webui.sh` launch reproduced the validated FP16 output hash.
+A normal user run at 512×512 recorded 8.3 seconds. Later controlled warm A/B sessions commonly clustered around 9.2–9.3 seconds. Background work, extensions, thermal state, and unified-memory pressure are material at this scale.
 
-## Working-tree changes
+## Rejected experiments
 
-- `modules/mps_stage_profile.py`: request/stage timing, memory snapshots, UNet call accounting, JSON report.
-- `modules/processing.py`: coarse generation-stage boundaries.
-- `modules/sd_samplers_cfg_denoiser.py`: profiler-only UNet call/shape accounting.
-- `webui-macos-env.sh`: M1-family FP16 VAE default; conservative fallback elsewhere.
-- `test/test_mps_stage_profile.py`: profiler behavior and disabled-path checks.
-- `test/test_macos_launch_defaults.py`: M1, M1 Max, M3, and Intel launch behavior.
-- `README.md`: launch, quality, performance, profiling, and troubleshooting documentation.
+Do not repeat these without a new mechanism or new evidence:
 
-The focused suite currently passes 21 tests. Python compilation, shell syntax, `git diff --check`, native Metal self-tests, an API generation, and a normal WebUI launch also pass.
+| Experiment | Evidence | Result |
+| --- | --- | --- |
+| DPM++ 2M substitution | Changed the desired LCM/DPM++ SDE image behavior | Reject sampler substitution |
+| FP8 on M1 | No M1 FP8 hardware execution path | Reject conversion/unpacking overhead |
+| Per-operator MPS events on PyTorch 2.3 | Isolated synchronization hung | Use coarse profiling |
+| Block-level MPSGraph | About 1% slower end to end with more numerical drift | Removed |
+| Real-weight MPSGraph block | About 1.4% isolated stage gain versus fused GroupNorm | Failed integration gate |
+| Fixed-shape TorchScript UNet | Inconsistent warm gain, lost after cache loss, increased retained memory | Removed |
+| Fused LayerNorm | Projected 110 ms microbenchmark gain; paired end-to-end median regressed 0.026 s and only 56.1% of RGB channels matched | Removed |
+| Cross-attention K/V reuse | Reused 112/144 projections and retained 11 MiB; paired end-to-end median regressed 0.016 s | Removed |
 
-## What the profile says next
+The LayerNorm and K/V code and saved probe settings were removed completely. The current repository and native extension contain neither path.
 
-With FP16 VAE enabled, the sampler/UNet is now roughly 87% of measured generation time. Image conversion and orchestration are negligible. Another material gain cannot come from unified-memory copies, PNG conversion, conditioning, or more VAE tuning; it must reduce UNet work or execute the UNet more efficiently.
+## What the profile says
 
-Do not revisit these rejected directions without new evidence:
+After the FP16 VAE improvement, sampling/UNet consumes roughly 87% of measured generation time. Conditioning, image conversion, metadata, PNG creation, and additional VAE micro-tuning cannot provide the next material gain.
 
-- DPM++ 2M substitution: it changes the desired LCM result.
-- FP8 on M1: there is no matching M1 hardware acceleration path.
-- Per-operator MPS timing events on PyTorch 2.3: isolated event synchronization hung on the tested system.
-- The previous block-level MPSGraph prototype: it was about 1% slower end to end and had a larger numerical delta.
-- A later real-weight MPSGraph ResBlock/down-stage executable: after comparing against the fork's fused GroupNorm baseline, it improved the measured stage by only about 1.4% and failed the integration gate.
-- TorchScript fixed-shape UNet tracing: warm results were inconsistent and lost their benefit after cache loss while retaining enough state to increase unified-memory pressure.
+The failed LayerNorm and K/V experiments also show that transformer micro-operations are now below the useful granularity. The next work must reduce framework overhead across a large portion of the UNet or execute the complete UNet more efficiently.
 
-## Recommended next sprint
+## Chosen direction: native ggml/Metal UNet sidecar
 
-Do not immediately revisit static UNet tracing or block-level MPSGraph; both have now failed measured gates on this M1. The next compatibility-preserving experiments should remain narrow transformer micro-fusions, with fused LayerNorm as the leading candidate. Packed self-attention QKV or cross-attention KV projection is a larger follow-up only if LoRA and model-mutation invalidation can be made exact.
+Take architectural inspiration from stable-diffusion.cpp and ggml without replacing Automatic1111.
 
-Suggested gates:
+Keep in Automatic1111:
 
-1. Preserve all nine DPM++ SDE evaluations and both batch-one and batch-two call shapes.
-2. Compare alternating warm runs against the current PyTorch MPS path.
-3. Require exact tensor parity for lookup-based or algebraically identical fusions; otherwise report image deviation explicitly.
-4. Require a positive end-to-end result, not only an isolated kernel win.
-5. Preserve LoRA, ControlNet, dynamic resolution, model switching, and training fallbacks.
+- Prompt parsing and conditioning.
+- Existing DPM++ SDE/Karras sampler.
+- CFG and NGMS decisions.
+- Seed and RNG behavior.
+- LoRA/extension activation and request routing.
+- VAE, image pipeline, metadata, API, and UI.
 
-A separate whole-UNet Metal, MLX, or Core ML backend remains the only plausible route to a large additional gain. That is significant engine work and should be treated as a new backend rather than another Automatic1111 micro-optimization.
+Delegate only a supported UNet evaluation to a native graph runner. Unsupported requests continue through the current PyTorch MPS UNet.
+
+stable-diffusion.cpp already demonstrates the relevant components: a complete SD 1.x UNet graph, graph-planned reusable buffers, whole-graph Metal encoding, safetensors/GGUF loading, LoRA support, Flash Attention, and fused quantized matrix kernels. The useful lesson is ownership of the complete graph and memory lifecycle, not copying individual kernels.
+
+## Phase 0: capture the existing UNet contract
+
+Create a diagnostic-only capture of all nine real calls for 384×640 and 512×512:
+
+- Latent input and reference output.
+- Timestep.
+- Text conditioning.
+- Shape, dtype, model hash, and request settings.
+- Batch-two and batch-one regimes.
+
+Include plain prompt, scheduled-prompt, active-LoRA, and unsupported/fallback fixtures. Disabled capture must add no synchronization or normal-path overhead.
+
+Deliverable: a reproducible tensor corpus and a PyTorch replay test.
+
+## Phase 1: standalone native shootout
+
+Build a small harness around stable-diffusion.cpp's `UNetModelRunner`, load the same SD 1.x checkpoint, and replay the captures outside WebUI.
+
+Measure complete nine-call warm latency, per-shape latency, retained/peak memory, determinism, and tensor deviation.
+
+Gate: the native nine-call workload must be at least 20–25% faster than current PyTorch MPS. Stop the project here if it does not clear the gate; smaller gains will likely disappear behind bridge synchronization and compatibility work.
+
+## Phase 2: copied-buffer WebUI prototype
+
+Expose a minimal native interface for latent, timestep, conditioning, and UNet output. Keep A1111's sampler in control. A first implementation may synchronize and copy once per UNet call to prove integration.
+
+Initial supported route:
+
+- Apple M1.
+- SD 1.x FP16.
+- Txt2img, batch one.
+- Tested 384×640 and 512×512 shapes.
+- No active LoRA, ControlNet, hypernetwork, training, or high-resolution pass.
+
+Implement it as an optional `SdUnetOption`. Every unsupported condition routes to PyTorch.
+
+Gate: multiple alternating end-to-end pairs must remain materially faster, deterministic, and within an explicitly approved output-deviation envelope.
+
+## Phase 3: zero-copy unified-memory proof
+
+If the copied bridge wins, share the underlying Metal storage between PyTorch MPS and ggml.
+
+Solve and test:
+
+- `MTLBuffer` ownership and lifetime.
+- Buffer offsets, strides, NCHW layout, and dtype agreement.
+- PyTorch and ggml command-queue ordering.
+- Error recovery and backend reset.
+
+Start with one captured UNet call. Do not attempt full sampling until shared-buffer output matches the copied native implementation.
+
+## Phase 4: compatibility expansion
+
+Add independently gated support in this order:
+
+1. Dynamic SD 1.x resolutions and reusable arenas per shape/batch regime.
+2. LoRA weight application plus explicit model-mutation generation counters.
+3. Img2img and inpainting.
+4. High-resolution pass and model switching.
+5. ControlNet where native semantics can match A1111.
+6. Additional model families.
+
+Never silently ignore an installed extension hook. Fall back to PyTorch for any request whose semantics the native backend cannot reproduce.
+
+## Phase 5: optional quantization
+
+Only after FP16 proves the native engine:
+
+1. Q8_0 for the lowest-risk memory experiment.
+2. Q6_K/Q5_K as optional balanced modes.
+3. Q4 as an explicit low-memory mode, not a default.
+
+Quantization must use native fused dequantization/matrix kernels. Do not add quantized PyTorch storage with per-call unpacking. Require tensor, fixed-seed image, LoRA, memory, and timing validation for every format.
+
+## Global gates
+
+1. Preserve A1111's exact DPM++ SDE evaluation sequence and both batch regimes.
+2. Benchmark alternating warm pairs, never a single best run.
+3. Report tensor and final-image deviation.
+4. Measure retained unified memory and cache-loss behavior.
+5. Preserve deterministic output within each path.
+6. Keep automatic PyTorch fallback for unsupported features and runtime errors.
+7. Never require checkpoint conversion for the normal PyTorch path.
+8. Keep the native backend independently disableable.
+
+## Explicit non-goals for the first sprint
+
+- Replacing the A1111 UI, API, sampler, VAE, or extension ecosystem.
+- Calling individual ggml convolutions or matrix kernels from PyTorch.
+- Adding another Flash Attention implementation.
+- Making GGUF mandatory.
+- Supporting every model family or extension before the SD 1.x proof.
+- Committing a backend before the standalone 20–25% gate passes.
+
+## Immediate next task
+
+Implement Phase 0 only: capture and replay the exact nine-call PyTorch UNet contract. Then create the standalone native replay harness. Do not begin WebUI integration until the raw native shootout produces a clear result.

@@ -7,49 +7,53 @@ The normal Automatic1111 interface, API, checkpoint layout, samplers, LoRA synta
 > [!IMPORTANT]
 > This is an experimental performance fork, not a new Stable Diffusion engine. It favors measured M1 inference performance and safe fallback behavior over broad hardware tuning. If a native Metal path is unavailable or fails its startup test, the WebUI falls back to the corresponding PyTorch implementation.
 
-## How far is this from Automatic1111?
+## Current project snapshot
 
-The Metal implementation at commit [`78c3fc98`](https://github.com/dmikey/stable-diffusion-webui-metal/commit/78c3fc988011add8f75dc66af259215d7fc56d2c) has an intentionally small, auditable delta from the official Automatic1111 `dev` branch. Documentation-only changes to this README are excluded from the implementation counts below.
+The current tested head is [`6eefbb40`](https://github.com/dmikey/stable-diffusion-webui-metal/commit/6eefbb402d177ec5166dbb364ea8e313d1bdb206) on `dev`. It remains recognizably Automatic1111: the performance work is concentrated in MPS routing, a small native Metal extension, macOS launch defaults, profiling, benchmarks, and tests.
 
 | Measure | Value |
 | --- | ---: |
 | Automatic1111 base | [`1937682a`](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/1937682a20f7f0442311a1ede68f9f0cb480163b) |
 | Base version | `v1.10.1-96-g1937682a` |
-| Metal implementation | [`78c3fc98`](https://github.com/dmikey/stable-diffusion-webui-metal/commit/78c3fc988011add8f75dc66af259215d7fc56d2c) |
-| Implementation version | `v1.10.1-100-g78c3fc98` |
-| Code relationship | 4 implementation commits ahead, 0 upstream commits behind official `dev` |
-| Changed implementation paths | 20 of 329 tracked repository paths (6.1%) |
-| New implementation files | 12 |
-| Modified upstream implementation files | 8 |
-| Implementation delta | 1,280 insertions, 46 deletions |
+| Current Metal head | [`6eefbb40`](https://github.com/dmikey/stable-diffusion-webui-metal/commit/6eefbb402d177ec5166dbb364ea8e313d1bdb206) |
+| Current version | `v1.10.1-104-g6eefbb40` |
+| Code relationship | 8 fork commits ahead of the selected Automatic1111 base |
+| Changed tracked paths | 29, including this README and the roadmap |
+| Changed implementation/test paths | 27 |
+| Total delta | 2,585 insertions, 271 deletions |
 
-The four fork commits are:
+The eight fork commits are:
 
-1. Apple Silicon dependency, attention, memory, and benchmark foundation.
-2. Removal of obsolete MPS safety copies on modern PyTorch.
+1. Apple Silicon dependencies, attention routing, unified-memory budgeting, and benchmark foundation.
+2. Removal of obsolete MPS safety operations on modern PyTorch.
 3. Metal Flash Attention command-buffer coalescing.
 4. Native fused GroupNorm + SiLU for compatible inference blocks.
+5. Documentation and launch configuration cleanup.
+6. Coarse MPS stage profiling and the M1 FP16 VAE default.
+7. Exact-parity native fused GEGLU.
+8. Clip skip 2 as the built-in default.
 
-Most of the added lines are isolated Metal code, benchmark utilities, and tests. The fork does **not** change checkpoint formats, prompt syntax, the REST API contract, or the core Gradio workflow.
+Most added code is isolated Metal code, profiling, benchmark utilities, and tests. The fork does **not** require a new checkpoint format, prompt syntax, REST API contract, or UI workflow.
 
 <details>
-<summary>Complete 20-path change surface</summary>
+<summary>Current implementation surface</summary>
 
 | Area | Added | Modified |
 | --- | --- | --- |
 | Metal runtime | `modules/mps_flash_attention.py`<br>`modules/mps_fused_ops.py`<br>`modules/mps_utils.py` | `modules/mac_specific.py`<br>`modules/sd_hijack_optimizations.py`<br>`modules/sd_hijack_unet.py`<br>`modules/sub_quadratic_attention.py` |
-| Startup and defaults | `requirements_macos.txt` | `modules/launch_utils.py`<br>`modules/shared_options.py`<br>`requirements_versions.txt`<br>`webui-macos-env.sh` |
+| Profiling | `modules/mps_stage_profile.py` | `modules/processing.py`<br>`modules/sd_samplers_cfg_denoiser.py` |
+| Startup and defaults | `requirements_macos.txt` | `modules/launch_utils.py`<br>`modules/shared_options.py`<br>`requirements_versions.txt`<br>`webui-macos-env.sh`<br>`webui-user.sh` |
 | Native build and benchmarks | `scripts/install_mps_flash_attention.py`<br>`scripts/mps_fused_group_norm.mm`<br>`scripts/benchmark_mps_attention.py`<br>`scripts/benchmark_mps_unet_ops.py`<br>`scripts/benchmark_mps_geglu_probe.py` | — |
-| Tests | `test/test_mps_flash_attention.py`<br>`test/test_mps_fused_ops.py`<br>`test/test_mps_utils.py`<br>`test/test_sub_quadratic_attention.py` | — |
+| Tests | `test/test_macos_launch_defaults.py`<br>`test/test_mps_flash_attention.py`<br>`test/test_mps_fused_ops.py`<br>`test/test_mps_stage_profile.py`<br>`test/test_mps_utils.py`<br>`test/test_sub_quadratic_attention.py` | — |
 
 </details>
 
 You can reproduce the comparison locally:
 
 ```bash
-git rev-list --left-right --count 1937682a...78c3fc98
-git diff --shortstat 1937682a..78c3fc98
-git diff --name-status 1937682a..78c3fc98
+git rev-list --left-right --count 1937682a...6eefbb40
+git diff --shortstat 1937682a..6eefbb40
+git diff --name-status 1937682a..6eefbb40
 ```
 
 ## What is different?
@@ -115,6 +119,17 @@ Several workarounds needed by early PyTorch MPS releases are now gated by runtim
 - Prefers direct Metal matrix multiplication for the SD 1.x projection sizes measured on M1.
 - Removes Automatic1111's default `--upcast-sampling` flag on Apple Silicon; it can be restored locally when exact upstream behavior is more important than speed.
 
+### Coarse MPS stage profiler
+
+An opt-in profiler measures the parts of a complete generation that are large enough to guide optimization decisions without adding synchronization to normal inference.
+
+- Enable it with `A1111_MPS_PROFILE=1 ./webui.sh`.
+- Reports conditioning, sampler, VAE decode/transfer, image processing, and request wall time.
+- Records every UNet call shape and MPS allocation snapshots in a machine-readable `MPS_PROFILE_JSON` line.
+- Adds no MPS synchronization points when disabled.
+
+On the M1 reference workload, the profiler established that the sampler/UNet consumes roughly 87% of generation time after enabling the FP16 VAE. This is why current roadmap work targets whole-UNet execution rather than PNG conversion, conditioning, or more VAE micro-tuning.
+
 ### Apple Silicon dependency profile
 
 The default Apple Silicon environment is pinned to the combination verified for this fork:
@@ -139,6 +154,7 @@ The following defaults intentionally differ from the upstream `dev` branch:
 | NGMS all steps | Off | On | Applies the configured NGMS rule on every eligible step |
 | `--upcast-sampling` on macOS | On | Off | Keeps more sampling work in FP16 for speed |
 | `--no-half-vae` on M1-family Macs | On | Off | Runs VAE encode/decode in FP16; Automatic1111 still retries in FP32 if VAE decode produces NaNs |
+| Clip skip | `1` | `2` | Uses the common SD 1.x checkpoint default without depending on local `config.json` |
 | Cross-attention Automatic choice on MPS | Sub-quadratic | Metal Flash Attention | Uses the measured native route when available |
 | Fused GroupNorm + SiLU | Not present | On | Reduces compatible normalization/activation dispatches |
 | Fused GEGLU | Not present | On | Preserves PyTorch FP16 output while reducing transformer activation dispatches |
@@ -154,7 +170,7 @@ One recorded Apple M1 Mac mini comparison during development used the same check
 | Automatic1111 `v1.10.1-96-g1937682a` | 5 steps, DPM++ SDE, Karras, CFG 1.15, 384×640, SD 1.x checkpoint `8ecad70a19`, Clip skip 2, NGMS 1/all steps | 12.8 s |
 | This fork `v1.10.1-99-g38ac556a` | Same sampler, schedule, dimensions, checkpoint hash, Clip skip, and NGMS settings | 8.7 s |
 
-That observed run was approximately **32% lower latency**, or **1.47× as fast**. The current head adds the fused GroupNorm + SiLU path after that recorded comparison.
+That observed run was approximately **32% lower latency**, or **1.47× as fast**. Later heads added fused GroupNorm + SiLU, the profiled FP16 VAE default, and exact-parity GEGLU after that recorded comparison.
 
 The two recorded generations used different seeds. This makes the table a throughput comparison at matching tensor shapes, not an image-parity A/B.
 
@@ -176,6 +192,28 @@ A later controlled A/B isolated VAE precision on a 16 GB Apple M1 Mac mini. Both
 FP16 reduced the measured VAE stage by about **37%** and end-to-end latency by about **7.8%**. The sampler time remained effectively unchanged, which is the expected result when only decode precision changes.
 
 Output quality was checked across three fixed-seed generations at 384×640 and 512×512. Compared with FP32 VAE output, every changed 8-bit RGB channel differed by at most 1 value, PSNR was 64.0–64.6 dB, and 97.4–97.7% of channels were byte-identical. All FP16 runs were deterministic and free of NaN, green, or corrupted output. The default is therefore enabled only on the tested M1 family; other Apple Silicon generations retain FP32 VAE until separately validated.
+
+### Current warm-run range
+
+A user-facing run at `v1.10.1-102-g58e63e9f` used `fast-model` (`8ecad70a19`), prompt `a dog`, seed `4017012032`, five-step DPM++ SDE with Karras, CFG 1.15, Clip skip 2, NGMS 1/all steps, and 512×512 output. It completed in **8.3 seconds** on the 16 GB M1 Mac mini.
+
+Later controlled development A/B runs of the same 512×512 shape typically clustered around 9.2–9.3 seconds after warm-up. Background load, extension startup activity, thermal state, and unified-memory pressure therefore matter at the sub-second scale. Report medians and the full generation settings rather than treating a single fastest run as a guarantee.
+
+## Experiments that did not pass the gate
+
+Failed experiments are documented to prevent attractive microbenchmarks from being repeated without new evidence.
+
+| Experiment | Isolated result | End-to-end result | Decision |
+| --- | --- | --- | --- |
+| DPM++ 2M substitution | Fewer or cheaper operations in some paths | Did not reproduce the desired LCM/DPM++ SDE result | Rejected; preserve the requested sampler |
+| Block-level MPSGraph | Working block prototype | About 1% slower with a larger numerical delta | Removed |
+| Real-weight MPSGraph ResBlock/down stage | About 1.4% stage improvement versus the fused GroupNorm baseline | Too small to survive integration overhead | Removed |
+| Fixed-shape TorchScript UNet | Some warm runs improved | Benefit was inconsistent and disappeared after cache loss while retaining extra unified memory | Removed |
+| Native fused LayerNorm | Exact SD1 workload projection suggested about 110 ms potential savings | Baseline median 11.512 s versus 11.503 s enabled; paired median regressed by 0.026 s. Only 56.1% of RGB channels were identical, with PSNR 47.53 dB | Removed because there was no speed gain and output drifted |
+| Cross-attention K/V reuse | Reused 112 of 144 projections | Baseline median 9.258 s versus 9.262 s cached; paired median regressed by 0.016 s while retaining 11 MiB. PNG hashes were identical | Removed because the projections were already too cheap |
+| FP8 on M1 | Reduced theoretical weight storage | No matching M1 FP8 execution path; conversion/unpacking would dominate | Not implemented |
+
+The LayerNorm and K/V probes were completely removed after testing. They are not hidden options and do not remain in the native extension. The repository returned to a clean state after each rejected sprint.
 
 Treat these numbers as a development result, not a universal guarantee. Timing varies with:
 
@@ -368,13 +406,120 @@ With `pytest` installed in the virtual environment:
   test/test_sub_quadratic_attention.py
 ```
 
-## Deliberately not included
+## Future roadmap: native ggml/Metal UNet
 
-- Block-level MPSGraph execution: implemented and benchmarked, but rejected after a small regression.
-- FP8 acceleration on M1: there is no matching M1 hardware fast path, so conversion would primarily add unpacking overhead.
-- Core ML/ANE conversion: this would introduce a separate static execution engine and materially reduce Automatic1111 compatibility.
-- Whole-UNet static graphs: potentially higher upside, but a much larger project with difficult LoRA, ControlNet, model-switching, and dynamic-resolution tradeoffs.
-- Model-format changes or required quantization: existing Automatic1111 checkpoints are used directly.
+The remaining material opportunity is engine-level work. The best incremental direction is inspired by [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp) and ggml: execute the complete UNet as one planned Metal graph with a reusable memory arena instead of crossing the Python/PyTorch boundary for individual kernels.
+
+This is not a plan to replace Automatic1111 wholesale. Prompt parsing, conditioning, the selected A1111/k-diffusion sampler, CFG and NGMS behavior, seed handling, extensions, VAE, image processing, metadata, API, and UI remain in the existing application. Only a compatible UNet evaluation may be delegated to the native backend.
+
+```text
+Automatic1111 prompt, LoRA, and conditioning setup
+                         |
+Existing DPM++ SDE / Karras sampler and NGMS logic
+                         |
+       Native ggml/Metal UNet evaluation
+                         |
+Existing CFG combination, VAE, image pipeline, API, and UI
+```
+
+stable-diffusion.cpp is relevant because its current implementation already provides a complete [SD 1.x UNet graph runner](https://github.com/leejet/stable-diffusion.cpp/blob/bcc7e29568b94a25f78e99d34a8fa048d77536b1/src/model/diffusion/unet.hpp#L748), a [reusable graph allocator](https://github.com/leejet/stable-diffusion.cpp/blob/bcc7e29568b94a25f78e99d34a8fa048d77536b1/src/core/ggml_extend.hpp#L2212), whole-graph [Metal command encoding](https://github.com/leejet/stable-diffusion.cpp/blob/bcc7e29568b94a25f78e99d34a8fa048d77536b1/ggml/src/ggml-metal/ggml-metal-context.m#L438), safetensors/GGUF loading, LoRA support, Flash Attention, and fused quantized matrix kernels. Its advantage comes from owning the graph, buffers, weights, and submission lifecycle together—not from one operator that can be dropped into PyTorch.
+
+### Phase 0: reproducible captured-tensor corpus
+
+Capture the inputs and reference outputs of every UNet evaluation from the existing M1 workload:
+
+- Five calls with batch two and four calls with batch one under five-step DPM++ SDE plus NGMS.
+- Both `512×512` and `384×640` latent shapes.
+- Latent input, timestep, text conditioning, model hash, precision, and PyTorch output.
+- A plain prompt, scheduled prompt, active LoRA, and a deliberately unsupported request for fallback testing.
+
+The capture path must be diagnostic-only and must not alter normal timing or output when disabled.
+
+### Phase 1: standalone native UNet shootout
+
+Build a small C/C++ harness around stable-diffusion.cpp's `UNetModelRunner`. Load the same SD 1.x safetensors checkpoint and replay the captured calls outside WebUI.
+
+Measure:
+
+- Per-call and complete nine-call latency after warm-up.
+- Batch-one and batch-two behavior separately.
+- Peak and retained unified memory.
+- Mean, maximum, and percentile tensor deviation from PyTorch MPS.
+- Determinism across repeated runs.
+
+Proceed only if the native nine-call workload is at least **20–25% faster** than the current PyTorch MPS UNet. A smaller isolated advantage is unlikely to survive framework-bridge synchronization and compatibility handling.
+
+### Phase 2: copied-buffer A1111 prototype
+
+Expose a minimal native interface that accepts latent, timestep, and conditioning buffers and returns the UNet prediction. Keep A1111's current sampler in control, initially accepting one synchronization and copy boundary per UNet evaluation.
+
+The first supported route should be intentionally narrow:
+
+- Apple M1 and SD 1.x only.
+- FP16 inference.
+- Txt2img, batch one, tested resolutions.
+- No ControlNet, hypernetwork, training, or high-resolution pass.
+- No active LoRA until mutation/invalidation is explicitly implemented.
+
+Every unsupported request must automatically use the existing PyTorch UNet. The native backend should be an optional `SdUnetOption`, never a global monkey patch with no escape path.
+
+### Phase 3: unified-memory zero-copy proof
+
+If the copied prototype remains faster, investigate sharing the underlying Metal storage rather than copying through CPU memory. PyTorch MPS tensors and ggml Metal tensors ultimately reside in `MTLBuffer` objects, but safe sharing requires explicit work on:
+
+- Buffer offsets, strides, dtype, and NCHW layout agreement.
+- Ownership and lifetime across Python, PyTorch, and the native runner.
+- Command-queue ordering and synchronization.
+- Error recovery without leaving either backend in a poisoned state.
+
+This phase should begin with one captured UNet call. Do not attempt full sampling until the shared-buffer output matches the copied native path.
+
+### Phase 4: compatibility expansion
+
+Add features one at a time, with a PyTorch fallback and an output test for each:
+
+1. Dynamic SD 1.x resolutions and cached arenas per batch/shape regime.
+2. Active LoRA application, model-mutation generation counters, and exact cache invalidation.
+3. Img2img and inpainting conditioning.
+4. High-resolution pass and model switching.
+5. ControlNet where native semantics can match the installed A1111 extension.
+6. Other model families only after SD 1.x is stable.
+
+Extension compatibility is a routing problem: requests using unsupported hooks should remain fully functional on PyTorch rather than partially executing through native code.
+
+### Phase 5: optional GGUF quantization
+
+Quantization follows a successful FP16 engine; it is not the first step. ggml gains from quantized weights because dequantization is fused into its Metal matrix kernels. Merely storing quantized tensors in PyTorch would not reproduce that behavior.
+
+Suggested order for the M1:
+
+1. FP16 native backend establishes the execution-engine benefit and parity baseline.
+2. Q8_0 evaluates memory reduction with the smallest expected quality risk.
+3. Q6_K or Q5_K may become optional balanced modes.
+4. Q4 remains an explicit low-memory choice, not the default.
+
+Each format requires fixed-seed image comparisons, tensor statistics, LoRA checks, and end-to-end timing. A smaller model file alone is not a speed result.
+
+### Roadmap acceptance gates
+
+A native backend is eligible for default use only when it:
+
+1. Improves multiple alternating warm end-to-end pairs, not just an operator microbenchmark.
+2. Preserves all nine DPM++ SDE evaluations and the current sampler's result.
+3. Reports deterministic output and quantified deviation from the PyTorch path.
+4. Does not retain enough extra unified memory to erase warm-run stability.
+5. Falls back cleanly for LoRA, ControlNet, dynamic shapes, training, and extensions it cannot reproduce.
+6. Can be disabled without changing checkpoint files or local configuration.
+
+The initial target is to determine whether native UNet execution can move the 16 GB M1 from the current roughly 8–9 second warm range toward 7–8 seconds. Phase 1 is deliberately a bounded proof: if the raw native UNet cannot clear its 20–25% gate, the integration project stops before modifying WebUI.
+
+### What not to borrow incrementally
+
+- Individual ggml convolutions or matrix kernels called from PyTorch. Repeated framework and command-queue boundaries would likely erase their benefit.
+- Another standalone Flash Attention implementation. The fork already has a measured native MFA route.
+- Required GGUF conversion. Existing Automatic1111 checkpoints remain the default input until an optional native backend proves itself.
+- VAE tiling at ordinary 512-pixel resolutions. It reduces peak memory but normally increases latency.
+- Sampler substitution. stable-diffusion.cpp supports related DPM++ samplers, but this project must retain the exact A1111 DPM++ SDE behavior already chosen for LCM output.
 
 ## Upstream features and documentation
 
