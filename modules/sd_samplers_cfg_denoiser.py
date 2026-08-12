@@ -1,5 +1,5 @@
 import torch
-from modules import prompt_parser, sd_samplers_common
+from modules import prompt_parser, sd_samplers_common, mps_stage_profile
 
 from modules.shared import opts, state
 import modules.shared as shared
@@ -246,13 +246,13 @@ class CFGDenoiser(torch.nn.Module):
                 cond_in = catenate_conds([tensor, uncond])
 
             if shared.opts.batch_cond_uncond:
-                x_out = self.inner_model(x_in, sigma_in, cond=make_condition_dict(cond_in, image_cond_in))
+                x_out = mps_stage_profile.unet_call(self.inner_model, x_in, sigma_in, cond=make_condition_dict(cond_in, image_cond_in))
             else:
                 x_out = torch.zeros_like(x_in)
                 for batch_offset in range(0, x_out.shape[0], batch_size):
                     a = batch_offset
                     b = a + batch_size
-                    x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond=make_condition_dict(subscript_cond(cond_in, a, b), image_cond_in[a:b]))
+                    x_out[a:b] = mps_stage_profile.unet_call(self.inner_model, x_in[a:b], sigma_in[a:b], cond=make_condition_dict(subscript_cond(cond_in, a, b), image_cond_in[a:b]))
         else:
             x_out = torch.zeros_like(x_in)
             batch_size = batch_size*2 if shared.opts.batch_cond_uncond else batch_size
@@ -265,10 +265,10 @@ class CFGDenoiser(torch.nn.Module):
                 else:
                     c_crossattn = torch.cat([tensor[a:b]], uncond)
 
-                x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond=make_condition_dict(c_crossattn, image_cond_in[a:b]))
+                x_out[a:b] = mps_stage_profile.unet_call(self.inner_model, x_in[a:b], sigma_in[a:b], cond=make_condition_dict(c_crossattn, image_cond_in[a:b]))
 
             if not skip_uncond:
-                x_out[-uncond.shape[0]:] = self.inner_model(x_in[-uncond.shape[0]:], sigma_in[-uncond.shape[0]:], cond=make_condition_dict(uncond, image_cond_in[-uncond.shape[0]:]))
+                x_out[-uncond.shape[0]:] = mps_stage_profile.unet_call(self.inner_model, x_in[-uncond.shape[0]:], sigma_in[-uncond.shape[0]:], cond=make_condition_dict(uncond, image_cond_in[-uncond.shape[0]:]))
 
         denoised_image_indexes = [x[0][0] for x in conds_list]
         if skip_uncond:

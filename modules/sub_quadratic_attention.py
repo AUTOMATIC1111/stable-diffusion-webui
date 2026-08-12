@@ -97,20 +97,26 @@ def _query_chunk_attention(
         )
         return summarize_chunk(query, key_chunk, value_chunk)
 
-    chunks: list[AttnChunk] = [
-        chunk_scanner(chunk) for chunk in torch.arange(0, k_tokens, kv_chunk_size)
-    ]
-    acc_chunk = AttnChunk(*map(torch.stack, zip(*chunks)))
-    chunk_values, chunk_weights, chunk_max = acc_chunk
+    # FlashAttention-style online softmax. Merge one K/V tile into a running
+    # maximum, normalization sum, and output numerator, then discard the tile.
+    # This avoids stacking every partial result in unified memory.
+    accumulated = None
+    for chunk_idx in range(0, k_tokens, kv_chunk_size):
+        current = chunk_scanner(chunk_idx)
+        if accumulated is None:
+            accumulated = current
+            continue
 
-    global_max, _ = torch.max(chunk_max, 0, keepdim=True)
-    max_diffs = torch.exp(chunk_max - global_max)
-    chunk_values *= torch.unsqueeze(max_diffs, -1)
-    chunk_weights *= max_diffs
+        global_max = torch.maximum(accumulated.max_score, current.max_score)
+        accumulated_scale = torch.exp(accumulated.max_score - global_max)
+        current_scale = torch.exp(current.max_score - global_max)
+        accumulated = AttnChunk(
+            accumulated.exp_values * accumulated_scale.unsqueeze(-1) + current.exp_values * current_scale.unsqueeze(-1),
+            accumulated.exp_weights_sum * accumulated_scale + current.exp_weights_sum * current_scale,
+            global_max,
+        )
 
-    all_values = chunk_values.sum(dim=0)
-    all_weights = torch.unsqueeze(chunk_weights, -1).sum(dim=0)
-    return all_values / all_weights
+    return accumulated.exp_values / accumulated.exp_weights_sum.unsqueeze(-1)
 
 
 # TODO: refactor CrossAttention#get_attention_scores to share code with this

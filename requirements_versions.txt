@@ -1,4 +1,4 @@
-setuptools==69.5.1  # temp fix for compatibility with some old packages
+setuptools==69.5.1
 GitPython==3.1.32
 Pillow==9.5.0
 accelerate==0.21.0
@@ -24,10 +24,13 @@ pytorch_lightning==1.9.4
 resize-right==0.0.2
 safetensors==0.4.5
 scikit-image==0.21.0
+scipy==1.13.1; platform_system == "Darwin" and platform_machine == "arm64"
 spandrel==0.3.4
 spandrel-extra-arches==0.1.1
 tomesd==0.1.3
-torch
+torch; platform_system != "Darwin" or platform_machine != "arm64"
+torch==2.3.1; platform_system == "Darwin" and platform_machine == "arm64"
+torchvision==0.18.1; platform_system == "Darwin" and platform_machine == "arm64"
 torchdiffeq==0.2.3
 torchsde==0.2.6
 transformers==4.30.2

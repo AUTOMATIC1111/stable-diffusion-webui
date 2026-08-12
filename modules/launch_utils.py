@@ -275,9 +275,6 @@ def run_extensions_installers(settings_file):
                 startup_timer.record(dirname_extension)
 
 
-re_requirement = re.compile(r"\s*([-_a-zA-Z0-9]+)\s*(?:==\s*([-+_.a-zA-Z0-9]+))?\s*")
-
-
 def requirements_met(requirements_file):
     """
     Does a simple parse of a requirements.txt file to determine if all rerqirements in it
@@ -285,29 +282,28 @@ def requirements_met(requirements_file):
     """
 
     import importlib.metadata
-    import packaging.version
+    import packaging.requirements
 
     with open(requirements_file, "r", encoding="utf8") as file:
         for line in file:
-            if line.strip() == "":
-                continue
-
-            m = re.match(re_requirement, line)
-            if m is None:
-                return False
-
-            package = m.group(1).strip()
-            version_required = (m.group(2) or "").strip()
-
-            if version_required == "":
+            line = line.split("#", 1)[0].strip()
+            if not line:
                 continue
 
             try:
-                version_installed = importlib.metadata.version(package)
-            except Exception:
+                requirement = packaging.requirements.Requirement(line)
+            except packaging.requirements.InvalidRequirement:
                 return False
 
-            if packaging.version.parse(version_required) != packaging.version.parse(version_installed):
+            if requirement.marker is not None and not requirement.marker.evaluate():
+                continue
+
+            try:
+                version_installed = importlib.metadata.version(requirement.name)
+            except importlib.metadata.PackageNotFoundError:
+                return False
+
+            if requirement.specifier and version_installed not in requirement.specifier:
                 return False
 
     return True
@@ -427,16 +423,38 @@ def prepare_environment():
         """Ensure essential build tools are available"""
         if not is_installed("wheel"):
             run_pip("install wheel", "wheel")
-        # Check setuptools version compatibility
+        # Keep the historical A1111 pin for compatibility with old packages.
         try:
-            setuptools_version = run(f'"{python}" -c "import setuptools; print(setuptools.__version__)"', None, None).strip()
-            if setuptools_version >= "70":
+            setuptools_version = importlib.metadata.version("setuptools")
+            setuptools_match = re.match(r"(\d+)\.(\d+)", setuptools_version)
+            setuptools_tuple = tuple(map(int, setuptools_match.groups())) if setuptools_match else (0, 0)
+            if setuptools_tuple >= (70, 0):
                 run_pip("install setuptools==69.5.1", "setuptools")
         except Exception:
-            # If setuptools check fails, install compatible version
-            run_pip("install setuptools==69.5.1", "setuptools")
+            print("Could not validate setuptools compatibility; leaving the installed version unchanged.")
     # Install build dependencies early
     ensure_build_dependencies()
+
+    if platform.system() == "Darwin" and platform.machine() == "arm64":
+        mps_flash_installer = os.environ.get("MPS_FLASH_ATTENTION_INSTALLER", "")
+        torch_version_match = re.match(r"(\d+)\.(\d+)", importlib.metadata.version("torch"))
+        torch_version = tuple(map(int, torch_version_match.groups())) if torch_version_match else (0, 0)
+        has_current_mps_flash = check_run_python(
+            "import metal_flash_sdpa; "
+            "assert getattr(metal_flash_sdpa, 'A1111_MPS_DEFERRED_COMMIT', False); "
+            "assert getattr(metal_flash_sdpa, 'A1111_MPS_FUSED_GROUP_NORM_SILU', False)"
+        )
+        if mps_flash_installer and torch_version >= (2, 3) and not has_current_mps_flash:
+            try:
+                run(
+                    f'"{python}" "{mps_flash_installer}"',
+                    "Installing stream-safe Metal Flash Attention",
+                    "Couldn't install Metal Flash Attention",
+                    live=True,
+                )
+                startup_timer.record("install Metal Flash Attention")
+            except RuntimeError as exc:
+                print(f"Metal Flash Attention installation failed; continuing with native MPS attention: {exc}")
 
     if not is_installed("clip"):
         run_pip(f"install --no-build-isolation {clip_package}", "clip")

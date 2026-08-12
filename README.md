@@ -3,6 +3,28 @@ A web interface for Stable Diffusion, implemented using Gradio library.
 
 ![](screenshot.png)
 
+## Apple Silicon Metal enhancements
+
+This branch adds targeted Apple Silicon inference optimizations while retaining the Automatic1111 interface, API, checkpoint layout, samplers, LoRA syntax, extensions, and PyTorch fallbacks. Stable Diffusion 1.x inference—especially short DPM++ SDE runs—is the primary measured workload.
+
+- Shape-selective Metal Flash Attention for measured SD 1.x FP16 inference shapes, encoded on PyTorch's current MPS command buffer.
+- Unified-memory-aware attention routing with dynamically sized sub-quadratic chunks and streaming online softmax.
+- Native fused FP16 GroupNorm + SiLU and exact-parity GEGLU operations for compatible inference tensors.
+- Modern-PyTorch removal of obsolete MPS clones and unconditional FP32 LayerNorm workarounds.
+- An M1-validated FP16 VAE default with Automatic1111's FP32 NaN retry retained.
+- An opt-in coarse profiler enabled with `A1111_MPS_PROFILE=1 ./webui.sh`.
+- Local benchmarks and focused correctness tests for the Metal paths.
+
+Native paths perform isolated startup checks and fall back to PyTorch for unsupported shapes, dtypes, training, masks, runtime failures, and incompatible configurations. The regular safetensors format remains supported; no checkpoint conversion is required.
+
+On Apple M1, the macOS launcher uses the FP16 VAE path by default. A controlled 512x512, five-step DPM++ SDE/Karras comparison measured approximately 9.16 seconds with FP16 VAE versus 10.37 seconds with `--no-half-vae`, an approximately 1.21 second or 11.7% median improvement. The measured comparison had no NaN fallback; decoded RGB pixels had a mean absolute difference of 0.0227, a maximum difference of 2, and 6.548% changed pixels. Small FP16 rounding differences are expected.
+
+Automatic1111 retains its existing VAE NaN detection and retry behavior: if FP16 decoding produces non-finite output, the VAE is converted to FP32 and decoding is retried. Use `--no-half-vae` to force the conservative FP32 path. The FP16 VAE path was smoke-tested with txt2img, img2img, inpainting, and Hires Fix; external VAE coverage requires an external VAE asset.
+
+Changed Apple Silicon defaults include NGMS 1.0/all steps, Clip skip 2, FP16 sampling without the upstream sampling-upcast default, and the validated FP16 VAE route on M1-family Macs. These settings can change same-seed output compared with upstream defaults. They can be changed through the existing settings or local launch overrides.
+
+A recorded 16 GB M1 comparison at the same checkpoint hash and compute shape improved a five-step 384×640 DPM++ SDE/Karras request from 12.8 seconds to 8.7 seconds. The runs used different seeds, so this is a throughput observation rather than an image-parity comparison.
+
 ## Features
 [Detailed feature showcase with images](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features):
 - Original txt2img and img2img modes

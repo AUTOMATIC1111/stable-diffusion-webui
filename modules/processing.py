@@ -16,7 +16,7 @@ from skimage import exposure
 from typing import Any
 
 import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram, infotext_utils, extra_networks, sd_vae_approx, scripts, sd_samplers_common, sd_unet, errors, rng, profiling
+from modules import devices, prompt_parser, masking, sd_samplers, lowvram, infotext_utils, extra_networks, sd_vae_approx, scripts, sd_samplers_common, sd_unet, errors, rng, profiling, mps_stage_profile
 from modules.rng import slerp # noqa: F401
 from modules.sd_hijack import model_hijack
 from modules.sd_samplers_common import images_tensor_to_samples, decode_first_stage, approximation_indexes
@@ -629,7 +629,8 @@ def decode_latent_batch(model, batch, target_device=None, check_for_nans=False):
         devices.test_for_nans(batch, "unet")
 
     for i in range(batch.shape[0]):
-        sample = decode_first_stage(model, batch[i:i + 1])[0]
+        with mps_stage_profile.stage("vae_decode"):
+            sample = decode_first_stage(model, batch[i:i + 1])[0]
 
         if check_for_nans:
 
@@ -662,10 +663,12 @@ def decode_latent_batch(model, batch, target_device=None, check_for_nans=False):
                 model.first_stage_model.to(devices.dtype_vae)
                 batch = batch.to(devices.dtype_vae)
 
-                sample = decode_first_stage(model, batch[i:i + 1])[0]
+                with mps_stage_profile.stage("vae_decode"):
+                    sample = decode_first_stage(model, batch[i:i + 1])[0]
 
         if target_device is not None:
-            sample = sample.to(target_device)
+            with mps_stage_profile.stage("vae_decode_transfer"):
+                sample = sample.to(target_device)
 
         samples.append(sample)
 
@@ -843,8 +846,9 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         # backwards compatibility, fix sampler and scheduler if invalid
         sd_samplers.fix_p_invalid_sampler_and_scheduler(p)
 
-        with profiling.Profiler():
-            res = process_images_inner(p)
+        with mps_stage_profile.request(p):
+            with profiling.Profiler():
+                res = process_images_inner(p)
 
     finally:
         sd_models.apply_token_merging(p.sd_model, 0)
@@ -868,7 +872,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     else:
         assert p.prompt is not None
 
-    devices.torch_gc()
+    with mps_stage_profile.stage("initial_gc"):
+        devices.torch_gc()
 
     seed = get_fixed_seed(p.seed)
     subseed = get_fixed_seed(p.subseed)
@@ -917,7 +922,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     infotexts = []
     output_images = []
     with torch.no_grad(), p.sd_model.ema_scope():
-        with devices.autocast():
+        with devices.autocast(), mps_stage_profile.stage("initialization"):
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
 
             # for OSX, loading the model during sampling changes the generated picture, so it is loaded here
@@ -963,7 +968,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if p.scripts is not None:
                 p.scripts.process_batch(p, batch_number=n, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds)
 
-            p.setup_conds()
+            with mps_stage_profile.stage("conditioning"):
+                p.setup_conds()
 
             p.extra_generation_params.update(model_hijack.extra_generation_params)
 
@@ -984,7 +990,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             sd_models.apply_alpha_schedule_override(p.sd_model, p)
 
-            with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
+            with mps_stage_profile.stage("sampler"), devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
                 samples_ddim = p.sample(conditioning=p.c, unconditional_conditioning=p.uc, seeds=p.seeds, subseeds=p.subseeds, subseed_strength=p.subseed_strength, prompts=p.prompts)
 
             if p.scripts is not None:
@@ -1001,15 +1007,17 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     p.extra_generation_params['VAE Decoder'] = opts.sd_vae_decode_method
                 x_samples_ddim = decode_latent_batch(p.sd_model, samples_ddim, target_device=devices.cpu, check_for_nans=True)
 
-            x_samples_ddim = torch.stack(x_samples_ddim).float()
-            x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
+            with mps_stage_profile.stage("image_tensor_processing"):
+                x_samples_ddim = torch.stack(x_samples_ddim).float()
+                x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
 
             del samples_ddim
 
             if lowvram.is_enabled(shared.sd_model):
                 lowvram.send_everything_to_cpu()
 
-            devices.torch_gc()
+            with mps_stage_profile.stage("post_decode_gc"):
+                devices.torch_gc()
 
             state.nextjob()
 

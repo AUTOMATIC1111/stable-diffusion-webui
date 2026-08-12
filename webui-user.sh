@@ -12,6 +12,13 @@
 # Commandline arguments for webui.py, for example: export COMMANDLINE_ARGS="--medvram --opt-split-attention"
 #export COMMANDLINE_ARGS=""
 
+# Share Models with your current install
+# COMMANDLINE_ARGS=--ckpt-dir /path/to/A1111/models/Stable-diffusion \
+#                  --lora-dir /path/to/A1111/models/Lora \
+#                  --vae-dir /path/to/A1111/models/VAE \
+#                  --controlnet-dir /path/to/A1111/extensions/sd-webui-controlnet/models \
+#                  --embeddings-dir /path/to/A1111/embeddings
+
 # python3 executable
 #python_cmd="python3"
 
@@ -44,5 +51,6 @@
 
 # Uncomment to disable TCMalloc
 #export NO_TCMALLOC="True"
+
 
 ###########################################
