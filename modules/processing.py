@@ -629,7 +629,8 @@ def decode_latent_batch(model, batch, target_device=None, check_for_nans=False):
         devices.test_for_nans(batch, "unet")
 
     for i in range(batch.shape[0]):
-        sample = decode_first_stage(model, batch[i:i + 1])[0]
+        with mps_stage_profile.stage("vae_decode"):
+            sample = decode_first_stage(model, batch[i:i + 1])[0]
 
         if check_for_nans:
 
@@ -662,10 +663,12 @@ def decode_latent_batch(model, batch, target_device=None, check_for_nans=False):
                 model.first_stage_model.to(devices.dtype_vae)
                 batch = batch.to(devices.dtype_vae)
 
-                sample = decode_first_stage(model, batch[i:i + 1])[0]
+                with mps_stage_profile.stage("vae_decode"):
+                    sample = decode_first_stage(model, batch[i:i + 1])[0]
 
         if target_device is not None:
-            sample = sample.to(target_device)
+            with mps_stage_profile.stage("vae_decode_transfer"):
+                sample = sample.to(target_device)
 
         samples.append(sample)
 
@@ -1002,8 +1005,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
                 if opts.sd_vae_decode_method != 'Full':
                     p.extra_generation_params['VAE Decoder'] = opts.sd_vae_decode_method
-                with mps_stage_profile.stage("vae_decode_and_transfer"):
-                    x_samples_ddim = decode_latent_batch(p.sd_model, samples_ddim, target_device=devices.cpu, check_for_nans=True)
+                x_samples_ddim = decode_latent_batch(p.sd_model, samples_ddim, target_device=devices.cpu, check_for_nans=True)
 
             with mps_stage_profile.stage("image_tensor_processing"):
                 x_samples_ddim = torch.stack(x_samples_ddim).float()

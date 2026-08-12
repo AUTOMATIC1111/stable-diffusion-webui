@@ -17,6 +17,10 @@ This branch adds targeted Apple Silicon inference optimizations while retaining 
 
 Native paths perform isolated startup checks and fall back to PyTorch for unsupported shapes, dtypes, training, masks, runtime failures, and incompatible configurations. The regular safetensors format remains supported; no checkpoint conversion is required.
 
+On Apple M1, the macOS launcher uses the FP16 VAE path by default. A controlled 512x512, five-step DPM++ SDE/Karras comparison measured approximately 9.16 seconds with FP16 VAE versus 10.37 seconds with `--no-half-vae`, an approximately 1.21 second or 11.7% median improvement. The measured comparison had no NaN fallback; decoded RGB pixels had a mean absolute difference of 0.0227, a maximum difference of 2, and 6.548% changed pixels. Small FP16 rounding differences are expected.
+
+Automatic1111 retains its existing VAE NaN detection and retry behavior: if FP16 decoding produces non-finite output, the VAE is converted to FP32 and decoding is retried. Use `--no-half-vae` to force the conservative FP32 path. The FP16 VAE path was smoke-tested with txt2img, img2img, inpainting, and Hires Fix; external VAE coverage requires an external VAE asset.
+
 Changed Apple Silicon defaults include NGMS 1.0/all steps, Clip skip 2, FP16 sampling without the upstream sampling-upcast default, and the validated FP16 VAE route on M1-family Macs. These settings can change same-seed output compared with upstream defaults. They can be changed through the existing settings or local launch overrides.
 
 A recorded 16 GB M1 comparison at the same checkpoint hash and compute shape improved a five-step 384×640 DPM++ SDE/Karras request from 12.8 seconds to 8.7 seconds. The runs used different seeds, so this is a throughput observation rather than an image-parity comparison.
