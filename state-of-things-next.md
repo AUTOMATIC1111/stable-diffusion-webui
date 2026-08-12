@@ -135,6 +135,32 @@ Measure complete nine-call warm latency, per-shape latency, retained/peak memory
 
 Gate: the native nine-call workload must be at least 20–25% faster than current PyTorch MPS. Stop the project here if it does not clear the gate; smaller gains will likely disappear behind bridge synchronization and compatibility work.
 
+### M1 single-call probe result: stopped at the gate
+
+On 2026-08-11, the first bounded probe captured the real first batch-two call from the 512×512 reference request. The fixture contains an FP16 `2×4×64×64` latent, timestep `[999, 999]`, FP16 cross-attention context `2×77×768`, and FP16 reference output. Replaying the captured inputs immediately through the existing PyTorch UNet produced a bit-for-bit identical output with zero mean and maximum absolute error.
+
+Ten synchronized warm PyTorch MPS replays measured:
+
+| Runner | Median | Minimum | Maximum |
+| --- | ---: | ---: | ---: |
+| Current PyTorch MPS UNet | 874.597 ms | 868.626 ms | 880.409 ms |
+
+A fresh upstream stable-diffusion.cpp checkout at `bcc7e29` was built with its Metal backend and a temporary direct `UNetModelRunner` probe. With native Flash Attention enabled, three final measured calls produced:
+
+| Runner | Median | Minimum | Maximum |
+| --- | ---: | ---: | ---: |
+| stable-diffusion.cpp Metal UNet | 2,192.908 ms | 2,187.225 ms | 2,203.125 ms |
+
+The native call was approximately 2.51× slower than the current PyTorch MPS path before any Automatic1111 bridge or buffer-transfer overhead. It also returned 16,384 non-finite values out of 32,768 outputs—exactly one batch element—while the PyTorch reference contained none. Among finite values, mean absolute error was `0.0002314` and maximum absolute error was `0.0017264`.
+
+Additional findings:
+
+- Enabling mmap for the native Metal weights crashed in `ggml_metal_buffer_get_id`; disabling mmap allowed the probe to complete.
+- Disabling native Flash Attention increased median latency to approximately 10.30 seconds per call and did not eliminate the non-finite output.
+- The capture and immediate PyTorch replay were exact, so the input corpus itself passed its accuracy check.
+
+Decision: do not proceed to a copied-buffer WebUI integration with this native runner. It misses the required speed gate by a wide margin and currently fails numerical validity. Retain the opt-in capture tooling as a small reusable test for a materially different future engine, but treat the stable-diffusion.cpp sidecar described below as rejected on the tested M1 implementation.
+
 ## Phase 2: copied-buffer WebUI prototype
 
 Expose a minimal native interface for latent, timestep, conditioning, and UNet output. Keep A1111's sampler in control. A first implementation may synchronize and copy once per UNet call to prove integration.
@@ -209,4 +235,4 @@ Quantization must use native fused dequantization/matrix kernels. Do not add qua
 
 ## Immediate next task
 
-Implement Phase 0 only: capture and replay the exact nine-call PyTorch UNet contract. Then create the standalone native replay harness. Do not begin WebUI integration until the raw native shootout produces a clear result.
+Do not begin native WebUI integration. The single-call native shootout already failed the speed and validity gates. If a materially different engine becomes available, reuse the opt-in capture tooling and require it to beat the synchronized 874.597 ms batch-two PyTorch reference by at least 20–25% before expanding to batch one or the complete nine-call sequence.

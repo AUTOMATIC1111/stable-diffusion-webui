@@ -3,7 +3,7 @@ from packaging import version
 from einops import repeat
 import math
 
-from modules import devices, mps_fused_ops
+from modules import devices, mps_fused_ops, mps_unet_capture
 from modules.sd_hijack_utils import CondFunc
 
 
@@ -129,7 +129,16 @@ def apply_model(orig_func, self, x_noisy, t, cond, **kwargs):
                 cond[y] = cond[y].to(devices.dtype_unet) if isinstance(cond[y], torch.Tensor) else cond[y]
 
     with devices.autocast():
-        result = orig_func(self, x_noisy.to(devices.dtype_unet), t.to(devices.dtype_unet), cond, **kwargs)
+        unet_input = x_noisy.to(devices.dtype_unet)
+        unet_timestep = t.to(devices.dtype_unet)
+        result = orig_func(self, unet_input, unet_timestep, cond, **kwargs)
+        mps_unet_capture.capture_and_validate(
+            lambda: orig_func(self, unet_input, unet_timestep, cond, **kwargs),
+            unet_input,
+            unet_timestep,
+            cond,
+            result,
+        )
         if devices.unet_needs_upcast:
             return result.float()
         else:
