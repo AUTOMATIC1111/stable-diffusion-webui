@@ -104,6 +104,20 @@ def fused_vae_resnet_forward(_, self, x, temb):
     return x + h
 
 
+def fused_geglu_condition(_, self, x):
+    return (
+        x.device.type == "mps"
+        and x.dtype == torch.float16
+        and x.ndim == 3
+        and not self.training
+        and hasattr(self, "proj")
+    )
+
+
+def fused_geglu_forward(_, self, x):
+    return mps_fused_ops.geglu(x, self.proj)
+
+
 # Below are monkey patches to enable upcasting a float16 UNet for float32 sampling
 def apply_model(orig_func, self, x_noisy, t, cond, **kwargs):
     """Always make sure inputs to unet are in correct dtype."""
@@ -197,6 +211,8 @@ CondFunc('ldm.modules.diffusionmodules.openaimodel.ResBlock._forward', fused_res
 CondFunc('sgm.modules.diffusionmodules.openaimodel.ResBlock._forward', fused_resblock_forward, fused_resblock_condition)
 CondFunc('ldm.modules.diffusionmodules.model.ResnetBlock.forward', fused_vae_resnet_forward, fused_vae_resnet_condition)
 CondFunc('sgm.modules.diffusionmodules.model.ResnetBlock.forward', fused_vae_resnet_forward, fused_vae_resnet_condition)
+CondFunc('ldm.modules.attention.GEGLU.forward', fused_geglu_forward, fused_geglu_condition)
+CondFunc('sgm.modules.attention.GEGLU.forward', fused_geglu_forward, fused_geglu_condition)
 CondFunc('ldm.modules.diffusionmodules.openaimodel.timestep_embedding', lambda orig_func, timesteps, *args, **kwargs: orig_func(timesteps, *args, **kwargs).to(torch.float32 if timesteps.dtype == torch.int64 else devices.dtype_unet), unet_needs_upcast)
 
 if version.parse(torch.__version__) <= version.parse("1.13.2") or torch.cuda.is_available():

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 
@@ -15,6 +16,12 @@ _fallback_count = 0
 _runtime_failure_warned = False
 _first_dispatch_logged = False
 _runtime_disabled = False
+_geglu_dispatch_count = 0
+_geglu_fallback_count = 0
+_geglu_runtime_failure_warned = False
+_geglu_first_dispatch_logged = False
+_geglu_runtime_disabled = False
+_geglu_lut = None
 
 
 def _can_dispatch(input_tensor, norm):
@@ -75,8 +82,58 @@ def group_norm_silu(input_tensor, norm):
     return F.silu(norm(input_tensor))
 
 
+def _can_dispatch_geglu(projected):
+    if _geglu_runtime_disabled:
+        return False
+    if os.environ.get("A1111_MPS_DISABLE_FUSED_GEGLU") == "1":
+        return False
+    if projected.device.type != "mps" or projected.dtype != torch.float16:
+        return False
+    if projected.ndim != 3 or projected.shape[-1] % 2 != 0 or not projected.is_contiguous():
+        return False
+    if torch.is_grad_enabled() and projected.requires_grad:
+        return False
+    from modules import shared
+
+    if not getattr(shared.opts, "mps_fused_geglu", True):
+        return False
+    return mps_flash_attention.is_available()
+
+
+def geglu(input_tensor, projection):
+    """Run the model's projection normally, then fuse GEGLU's GELU and multiply."""
+    global _geglu_dispatch_count, _geglu_fallback_count
+    global _geglu_runtime_failure_warned, _geglu_first_dispatch_logged
+    global _geglu_runtime_disabled, _geglu_lut
+
+    projected = projection(input_tensor)
+    if _can_dispatch_geglu(projected):
+        try:
+            if _geglu_lut is None or _geglu_lut.device != projected.device:
+                half_values = np.arange(65536, dtype=np.uint16).view(np.float16).copy()
+                half_values = torch.from_numpy(half_values).to(projected.device)
+                _geglu_lut = F.gelu(half_values).contiguous()
+            result = mps_flash_attention._extension.fused_geglu_forward(projected, _geglu_lut)
+            _geglu_dispatch_count += 1
+            if not _geglu_first_dispatch_logged:
+                print(f"Fused Metal GEGLU first dispatch: {tuple(projected.shape)}")
+                _geglu_first_dispatch_logged = True
+            return result
+        except RuntimeError as exc:
+            _geglu_runtime_disabled = True
+            if not _geglu_runtime_failure_warned:
+                print(f"Fused Metal GEGLU failed; using PyTorch: {exc}")
+                _geglu_runtime_failure_warned = True
+
+    _geglu_fallback_count += 1
+    value, gate = projected.chunk(2, dim=-1)
+    return value * F.gelu(gate)
+
+
 def diagnostics():
     return {
         "dispatches": _dispatch_count,
         "fallbacks": _fallback_count,
+        "geglu_dispatches": _geglu_dispatch_count,
+        "geglu_fallbacks": _geglu_fallback_count,
     }

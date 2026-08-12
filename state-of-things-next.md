@@ -9,10 +9,13 @@ Last committed head before this sprint: `771259243a5a6e9a938dcedab80999512b78f5f
 
 ## Current result
 
-This fork remains Automatic1111 with targeted MPS and Metal acceleration rather than a separate inference engine. The working tree now adds two measured changes:
+This fork remains Automatic1111 with targeted MPS and Metal acceleration rather than a separate inference engine. The current optimization stack includes three measured changes from the latest sprints:
 
 1. An opt-in, coarse MPS stage profiler enabled with `A1111_MPS_PROFILE=1`.
 2. FP16 VAE as the tracked launch default only on M1-family Macs.
+3. An exact-parity fused Metal GEGLU path enabled by default on compatible Mac inference.
+
+The GEGLU kernel uses a 128 KB table generated once by PyTorch MPS to preserve every possible FP16 GELU result, then combines table lookup and multiplication in one Metal dispatch. Exact SD 1.x batch-one and batch-two tests were byte-identical to PyTorch. A fixed-process 512×512 DPM++ SDE A/B produced identical PNG hashes and saved approximately 0.12–0.27 seconds in every matched pair. An active LCM LoRA output was also byte-identical with the fusion on and off.
 
 The normal path adds no profiler synchronization. Intel and non-M1 Apple Silicon retain `--no-half-vae` until separately validated. Automatic1111's existing NaN recovery remains enabled and retries VAE decode in FP32 if necessary.
 
@@ -74,18 +77,19 @@ Do not revisit these rejected directions without new evidence:
 - FP8 on M1: there is no matching M1 hardware acceleration path.
 - Per-operator MPS timing events on PyTorch 2.3: isolated event synchronization hung on the tested system.
 - The previous block-level MPSGraph prototype: it was about 1% slower end to end and had a larger numerical delta.
+- A later real-weight MPSGraph ResBlock/down-stage executable: after comparing against the fork's fused GroupNorm baseline, it improved the measured stage by only about 1.4% and failed the integration gate.
+- TorchScript fixed-shape UNet tracing: warm results were inconsistent and lost their benefit after cache loss while retaining enough state to increase unified-memory pressure.
 
 ## Recommended next sprint
 
-The next useful experiment is an opt-in static UNet executor, not another broad rewrite. Keep the normal Automatic1111 model and sampler interfaces, and cache a compiled path by checkpoint, latent shape, conditional batch shape, and active network state. Start with the exact SD 1.x reference workload and refuse unsupported inputs rather than silently changing behavior.
+Do not immediately revisit static UNet tracing or block-level MPSGraph; both have now failed measured gates on this M1. The next compatibility-preserving experiments should remain narrow transformer micro-fusions, with fused LayerNorm as the leading candidate. Packed self-attention QKV or cross-attention KV projection is a larger follow-up only if LoRA and model-mutation invalidation can be made exact.
 
 Suggested gates:
 
-1. Support only txt2img, SD 1.x, batch 1, 384×640 and 512×512, no ControlNet, and no live model mutation in the prototype.
-2. Preserve all nine DPM++ SDE evaluations and both batch-one and batch-two call shapes.
-3. Compare five warm alternating runs against the current PyTorch MPS path.
-4. Require at least a 5% end-to-end improvement before expanding compatibility.
-5. Require deterministic output and report image deviation; fall back to PyTorch for every unsupported or failed graph.
-6. Add LoRA-aware cache invalidation before considering a default-on route.
+1. Preserve all nine DPM++ SDE evaluations and both batch-one and batch-two call shapes.
+2. Compare alternating warm runs against the current PyTorch MPS path.
+3. Require exact tensor parity for lookup-based or algebraically identical fusions; otherwise report image deviation explicitly.
+4. Require a positive end-to-end result, not only an isolated kernel win.
+5. Preserve LoRA, ControlNet, dynamic resolution, model switching, and training fallbacks.
 
-This is significant engine work. If the static executor cannot clear the 5% end-to-end gate on this M1, the current approximately 7.8-second profiled result is the practical stopping point for compatibility-preserving changes on the pinned PyTorch 2.3 runtime.
+A separate whole-UNet Metal, MLX, or Core ML backend remains the only plausible route to a large additional gain. That is significant engine work and should be treated as a new backend rather than another Automatic1111 micro-optimization.

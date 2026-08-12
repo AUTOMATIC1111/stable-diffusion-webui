@@ -2,7 +2,7 @@
 
 An Apple Silicon performance fork of [AUTOMATIC1111/stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui), focused on faster and more memory-aware inference through PyTorch MPS and native Metal kernels.
 
-The normal Automatic1111 interface, API, checkpoint layout, samplers, LoRA syntax, and extension structure are preserved. The fork adds a selective Metal attention path, a fused GroupNorm + SiLU kernel, unified-memory-aware attention fallback, an M1-validated FP16 VAE path, and tested macOS dependency defaults. Stable Diffusion 1.x inference—particularly short DPM++ SDE runs—is the primary optimization target.
+The normal Automatic1111 interface, API, checkpoint layout, samplers, LoRA syntax, and extension structure are preserved. The fork adds a selective Metal attention path, fused GroupNorm + SiLU and exact-parity GEGLU kernels, unified-memory-aware attention fallback, an M1-validated FP16 VAE path, and tested macOS dependency defaults. Stable Diffusion 1.x inference—particularly short DPM++ SDE runs—is the primary optimization target.
 
 > [!IMPORTANT]
 > This is an experimental performance fork, not a new Stable Diffusion engine. It favors measured M1 inference performance and safe fallback behavior over broad hardware tuning. If a native Metal path is unavailable or fails its startup test, the WebUI falls back to the corresponding PyTorch implementation.
@@ -39,7 +39,7 @@ Most of the added lines are isolated Metal code, benchmark utilities, and tests.
 | --- | --- | --- |
 | Metal runtime | `modules/mps_flash_attention.py`<br>`modules/mps_fused_ops.py`<br>`modules/mps_utils.py` | `modules/mac_specific.py`<br>`modules/sd_hijack_optimizations.py`<br>`modules/sd_hijack_unet.py`<br>`modules/sub_quadratic_attention.py` |
 | Startup and defaults | `requirements_macos.txt` | `modules/launch_utils.py`<br>`modules/shared_options.py`<br>`requirements_versions.txt`<br>`webui-macos-env.sh` |
-| Native build and benchmarks | `scripts/install_mps_flash_attention.py`<br>`scripts/mps_fused_group_norm.mm`<br>`scripts/benchmark_mps_attention.py`<br>`scripts/benchmark_mps_unet_ops.py` | — |
+| Native build and benchmarks | `scripts/install_mps_flash_attention.py`<br>`scripts/mps_fused_group_norm.mm`<br>`scripts/benchmark_mps_attention.py`<br>`scripts/benchmark_mps_unet_ops.py`<br>`scripts/benchmark_mps_geglu_probe.py` | — |
 | Tests | `test/test_mps_flash_attention.py`<br>`test/test_mps_fused_ops.py`<br>`test/test_mps_utils.py`<br>`test/test_sub_quadratic_attention.py` | — |
 
 </details>
@@ -82,6 +82,16 @@ A native inference-only Metal kernel combines GroupNorm and SiLU in one dispatch
 - Enabled by default through **Settings → Optimizations → Fuse GroupNorm and SiLU on Apple Silicon**.
 
 This is a focused fusion; convolutions and residual additions still use PyTorch MPS. A larger block-level MPSGraph prototype was tested and deliberately rejected because it was about 1% slower end to end and produced a larger numerical delta without a speed benefit.
+
+### Exact-parity fused GEGLU
+
+The SD 1.x transformer feed-forward path normally stores a GELU result and then launches a separate multiply. On Apple Silicon, the fork combines the lookup and multiply into one Metal dispatch.
+
+- The model's linear projection still runs normally, so active LoRAs and other projection hooks remain compatible.
+- A one-time 65,536-entry FP16 table is generated with the installed PyTorch MPS GELU implementation. The table is 128 KB and maps every possible half-precision gate value to PyTorch's exact result.
+- The fused output was byte-identical to PyTorch at all SD 1.x transformer shapes for batch one and batch two.
+- CPU, FP32, training/autograd, incompatible layouts, disabled settings, and runtime failures use the original PyTorch implementation.
+- Enabled by default through **Settings → Optimizations → Fuse GEGLU on Apple Silicon**.
 
 ### Unified-memory-aware attention
 
@@ -131,6 +141,7 @@ The following defaults intentionally differ from the upstream `dev` branch:
 | `--no-half-vae` on M1-family Macs | On | Off | Runs VAE encode/decode in FP16; Automatic1111 still retries in FP32 if VAE decode produces NaNs |
 | Cross-attention Automatic choice on MPS | Sub-quadratic | Metal Flash Attention | Uses the measured native route when available |
 | Fused GroupNorm + SiLU | Not present | On | Reduces compatible normalization/activation dispatches |
+| Fused GEGLU | Not present | On | Preserves PyTorch FP16 output while reducing transformer activation dispatches |
 
 NGMS is the largest user-visible behavioral change. It is recorded in PNG generation metadata when active. Set NGMS to `0` and disable **NGMS all steps** if a workflow expects upstream guidance behavior.
 
@@ -146,6 +157,12 @@ One recorded Apple M1 Mac mini comparison during development used the same check
 That observed run was approximately **32% lower latency**, or **1.47× as fast**. The current head adds the fused GroupNorm + SiLU path after that recorded comparison.
 
 The two recorded generations used different seeds. This makes the table a throughput comparison at matching tensor shapes, not an image-parity A/B.
+
+### M1 fused GEGLU validation
+
+A fixed-process API A/B used `hyperGlance` (`8ecad70a19`), prompt `a dog and a cat`, seed `158926638`, 5-step DPM++ SDE with Karras, CFG 1.15, Clip skip 2, NGMS 1/all steps, and 512×512 output. Three alternating warm pairs measured a positive saving in every pair: approximately 0.12–0.27 seconds, with a median paired saving of about 0.27 seconds. All fusion-on and fusion-off PNG files had the same SHA-256 hash.
+
+An additional active-LoRA check used `a dog <lora:lcm:1>`, seed `784504668`, five Euler a steps, and the same CFG, size, Clip skip, and NGMS settings. Fusion-on and fusion-off output hashes were identical. The timing from that single LoRA pair is not reported as a speed result because its first run included LoRA activation overhead.
 
 ### M1 FP16 VAE validation
 
@@ -232,13 +249,13 @@ M1-family Macs use the validated FP16 VAE path by default. Intel and other Apple
 A healthy optimized startup prints messages similar to:
 
 ```text
-Metal self-test passed; deferred MFA and fused GroupNorm+SiLU routing enabled.
+Metal self-test passed; deferred MFA, fused GroupNorm+SiLU, and fused GEGLU routing enabled.
 Applying attention optimization: mps-flash... done.
 ```
 
-The first compatible generation also reports the first native attention and GroupNorm dispatch. These messages are informational and print only once per process.
+The first compatible generation also reports the first native attention, GroupNorm, and GEGLU dispatch. These messages are informational and print only once per process.
 
-If the extension cannot build or fails its isolated self-test, startup continues with native PyTorch MPS attention. If the fused GroupNorm kernel fails at runtime, that fusion is disabled for the process and PyTorch handles subsequent operations.
+If the extension cannot build or fails its isolated self-test, startup continues with native PyTorch MPS operations. If either fused activation kernel fails at runtime, that fusion is disabled for the process and PyTorch handles subsequent operations.
 
 ## Compatibility and output parity
 
@@ -270,12 +287,13 @@ For an upstream-style comparison:
 1. Set **Negative Guidance minimum sigma** to `0`.
 2. Disable **Negative Guidance minimum sigma all steps**.
 3. Disable **Fuse GroupNorm and SiLU on Apple Silicon**.
-4. Select `sub-quadratic` under **Cross attention optimization**.
-5. Add `--upcast-sampling` to `COMMANDLINE_ARGS` in `webui-user.sh`.
-6. On M1, also add `--no-half-vae`.
-7. Restart the WebUI after changing launch arguments.
+4. Disable **Fuse GEGLU on Apple Silicon**.
+5. Select `sub-quadratic` under **Cross attention optimization**.
+6. Add `--upcast-sampling` to `COMMANDLINE_ARGS` in `webui-user.sh`.
+7. On M1, also add `--no-half-vae`.
+8. Restart the WebUI after changing launch arguments.
 
-For diagnostics only, `A1111_MPS_FORCE_LEGACY_OPS=1` restores version-gated MPS safety copies, and `A1111_MPS_DISABLE_FUSED_GROUP_NORM_SILU=1` disables the native normalization fusion before startup.
+For diagnostics only, `A1111_MPS_FORCE_LEGACY_OPS=1` restores version-gated MPS safety copies. `A1111_MPS_DISABLE_FUSED_GROUP_NORM_SILU=1` and `A1111_MPS_DISABLE_FUSED_GEGLU=1` disable the corresponding native fusion before startup.
 
 ## Troubleshooting
 
@@ -315,6 +333,7 @@ Two standalone benchmark scripts are included:
 ```bash
 ./venv/bin/python scripts/benchmark_mps_attention.py
 ./venv/bin/python scripts/benchmark_mps_unet_ops.py --batch 2
+./venv/bin/python scripts/benchmark_mps_geglu_probe.py
 ```
 
 The first compares PyTorch MPS scaled dot product attention with sliced attention. The second measures representative SD 1.x convolution, GroupNorm + SiLU, linear projection, and attention shapes.
@@ -332,6 +351,7 @@ Focused tests cover:
 - Metal Flash Attention routing and PyTorch fallback
 - M1-specific FP16 VAE launch defaults with conservative Intel and newer-chip behavior
 - Native fused GroupNorm + SiLU correctness
+- Native fused GEGLU exact parity, fallback routing, and active-LoRA compatibility
 - Opt-in MPS stage profiling and its zero-synchronization disabled path
 - Unified-memory attention budgeting and dynamic query tiles
 - Streaming online-softmax forward results and gradients

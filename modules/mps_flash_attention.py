@@ -47,7 +47,7 @@ def _run_isolated_self_test():
     code = """
 import torch
 import torch.nn.functional as F
-from metal_flash_sdpa import MetalFlashAttentionForward, fused_group_norm_silu_forward
+from metal_flash_sdpa import MetalFlashAttentionForward, fused_geglu_forward, fused_group_norm_silu_forward
 
 torch.manual_seed(1)
 source = torch.randn((1, 256, 320), device='mps', dtype=torch.float16)
@@ -75,6 +75,17 @@ norm_difference = (actual_norm.float() - expected_norm.float()).abs()
 assert torch.isfinite(actual_norm).all().item()
 assert norm_difference.max().item() < 0.02
 assert norm_difference.mean().item() < 0.001
+
+import numpy as np
+geglu_source = torch.randn((1, 256, 2560), device='mps', dtype=torch.float16)
+half_values = np.arange(65536, dtype=np.uint16).view(np.float16).copy()
+geglu_lut = F.gelu(torch.from_numpy(half_values).to('mps')).contiguous()
+value, gate = geglu_source.chunk(2, dim=-1)
+expected_geglu = value * F.gelu(gate)
+actual_geglu = fused_geglu_forward(geglu_source, geglu_lut) + 0
+torch.mps.synchronize()
+assert torch.isfinite(actual_geglu).all().item()
+assert torch.equal(actual_geglu, expected_geglu)
 """
     environment = os.environ.copy()
     environment["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
@@ -115,6 +126,8 @@ def is_available():
             raise RuntimeError("native extension is missing the A1111 deferred MPS commit patch")
         if not getattr(_extension, "A1111_MPS_FUSED_GROUP_NORM_SILU", False):
             raise RuntimeError("native extension is missing fused GroupNorm+SiLU")
+        if not getattr(_extension, "A1111_MPS_FUSED_GEGLU", False):
+            raise RuntimeError("native extension is missing fused GEGLU")
         _run_isolated_self_test()
     except (ImportError, OSError, RuntimeError, subprocess.SubprocessError) as exc:
         _availability_error = str(exc)
@@ -123,7 +136,7 @@ def is_available():
         return False
 
     _availability = True
-    print("Metal self-test passed; deferred MFA and fused GroupNorm+SiLU routing enabled.")
+    print("Metal self-test passed; deferred MFA, fused GroupNorm+SiLU, and fused GEGLU routing enabled.")
     return True
 
 

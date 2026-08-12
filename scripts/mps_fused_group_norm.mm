@@ -7,6 +7,8 @@
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
 
+#include <algorithm>
+
 namespace {
 
 struct FusedGroupNormParams {
@@ -15,6 +17,11 @@ struct FusedGroupNormParams {
   uint32_t spatial;
   uint32_t groups;
   float epsilon;
+};
+
+struct FusedGEGLUParams {
+  uint32_t rows;
+  uint32_t width;
 };
 
 static inline id<MTLBuffer> getMTLBufferStorage(const at::Tensor& tensor) {
@@ -94,6 +101,7 @@ kernel void fused_group_norm_silu_half(
     output[base + index] = half(value);
   }
 }
+
 )METAL";
 
     NSError* error = nil;
@@ -108,6 +116,57 @@ kernel void fused_group_norm_silu_half(
     TORCH_CHECK(
         pipeline != nil,
         "Failed to create fused GroupNorm+SiLU pipeline: ",
+        error ? [[error localizedDescription] UTF8String] : "unknown error");
+  });
+  return pipeline;
+}
+
+static id<MTLComputePipelineState> getFusedGEGLUPipeline() {
+  static id<MTLComputePipelineState> pipeline = nil;
+  static dispatch_once_t once;
+  dispatch_once(&once, ^{
+    id<MTLDevice> device = at::mps::MPSDevice::getInstance()->device();
+    NSString* source = @R"METAL(
+#include <metal_stdlib>
+using namespace metal;
+
+struct FusedGEGLUParams {
+  uint rows;
+  uint width;
+};
+
+kernel void fused_geglu_half(
+    device const half* input [[buffer(0)]],
+    device half* output [[buffer(1)]],
+    device const half* gelu_lut [[buffer(2)]],
+    constant FusedGEGLUParams& params [[buffer(3)]],
+    uint index [[thread_position_in_grid]]) {
+  const uint count = params.rows * params.width;
+  if (index >= count) {
+    return;
+  }
+  const uint row = index / params.width;
+  const uint column = index - row * params.width;
+  const uint input_base = row * params.width * 2;
+  const float value = float(input[input_base + column]);
+  device const ushort* input_bits = reinterpret_cast<device const ushort*>(input);
+  const ushort gate_bits = input_bits[input_base + params.width + column];
+  output[index] = half(value * float(gelu_lut[gate_bits]));
+}
+)METAL";
+
+    NSError* error = nil;
+    id<MTLLibrary> library = [device newLibraryWithSource:source options:nil error:&error];
+    TORCH_CHECK(
+        library != nil,
+        "Failed to compile fused GEGLU Metal library: ",
+        error ? [[error localizedDescription] UTF8String] : "unknown error");
+    id<MTLFunction> function = [library newFunctionWithName:@"fused_geglu_half"];
+    TORCH_CHECK(function != nil, "Fused GEGLU Metal function was not found");
+    pipeline = [device newComputePipelineStateWithFunction:function error:&error];
+    TORCH_CHECK(
+        pipeline != nil,
+        "Failed to create fused GEGLU pipeline: ",
         error ? [[error localizedDescription] UTF8String] : "unknown error");
   });
   return pipeline;
@@ -178,6 +237,56 @@ torch::Tensor fused_group_norm_silu_forward(
   return output;
 }
 
+torch::Tensor fused_geglu_forward(
+    const torch::Tensor& input,
+    const torch::Tensor& gelu_lut) {
+  TORCH_CHECK(input.device().is_mps(), "input must be an MPS tensor");
+  TORCH_CHECK(input.scalar_type() == at::kHalf, "input must be float16");
+  TORCH_CHECK(input.dim() == 3, "input must have shape [batch, tokens, 2 * width]");
+  TORCH_CHECK(input.is_contiguous(), "input must be contiguous");
+  TORCH_CHECK(input.size(2) % 2 == 0, "the last input dimension must be even");
+  TORCH_CHECK(gelu_lut.device().is_mps(), "GELU lookup table must be an MPS tensor");
+  TORCH_CHECK(gelu_lut.scalar_type() == at::kHalf, "GELU lookup table must be float16");
+  TORCH_CHECK(gelu_lut.is_contiguous(), "GELU lookup table must be contiguous");
+  TORCH_CHECK(gelu_lut.numel() == 65536, "GELU lookup table must contain 65536 values");
+
+  const int64_t width = input.size(2) / 2;
+  auto output = torch::empty({input.size(0), input.size(1), width}, input.options());
+  FusedGEGLUParams params = {
+      static_cast<uint32_t>(input.size(0) * input.size(1)),
+      static_cast<uint32_t>(width),
+  };
+  const uint32_t count = params.rows * params.width;
+  auto pipeline = getFusedGEGLUPipeline();
+
+  @autoreleasepool {
+    dispatch_sync(torch::mps::get_dispatch_queue(), ^{
+      @autoreleasepool {
+        at::mps::getCurrentMPSStream()->endKernelCoalescing();
+        id<MTLCommandBuffer> command_buffer = torch::mps::get_command_buffer();
+        id<MTLComputeCommandEncoder> encoder = [command_buffer computeCommandEncoder];
+        [encoder setComputePipelineState:pipeline];
+        [encoder setBuffer:getMTLBufferStorage(input)
+                     offset:getMTLBufferOffset(input)
+                    atIndex:0];
+        [encoder setBuffer:getMTLBufferStorage(output)
+                     offset:getMTLBufferOffset(output)
+                    atIndex:1];
+        [encoder setBuffer:getMTLBufferStorage(gelu_lut)
+                     offset:getMTLBufferOffset(gelu_lut)
+                    atIndex:2];
+        [encoder setBytes:&params length:sizeof(params) atIndex:3];
+        const NSUInteger threads =
+            std::min<NSUInteger>(pipeline.maxTotalThreadsPerThreadgroup, 256);
+        [encoder dispatchThreads:MTLSizeMake(count, 1, 1)
+            threadsPerThreadgroup:MTLSizeMake(threads, 1, 1)];
+        [encoder endEncoding];
+      }
+    });
+  }
+  return output;
+}
+
 } // namespace
 
 void register_fused_ops(pybind11::module_& module) {
@@ -190,4 +299,10 @@ void register_fused_ops(pybind11::module_& module) {
       pybind11::arg("bias"),
       pybind11::arg("groups"),
       pybind11::arg("epsilon"));
+  module.def(
+      "fused_geglu_forward",
+      &fused_geglu_forward,
+      "Fused Metal GEGLU forward pass",
+      pybind11::arg("input"),
+      pybind11::arg("gelu_lut"));
 }
