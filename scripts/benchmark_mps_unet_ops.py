@@ -40,7 +40,7 @@ def measure(operation, warmup, repeats):
     return statistics.median(timings)
 
 
-def benchmark_shape(batch, tokens, channels, warmup, repeats):
+def measure_shape(batch, tokens, channels, warmup, repeats):
     side = int(tokens**0.5)
     image = torch.randn((batch, channels, side, side), device="mps", dtype=torch.float16)
     convolution_weight = torch.randn((channels, channels, 3, 3), device="mps", dtype=torch.float16)
@@ -51,7 +51,7 @@ def benchmark_shape(batch, tokens, channels, warmup, repeats):
     heads = 8
     query = sequence.view(batch, tokens, heads, channels // heads).transpose(1, 2)
 
-    results = {
+    return {
         "conv3x3": measure(
             lambda: F.conv2d(image, convolution_weight, convolution_bias, padding=1),
             warmup,
@@ -74,7 +74,9 @@ def benchmark_shape(batch, tokens, channels, warmup, repeats):
         ),
     }
 
-    del image, convolution_weight, convolution_bias, sequence, projection_weight, query
+
+def benchmark_shape(batch, tokens, channels, warmup, repeats):
+    results = measure_shape(batch, tokens, channels, warmup, repeats)
     torch.mps.empty_cache()
     return results
 
