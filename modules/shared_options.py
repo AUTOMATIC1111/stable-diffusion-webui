@@ -233,6 +233,7 @@ options_templates.update(options_section(('img2img', "img2img", "sd"), {
 options_templates.update(options_section(('optimizations', "Optimizations", "sd"), {
     "cross_attention_optimization": OptionInfo("Automatic", "Cross attention optimization", gr.Dropdown, lambda: {"choices": shared_items.cross_attention_optimizations()}),
     "mps_fused_group_norm_silu": OptionInfo(True, "Fuse GroupNorm and SiLU on Apple Silicon").info("uses the native Metal inference kernel when supported; disable to compare with PyTorch"),
+    "mps_fused_group_norm_silu_embedding": OptionInfo(True, "Fuse timestep embedding with GroupNorm and SiLU on Apple Silicon").info("uses the native Metal glue kernel when supported; disable to isolate its end-to-end impact"),
     "mps_fused_geglu": OptionInfo(True, "Fuse GEGLU on Apple Silicon").info("uses the native Metal inference kernel when supported; disable to compare with PyTorch"),
     "s_min_uncond": OptionInfo(1.0, "Negative Guidance minimum sigma", gr.Slider, {"minimum": 0.0, "maximum": 15.0, "step": 0.01}, infotext='NGMS').link("PR", "https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9177").info("skip negative prompt for some steps when the image is almost ready; 0=disable, higher=faster"),
     "s_min_uncond_all": OptionInfo(True, "Negative Guidance minimum sigma all steps", infotext='NGMS all steps').info("By default, NGMS above skips every other step; this makes it skip all steps"),

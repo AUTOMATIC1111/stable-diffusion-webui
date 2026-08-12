@@ -4,11 +4,17 @@
 from __future__ import annotations
 
 import argparse
+import pathlib
 import statistics
+import sys
 import time
 
 import torch
 import torch.nn.functional as F
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+
+from modules import mps_fused_ops
 
 
 SD1_SHAPES = (
@@ -47,6 +53,12 @@ def measure_shape(batch, tokens, channels, warmup, repeats):
     convolution_bias = torch.randn((channels,), device="mps", dtype=torch.float16)
     sequence = image.flatten(2).transpose(1, 2)
     projection_weight = torch.randn((channels, channels), device="mps", dtype=torch.float16)
+    norm_weight = torch.randn((channels,), device="mps", dtype=torch.float16)
+    norm_bias = torch.randn((channels,), device="mps", dtype=torch.float16)
+    embedding = torch.randn((batch, channels), device="mps", dtype=torch.float16)
+    norm = torch.nn.GroupNorm(32, channels).to("mps").half()
+    norm.weight.data.copy_(norm_weight)
+    norm.bias.data.copy_(norm_bias)
 
     heads = 8
     query = sequence.view(batch, tokens, heads, channels // heads).transpose(1, 2)
@@ -59,6 +71,16 @@ def measure_shape(batch, tokens, channels, warmup, repeats):
         ),
         "groupnorm+silu": measure(
             lambda: F.silu(F.group_norm(image, 32)),
+            warmup,
+            repeats,
+        ),
+        "groupnorm+silu+embedding": measure(
+            lambda: F.silu(F.group_norm(image + embedding[:, :, None, None], 32, norm_weight, norm_bias)),
+            warmup,
+            repeats,
+        ),
+        "fused_groupnorm+silu+embedding": measure(
+            lambda: mps_fused_ops.group_norm_silu_add_embedding(image, embedding, norm),
             warmup,
             repeats,
         ),

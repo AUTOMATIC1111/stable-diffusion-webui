@@ -104,13 +104,15 @@ def patch_source(source):
         'A1111_MPS_STREAM_FIX = True\n'
         'A1111_MPS_DEFERRED_COMMIT = True\n'
         'A1111_MPS_FUSED_GROUP_NORM_SILU = True\n'
-        'A1111_MPS_FUSED_GEGLU = True\n',
+        'A1111_MPS_FUSED_GEGLU = True\n'
+        'A1111_MPS_FUSED_GROUP_NORM_SILU_EMBEDDING = True\n',
     )
     replace_exact(
         package_init,
         "from metal_flash_sdpa._C import mfa_attention_forward, mfa_attention_backward\n",
         "from metal_flash_sdpa._C import (\n"
         "    fused_geglu_forward,\n"
+        "    fused_group_norm_silu_add_embedding_forward,\n"
         "    fused_group_norm_silu_forward,\n"
         "    mfa_attention_backward,\n"
         "    mfa_attention_forward,\n"

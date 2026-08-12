@@ -65,11 +65,7 @@ def fused_resblock_forward(_, self, x, emb):
         h = self.in_layers[2](mps_fused_ops.group_norm_silu(x, self.in_layers[0]))
 
     emb_out = self.emb_layers(emb).type(h.dtype)
-    while len(emb_out.shape) < len(h.shape):
-        emb_out = emb_out[..., None]
-
-    h = h + emb_out
-    h = mps_fused_ops.group_norm_silu(h, self.out_layers[0])
+    h = mps_fused_ops.group_norm_silu_add_embedding(h, emb_out, self.out_layers[0])
     h = self.out_layers[2](h)
     h = self.out_layers[3](h)
     return self.skip_connection(x) + h

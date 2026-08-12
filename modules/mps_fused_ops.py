@@ -16,6 +16,11 @@ _fallback_count = 0
 _runtime_failure_warned = False
 _first_dispatch_logged = False
 _runtime_disabled = False
+_embedding_dispatch_count = 0
+_embedding_fallback_count = 0
+_embedding_runtime_failure_warned = False
+_embedding_first_dispatch_logged = False
+_embedding_runtime_disabled = False
 _geglu_dispatch_count = 0
 _geglu_fallback_count = 0
 _geglu_runtime_failure_warned = False
@@ -82,6 +87,67 @@ def group_norm_silu(input_tensor, norm):
     return F.silu(norm(input_tensor))
 
 
+def group_norm_silu_add_embedding(input_tensor, embedding, norm):
+    """Fuse a broadcast timestep embedding, GroupNorm, and SiLU when supported."""
+    from modules import shared
+
+    global _embedding_dispatch_count, _embedding_fallback_count
+    global _embedding_runtime_failure_warned, _embedding_first_dispatch_logged
+    global _embedding_runtime_disabled
+
+    can_dispatch = (
+        not _embedding_runtime_disabled
+        and os.environ.get("A1111_MPS_DISABLE_FUSED_GROUP_NORM_SILU_EMBEDDING") != "1"
+        and input_tensor.device.type == "mps"
+        and input_tensor.dtype == torch.float16
+        and embedding.device == input_tensor.device
+        and embedding.dtype == input_tensor.dtype
+        and input_tensor.ndim == 4
+        and embedding.ndim == 2
+        and input_tensor.is_contiguous()
+        and embedding.is_contiguous()
+        and embedding.shape == (input_tensor.shape[0], input_tensor.shape[1])
+        and norm.weight is not None
+        and norm.bias is not None
+        and norm.weight.device == input_tensor.device
+        and norm.bias.device == input_tensor.device
+        and norm.weight.dtype == input_tensor.dtype
+        and norm.bias.dtype == input_tensor.dtype
+        and norm.weight.is_contiguous()
+        and norm.bias.is_contiguous()
+        and input_tensor.shape[1] % norm.num_groups == 0
+        and getattr(shared.opts, "mps_fused_group_norm_silu_embedding", True)
+        and not (torch.is_grad_enabled() and (input_tensor.requires_grad or embedding.requires_grad or norm.weight.requires_grad or norm.bias.requires_grad))
+        and mps_flash_attention.is_available()
+    )
+
+    if can_dispatch:
+        try:
+            result = mps_flash_attention._extension.fused_group_norm_silu_add_embedding_forward(
+                input_tensor,
+                embedding,
+                norm.weight,
+                norm.bias,
+                norm.num_groups,
+                norm.eps,
+            )
+            _embedding_dispatch_count += 1
+            if not _embedding_first_dispatch_logged:
+                print(f"Fused Metal GroupNorm+SiLU+embedding first dispatch: {tuple(input_tensor.shape)}")
+                _embedding_first_dispatch_logged = True
+            return result
+        except RuntimeError as exc:
+            _embedding_runtime_disabled = True
+            if not _embedding_runtime_failure_warned:
+                print(f"Fused Metal GroupNorm+SiLU+embedding failed; using PyTorch: {exc}")
+                _embedding_runtime_failure_warned = True
+
+    _embedding_fallback_count += 1
+    while embedding.ndim < input_tensor.ndim:
+        embedding = embedding[..., None]
+    return F.silu(norm(input_tensor + embedding))
+
+
 def _can_dispatch_geglu(projected):
     if _geglu_runtime_disabled:
         return False
@@ -134,6 +200,8 @@ def diagnostics():
     return {
         "dispatches": _dispatch_count,
         "fallbacks": _fallback_count,
+        "embedding_dispatches": _embedding_dispatch_count,
+        "embedding_fallbacks": _embedding_fallback_count,
         "geglu_dispatches": _geglu_dispatch_count,
         "geglu_fallbacks": _geglu_fallback_count,
     }
