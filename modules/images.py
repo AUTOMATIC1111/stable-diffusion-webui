@@ -168,9 +168,11 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
         for line in lines:
             fnt = initial_fnt
             fontsize = initial_fontsize
-            while drawing.multiline_textsize(line.text, font=fnt)[0] > line.allowed_width and fontsize > 0:
+            bbox = drawing.multiline_textbbox((0, 0), line.text, font=fnt)
+            while bbox[2] - bbox[0] > line.allowed_width and fontsize > 0:
                 fontsize -= 1
                 fnt = get_font(fontsize)
+                bbox = drawing.multiline_textbbox((0, 0), line.text, font=fnt)
             drawing.multiline_text((draw_x, draw_y + line.size[1] / 2), line.text, font=fnt, fill=color_active if line.is_active else color_inactive, anchor="mm", align="center")
 
             if not line.is_active:
