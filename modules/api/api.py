@@ -687,7 +687,11 @@ class Api:
         return
 
     def get_cmd_flags(self):
-        return vars(shared.cmd_opts)
+        flags = dict(vars(shared.cmd_opts))
+        for secret_flag in ("gradio_auth", "api_auth"):
+            if secret_flag in flags and flags[secret_flag]:
+                flags[secret_flag] = "<hidden>"
+        return flags
 
     def get_samplers(self):
         return [{"name": sampler[0], "aliases":sampler[2], "options":sampler[3]} for sampler in sd_samplers.all_samplers]
