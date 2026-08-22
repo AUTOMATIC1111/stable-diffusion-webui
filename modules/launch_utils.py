@@ -150,7 +150,10 @@ def check_run_python(code: str) -> bool:
 
 
 def git_fix_workspace(dir, name):
-    run(f'"{git}" -C "{dir}" fetch --refetch --no-auto-gc', f"Fetching all contents for {name}", f"Couldn't fetch {name}", live=True)
+    try:
+        run(f'"{git}" -C "{dir}" fetch --refetch --no-auto-gc', f"Fetching all contents for {name}", f"Couldn't fetch {name}", live=True)
+    except RuntimeError:
+        run(f'"{git}" -C "{dir}" fetch --all --tags', f"Fetching all contents for {name}", f"Couldn't fetch {name}", live=True)
     run(f'"{git}" -C "{dir}" gc --aggressive --prune=now', f"Pruning {name}", f"Couldn't prune {name}", live=True)
     return
 
@@ -195,7 +198,7 @@ def git_clone(url, dir, name, commithash=None):
         raise
 
     if commithash is not None:
-        run(f'"{git}" -C "{dir}" checkout {commithash}', None, "Couldn't checkout {name}'s hash: {commithash}")
+        run(f'"{git}" -C "{dir}" checkout {commithash}', None, f"Couldn't checkout {name}'s hash: {commithash}")
 
 
 def git_pull_recursive(dir):
