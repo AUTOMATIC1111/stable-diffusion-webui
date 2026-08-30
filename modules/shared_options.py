@@ -240,6 +240,11 @@ options_templates.update(options_section(('optimizations', "Optimizations", "sd"
     "pad_cond_uncond_v0": OptionInfo(False, "Pad prompt/negative prompt (v0)", infotext='Pad conds v0').info("alternative implementation for the above; used prior to 1.6.0 for DDIM sampler; overrides the above if set; WARNING: truncates negative prompt if it's too long; changes seeds"),
     "persistent_cond_cache": OptionInfo(True, "Persistent cond cache").info("do not recalculate conds from prompts if prompts have not changed since previous calculation"),
     "batch_cond_uncond": OptionInfo(True, "Batch cond/uncond").info("do both conditional and unconditional denoising in one batch; uses a bit more VRAM during sampling, but improves speed; previously this was controlled by --always-batch-cond-uncond commandline argument"),
+    "vram_profile": OptionInfo("default", "VRAM generation profile", gr.Radio, {"choices": ["default", "balanced", "fast", "ultra"]}).info("Presets that reduce memory pressure for lower-end GPUs while keeping image quality stable."),
+    "vram_optimization_mode": OptionInfo("balanced", "VRAM optimization mode", gr.Radio, {"choices": ["balanced", "saver", "ultra"]}).info("Balanced keeps the default behavior; saver frees memory between batches; ultra is best for 4-8 GB cards."),
+    "vram_adaptive_batch_limit": OptionInfo(0, "Adaptive batch limit for VRAM saver", gr.Slider, {"minimum": 0, "maximum": 32, "step": 1}).info("Automatically reduces batch size when saver or ultra mode is active. 0 disables the feature."),
+    "safe_mode": OptionInfo(False, "Safe mode").info("Turns on aggressive cleanup, tiny batch sizes, and conservative generation settings to avoid OOM issues."),
+    "auto_unload_after_generation": OptionInfo(False, "Auto-unload inactive model blocks after each batch").info("Moves unused diffusion components back to RAM/CPU sooner to reduce OOM risk and smooth out long generations."),
     "fp8_storage": OptionInfo("Disable", "FP8 weight", gr.Radio, {"choices": ["Disable", "Enable for SDXL", "Enable"]}).info("Use FP8 to store Linear/Conv layers' weight. Require pytorch>=2.1.0."),
     "cache_fp16_weight": OptionInfo(False, "Cache FP16 weight for LoRA").info("Cache fp16 weight when enabling FP8, will increase the quality of LoRA. Use more system ram."),
 }))

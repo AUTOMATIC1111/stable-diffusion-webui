@@ -1,3 +1,18 @@
+## Unreleased
+
+### Features
+* Added a VRAM optimization mode selector with Balanced, VRAM Saver, and Extreme VRAM Saver presets for low-memory systems.
+* Added automatic cleanup support to offload inactive model blocks after each batch and lower the risk of out-of-memory failures.
+* Improved memory hygiene during generation with additional garbage collection and CUDA cache clearing in saver modes.
+* Added adaptive batch limiting for low-VRAM runs so generation automatically shrinks oversized batches when saver or ultra mode is active.
+* Added a built-in VRAM profile system with default, balanced, fast, and ultra presets plus a one-click Safe Mode for maximum stability.
+
+### Improvements
+* Kept existing lowvram/medvram behavior intact while extending it with an easier-to-use settings-driven profile.
+* Added a command-line flag, --vram-optimization-mode, to match the UI setting for headless setup.
+* Added the --vram-adaptive-batch-limit CLI switch for headless or batch automation users.
+* Added --vram-profile and --safe-mode so users can hard-code a safer default in automation and launch scripts.
+
 ## 1.10.1
 
 ### Bug Fixes:

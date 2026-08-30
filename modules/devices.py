@@ -1,5 +1,6 @@
 import sys
 import contextlib
+import gc
 from functools import lru_cache
 
 import torch
@@ -74,12 +75,82 @@ def get_device_for(task):
     return get_optimal_device()
 
 
+def normalize_vram_profile(value):
+    if value is None:
+        return "default"
+
+    normalized = str(value).strip().lower().replace("-", "_").replace(" ", "_")
+    if normalized in {"default", "balanced", "fast", "ultra", "safe_mode", "low_vram"}:
+        if normalized in {"safe_mode", "low_vram"}:
+            return "ultra"
+        return normalized
+
+    if "ultra" in normalized:
+        return "ultra"
+    if "balanced" in normalized:
+        return "balanced"
+    if "fast" in normalized:
+        return "fast"
+    return "default"
+
+
+def get_safe_mode():
+    if hasattr(shared, "opts") and hasattr(shared.opts, "safe_mode"):
+        if shared.opts.safe_mode:
+            return True
+    return bool(getattr(shared.cmd_opts, "safe_mode", False))
+
+
+def get_vram_profile():
+    if hasattr(shared, "opts") and hasattr(shared.opts, "vram_profile"):
+        profile = normalize_vram_profile(shared.opts.vram_profile)
+        if get_safe_mode() and profile != "ultra":
+            return "ultra"
+        return profile
+
+    profile = normalize_vram_profile(getattr(shared.cmd_opts, "vram_profile", "default"))
+    if get_safe_mode() and profile != "ultra":
+        return "ultra"
+    return profile
+
+
+def get_vram_optimization_mode():
+    if get_safe_mode():
+        return "ultra"
+
+    if hasattr(shared, "opts") and hasattr(shared.opts, "vram_optimization_mode"):
+        mode = str(shared.opts.vram_optimization_mode).lower().replace("-", "_").replace(" ", "_")
+        if mode in {"balanced", "saver", "ultra"}:
+            return mode
+        if "vram" in mode and "extreme" in mode:
+            return "ultra"
+        if "vram" in mode and "saver" in mode:
+            return "saver"
+        if mode in {"default", "normal"}:
+            return "balanced"
+
+    mode = getattr(shared.cmd_opts, "vram_optimization_mode", "balanced")
+    mode = str(mode).lower().replace("-", "_").replace(" ", "_")
+    if mode in {"balanced", "saver", "ultra"}:
+        return mode
+    if "vram" in mode and "extreme" in mode:
+        return "ultra"
+    if "vram" in mode and "saver" in mode:
+        return "saver"
+    return "balanced"
+
+
 def torch_gc():
+    mode = get_vram_optimization_mode()
+
+    if mode in {"saver", "ultra"}:
+        gc.collect()
 
     if torch.cuda.is_available():
         with torch.cuda.device(get_cuda_device_string()):
             torch.cuda.empty_cache()
-            torch.cuda.ipc_collect()
+            if mode in {"saver", "ultra"}:
+                torch.cuda.ipc_collect()
 
     if has_mps():
         mac_specific.torch_mps_gc()

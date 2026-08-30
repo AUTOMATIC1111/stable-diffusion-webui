@@ -914,6 +914,17 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     if p.scripts is not None:
         p.scripts.process(p)
 
+    adaptive_batch_limit = getattr(shared.opts, 'vram_adaptive_batch_limit', 0)
+    profile = devices.get_vram_profile()
+    if devices.get_safe_mode():
+        p.batch_size = max(1, min(int(p.batch_size), 2))
+    elif profile == 'ultra':
+        p.batch_size = max(1, min(int(p.batch_size), 2))
+    elif profile == 'balanced':
+        p.batch_size = max(1, min(int(p.batch_size), 4))
+    elif adaptive_batch_limit > 0 and devices.get_vram_optimization_mode() != 'balanced':
+        p.batch_size = max(1, min(int(p.batch_size), int(adaptive_batch_limit)))
+
     infotexts = []
     output_images = []
     with torch.no_grad(), p.sd_model.ema_scope():
@@ -1006,7 +1017,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             del samples_ddim
 
-            if lowvram.is_enabled(shared.sd_model):
+            if lowvram.is_enabled(shared.sd_model) or shared.opts.auto_unload_after_generation or devices.get_vram_optimization_mode() != "balanced":
                 lowvram.send_everything_to_cpu()
 
             devices.torch_gc()
