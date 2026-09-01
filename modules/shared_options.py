@@ -153,7 +153,7 @@ options_templates.update(options_section(('API', "API", "system"), {
 }))
 
 options_templates.update(options_section(('training', "Training", "training"), {
-    "unload_models_when_training": OptionInfo(False, "Move VAE and CLIP to RAM when training if possible. Saves VRAM."),
+    "unload_models_when_training": OptionInfo(False, "Move VAE to RAM when training if possible. Saves VRAM. (CLIP text encoder stays on GPU so the trained embedding receives gradients each step.)"),
     "pin_memory": OptionInfo(False, "Turn on pin_memory for DataLoader. Makes training slightly faster but can increase memory usage."),
     "save_optimizer_state": OptionInfo(False, "Saves Optimizer state as separate *.optim file. Training of embedding or HN can be resumed with the matching optim file."),
     "save_training_settings_to_txt": OptionInfo(True, "Save textual inversion and hypernet settings to a text file whenever training starts."),

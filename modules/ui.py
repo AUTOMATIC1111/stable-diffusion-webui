@@ -939,6 +939,7 @@ def create_ui():
 
                 with gr.Tab(label="Train", id="train"):
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding or Hypernetwork; you must specify a directory with a set of 1:1 ratio images <a href=\"https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion\" style=\"font-weight:bold;\">[wiki]</a></p>")
+                    gr.HTML(value="<p style='margin-bottom: 0.5em; color: var(--color-foreground);'><b>Low VRAM (e.g. 8 GB)?</b> Use an SD 1.5/2.x checkpoint, set &mdash;launch with <code>--vram-optimization-mode ultra</code> (or <code>--medvram</code>), enable <b>Training &rarr; Move VAE to RAM when training</b> and <b>Training &rarr; Use cross attention optimizations while training</b>, then use batch size = 1, gradient accumulation = 1, 1 vector/token, 512&times;512 resolution. SDXL/SD3 checkpoints do not fit 8 GB.</p>")
                     with FormRow():
                         train_embedding_name = gr.Dropdown(label='Embedding', elem_id="train_embedding", choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
                         create_refresh_button(train_embedding_name, sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings, lambda: {"choices": sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys())}, "refresh_train_embedding_name")
