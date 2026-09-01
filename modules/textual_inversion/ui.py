@@ -3,7 +3,7 @@ import html
 import gradio as gr
 
 import modules.textual_inversion.textual_inversion
-from modules import sd_hijack, shared
+from modules import devices, sd_hijack, shared
 
 
 def create_embedding(name, initialization_text, nvpt, overwrite_old):
@@ -18,7 +18,10 @@ def train_embedding(*args):
 
     assert not shared.cmd_opts.lowvram, 'Training models with lowvram not possible'
 
-    apply_optimizations = shared.opts.training_xattention_optimizations
+    # When the user has requested a low-VRAM profile (saver/ultra/safe mode), keep the
+    # memory-efficient cross-attention path active during training rather than undoing it.
+    # Undoing the optimizations (the default) is what makes training OOM on 8 GB cards.
+    apply_optimizations = shared.opts.training_xattention_optimizations or devices.is_low_vram_training()
     try:
         if not apply_optimizations:
             sd_hijack.undo_optimizations()

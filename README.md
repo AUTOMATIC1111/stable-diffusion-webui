@@ -160,6 +160,32 @@ git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui
 
 Find the instructions [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Installation-on-Apple-Silicon).
 
+### Textual inversion training on low VRAM (e.g. 8 GB)
+If you want to train textual-inversion embeddings (or hypernetworks) on a CUDA GPU with ~8 GB of VRAM, use a **Stable Diffusion 1.5 / 2.x** checkpoint (SDXL/SD3 do not fit 8 GB) and launch with a low-VRAM profile so the memory-efficient attention path stays active during training:
+
+```
+# Windows: edit webui-user.bat and add the flag to COMMANDLINE_ARGS, e.g.
+set COMMANDLINE_ARGS=--vram-optimization-mode ultra
+# or the legacy equivalent:
+set COMMANDLINE_ARGS=--medvram
+
+# Linux (flags are forwarded by webui.sh):
+./webui.sh --vram-optimization-mode ultra
+# or the legacy flag:
+./webui.sh --medvram
+```
+Then, in the UI **Settings → Training**, enable **Move VAE to RAM when training** and **Use cross attention optimizations while training**, and use these training values:
+
+| Parameter | Value |
+| --- | --- |
+| Batch size | 1 |
+| Gradient accumulation steps | 1 |
+| Number of vectors per token | 1 |
+| Width / Height | 512 |
+| Save an image to log directory every N steps | 0 (or a large number, to avoid VAE decode spikes) |
+
+> When a saver/ultra/safe profile is active, the web UI automatically keeps cross-attention optimizations enabled while training instead of reverting them, which is what makes 8 GB training possible. If you do not use a low-VRAM profile, you can still enable it manually with the two settings above.
+
 ## Contributing
 Here's how to add code to this repo: [Contributing](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Contributing)
 

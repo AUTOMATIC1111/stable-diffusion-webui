@@ -13,6 +13,11 @@
 * Added the --vram-adaptive-batch-limit CLI switch for headless or batch automation users.
 * Added --vram-profile and --safe-mode so users can hard-code a safer default in automation and launch scripts.
 
+### Training
+* Textual inversion / hypernetwork training no longer reverts cross-attention memory optimizations when a low-VRAM profile is active. In `saver`, `ultra`, or safe mode, the xformers/scaled-dot-product attention path now stays enabled during training, which prevents out-of-memory errors on 8 GB GPUs. (The default, full-VRAM path still produces identical results via `training_xattention_optimizations`.)
+* `GradScaler` is now CUDA-guarded so the training loop no longer emits a spurious warning (and falls back to plain `backward()`/`step()`) on non-CUDA devices.
+* Fixed the description of the "Move VAE to RAM when training" setting so it no longer claims CLIP is offloaded (CLIP must stay on GPU for the trained embedding to receive gradients each step).
+
 ## 1.10.1
 
 ### Bug Fixes:

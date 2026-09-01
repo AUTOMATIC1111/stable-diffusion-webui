@@ -140,6 +140,18 @@ def get_vram_optimization_mode():
     return "balanced"
 
 
+def is_low_vram_training():
+    """Whether the user has requested a low-VRAM profile (saver/ultra) or safe mode.
+
+    Textual inversion training undoes cross-attention memory optimizations by default
+    to preserve reproducibility. When the user has explicitly opted into a low-memory
+    profile, we instead want to keep (or re-apply) the memory-efficient attention path,
+    since those optimizations materially reduce peak VRAM on 8 GB cards.
+    """
+    mode = get_vram_optimization_mode()
+    return mode in {"saver", "ultra"} or get_safe_mode()
+
+
 def torch_gc():
     mode = get_vram_optimization_mode()
 
