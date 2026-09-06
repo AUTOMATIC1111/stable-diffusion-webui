@@ -118,8 +118,15 @@ def ddim_scheduler(n, sigma_min, sigma_max, inner_model, device):
 
 def beta_scheduler(n, sigma_min, sigma_max, inner_model, device):
     # From "Beta Sampling is All You Need" [arXiv:2407.12173] (Lee et. al, 2024)
-    alpha = shared.opts.beta_dist_alpha
-    beta = shared.opts.beta_dist_beta
+    # stats.beta.ppf requires both shape parameters to be strictly positive --
+    # 0 (or negative) produces NaN. Commit 94275b11 raised the options UI
+    # slider's minimum to 0.01 to stop new 0 values from being set, but a
+    # value saved before that change, or set directly through the
+    # /sdapi/v1/options API (which the slider's minimum doesn't constrain),
+    # can still reach here as 0. Clamp at the point of use so every path
+    # is covered.
+    alpha = max(shared.opts.beta_dist_alpha, 0.01)
+    beta = max(shared.opts.beta_dist_beta, 0.01)
     curve = [stats.beta.ppf(x, alpha, beta) for x in np.linspace(1, 0, n)]
 
     start = inner_model.sigma_to_t(torch.tensor(sigma_max))
