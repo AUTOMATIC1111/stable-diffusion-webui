@@ -490,7 +490,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
         else:
             print("No saved optimizer exists in checkpoint")
 
-    scaler = torch.cuda.amp.GradScaler()
+    scaler = torch.cuda.amp.GradScaler() if torch.cuda.is_available() else None
 
     batch_size = ds.batch_size
     gradient_step = ds.gradient_step
@@ -552,7 +552,11 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                     del x
 
                     _loss_step += loss.item()
-                scaler.scale(loss).backward()
+
+                if scaler is not None:
+                    scaler.scale(loss).backward()
+                else:
+                    loss.backward()
 
                 # go back until we reach gradient accumulation steps
                 if (j + 1) % gradient_step != 0:
@@ -561,8 +565,11 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                 if clip_grad:
                     clip_grad(embedding.vec, clip_grad_sched.learn_rate)
 
-                scaler.step(optimizer)
-                scaler.update()
+                if scaler is not None:
+                    scaler.step(optimizer)
+                    scaler.update()
+                else:
+                    optimizer.step()
                 embedding.step += 1
                 pbar.update()
                 optimizer.zero_grad(set_to_none=True)

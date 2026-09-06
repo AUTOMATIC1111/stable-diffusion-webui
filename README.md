@@ -94,6 +94,8 @@ A web interface for Stable Diffusion, implemented using Gradio library.
 - [Segmind Stable Diffusion](https://huggingface.co/segmind/SSD-1B) support
 
 ## Installation and Running
+For a complete setup guide, including Python 3.12 instructions and troubleshooting, see [INSTALL.md](INSTALL.md).
+
 Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for:
 - [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended)
 - [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.
@@ -111,7 +113,7 @@ Alternatively, use online services (like Google Colab):
 > For more details see [Install-and-Run-on-NVidia-GPUs](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs)
 
 ### Automatic Installation on Windows
-1. Install [Python 3.10.6](https://www.python.org/downloads/release/python-3106/) (Newer version of Python does not support torch), checking "Add Python to PATH".
+1. Install [Python 3.12](https://www.python.org/downloads/) (64-bit), checking "Add Python to PATH".
 2. Install [git](https://git-scm.com/download/win).
 3. Download the stable-diffusion-webui repository, for example by running `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git`.
 4. Run `webui-user.bat` from Windows Explorer as normal, non-administrator, user.
@@ -128,22 +130,22 @@ sudo zypper install wget git python3 libtcmalloc4 libglvnd
 # Arch-based:
 sudo pacman -S wget git python3
 ```
-If your system is very new, you need to install python3.11 or python3.10:
+If your system is very new, you need to install python3.12:
 ```bash
 # Ubuntu 24.04
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt update
-sudo apt install python3.11
+sudo apt install python3.12 python3.12-venv
 
 # Manjaro/Arch
 sudo pacman -S yay
-yay -S python311 # do not confuse with python3.11 package
+yay -S python312 # do not confuse with python3.12 package
 
-# Only for 3.11
+# Only for 3.12
 # Then set up env variable in launch script
-export python_cmd="python3.11"
+export python_cmd="python3.12"
 # or in webui-user.sh
-python_cmd="python3.11"
+python_cmd="python3.12"
 ```
 2. Navigate to the directory you would like the webui to be installed and execute the following command:
 ```bash
@@ -159,6 +161,32 @@ git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui
 ### Installation on Apple Silicon
 
 Find the instructions [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Installation-on-Apple-Silicon).
+
+### Textual inversion training on low VRAM (e.g. 8 GB)
+If you want to train textual-inversion embeddings (or hypernetworks) on a CUDA GPU with ~8 GB of VRAM, use a **Stable Diffusion 1.5 / 2.x** checkpoint (SDXL/SD3 do not fit 8 GB) and launch with a low-VRAM profile so the memory-efficient attention path stays active during training:
+
+```
+# Windows: edit webui-user.bat and add the flag to COMMANDLINE_ARGS, e.g.
+set COMMANDLINE_ARGS=--vram-optimization-mode ultra
+# or the legacy equivalent:
+set COMMANDLINE_ARGS=--medvram
+
+# Linux (flags are forwarded by webui.sh):
+./webui.sh --vram-optimization-mode ultra
+# or the legacy flag:
+./webui.sh --medvram
+```
+Then, in the UI **Settings → Training**, enable **Move VAE to RAM when training** and **Use cross attention optimizations while training**, and use these training values:
+
+| Parameter | Value |
+| --- | --- |
+| Batch size | 1 |
+| Gradient accumulation steps | 1 |
+| Number of vectors per token | 1 |
+| Width / Height | 512 |
+| Save an image to log directory every N steps | 0 (or a large number, to avoid VAE decode spikes) |
+
+> When a saver/ultra/safe profile is active, the web UI automatically keeps cross-attention optimizations enabled while training instead of reverting them, which is what makes 8 GB training possible. If you do not use a low-VRAM profile, you can still enable it manually with the two settings above.
 
 ## Contributing
 Here's how to add code to this repo: [Contributing](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Contributing)

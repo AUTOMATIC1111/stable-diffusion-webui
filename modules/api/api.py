@@ -805,7 +805,10 @@ class Api:
     def train_embedding(self, args: dict):
         try:
             shared.state.begin(job="train_embedding")
-            apply_optimizations = shared.opts.training_xattention_optimizations
+            # When the user has requested a low-VRAM profile (saver/ultra/safe mode), keep the
+            # memory-efficient cross-attention path active during training rather than undoing it.
+            # Undoing the optimizations (the default) is what makes training OOM on 8 GB cards.
+            apply_optimizations = shared.opts.training_xattention_optimizations or devices.is_low_vram_training()
             error = None
             filename = ''
             if not apply_optimizations:
@@ -827,7 +830,9 @@ class Api:
         try:
             shared.state.begin(job="train_hypernetwork")
             shared.loaded_hypernetworks = []
-            apply_optimizations = shared.opts.training_xattention_optimizations
+            # Mirror the textual-inversion behavior: in low-VRAM profiles keep the
+            # memory-efficient attention path active rather than undoing it.
+            apply_optimizations = shared.opts.training_xattention_optimizations or devices.is_low_vram_training()
             error = None
             filename = ''
             if not apply_optimizations:

@@ -19,8 +19,14 @@ def train_hypernetwork(*args):
 
     assert not shared.cmd_opts.lowvram, 'Training models with lowvram is not possible'
 
+    # In low-VRAM profiles (saver/ultra/safe mode) keep the memory-efficient
+    # attention path active instead of reverting to vanilla attention, which
+    # can push 8 GB cards into OOM during training.
+    apply_optimizations = shared.opts.training_xattention_optimizations or devices.is_low_vram_training()
+
     try:
-        sd_hijack.undo_optimizations()
+        if not apply_optimizations:
+            sd_hijack.undo_optimizations()
 
         hypernetwork, filename = modules.hypernetworks.hypernetwork.train_hypernetwork(*args)
 

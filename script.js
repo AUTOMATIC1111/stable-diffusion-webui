@@ -1,3 +1,7 @@
+/**
+ * Get the gradio app element or document if not found.
+ * @returns {Element} The gradio app element or document
+ */
 function gradioApp() {
     const elems = document.getElementsByTagName('gradio-app');
     const elem = elems.length == 0 ? document : elems[0];
@@ -12,6 +16,7 @@ function gradioApp() {
 
 /**
  * Get the currently selected top-level UI tab button (e.g. the button that says "Extras").
+ * @returns {Element|null} The selected tab button element or null if not found
  */
 function get_uiCurrentTab() {
     return gradioApp().querySelector('#tabs > .tab-nav > button.selected');
@@ -19,23 +24,72 @@ function get_uiCurrentTab() {
 
 /**
  * Get the first currently visible top-level UI tab content (e.g. the div hosting the "txt2img" UI).
+ * @returns {Element|null} The visible tab content element or null if not found
  */
 function get_uiCurrentTabContent() {
     return gradioApp().querySelector('#tabs > .tabitem[id^=tab_]:not([style*="display: none"])');
 }
 
+/**
+ * Array of callbacks registered to be called at each UI update.
+ * Each callback receives an array of MutationRecords as an argument.
+ * @type {Array<function>}
+ */
 var uiUpdateCallbacks = [];
+
+/**
+ * Array of callbacks registered to be called soon after UI updates.
+ * Each callback receives no arguments.
+ * These are preferred over `onUiUpdate` if you don't need access to MutationRecords.
+ * @type {Array<function>}
+ */
 var uiAfterUpdateCallbacks = [];
+
+/**
+ * Array of callbacks registered to be called when the UI is loaded.
+ * Each callback receives no arguments.
+ * @type {Array<function>}
+ */
 var uiLoadedCallbacks = [];
+
+/**
+ * Array of callbacks registered to be called when the UI tab is changed.
+ * Each callback receives no arguments.
+ * @type {Array<function>}
+ */
 var uiTabChangeCallbacks = [];
+
+/**
+ * Array of callbacks registered to be called when the options are changed.
+ * Each callback receives no arguments.
+ * @type {Array<function>}
+ */
 var optionsChangedCallbacks = [];
+
+/**
+ * Array of callbacks registered to be called when the options (in opts global variable) are available.
+ * Each callback receives no arguments.
+ * If you register the callback after the options are available, it's immediately called.
+ * @type {Array<function>}
+ */
 var optionsAvailableCallbacks = [];
+
+/**
+ * Timeout ID for scheduling UI update callbacks.
+ * @type {number|null}
+ */
 var uiAfterUpdateTimeout = null;
+
+/**
+ * Currently active UI tab.
+ * @type {Element|null}
+ */
 var uiCurrentTab = null;
 
 /**
  * Register callback to be called at each UI update.
  * The callback receives an array of MutationRecords as an argument.
+ * @param {function} callback - The callback function to register
  */
 function onUiUpdate(callback) {
     uiUpdateCallbacks.push(callback);
@@ -48,6 +102,7 @@ function onUiUpdate(callback) {
  * This is preferred over `onUiUpdate` if you don't need
  * access to the MutationRecords, as your function will
  * not be called quite as often.
+ * @param {function} callback - The callback function to register
  */
 function onAfterUiUpdate(callback) {
     uiAfterUpdateCallbacks.push(callback);
@@ -56,6 +111,7 @@ function onAfterUiUpdate(callback) {
 /**
  * Register callback to be called when the UI is loaded.
  * The callback receives no arguments.
+ * @param {function} callback - The callback function to register
  */
 function onUiLoaded(callback) {
     uiLoadedCallbacks.push(callback);
@@ -64,6 +120,7 @@ function onUiLoaded(callback) {
 /**
  * Register callback to be called when the UI tab is changed.
  * The callback receives no arguments.
+ * @param {function} callback - The callback function to register
  */
 function onUiTabChange(callback) {
     uiTabChangeCallbacks.push(callback);
@@ -72,7 +129,7 @@ function onUiTabChange(callback) {
 /**
  * Register callback to be called when the options are changed.
  * The callback receives no arguments.
- * @param callback
+ * @param {function} callback - The callback function to register
  */
 function onOptionsChanged(callback) {
     optionsChangedCallbacks.push(callback);
@@ -82,6 +139,7 @@ function onOptionsChanged(callback) {
  * Register callback to be called when the options (in opts global variable) are available.
  * The callback receives no arguments.
  * If you register the callback after the options are available, it's just immediately called.
+ * @param {function} callback - The callback function to register
  */
 function onOptionsAvailable(callback) {
     if (Object.keys(opts).length != 0) {
@@ -92,6 +150,11 @@ function onOptionsAvailable(callback) {
     optionsAvailableCallbacks.push(callback);
 }
 
+/**
+ * Execute all callbacks in the given queue with the provided argument.
+ * @param {Array<function>} queue - Array of callback functions
+ * @param {*} arg - Argument to pass to each callback
+ */
 function executeCallbacks(queue, arg) {
     for (const callback of queue) {
         try {
