@@ -94,6 +94,8 @@ A web interface for Stable Diffusion, implemented using Gradio library.
 - [Segmind Stable Diffusion](https://huggingface.co/segmind/SSD-1B) support
 
 ## Installation and Running
+For a complete setup guide, including Python 3.12 instructions and troubleshooting, see [INSTALL.md](INSTALL.md).
+
 Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for:
 - [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended)
 - [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.
@@ -111,7 +113,7 @@ Alternatively, use online services (like Google Colab):
 > For more details see [Install-and-Run-on-NVidia-GPUs](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs)
 
 ### Automatic Installation on Windows
-1. Install [Python 3.10.6](https://www.python.org/downloads/release/python-3106/) (Newer version of Python does not support torch), checking "Add Python to PATH".
+1. Install [Python 3.12](https://www.python.org/downloads/) (64-bit), checking "Add Python to PATH".
 2. Install [git](https://git-scm.com/download/win).
 3. Download the stable-diffusion-webui repository, for example by running `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git`.
 4. Run `webui-user.bat` from Windows Explorer as normal, non-administrator, user.
@@ -128,22 +130,22 @@ sudo zypper install wget git python3 libtcmalloc4 libglvnd
 # Arch-based:
 sudo pacman -S wget git python3
 ```
-If your system is very new, you need to install python3.11 or python3.10:
+If your system is very new, you need to install python3.12:
 ```bash
 # Ubuntu 24.04
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt update
-sudo apt install python3.11
+sudo apt install python3.12 python3.12-venv
 
 # Manjaro/Arch
 sudo pacman -S yay
-yay -S python311 # do not confuse with python3.11 package
+yay -S python312 # do not confuse with python3.12 package
 
-# Only for 3.11
+# Only for 3.12
 # Then set up env variable in launch script
-export python_cmd="python3.11"
+export python_cmd="python3.12"
 # or in webui-user.sh
-python_cmd="python3.11"
+python_cmd="python3.12"
 ```
 2. Navigate to the directory you would like the webui to be installed and execute the following command:
 ```bash
