@@ -36,20 +36,14 @@ class ModelType(enum.Enum):
 
 
 def replace_key(d, key, new_key, value):
-    keys = list(d.keys())
-
+    """Replace a key in the dictionary while maintaining insertion order.
+    
+    Uses Python 3.7+ dict insertion order guarantee instead of rebuilding
+    the entire dictionary. Time complexity: O(1) instead of O(n).
+    """
+    if key in d:
+        del d[key]
     d[new_key] = value
-
-    if key not in keys:
-        return d
-
-    index = keys.index(key)
-    keys[index] = new_key
-
-    new_d = {k: d[k] for k in keys}
-
-    d.clear()
-    d.update(new_d)
     return d
 
 
