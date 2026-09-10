@@ -549,6 +549,7 @@ class FilenameGenerator:
             *args
         ),  # accepts formats:[hasprompt<prompt1|default><prompt2>..]
         "clip_skip": lambda self: opts.data["CLIP_stop_at_last_layers"],
+        "randn_source": lambda self: opts.data["randn_source"],
         "denoising": lambda self: self.p.denoising_strength
         if self.p and self.p.denoising_strength
         else NOTHING_AND_SKIP_PREVIOUS_TEXT,

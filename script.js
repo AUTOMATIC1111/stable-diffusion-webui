@@ -182,7 +182,7 @@ document.addEventListener('keydown', function(e) {
         const lightboxModal = document.querySelector('#lightboxModal');
         if (!globalPopup || globalPopup.style.display === 'none') {
             if (document.activeElement === lightboxModal) return;
-            if (interruptButton.style.display === 'block') {
+            if (interruptButton?.style.display === 'block') {
                 interruptButton.click();
                 e.preventDefault();
             }

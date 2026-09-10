@@ -175,6 +175,7 @@ def encode_pil_to_base64(image):
                     format="WEBP",
                     exif=exif_bytes,
                     quality=opts.jpeg_quality,
+                    lossless=opts.webp_lossless,
                 )
 
         else:

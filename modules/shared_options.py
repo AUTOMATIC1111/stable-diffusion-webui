@@ -48,7 +48,14 @@ options_templates.update(
         ("saving-images", "Saving images/grids", "saving"),
         {
             "samples_save": OptionInfo(True, "Always save all generated images"),
-            "samples_format": OptionInfo("png", "File format for images"),
+            "samples_format": OptionInfo(
+                "png",
+                "File format for images",
+                ui_components.DropdownEditable,
+                {"choices": ("png", "jpg", "jpeg", "webp", "avif")},
+            ).info(
+                "manual input of <a href='https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html' target='_blank'>other formats</a> is possible, but compatibility is not guaranteed"
+            ),
             "samples_filename_pattern": OptionInfo(
                 "", "Images filename pattern", component_args=hide_dirs
             ).link(
@@ -65,7 +72,14 @@ options_templates.update(
                 {"choices": ["Replace", "Add number suffix"], **hide_dirs},
             ),
             "grid_save": OptionInfo(True, "Always save all generated image grids"),
-            "grid_format": OptionInfo("png", "File format for grids"),
+            "grid_format": OptionInfo(
+                "png",
+                "File format for grids",
+                ui_components.DropdownEditable,
+                {"choices": ("png", "jpg", "jpeg", "webp", "avif")},
+            ).info(
+                "manual input of <a href='https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html' target='_blank'>other formats</a> is possible, but compatibility is not guaranteed"
+            ),
             "grid_extended_filename": OptionInfo(
                 False, "Add extended info (seed, prompt) to filename when saving grid"
             ),
@@ -395,6 +409,12 @@ options_templates.update(
             "dump_stacks_on_signal": OptionInfo(
                 False, "Print stack traces before exiting the program with ctrl+c."
             ),
+            "concurrent_git_fetch_limit": OptionInfo(
+                16,
+                "Number of simultaneous extension update checks ",
+                gr.Slider,
+                {"step": 1, "minimum": 1, "maximum": 100},
+            ).info("reduce extension update check time"),
         },
     )
 )
@@ -791,7 +811,8 @@ options_templates.update(
                 infotext="NGMS",
             )
             .link(
-                "PR", "https://github.com/AUTOMATIC1111/stablediffusion-webui/pull/9177"
+                "PR",
+                "https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9177",
             )
             .info(
                 "skip negative prompt for some steps when the image is almost ready; 0=disable, higher=faster"
@@ -1059,6 +1080,9 @@ options_templates.update(
                 lambda: {"choices": ["None", *shared.hypernetworks]},
                 refresh=shared_items.reload_hypernetworks,
             ),
+            "textual_inversion_image_embedding_data_cache": OptionInfo(
+                False, "Cache the data of image embeddings"
+            ).info("potentially increase TI load time at the cost some disk space"),
         },
     )
 )
@@ -1526,13 +1550,13 @@ options_templates.update(
                 {"minimum": 0.0, "maximum": 1.0, "step": 0.01},
                 infotext="Skip Early CFG",
             ).info(
-                "disables CFG on a proportion of steps at the beginning of generation; 0=skip none; 1=skip all; can both improve sample diversity/quality and speed up sampling"
+                "disables CFG on a proportion of steps at the beginning of generation; 0=skip none; 1=skip all; can both improve sample diversity/quality and speed up sampling; XYZ plot: Skip Early CFG"
             ),
             "beta_dist_alpha": OptionInfo(
                 0.6,
                 "Beta scheduler - alpha",
                 gr.Slider,
-                {"minimum": 0.01, "maximum": 1.0, "step": 0.01},
+                {"minimum": 0.01, "maximum": 5.0, "step": 0.01},
                 infotext="Beta scheduler alpha",
             ).info(
                 "Default = 0.6; the alpha parameter of the beta distribution used in Beta sampling"
@@ -1541,7 +1565,7 @@ options_templates.update(
                 0.6,
                 "Beta scheduler - beta",
                 gr.Slider,
-                {"minimum": 0.01, "maximum": 1.0, "step": 0.01},
+                {"minimum": 0.01, "maximum": 5.0, "step": 0.01},
                 infotext="Beta scheduler beta",
             ).info(
                 "Default = 0.6; the beta parameter of the beta distribution used in Beta sampling"
@@ -1559,7 +1583,12 @@ options_templates.update(
                 "Enable postprocessing operations in txt2img and img2img tabs",
                 ui_components.DropdownMulti,
                 lambda: {
-                    "choices": [x.name for x in shared_items.postprocessing_scripts()]
+                    "choices": [
+                        x.name
+                        for x in shared_items.postprocessing_scripts(
+                            filter_out_extra_only=True
+                        )
+                    ]
                 },
             ),
             "postprocessing_disable_in_extras": OptionInfo(
@@ -1567,7 +1596,12 @@ options_templates.update(
                 "Disable postprocessing operations in extras tab",
                 ui_components.DropdownMulti,
                 lambda: {
-                    "choices": [x.name for x in shared_items.postprocessing_scripts()]
+                    "choices": [
+                        x.name
+                        for x in shared_items.postprocessing_scripts(
+                            filter_out_main_ui_only=True
+                        )
+                    ]
                 },
             ),
             "postprocessing_operation_order": OptionInfo(
@@ -1575,7 +1609,12 @@ options_templates.update(
                 "Postprocessing operation order",
                 ui_components.DropdownMulti,
                 lambda: {
-                    "choices": [x.name for x in shared_items.postprocessing_scripts()]
+                    "choices": [
+                        x.name
+                        for x in shared_items.postprocessing_scripts(
+                            filter_out_main_ui_only=True
+                        )
+                    ]
                 },
             ),
             "upscaling_max_images_in_cache": OptionInfo(

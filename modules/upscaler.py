@@ -106,6 +106,7 @@ class UpscalerData:
         upscaler: Upscaler = None,
         scale: int = 4,
         model=None,
+        sha256: str = None,
     ):
         self.name = name
         self.data_path = path
@@ -113,6 +114,7 @@ class UpscalerData:
         self.scaler = upscaler
         self.scale = scale
         self.model = model
+        self.sha256 = sha256
 
     def __repr__(self):
         return (

@@ -104,7 +104,7 @@ var contextMenuInit = function() {
                         e.preventDefault();
                     }
                 });
-            });
+            }, {passive: false});
         });
         eventListenerApplied = true;
 

@@ -208,10 +208,8 @@ def add_pages_to_demo(app):
     )
 
 
-def quote_js(s):
-    s = s.replace("\\", "\\\\")
-    s = s.replace('"', '\\"')
-    return f'"{s}"'
+def quote_js(s: str):
+    return json.dumps(s, ensure_ascii=False)
 
 
 class ExtraNetworksPage:

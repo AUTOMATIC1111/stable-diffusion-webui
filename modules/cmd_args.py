@@ -634,3 +634,4 @@ parser.add_argument(
     action="store_true",
     help="disable read prompt from last generation feature; settings this argument will not create '--data_path/params.txt' file",
 )
+parser.add_argument("--uv", action="store_true", help="use the uv package manager")

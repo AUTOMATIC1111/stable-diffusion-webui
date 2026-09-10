@@ -91,7 +91,7 @@ class DisableInitialization(ReplaceHelper):
             # this file is always 404, prevent making request
             if (
                 url
-                == "https://huggingface.co/openai/clip-vit-large-patch14/resolve/main/added_tokens.json"
+                == f"{shared.hf_endpoint}/openai/clip-vit-large-patch14/resolve/main/added_tokens.json"
                 or url == "openai/clip-vit-large-patch14"
                 and args[0] == "added_tokens.json"
             ):

@@ -34,14 +34,14 @@ class ScriptPostprocessingAutosizedCrop(scripts_postprocessing.ScriptPostprocess
         with ui_components.InputAccordion(False, label="Auto-sized crop") as enable:
             gr.Markdown('Each image is center-cropped with an automatically chosen width and height.')
             with gr.Row():
-                mindim = gr.Slider(minimum=64, maximum=2048, step=8, label="Dimension lower bound", value=384, elem_id="postprocess_multicrop_mindim")
-                maxdim = gr.Slider(minimum=64, maximum=2048, step=8, label="Dimension upper bound", value=768, elem_id="postprocess_multicrop_maxdim")
+                mindim = gr.Slider(minimum=64, maximum=2048, step=8, label="Dimension lower bound", value=384, elem_id=self.elem_id_suffix("postprocess_multicrop_mindim"))
+                maxdim = gr.Slider(minimum=64, maximum=2048, step=8, label="Dimension upper bound", value=768, elem_id=self.elem_id_suffix("postprocess_multicrop_maxdim"))
             with gr.Row():
-                minarea = gr.Slider(minimum=64 * 64, maximum=2048 * 2048, step=1, label="Area lower bound", value=64 * 64, elem_id="postprocess_multicrop_minarea")
-                maxarea = gr.Slider(minimum=64 * 64, maximum=2048 * 2048, step=1, label="Area upper bound", value=640 * 640, elem_id="postprocess_multicrop_maxarea")
+                minarea = gr.Slider(minimum=64 * 64, maximum=2048 * 2048, step=1, label="Area lower bound", value=64 * 64, elem_id=self.elem_id_suffix("postprocess_multicrop_minarea"))
+                maxarea = gr.Slider(minimum=64 * 64, maximum=2048 * 2048, step=1, label="Area upper bound", value=640 * 640, elem_id=self.elem_id_suffix("postprocess_multicrop_maxarea"))
             with gr.Row():
-                objective = gr.Radio(["Maximize area", "Minimize error"], value="Maximize area", label="Resizing objective", elem_id="postprocess_multicrop_objective")
-                threshold = gr.Slider(minimum=0, maximum=1, step=0.01, label="Error threshold", value=0.1, elem_id="postprocess_multicrop_threshold")
+                objective = gr.Radio(["Maximize area", "Minimize error"], value="Maximize area", label="Resizing objective", elem_id=self.elem_id_suffix("postprocess_multicrop_objective"))
+                threshold = gr.Slider(minimum=0, maximum=1, step=0.01, label="Error threshold", value=0.1, elem_id=self.elem_id_suffix("postprocess_multicrop_threshold"))
 
         return {
             "enable": enable,

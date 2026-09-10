@@ -133,7 +133,7 @@ If your system is very new, you need to install python3.11 or python3.10:
 # Ubuntu 24.04
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt update
-sudo apt install python3.11
+sudo apt install python3.11 python3.11-venv
 
 # Manjaro/Arch
 sudo pacman -S yay
@@ -148,6 +148,7 @@ python_cmd="python3.11"
 2. Navigate to the directory you would like the webui to be installed and execute the following command:
 ```bash
 wget -q https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/master/webui.sh
+chmod +x webui.sh
 ```
 Or just clone the repo wherever you want:
 ```bash

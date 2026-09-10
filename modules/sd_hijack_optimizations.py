@@ -69,7 +69,7 @@ class SdOptimizationXformers(SdOptimization):
         return shared.cmd_opts.force_enable_xformers or (
             shared.xformers_available
             and torch.cuda.is_available()
-            and (6, 0) <= torch.cuda.get_device_capability(shared.device) <= (9, 0)
+            and (6, 0) <= torch.cuda.get_device_capability(shared.device) <= (12, 0)
         )
 
     def apply(self):
