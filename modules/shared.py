@@ -11,7 +11,15 @@ from modules import (
     sd_models_types,
 )
 from modules.paths_internal import (
+    default_sd_model_file,
     data_path,
+    extensions_builtin_dir,
+    extensions_dir,
+    models_path,
+    script_path,
+    sd_configs_path,
+    sd_default_config,
+    sd_model_file,
 )  # noqa: F401
 from modules import util
 from typing import TYPE_CHECKING
