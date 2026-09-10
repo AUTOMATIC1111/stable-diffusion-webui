@@ -31,7 +31,7 @@
 * Add filename pattern: `[basename]` ([#15978](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15978))
 * Add option to enable clip skip for clip L on SDXL ([#15992](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15992))
 * Option to prevent screen sleep during generation ([#16001](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16001))
-* ToggleLivePriview button in image viewer ([#16065](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16065))
+* ToggleLivePreview button in image viewer ([#16065](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16065))
 * Remove ui flashing on reloading and fast scrollong ([#16153](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16153))
 * option to disable save button log.csv ([#16242](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16242))
 
@@ -60,7 +60,7 @@
 * Fix Hypertile xyz ([#15831](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15831))
 * XYZ CSV skipinitialspace ([#15832](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15832))
 * fix soft inpainting on mps and xpu, torch_utils.float64 ([#15815](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15815))
-* fix extention update when not on main branch ([#15797](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15797))
+* fix extension update when not on main branch ([#15797](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15797))
 * update pickle safe filenames
 * use relative path for webui-assets css ([#15757](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15757))
 * When creating a virtual environment, upgrade pip in webui.bat/webui.sh ([#15750](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15750))
@@ -78,7 +78,7 @@
 * Possible fix of wrong scale in weight decomposition ([#16151](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16151))
 * Ensure use of python from venv on Mac and Linux ([#16116](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16116))
 * Prioritize python3.10 over python3 if both are available on Linux and Mac (with fallback) ([#16092](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16092))
-* stoping generation extras ([#16085](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16085))
+* stopping generation extras ([#16085](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16085))
 * Fix SD2 loading ([#16078](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16078), [#16079](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16079))
 * fix infotext Lora hashes for hires fix different lora ([#16062](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16062))
 * Fix sampler scheduler autocorrection warning ([#16054](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/16054))
@@ -146,7 +146,7 @@
 * fix: remove_callbacks_for_function should also remove from the ordered map ([#15533](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15533))
 * fix x1 upscalers ([#15555](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15555))
 * Fix cls.__module__ value in extension script ([#15532](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15532))
-* fix typo in function call (eror -> error) ([#15531](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15531))
+* fix typo in function call (error -> error) ([#15531](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15531))
 
 ### Other:
 * Hide 'No Image data blocks found.' message ([#15567](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15567))
@@ -186,7 +186,7 @@
 * add an option to hide postprocessing options in Extras tab
 
 ### Extensions and API:
-* ResizeHandleRow - allow overriden column scale parametr ([#15004](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15004))
+* ResizeHandleRow - allow overridden column scale parameter ([#15004](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15004))
 * call script_callbacks.ui_settings_callback earlier; fix extra-options-section built-in extension killing the ui if using a setting that doesn't exist
 * make it possible to use zoom.js outside webui context ([#15286](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15286), [#15288](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15288))
 * allow variants for extension name in metadata.ini ([#15290](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15290))
@@ -202,10 +202,10 @@
 
 ### Bug Fixes:
 * prevent escape button causing an interrupt when no generation has been made yet
-* [bug] avoid doble upscaling in inpaint ([#14966](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14966))
+* [bug] avoid double upscaling in inpaint ([#14966](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14966))
 * possible fix for reload button not appearing in some cases for extra networks.
 * fix: the `split_threshold` parameter does not work when running Split oversized images ([#15006](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15006))
-* Fix resize-handle visability for vertical layout (mobile) ([#15010](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15010))
+* Fix resize-handle visibility for vertical layout (mobile) ([#15010](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15010))
 * register_tmp_file also for mtime ([#15012](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15012))
 * Protect alphas_cumprod during refiner switchover ([#14979](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/14979))
 * Fix EXIF orientation in API image loading ([#15062](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/15062))
@@ -545,7 +545,7 @@
 * update dragdrop.js ([#13372](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/13372))
 * use orderdict as lru cache:opt/bug ([#13313](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/13313))
 * XYZ if not include sub grids do not save sub grid ([#13282](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/13282))
-* initialize state.time_start befroe state.job_count ([#13229](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/13229))
+* initialize state.time_start before state.job_count ([#13229](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/13229))
 * fix fieldname regex ([#13458](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/13458))
 * change denoising_strength default to None. ([#13466](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/13466))
 * fix regression ([#13475](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/13475))
@@ -681,7 +681,7 @@
  * fix api only Lora not working ([#12387](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12387))
  * fix options in main UI misbehaving when there's just one element
  * make it possible to use a sampler from infotext even if it's hidden in the dropdown
- * fix styles missing from the prompt in infotext when making a grid of batch of multiplie images
+ * fix styles missing from the prompt in infotext when making a grid of batch of multiply images
  * prevent bogus progress output in console when calculating hires fix dimensions
  * fix --use-textbox-seed
  * fix broken `Lora/Networks: use old method` option ([#12466](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12466))

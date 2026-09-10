@@ -13,7 +13,7 @@ def parse_version(text):
     if text is None:
         return None
 
-    m = re.match(r'([^-]+-[^-]+)-.*', text)
+    m = re.match(r"([^-]+-[^-]+)-.*", text)
     if m:
         text = m.group(1)
 
@@ -33,14 +33,14 @@ def backcompat(d):
     if ver is None:
         return
 
-    if ver < v160 and '[' in d.get('Prompt', ''):
+    if ver < v160 and "[" in d.get("Prompt", ""):
         d["Old prompt editing timelines"] = True
 
-    if ver < v160 and d.get('Sampler', '') in ('DDIM', 'PLMS'):
+    if ver < v160 and d.get("Sampler", "") in ("DDIM", "PLMS"):
         d["Pad conds v0"] = True
 
     if ver < v170_tsnr:
         d["Downcast alphas_cumprod"] = True
 
-    if ver < v180 and d.get('Refiner'):
+    if ver < v180 and d.get("Refiner"):
         d["Refiner switch by sampling steps"] = True

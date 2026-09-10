@@ -20,7 +20,9 @@ def preload_extensions(extensions_dir, parser, extension_list=None):
     if not os.path.isdir(extensions_dir):
         return
 
-    extensions = extension_list if extension_list is not None else os.listdir(extensions_dir)
+    extensions = (
+        extension_list if extension_list is not None else os.listdir(extensions_dir)
+    )
     for dirname in sorted(extensions):
         preload_script = os.path.join(extensions_dir, dirname, "preload.py")
         if not os.path.isfile(preload_script):
@@ -28,8 +30,10 @@ def preload_extensions(extensions_dir, parser, extension_list=None):
 
         try:
             module = load_module(preload_script)
-            if hasattr(module, 'preload'):
+            if hasattr(module, "preload"):
                 module.preload(parser)
 
         except Exception:
-            errors.report(f"Error running preload() for {preload_script}", exc_info=True)
+            errors.report(
+                f"Error running preload() for {preload_script}", exc_info=True
+            )

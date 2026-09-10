@@ -6,11 +6,13 @@ from modules.ui_extra_networks import quote_js
 
 class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
     def __init__(self):
-        super().__init__('Textual Inversion')
+        super().__init__("Textual Inversion")
         self.allow_negative_prompt = True
 
     def refresh(self):
-        sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)
+        sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(
+            force_reload=True
+        )
 
     def create_item(self, name, index=None, enable_filter=True):
         embedding = sd_hijack.model_hijack.embedding_db.word_embeddings.get(name)
@@ -30,7 +32,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
             "search_terms": search_terms,
             "prompt": quote_js(embedding.name),
             "local_preview": f"{path}.preview.{shared.opts.samples_format}",
-            "sort_keys": {'default': index, **self.get_sort_keys(embedding.filename)},
+            "sort_keys": {"default": index, **self.get_sort_keys(embedding.filename)},
         }
 
     def list_items(self):

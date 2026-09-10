@@ -19,7 +19,11 @@ class UpscalerRealESRGAN(Upscaler):
         for scaler in scalers:
             if scaler.local_data_path.startswith("http"):
                 filename = modelloader.friendly_name(scaler.local_data_path)
-                local_model_candidates = [local_model for local_model in local_model_paths if local_model.endswith(f"{filename}.pth")]
+                local_model_candidates = [
+                    local_model
+                    for local_model in local_model_paths
+                    if local_model.endswith(f"{filename}.pth")
+                ]
                 if local_model_candidates:
                     scaler.local_data_path = local_model_candidates[0]
 
@@ -59,7 +63,9 @@ class UpscalerRealESRGAN(Upscaler):
                         model_dir=self.model_download_path,
                     )
                 if not os.path.exists(scaler.local_data_path):
-                    raise FileNotFoundError(f"RealESRGAN data missing: {scaler.local_data_path}")
+                    raise FileNotFoundError(
+                        f"RealESRGAN data missing: {scaler.local_data_path}"
+                    )
                 return scaler
         raise ValueError(f"Unable to find model info: {path}")
 

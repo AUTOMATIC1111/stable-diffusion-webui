@@ -6,7 +6,12 @@ import typing
 from transformers import CLIPTokenizer, T5TokenizerFast
 
 from modules import shared, devices, modelloader, sd_hijack_clip, prompt_parser
-from modules.models.sd3.other_impls import SDClipModel, SDXLClipG, T5XXLModel, SD3Tokenizer
+from modules.models.sd3.other_impls import (
+    SDClipModel,
+    SDXLClipG,
+    T5XXLModel,
+    SD3Tokenizer,
+)
 
 
 class SafetensorsMapping(typing.Mapping):
@@ -62,7 +67,7 @@ class Sd3ClipLG(sd_hijack_clip.TextConditionalModel):
 
         self.tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
 
-        empty = self.tokenizer('')["input_ids"]
+        empty = self.tokenizer("")["input_ids"]
         self.id_start = empty[0]
         self.id_end = empty[1]
         self.id_pad = empty[1]
@@ -70,14 +75,16 @@ class Sd3ClipLG(sd_hijack_clip.TextConditionalModel):
         self.return_pooled = True
 
     def tokenize(self, texts):
-        return self.tokenizer(texts, truncation=False, add_special_tokens=False)["input_ids"]
+        return self.tokenizer(texts, truncation=False, add_special_tokens=False)[
+            "input_ids"
+        ]
 
     def encode_with_transformers(self, tokens):
         tokens_g = tokens.clone()
 
         for batch_pos in range(tokens_g.shape[0]):
             index = tokens_g[batch_pos].cpu().tolist().index(self.id_end)
-            tokens_g[batch_pos, index+1:tokens_g.shape[1]] = 0
+            tokens_g[batch_pos, index + 1 : tokens_g.shape[1]] = 0
 
         l_out, l_pooled = self.clip_l(tokens)
         g_out, g_pooled = self.clip_g(tokens_g)
@@ -91,7 +98,7 @@ class Sd3ClipLG(sd_hijack_clip.TextConditionalModel):
         return lg_out
 
     def encode_embedding_init_text(self, init_text, nvpt):
-        return torch.zeros((nvpt, 768+1280), device=devices.device) # XXX
+        return torch.zeros((nvpt, 768 + 1280), device=devices.device)  # XXX
 
 
 class Sd3T5(torch.nn.Module):
@@ -101,12 +108,14 @@ class Sd3T5(torch.nn.Module):
         self.t5xxl = t5xxl
         self.tokenizer = T5TokenizerFast.from_pretrained("google/t5-v1_1-xxl")
 
-        empty = self.tokenizer('', padding='max_length', max_length=2)["input_ids"]
+        empty = self.tokenizer("", padding="max_length", max_length=2)["input_ids"]
         self.id_end = empty[0]
         self.id_pad = empty[1]
 
     def tokenize(self, texts):
-        return self.tokenizer(texts, truncation=False, add_special_tokens=False)["input_ids"]
+        return self.tokenizer(texts, truncation=False, add_special_tokens=False)[
+            "input_ids"
+        ]
 
     def tokenize_line(self, line, *, target_token_count=None):
         if shared.opts.emphasis != "None":
@@ -120,7 +129,7 @@ class Sd3T5(torch.nn.Module):
         multipliers = []
 
         for text_tokens, (text, weight) in zip(tokenized, parsed):
-            if text == 'BREAK' and weight == -1:
+            if text == "BREAK" and weight == -1:
                 continue
 
             tokens += text_tokens
@@ -141,12 +150,18 @@ class Sd3T5(torch.nn.Module):
 
     def forward(self, texts, *, token_count):
         if not self.t5xxl or not shared.opts.sd3_enable_t5:
-            return torch.zeros((len(texts), token_count, 4096), device=devices.device, dtype=devices.dtype)
+            return torch.zeros(
+                (len(texts), token_count, 4096),
+                device=devices.device,
+                dtype=devices.dtype,
+            )
 
         tokens_batch = []
 
         for text in texts:
-            tokens, multipliers = self.tokenize_line(text, target_token_count=token_count)
+            tokens, multipliers = self.tokenize_line(
+                text, target_token_count=token_count
+            )
             tokens_batch.append(tokens)
 
         t5_out, t5_pooled = self.t5xxl(tokens_batch)
@@ -154,7 +169,7 @@ class Sd3T5(torch.nn.Module):
         return t5_out
 
     def encode_embedding_init_text(self, init_text, nvpt):
-        return torch.zeros((nvpt, 4096), device=devices.device) # XXX
+        return torch.zeros((nvpt, 4096), device=devices.device)  # XXX
 
 
 class SD3Cond(torch.nn.Module):
@@ -165,7 +180,15 @@ class SD3Cond(torch.nn.Module):
 
         with torch.no_grad():
             self.clip_g = SDXLClipG(CLIPG_CONFIG, device="cpu", dtype=devices.dtype)
-            self.clip_l = SDClipModel(layer="hidden", layer_idx=-2, device="cpu", dtype=devices.dtype, layer_norm_hidden_state=False, return_projected_pooled=False, textmodel_json_config=CLIPL_CONFIG)
+            self.clip_l = SDClipModel(
+                layer="hidden",
+                layer_idx=-2,
+                device="cpu",
+                dtype=devices.dtype,
+                layer_norm_hidden_state=False,
+                return_projected_pooled=False,
+                textmodel_json_config=CLIPL_CONFIG,
+            )
 
             if shared.opts.sd3_enable_t5:
                 self.t5xxl = T5XXLModel(T5_CONFIG, device="cpu", dtype=devices.dtype)
@@ -182,27 +205,47 @@ class SD3Cond(torch.nn.Module):
             lgt_out = torch.cat([lg_out, t5_out], dim=-2)
 
         return {
-            'crossattn': lgt_out,
-            'vector': vector_out,
+            "crossattn": lgt_out,
+            "vector": vector_out,
         }
 
     def before_load_weights(self, state_dict):
         clip_path = os.path.join(shared.models_path, "CLIP")
 
-        if 'text_encoders.clip_g.transformer.text_model.embeddings.position_embedding.weight' not in state_dict:
-            clip_g_file = modelloader.load_file_from_url(CLIPG_URL, model_dir=clip_path, file_name="clip_g.safetensors")
+        if (
+            "text_encoders.clip_g.transformer.text_model.embeddings.position_embedding.weight"
+            not in state_dict
+        ):
+            clip_g_file = modelloader.load_file_from_url(
+                CLIPG_URL, model_dir=clip_path, file_name="clip_g.safetensors"
+            )
             with safetensors.safe_open(clip_g_file, framework="pt") as file:
                 self.clip_g.transformer.load_state_dict(SafetensorsMapping(file))
 
-        if 'text_encoders.clip_l.transformer.text_model.embeddings.position_embedding.weight' not in state_dict:
-            clip_l_file = modelloader.load_file_from_url(CLIPL_URL, model_dir=clip_path, file_name="clip_l.safetensors")
+        if (
+            "text_encoders.clip_l.transformer.text_model.embeddings.position_embedding.weight"
+            not in state_dict
+        ):
+            clip_l_file = modelloader.load_file_from_url(
+                CLIPL_URL, model_dir=clip_path, file_name="clip_l.safetensors"
+            )
             with safetensors.safe_open(clip_l_file, framework="pt") as file:
-                self.clip_l.transformer.load_state_dict(SafetensorsMapping(file), strict=False)
+                self.clip_l.transformer.load_state_dict(
+                    SafetensorsMapping(file), strict=False
+                )
 
-        if self.t5xxl and 'text_encoders.t5xxl.transformer.encoder.embed_tokens.weight' not in state_dict:
-            t5_file = modelloader.load_file_from_url(T5_URL, model_dir=clip_path, file_name="t5xxl_fp16.safetensors")
+        if (
+            self.t5xxl
+            and "text_encoders.t5xxl.transformer.encoder.embed_tokens.weight"
+            not in state_dict
+        ):
+            t5_file = modelloader.load_file_from_url(
+                T5_URL, model_dir=clip_path, file_name="t5xxl_fp16.safetensors"
+            )
             with safetensors.safe_open(t5_file, framework="pt") as file:
-                self.t5xxl.transformer.load_state_dict(SafetensorsMapping(file), strict=False)
+                self.t5xxl.transformer.load_state_dict(
+                    SafetensorsMapping(file), strict=False
+                )
 
     def encode_embedding_init_text(self, init_text, nvpt):
         return self.model_lg.encode_embedding_init_text(init_text, nvpt)

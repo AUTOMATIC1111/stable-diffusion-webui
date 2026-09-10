@@ -12,7 +12,9 @@ class Git(git.Git):
     """
 
     def _get_persistent_cmd(self, attr_name, cmd_name, *args, **kwargs):
-        raise NotImplementedError(f"Refusing to use persistent process: {attr_name} ({cmd_name} {args} {kwargs})")
+        raise NotImplementedError(
+            f"Refusing to use persistent process: {attr_name} ({cmd_name} {args} {kwargs})"
+        )
 
     def get_object_header(self, ref: str | bytes) -> tuple[str, str, int]:
         ret = subprocess.check_output(
@@ -23,7 +25,9 @@ class Git(git.Git):
         )
         return self._parse_object_header(ret)
 
-    def stream_object_data(self, ref: str) -> tuple[str, str, int, Git.CatFileContentStream]:
+    def stream_object_data(
+        self, ref: str
+    ) -> tuple[str, str, int, Git.CatFileContentStream]:
         # Not really streaming, per se; this buffers the entire object in memory.
         # Shouldn't be a problem for our use case, since we're only using this for
         # object headers (commit objects).

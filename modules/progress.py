@@ -37,11 +37,12 @@ def finish_task(id_task):
     if len(finished_tasks) > 16:
         finished_tasks.pop(0)
 
+
 def create_task_id(task_type):
     N = 7
-    res = ''.join(random.choices(string.ascii_uppercase +
-    string.digits, k=N))
+    res = "".join(random.choices(string.ascii_uppercase + string.digits, k=N))
     return f"task({task_type}-{res})"
+
 
 def record_results(id_task, res):
     recorded_results.append((id_task, res))
@@ -52,30 +53,61 @@ def record_results(id_task, res):
 def add_task_to_queue(id_job):
     pending_tasks[id_job] = time.time()
 
+
 class PendingTasksResponse(BaseModel):
     size: int = Field(title="Pending task size")
     tasks: List[str] = Field(title="Pending task ids")
 
+
 class ProgressRequest(BaseModel):
-    id_task: str = Field(default=None, title="Task ID", description="id of the task to get progress for")
-    id_live_preview: int = Field(default=-1, title="Live preview image ID", description="id of last received last preview image")
-    live_preview: bool = Field(default=True, title="Include live preview", description="boolean flag indicating whether to include the live preview image")
+    id_task: str = Field(
+        default=None, title="Task ID", description="id of the task to get progress for"
+    )
+    id_live_preview: int = Field(
+        default=-1,
+        title="Live preview image ID",
+        description="id of last received last preview image",
+    )
+    live_preview: bool = Field(
+        default=True,
+        title="Include live preview",
+        description="boolean flag indicating whether to include the live preview image",
+    )
 
 
 class ProgressResponse(BaseModel):
     active: bool = Field(title="Whether the task is being worked on right now")
     queued: bool = Field(title="Whether the task is in queue")
     completed: bool = Field(title="Whether the task has already finished")
-    progress: float = Field(default=None, title="Progress", description="The progress with a range of 0 to 1")
+    progress: float = Field(
+        default=None,
+        title="Progress",
+        description="The progress with a range of 0 to 1",
+    )
     eta: float = Field(default=None, title="ETA in secs")
-    live_preview: str = Field(default=None, title="Live preview image", description="Current live preview; a data: uri")
-    id_live_preview: int = Field(default=None, title="Live preview image ID", description="Send this together with next request to prevent receiving same image")
-    textinfo: str = Field(default=None, title="Info text", description="Info text used by WebUI.")
+    live_preview: str = Field(
+        default=None,
+        title="Live preview image",
+        description="Current live preview; a data: uri",
+    )
+    id_live_preview: int = Field(
+        default=None,
+        title="Live preview image ID",
+        description="Send this together with next request to prevent receiving same image",
+    )
+    textinfo: str = Field(
+        default=None, title="Info text", description="Info text used by WebUI."
+    )
 
 
 def setup_progress_api(app):
     app.add_api_route("/internal/pending-tasks", get_pending_tasks, methods=["GET"])
-    return app.add_api_route("/internal/progress", progressapi, methods=["POST"], response_model=ProgressResponse)
+    return app.add_api_route(
+        "/internal/progress",
+        progressapi,
+        methods=["POST"],
+        response_model=ProgressResponse,
+    )
 
 
 def get_pending_tasks():
@@ -95,12 +127,21 @@ def progressapi(req: ProgressRequest):
             sorted_queued = sorted(pending_tasks.keys(), key=lambda x: pending_tasks[x])
             queue_index = sorted_queued.index(req.id_task)
             textinfo = "In queue: {}/{}".format(queue_index + 1, len(sorted_queued))
-        return ProgressResponse(active=active, queued=queued, completed=completed, id_live_preview=-1, textinfo=textinfo)
+        return ProgressResponse(
+            active=active,
+            queued=queued,
+            completed=completed,
+            id_live_preview=-1,
+            textinfo=textinfo,
+        )
 
     progress = 0
 
     job_count, job_no = shared.state.job_count, shared.state.job_no
-    sampling_steps, sampling_step = shared.state.sampling_steps, shared.state.sampling_step
+    sampling_steps, sampling_step = (
+        shared.state.sampling_steps,
+        shared.state.sampling_step,
+    )
 
     if job_count > 0:
         progress += job_no / job_count
@@ -111,7 +152,11 @@ def progressapi(req: ProgressRequest):
 
     elapsed_since_start = time.time() - shared.state.time_start
     predicted_duration = elapsed_since_start / progress if progress > 0 else None
-    eta = predicted_duration - elapsed_since_start if predicted_duration is not None else None
+    eta = (
+        predicted_duration - elapsed_since_start
+        if predicted_duration is not None
+        else None
+    )
 
     live_preview = None
     id_live_preview = req.id_live_preview
@@ -133,12 +178,23 @@ def progressapi(req: ProgressRequest):
                 else:
                     save_kwargs = {}
 
-                image.save(buffered, format=opts.live_previews_image_format, **save_kwargs)
-                base64_image = base64.b64encode(buffered.getvalue()).decode('ascii')
+                image.save(
+                    buffered, format=opts.live_previews_image_format, **save_kwargs
+                )
+                base64_image = base64.b64encode(buffered.getvalue()).decode("ascii")
                 live_preview = f"data:image/{opts.live_previews_image_format};base64,{base64_image}"
                 id_live_preview = shared.state.id_live_preview
 
-    return ProgressResponse(active=active, queued=queued, completed=completed, progress=progress, eta=eta, live_preview=live_preview, id_live_preview=id_live_preview, textinfo=shared.state.textinfo)
+    return ProgressResponse(
+        active=active,
+        queued=queued,
+        completed=completed,
+        progress=progress,
+        eta=eta,
+        live_preview=live_preview,
+        id_live_preview=id_live_preview,
+        textinfo=shared.state.textinfo,
+    )
 
 
 def restore_progress(id_task):
@@ -149,4 +205,9 @@ def restore_progress(id_task):
     if res is not None:
         return res
 
-    return gr.update(), gr.update(), gr.update(), f"Couldn't restore progress for {id_task}: results either have been discarded or never were obtained"
+    return (
+        gr.update(),
+        gr.update(),
+        gr.update(),
+        f"Couldn't restore progress for {id_task}: results either have been discarded or never were obtained",
+    )

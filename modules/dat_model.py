@@ -51,7 +51,9 @@ class UpscalerDAT(Upscaler):
                         model_dir=self.model_download_path,
                     )
                 if not os.path.exists(scaler.local_data_path):
-                    raise FileNotFoundError(f"DAT data missing: {scaler.local_data_path}")
+                    raise FileNotFoundError(
+                        f"DAT data missing: {scaler.local_data_path}"
+                    )
                 return scaler
         raise ValueError(f"Unable to find model info: {path}")
 

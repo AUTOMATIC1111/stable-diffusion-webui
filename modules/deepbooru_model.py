@@ -13,7 +13,9 @@ class DeepDanbooruModel(nn.Module):
 
         self.tags = []
 
-        self.n_Conv_0 = nn.Conv2d(kernel_size=(7, 7), in_channels=3, out_channels=64, stride=(2, 2))
+        self.n_Conv_0 = nn.Conv2d(
+            kernel_size=(7, 7), in_channels=3, out_channels=64, stride=(2, 2)
+        )
         self.n_MaxPool_0 = nn.MaxPool2d(kernel_size=(3, 3), stride=(2, 2))
         self.n_Conv_1 = nn.Conv2d(kernel_size=(1, 1), in_channels=64, out_channels=256)
         self.n_Conv_2 = nn.Conv2d(kernel_size=(1, 1), in_channels=64, out_channels=64)
@@ -25,182 +27,522 @@ class DeepDanbooruModel(nn.Module):
         self.n_Conv_8 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=64)
         self.n_Conv_9 = nn.Conv2d(kernel_size=(3, 3), in_channels=64, out_channels=64)
         self.n_Conv_10 = nn.Conv2d(kernel_size=(1, 1), in_channels=64, out_channels=256)
-        self.n_Conv_11 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=512, stride=(2, 2))
-        self.n_Conv_12 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=128)
-        self.n_Conv_13 = nn.Conv2d(kernel_size=(3, 3), in_channels=128, out_channels=128, stride=(2, 2))
-        self.n_Conv_14 = nn.Conv2d(kernel_size=(1, 1), in_channels=128, out_channels=512)
-        self.n_Conv_15 = nn.Conv2d(kernel_size=(1, 1), in_channels=512, out_channels=128)
-        self.n_Conv_16 = nn.Conv2d(kernel_size=(3, 3), in_channels=128, out_channels=128)
-        self.n_Conv_17 = nn.Conv2d(kernel_size=(1, 1), in_channels=128, out_channels=512)
-        self.n_Conv_18 = nn.Conv2d(kernel_size=(1, 1), in_channels=512, out_channels=128)
-        self.n_Conv_19 = nn.Conv2d(kernel_size=(3, 3), in_channels=128, out_channels=128)
-        self.n_Conv_20 = nn.Conv2d(kernel_size=(1, 1), in_channels=128, out_channels=512)
-        self.n_Conv_21 = nn.Conv2d(kernel_size=(1, 1), in_channels=512, out_channels=128)
-        self.n_Conv_22 = nn.Conv2d(kernel_size=(3, 3), in_channels=128, out_channels=128)
-        self.n_Conv_23 = nn.Conv2d(kernel_size=(1, 1), in_channels=128, out_channels=512)
-        self.n_Conv_24 = nn.Conv2d(kernel_size=(1, 1), in_channels=512, out_channels=128)
-        self.n_Conv_25 = nn.Conv2d(kernel_size=(3, 3), in_channels=128, out_channels=128)
-        self.n_Conv_26 = nn.Conv2d(kernel_size=(1, 1), in_channels=128, out_channels=512)
-        self.n_Conv_27 = nn.Conv2d(kernel_size=(1, 1), in_channels=512, out_channels=128)
-        self.n_Conv_28 = nn.Conv2d(kernel_size=(3, 3), in_channels=128, out_channels=128)
-        self.n_Conv_29 = nn.Conv2d(kernel_size=(1, 1), in_channels=128, out_channels=512)
-        self.n_Conv_30 = nn.Conv2d(kernel_size=(1, 1), in_channels=512, out_channels=128)
-        self.n_Conv_31 = nn.Conv2d(kernel_size=(3, 3), in_channels=128, out_channels=128)
-        self.n_Conv_32 = nn.Conv2d(kernel_size=(1, 1), in_channels=128, out_channels=512)
-        self.n_Conv_33 = nn.Conv2d(kernel_size=(1, 1), in_channels=512, out_channels=128)
-        self.n_Conv_34 = nn.Conv2d(kernel_size=(3, 3), in_channels=128, out_channels=128)
-        self.n_Conv_35 = nn.Conv2d(kernel_size=(1, 1), in_channels=128, out_channels=512)
-        self.n_Conv_36 = nn.Conv2d(kernel_size=(1, 1), in_channels=512, out_channels=1024, stride=(2, 2))
-        self.n_Conv_37 = nn.Conv2d(kernel_size=(1, 1), in_channels=512, out_channels=256)
-        self.n_Conv_38 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256, stride=(2, 2))
-        self.n_Conv_39 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_40 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_41 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_42 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_43 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_44 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_45 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_46 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_47 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_48 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_49 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_50 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_51 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_52 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_53 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_54 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_55 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_56 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_57 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_58 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_59 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_60 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_61 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_62 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_63 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_64 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_65 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_66 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_67 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_68 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_69 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_70 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_71 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_72 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_73 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_74 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_75 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_76 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_77 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_78 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_79 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_80 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_81 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_82 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_83 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_84 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_85 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_86 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_87 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_88 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_89 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_90 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_91 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_92 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_93 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_94 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_95 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_96 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_97 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_98 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256, stride=(2, 2))
-        self.n_Conv_99 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_100 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=1024, stride=(2, 2))
-        self.n_Conv_101 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_102 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_103 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_104 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_105 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_106 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_107 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_108 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_109 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_110 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_111 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_112 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_113 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_114 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_115 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_116 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_117 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_118 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_119 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_120 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_121 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_122 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_123 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_124 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_125 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_126 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_127 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_128 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_129 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_130 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_131 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_132 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_133 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_134 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_135 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_136 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_137 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_138 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_139 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_140 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_141 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_142 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_143 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_144 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_145 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_146 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_147 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_148 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_149 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_150 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_151 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_152 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_153 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_154 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_155 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=256)
-        self.n_Conv_156 = nn.Conv2d(kernel_size=(3, 3), in_channels=256, out_channels=256)
-        self.n_Conv_157 = nn.Conv2d(kernel_size=(1, 1), in_channels=256, out_channels=1024)
-        self.n_Conv_158 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=2048, stride=(2, 2))
-        self.n_Conv_159 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=512)
-        self.n_Conv_160 = nn.Conv2d(kernel_size=(3, 3), in_channels=512, out_channels=512, stride=(2, 2))
-        self.n_Conv_161 = nn.Conv2d(kernel_size=(1, 1), in_channels=512, out_channels=2048)
-        self.n_Conv_162 = nn.Conv2d(kernel_size=(1, 1), in_channels=2048, out_channels=512)
-        self.n_Conv_163 = nn.Conv2d(kernel_size=(3, 3), in_channels=512, out_channels=512)
-        self.n_Conv_164 = nn.Conv2d(kernel_size=(1, 1), in_channels=512, out_channels=2048)
-        self.n_Conv_165 = nn.Conv2d(kernel_size=(1, 1), in_channels=2048, out_channels=512)
-        self.n_Conv_166 = nn.Conv2d(kernel_size=(3, 3), in_channels=512, out_channels=512)
-        self.n_Conv_167 = nn.Conv2d(kernel_size=(1, 1), in_channels=512, out_channels=2048)
-        self.n_Conv_168 = nn.Conv2d(kernel_size=(1, 1), in_channels=2048, out_channels=4096, stride=(2, 2))
-        self.n_Conv_169 = nn.Conv2d(kernel_size=(1, 1), in_channels=2048, out_channels=1024)
-        self.n_Conv_170 = nn.Conv2d(kernel_size=(3, 3), in_channels=1024, out_channels=1024, stride=(2, 2))
-        self.n_Conv_171 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=4096)
-        self.n_Conv_172 = nn.Conv2d(kernel_size=(1, 1), in_channels=4096, out_channels=1024)
-        self.n_Conv_173 = nn.Conv2d(kernel_size=(3, 3), in_channels=1024, out_channels=1024)
-        self.n_Conv_174 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=4096)
-        self.n_Conv_175 = nn.Conv2d(kernel_size=(1, 1), in_channels=4096, out_channels=1024)
-        self.n_Conv_176 = nn.Conv2d(kernel_size=(3, 3), in_channels=1024, out_channels=1024)
-        self.n_Conv_177 = nn.Conv2d(kernel_size=(1, 1), in_channels=1024, out_channels=4096)
-        self.n_Conv_178 = nn.Conv2d(kernel_size=(1, 1), in_channels=4096, out_channels=9176, bias=False)
+        self.n_Conv_11 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=512, stride=(2, 2)
+        )
+        self.n_Conv_12 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=128
+        )
+        self.n_Conv_13 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=128, out_channels=128, stride=(2, 2)
+        )
+        self.n_Conv_14 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=128, out_channels=512
+        )
+        self.n_Conv_15 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=512, out_channels=128
+        )
+        self.n_Conv_16 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=128, out_channels=128
+        )
+        self.n_Conv_17 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=128, out_channels=512
+        )
+        self.n_Conv_18 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=512, out_channels=128
+        )
+        self.n_Conv_19 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=128, out_channels=128
+        )
+        self.n_Conv_20 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=128, out_channels=512
+        )
+        self.n_Conv_21 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=512, out_channels=128
+        )
+        self.n_Conv_22 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=128, out_channels=128
+        )
+        self.n_Conv_23 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=128, out_channels=512
+        )
+        self.n_Conv_24 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=512, out_channels=128
+        )
+        self.n_Conv_25 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=128, out_channels=128
+        )
+        self.n_Conv_26 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=128, out_channels=512
+        )
+        self.n_Conv_27 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=512, out_channels=128
+        )
+        self.n_Conv_28 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=128, out_channels=128
+        )
+        self.n_Conv_29 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=128, out_channels=512
+        )
+        self.n_Conv_30 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=512, out_channels=128
+        )
+        self.n_Conv_31 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=128, out_channels=128
+        )
+        self.n_Conv_32 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=128, out_channels=512
+        )
+        self.n_Conv_33 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=512, out_channels=128
+        )
+        self.n_Conv_34 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=128, out_channels=128
+        )
+        self.n_Conv_35 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=128, out_channels=512
+        )
+        self.n_Conv_36 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=512, out_channels=1024, stride=(2, 2)
+        )
+        self.n_Conv_37 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=512, out_channels=256
+        )
+        self.n_Conv_38 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256, stride=(2, 2)
+        )
+        self.n_Conv_39 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_40 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_41 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_42 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_43 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_44 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_45 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_46 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_47 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_48 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_49 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_50 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_51 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_52 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_53 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_54 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_55 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_56 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_57 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_58 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_59 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_60 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_61 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_62 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_63 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_64 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_65 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_66 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_67 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_68 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_69 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_70 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_71 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_72 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_73 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_74 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_75 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_76 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_77 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_78 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_79 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_80 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_81 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_82 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_83 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_84 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_85 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_86 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_87 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_88 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_89 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_90 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_91 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_92 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_93 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_94 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_95 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_96 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_97 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_98 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256, stride=(2, 2)
+        )
+        self.n_Conv_99 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_100 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=1024, stride=(2, 2)
+        )
+        self.n_Conv_101 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_102 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_103 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_104 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_105 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_106 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_107 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_108 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_109 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_110 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_111 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_112 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_113 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_114 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_115 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_116 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_117 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_118 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_119 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_120 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_121 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_122 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_123 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_124 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_125 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_126 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_127 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_128 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_129 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_130 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_131 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_132 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_133 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_134 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_135 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_136 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_137 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_138 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_139 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_140 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_141 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_142 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_143 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_144 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_145 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_146 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_147 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_148 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_149 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_150 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_151 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_152 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_153 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_154 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_155 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=256
+        )
+        self.n_Conv_156 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=256, out_channels=256
+        )
+        self.n_Conv_157 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=256, out_channels=1024
+        )
+        self.n_Conv_158 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=2048, stride=(2, 2)
+        )
+        self.n_Conv_159 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=512
+        )
+        self.n_Conv_160 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=512, out_channels=512, stride=(2, 2)
+        )
+        self.n_Conv_161 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=512, out_channels=2048
+        )
+        self.n_Conv_162 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=2048, out_channels=512
+        )
+        self.n_Conv_163 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=512, out_channels=512
+        )
+        self.n_Conv_164 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=512, out_channels=2048
+        )
+        self.n_Conv_165 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=2048, out_channels=512
+        )
+        self.n_Conv_166 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=512, out_channels=512
+        )
+        self.n_Conv_167 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=512, out_channels=2048
+        )
+        self.n_Conv_168 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=2048, out_channels=4096, stride=(2, 2)
+        )
+        self.n_Conv_169 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=2048, out_channels=1024
+        )
+        self.n_Conv_170 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=1024, out_channels=1024, stride=(2, 2)
+        )
+        self.n_Conv_171 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=4096
+        )
+        self.n_Conv_172 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=4096, out_channels=1024
+        )
+        self.n_Conv_173 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=1024, out_channels=1024
+        )
+        self.n_Conv_174 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=4096
+        )
+        self.n_Conv_175 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=4096, out_channels=1024
+        )
+        self.n_Conv_176 = nn.Conv2d(
+            kernel_size=(3, 3), in_channels=1024, out_channels=1024
+        )
+        self.n_Conv_177 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=1024, out_channels=4096
+        )
+        self.n_Conv_178 = nn.Conv2d(
+            kernel_size=(1, 1), in_channels=4096, out_channels=9176, bias=False
+        )
 
     def forward(self, *inputs):
-        t_358, = inputs
+        (t_358,) = inputs
         t_359 = t_358.permute(*[0, 3, 1, 2])
         t_359_padded = F.pad(t_359, [2, 3, 2, 3], value=0)
-        t_360 = self.n_Conv_0(t_359_padded.to(self.n_Conv_0.bias.dtype) if devices.unet_needs_upcast else t_359_padded)
+        t_360 = self.n_Conv_0(
+            t_359_padded.to(self.n_Conv_0.bias.dtype)
+            if devices.unet_needs_upcast
+            else t_359_padded
+        )
         t_361 = F.relu(t_360)
-        t_361 = F.pad(t_361, [0, 1, 0, 1], value=float('-inf'))
+        t_361 = F.pad(t_361, [0, 1, 0, 1], value=float("-inf"))
         t_362 = self.n_MaxPool_0(t_361)
         t_363 = self.n_Conv_1(t_362)
         t_364 = self.n_Conv_2(t_362)
@@ -672,7 +1014,8 @@ class DeepDanbooruModel(nn.Module):
         return t_771
 
     def load_state_dict(self, state_dict, **kwargs):
-        self.tags = state_dict.get('tags', [])
+        self.tags = state_dict.get("tags", [])
 
-        super(DeepDanbooruModel, self).load_state_dict({k: v for k, v in state_dict.items() if k != 'tags'})
-
+        super(DeepDanbooruModel, self).load_state_dict(
+            {k: v for k, v in state_dict.items() if k != "tags"}
+        )

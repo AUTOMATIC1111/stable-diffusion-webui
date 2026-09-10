@@ -18,7 +18,7 @@ class WebuiSdModel(LatentDiffusion):
     sd_model_checkpoint: str
     """path to the file on disk that model weights were obtained from"""
 
-    sd_checkpoint_info: 'CheckpointInfo'
+    sd_checkpoint_info: "CheckpointInfo"
     """structure with additional information about the file with model's weights"""
 
     is_sdxl: bool

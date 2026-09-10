@@ -22,10 +22,10 @@ def split_pic(image, inverse_xy, width, height, overlap_ratio):
     for i in range(split_count):
         y = int(y_step * i)
         if inverse_xy:
-            splitted = image.crop((y, 0, y + to_h, to_w))
+            split = image.crop((y, 0, y + to_h, to_w))
         else:
-            splitted = image.crop((0, y, to_w, y + to_h))
-        yield splitted
+            split = image.crop((0, y, to_w, y + to_h))
+        yield split
 
 
 class ScriptPostprocessingSplitOversized(scripts_postprocessing.ScriptPostprocessing):

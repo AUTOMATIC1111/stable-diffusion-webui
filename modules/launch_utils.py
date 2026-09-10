@@ -21,14 +21,14 @@ args, _ = cmd_args.parser.parse_known_args()
 logging_config.setup_logging(args.loglevel)
 
 python = sys.executable
-git = os.environ.get('GIT', "git")
-index_url = os.environ.get('INDEX_URL', "")
+git = os.environ.get("GIT", "git")
+index_url = os.environ.get("INDEX_URL", "")
 dir_repos = "repositories"
 
 # Whether to default to printing command output
-default_command_live = (os.environ.get('WEBUI_LAUNCH_LIVE_OUTPUT') == "1")
+default_command_live = os.environ.get("WEBUI_LAUNCH_LIVE_OUTPUT") == "1"
 
-os.environ.setdefault('GRADIO_ANALYTICS_ENABLED', 'False')
+os.environ.setdefault("GRADIO_ANALYTICS_ENABLED", "False")
 
 
 def check_python_version():
@@ -65,7 +65,9 @@ Use --skip-python-version-check to suppress this warning.
 @lru_cache()
 def commit_hash():
     try:
-        return subprocess.check_output([git, "-C", script_path, "rev-parse", "HEAD"], shell=False, encoding='utf8').strip()
+        return subprocess.check_output(
+            [git, "-C", script_path, "rev-parse", "HEAD"], shell=False, encoding="utf8"
+        ).strip()
     except Exception:
         return "<none>"
 
@@ -73,10 +75,11 @@ def commit_hash():
 @lru_cache()
 def git_tag():
     try:
-        return subprocess.check_output([git, "-C", script_path, "describe", "--tags"], shell=False, encoding='utf8').strip()
+        return subprocess.check_output(
+            [git, "-C", script_path, "describe", "--tags"], shell=False, encoding="utf8"
+        ).strip()
     except Exception:
         try:
-
             changelog_md = os.path.join(script_path, "CHANGELOG.md")
             with open(changelog_md, "r", encoding="utf-8") as file:
                 line = next((line.strip() for line in file if line.strip()), "<none>")
@@ -86,7 +89,9 @@ def git_tag():
             return "<none>"
 
 
-def run(command, desc=None, errdesc=None, custom_env=None, live: bool = default_command_live) -> str:
+def run(
+    command, desc=None, errdesc=None, custom_env=None, live: bool = default_command_live
+) -> str:
     if desc is not None:
         print(desc)
 
@@ -94,8 +99,8 @@ def run(command, desc=None, errdesc=None, custom_env=None, live: bool = default_
         "args": command,
         "shell": True,
         "env": os.environ if custom_env is None else custom_env,
-        "encoding": 'utf8',
-        "errors": 'ignore',
+        "encoding": "utf8",
+        "errors": "ignore",
     }
 
     if not live:
@@ -115,7 +120,7 @@ def run(command, desc=None, errdesc=None, custom_env=None, live: bool = default_
             error_bits.append(f"stderr: {result.stderr}")
         raise RuntimeError("\n".join(error_bits))
 
-    return (result.stdout or "")
+    return result.stdout or ""
 
 
 def is_installed(package):
@@ -140,8 +145,13 @@ def run_pip(command, desc=None, live=default_command_live):
     if args.skip_install:
         return
 
-    index_url_line = f' --index-url {index_url}' if index_url != '' else ''
-    return run(f'"{python}" -m pip {command} --prefer-binary{index_url_line}', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}", live=live)
+    index_url_line = f" --index-url {index_url}" if index_url != "" else ""
+    return run(
+        f'"{python}" -m pip {command} --prefer-binary{index_url_line}',
+        desc=f"Installing {desc}",
+        errdesc=f"Couldn't install {desc}",
+        live=live,
+    )
 
 
 def check_run_python(code: str) -> bool:
@@ -150,14 +160,39 @@ def check_run_python(code: str) -> bool:
 
 
 def git_fix_workspace(dir, name):
-    run(f'"{git}" -C "{dir}" fetch --refetch --no-auto-gc', f"Fetching all contents for {name}", f"Couldn't fetch {name}", live=True)
-    run(f'"{git}" -C "{dir}" gc --aggressive --prune=now', f"Pruning {name}", f"Couldn't prune {name}", live=True)
+    run(
+        f'"{git}" -C "{dir}" fetch --refetch --no-auto-gc',
+        f"Fetching all contents for {name}",
+        f"Couldn't fetch {name}",
+        live=True,
+    )
+    run(
+        f'"{git}" -C "{dir}" gc --aggressive --prune=now',
+        f"Pruning {name}",
+        f"Couldn't prune {name}",
+        live=True,
+    )
     return
 
 
-def run_git(dir, name, command, desc=None, errdesc=None, custom_env=None, live: bool = default_command_live, autofix=True):
+def run_git(
+    dir,
+    name,
+    command,
+    desc=None,
+    errdesc=None,
+    custom_env=None,
+    live: bool = default_command_live,
+    autofix=True,
+):
     try:
-        return run(f'"{git}" -C "{dir}" {command}', desc=desc, errdesc=errdesc, custom_env=custom_env, live=live)
+        return run(
+            f'"{git}" -C "{dir}" {command}',
+            desc=desc,
+            errdesc=errdesc,
+            custom_env=custom_env,
+            live=live,
+        )
     except RuntimeError:
         if not autofix:
             raise
@@ -165,7 +200,13 @@ def run_git(dir, name, command, desc=None, errdesc=None, custom_env=None, live: 
     print(f"{errdesc}, attempting autofix...")
     git_fix_workspace(dir, name)
 
-    return run(f'"{git}" -C "{dir}" {command}', desc=desc, errdesc=errdesc, custom_env=custom_env, live=live)
+    return run(
+        f'"{git}" -C "{dir}" {command}',
+        desc=desc,
+        errdesc=errdesc,
+        custom_env=custom_env,
+        live=live,
+    )
 
 
 def git_clone(url, dir, name, commithash=None):
@@ -175,49 +216,105 @@ def git_clone(url, dir, name, commithash=None):
         if commithash is None:
             return
 
-        current_hash = run_git(dir, name, 'rev-parse HEAD', None, f"Couldn't determine {name}'s hash: {commithash}", live=False).strip()
+        current_hash = run_git(
+            dir,
+            name,
+            "rev-parse HEAD",
+            None,
+            f"Couldn't determine {name}'s hash: {commithash}",
+            live=False,
+        ).strip()
         if current_hash == commithash:
             return
 
-        if run_git(dir, name, 'config --get remote.origin.url', None, f"Couldn't determine {name}'s origin URL", live=False).strip() != url:
-            run_git(dir, name, f'remote set-url origin "{url}"', None, f"Failed to set {name}'s origin URL", live=False)
+        if (
+            run_git(
+                dir,
+                name,
+                "config --get remote.origin.url",
+                None,
+                f"Couldn't determine {name}'s origin URL",
+                live=False,
+            ).strip()
+            != url
+        ):
+            run_git(
+                dir,
+                name,
+                f'remote set-url origin "{url}"',
+                None,
+                f"Failed to set {name}'s origin URL",
+                live=False,
+            )
 
-        run_git(dir, name, 'fetch', f"Fetching updates for {name}...", f"Couldn't fetch {name}", autofix=False)
+        run_git(
+            dir,
+            name,
+            "fetch",
+            f"Fetching updates for {name}...",
+            f"Couldn't fetch {name}",
+            autofix=False,
+        )
 
-        run_git(dir, name, f'checkout {commithash}', f"Checking out commit for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}", live=True)
+        run_git(
+            dir,
+            name,
+            f"checkout {commithash}",
+            f"Checking out commit for {name} with hash: {commithash}...",
+            f"Couldn't checkout commit {commithash} for {name}",
+            live=True,
+        )
 
         return
 
     try:
-        run(f'"{git}" clone --config core.filemode=false "{url}" "{dir}"', f"Cloning {name} into {dir}...", f"Couldn't clone {name}", live=True)
+        run(
+            f'"{git}" clone --config core.filemode=false "{url}" "{dir}"',
+            f"Cloning {name} into {dir}...",
+            f"Couldn't clone {name}",
+            live=True,
+        )
     except RuntimeError:
         shutil.rmtree(dir, ignore_errors=True)
         raise
 
     if commithash is not None:
-        run(f'"{git}" -C "{dir}" checkout {commithash}', None, "Couldn't checkout {name}'s hash: {commithash}")
+        run(
+            f'"{git}" -C "{dir}" checkout {commithash}',
+            None,
+            "Couldn't checkout {name}'s hash: {commithash}",
+        )
 
 
 def git_pull_recursive(dir):
     for subdir, _, _ in os.walk(dir):
-        if os.path.exists(os.path.join(subdir, '.git')):
+        if os.path.exists(os.path.join(subdir, ".git")):
             try:
-                output = subprocess.check_output([git, '-C', subdir, 'pull', '--autostash'])
-                print(f"Pulled changes for repository in '{subdir}':\n{output.decode('utf-8').strip()}\n")
+                output = subprocess.check_output(
+                    [git, "-C", subdir, "pull", "--autostash"]
+                )
+                print(
+                    f"Pulled changes for repository in '{subdir}':\n{output.decode('utf-8').strip()}\n"
+                )
             except subprocess.CalledProcessError as e:
-                print(f"Couldn't perform 'git pull' on repository in '{subdir}':\n{e.output.decode('utf-8').strip()}\n")
+                print(
+                    f"Couldn't perform 'git pull' on repository in '{subdir}':\n{e.output.decode('utf-8').strip()}\n"
+                )
 
 
 def version_check(commit):
     try:
         import requests
-        commits = requests.get('https://api.github.com/repos/AUTOMATIC1111/stable-diffusion-webui/branches/master').json()
-        if commit != "<none>" and commits['commit']['sha'] != commit:
+
+        commits = requests.get(
+            "https://api.github.com/repos/AUTOMATIC1111/stable-diffusion-webui/branches/master"
+        ).json()
+        if commit != "<none>" and commits["commit"]["sha"] != commit:
             print("--------------------------------------------------------")
             print("| You are not up to date with the most recent release. |")
             print("| Consider running `git pull` to update.               |")
             print("--------------------------------------------------------")
-        elif commits['commit']['sha'] == commit:
+        elif commits["commit"]["sha"] == commit:
             print("You are up to date with the most recent release.")
         else:
             print("Not a git clone, can't perform version check.")
@@ -232,9 +329,13 @@ def run_extension_installer(extension_dir):
 
     try:
         env = os.environ.copy()
-        env['PYTHONPATH'] = f"{script_path}{os.pathsep}{env.get('PYTHONPATH', '')}"
+        env["PYTHONPATH"] = f"{script_path}{os.pathsep}{env.get('PYTHONPATH', '')}"
 
-        stdout = run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {extension_dir}", custom_env=env).strip()
+        stdout = run(
+            f'"{python}" "{path_installer}"',
+            errdesc=f"Error running install.py for extension {extension_dir}",
+            custom_env=env,
+        ).strip()
         if stdout:
             print(stdout)
     except Exception as e:
@@ -250,13 +351,22 @@ def list_extensions(settings_file):
     except FileNotFoundError:
         pass
     except Exception:
-        errors.report(f'\nCould not load settings\nThe config file "{settings_file}" is likely corrupted\nIt has been moved to the "tmp/config.json"\nReverting config to default\n\n''', exc_info=True)
+        errors.report(
+            f'\nCould not load settings\nThe config file "{settings_file}" is likely corrupted\nIt has been moved to the "tmp/config.json"\nReverting config to default\n\n'
+            "",
+            exc_info=True,
+        )
         os.replace(settings_file, os.path.join(script_path, "tmp", "config.json"))
 
-    disabled_extensions = set(settings.get('disabled_extensions', []))
-    disable_all_extensions = settings.get('disable_all_extensions', 'none')
+    disabled_extensions = set(settings.get("disabled_extensions", []))
+    disable_all_extensions = settings.get("disable_all_extensions", "none")
 
-    if disable_all_extensions != 'none' or args.disable_extra_extensions or args.disable_all_extensions or not os.path.isdir(extensions_dir):
+    if (
+        disable_all_extensions != "none"
+        or args.disable_extra_extensions
+        or args.disable_all_extensions
+        or not os.path.isdir(extensions_dir)
+    ):
         return []
 
     return [x for x in os.listdir(extensions_dir) if x not in disabled_extensions]
@@ -309,15 +419,22 @@ def requirements_met(requirements_file):
             except Exception:
                 return False
 
-            if packaging.version.parse(version_required) != packaging.version.parse(version_installed):
+            if packaging.version.parse(version_required) != packaging.version.parse(
+                version_installed
+            ):
                 return False
 
     return True
 
 
 def prepare_environment():
-    torch_index_url = os.environ.get('TORCH_INDEX_URL', "https://download.pytorch.org/whl/cu121")
-    torch_command = os.environ.get('TORCH_COMMAND', f"pip install torch==2.1.2 torchvision==0.16.2 --extra-index-url {torch_index_url}")
+    torch_index_url = os.environ.get(
+        "TORCH_INDEX_URL", "https://download.pytorch.org/whl/cu121"
+    )
+    torch_command = os.environ.get(
+        "TORCH_COMMAND",
+        f"pip install torch==2.1.2 torchvision==0.16.2 --extra-index-url {torch_index_url}",
+    )
     if args.use_ipex:
         if platform.system() == "Windows":
             # The "Nuullll/intel-extension-for-pytorch" wheels were built from IPEX source for Intel Arc GPU: https://github.com/intel/intel-extension-for-pytorch/tree/xpu-main
@@ -331,36 +448,73 @@ def prepare_environment():
             # Limitation:
             #   - Only works for python 3.10
             url_prefix = "https://github.com/Nuullll/intel-extension-for-pytorch/releases/download/v2.0.110%2Bxpu-master%2Bdll-bundle"
-            torch_command = os.environ.get('TORCH_COMMAND', f"pip install {url_prefix}/torch-2.0.0a0+gite9ebda2-cp310-cp310-win_amd64.whl {url_prefix}/torchvision-0.15.2a0+fa99a53-cp310-cp310-win_amd64.whl {url_prefix}/intel_extension_for_pytorch-2.0.110+gitc6ea20b-cp310-cp310-win_amd64.whl")
+            torch_command = os.environ.get(
+                "TORCH_COMMAND",
+                f"pip install {url_prefix}/torch-2.0.0a0+gite9ebda2-cp310-cp310-win_amd64.whl {url_prefix}/torchvision-0.15.2a0+fa99a53-cp310-cp310-win_amd64.whl {url_prefix}/intel_extension_for_pytorch-2.0.110+gitc6ea20b-cp310-cp310-win_amd64.whl",
+            )
         else:
             # Using official IPEX release for linux since it's already an AOT build.
             # However, users still have to install oneAPI toolkit and activate oneAPI environment manually.
             # See https://intel.github.io/intel-extension-for-pytorch/index.html#installation for details.
-            torch_index_url = os.environ.get('TORCH_INDEX_URL', "https://pytorch-extension.intel.com/release-whl/stable/xpu/us/")
-            torch_command = os.environ.get('TORCH_COMMAND', f"pip install torch==2.0.0a0 intel-extension-for-pytorch==2.0.110+gitba7f6c1 --extra-index-url {torch_index_url}")
-    requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
-    requirements_file_for_npu = os.environ.get('REQS_FILE_FOR_NPU', "requirements_npu.txt")
+            torch_index_url = os.environ.get(
+                "TORCH_INDEX_URL",
+                "https://pytorch-extension.intel.com/release-whl/stable/xpu/us/",
+            )
+            torch_command = os.environ.get(
+                "TORCH_COMMAND",
+                f"pip install torch==2.0.0a0 intel-extension-for-pytorch==2.0.110+gitba7f6c1 --extra-index-url {torch_index_url}",
+            )
+    requirements_file = os.environ.get("REQS_FILE", "requirements_versions.txt")
+    requirements_file_for_npu = os.environ.get(
+        "REQS_FILE_FOR_NPU", "requirements_npu.txt"
+    )
 
-    xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.23.post1')
-    clip_package = os.environ.get('CLIP_PACKAGE', "https://github.com/openai/CLIP/archive/d50d76daa670286dd6cacf3bcd80b5e4823fc8e1.zip")
-    openclip_package = os.environ.get('OPENCLIP_PACKAGE', "https://github.com/mlfoundations/open_clip/archive/bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b.zip")
+    xformers_package = os.environ.get("XFORMERS_PACKAGE", "xformers==0.0.23.post1")
+    clip_package = os.environ.get(
+        "CLIP_PACKAGE",
+        "https://github.com/openai/CLIP/archive/d50d76daa670286dd6cacf3bcd80b5e4823fc8e1.zip",
+    )
+    openclip_package = os.environ.get(
+        "OPENCLIP_PACKAGE",
+        "https://github.com/mlfoundations/open_clip/archive/bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b.zip",
+    )
 
-    assets_repo = os.environ.get('ASSETS_REPO', "https://github.com/AUTOMATIC1111/stable-diffusion-webui-assets.git")
-    stable_diffusion_repo = os.environ.get('STABLE_DIFFUSION_REPO', "https://github.com/Stability-AI/stablediffusion.git")
-    stable_diffusion_xl_repo = os.environ.get('STABLE_DIFFUSION_XL_REPO', "https://github.com/Stability-AI/generative-models.git")
-    k_diffusion_repo = os.environ.get('K_DIFFUSION_REPO', 'https://github.com/crowsonkb/k-diffusion.git')
-    blip_repo = os.environ.get('BLIP_REPO', 'https://github.com/salesforce/BLIP.git')
+    assets_repo = os.environ.get(
+        "ASSETS_REPO",
+        "https://github.com/AUTOMATIC1111/stable-diffusion-webui-assets.git",
+    )
+    stable_diffusion_repo = os.environ.get(
+        "STABLE_DIFFUSION_REPO", "https://github.com/Stability-AI/stablediffusion.git"
+    )
+    stable_diffusion_xl_repo = os.environ.get(
+        "STABLE_DIFFUSION_XL_REPO",
+        "https://github.com/Stability-AI/generative-models.git",
+    )
+    k_diffusion_repo = os.environ.get(
+        "K_DIFFUSION_REPO", "https://github.com/crowsonkb/k-diffusion.git"
+    )
+    blip_repo = os.environ.get("BLIP_REPO", "https://github.com/salesforce/BLIP.git")
 
-    assets_commit_hash = os.environ.get('ASSETS_COMMIT_HASH', "6f7db241d2f8ba7457bac5ca9753331f0c266917")
-    stable_diffusion_commit_hash = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "cf1d67a6fd5ea1aa600c4df58e5b47da45f6bdbf")
-    stable_diffusion_xl_commit_hash = os.environ.get('STABLE_DIFFUSION_XL_COMMIT_HASH', "45c443b316737a4ab6e40413d7794a7f5657c19f")
-    k_diffusion_commit_hash = os.environ.get('K_DIFFUSION_COMMIT_HASH', "ab527a9a6d347f364e3d185ba6d714e22d80cb3c")
-    blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
+    assets_commit_hash = os.environ.get(
+        "ASSETS_COMMIT_HASH", "6f7db241d2f8ba7457bac5ca9753331f0c266917"
+    )
+    stable_diffusion_commit_hash = os.environ.get(
+        "STABLE_DIFFUSION_COMMIT_HASH", "cf1d67a6fd5ea1aa600c4df58e5b47da45f6bdbf"
+    )
+    stable_diffusion_xl_commit_hash = os.environ.get(
+        "STABLE_DIFFUSION_XL_COMMIT_HASH", "45c443b316737a4ab6e40413d7794a7f5657c19f"
+    )
+    k_diffusion_commit_hash = os.environ.get(
+        "K_DIFFUSION_COMMIT_HASH", "ab527a9a6d347f364e3d185ba6d714e22d80cb3c"
+    )
+    blip_commit_hash = os.environ.get(
+        "BLIP_COMMIT_HASH", "48211a1594f1321b00f14c9f7a5b4813144b2fb9"
+    )
 
     try:
         # the existence of this file is a signal to webui.sh/bat that webui needs to be restarted when it stops execution
         os.remove(os.path.join(script_path, "tmp", "restart"))
-        os.environ.setdefault('SD_WEBUI_RESTARTING', '1')
+        os.environ.setdefault("SD_WEBUI_RESTARTING", "1")
     except OSError:
         pass
 
@@ -377,16 +531,27 @@ def prepare_environment():
     print(f"Version: {tag}")
     print(f"Commit hash: {commit}")
 
-    if args.reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
-        run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch", live=True)
+    if (
+        args.reinstall_torch
+        or not is_installed("torch")
+        or not is_installed("torchvision")
+    ):
+        run(
+            f'"{python}" -m {torch_command}',
+            "Installing torch and torchvision",
+            "Couldn't install torch",
+            live=True,
+        )
         startup_timer.record("install torch")
 
     if args.use_ipex:
         args.skip_torch_cuda_test = True
-    if not args.skip_torch_cuda_test and not check_run_python("import torch; assert torch.cuda.is_available()"):
+    if not args.skip_torch_cuda_test and not check_run_python(
+        "import torch; assert torch.cuda.is_available()"
+    ):
         raise RuntimeError(
-            'Torch is not able to use GPU; '
-            'add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'
+            "Torch is not able to use GPU; "
+            "add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check"
         )
     startup_timer.record("torch GPU test")
 
@@ -408,11 +573,31 @@ def prepare_environment():
 
     os.makedirs(os.path.join(script_path, dir_repos), exist_ok=True)
 
-    git_clone(assets_repo, repo_dir('stable-diffusion-webui-assets'), "assets", assets_commit_hash)
-    git_clone(stable_diffusion_repo, repo_dir('stable-diffusion-stability-ai'), "Stable Diffusion", stable_diffusion_commit_hash)
-    git_clone(stable_diffusion_xl_repo, repo_dir('generative-models'), "Stable Diffusion XL", stable_diffusion_xl_commit_hash)
-    git_clone(k_diffusion_repo, repo_dir('k-diffusion'), "K-diffusion", k_diffusion_commit_hash)
-    git_clone(blip_repo, repo_dir('BLIP'), "BLIP", blip_commit_hash)
+    git_clone(
+        assets_repo,
+        repo_dir("stable-diffusion-webui-assets"),
+        "assets",
+        assets_commit_hash,
+    )
+    git_clone(
+        stable_diffusion_repo,
+        repo_dir("stable-diffusion-stability-ai"),
+        "Stable Diffusion",
+        stable_diffusion_commit_hash,
+    )
+    git_clone(
+        stable_diffusion_xl_repo,
+        repo_dir("generative-models"),
+        "Stable Diffusion XL",
+        stable_diffusion_xl_commit_hash,
+    )
+    git_clone(
+        k_diffusion_repo,
+        repo_dir("k-diffusion"),
+        "K-diffusion",
+        k_diffusion_commit_hash,
+    )
+    git_clone(blip_repo, repo_dir("BLIP"), "BLIP", blip_commit_hash)
 
     startup_timer.record("clone repositores")
 
@@ -420,14 +605,14 @@ def prepare_environment():
         requirements_file = os.path.join(script_path, requirements_file)
 
     if not requirements_met(requirements_file):
-        run_pip(f"install -r \"{requirements_file}\"", "requirements")
+        run_pip(f'install -r "{requirements_file}"', "requirements")
         startup_timer.record("install requirements")
 
     if not os.path.isfile(requirements_file_for_npu):
         requirements_file_for_npu = os.path.join(script_path, requirements_file_for_npu)
 
     if "torch_npu" in torch_command and not requirements_met(requirements_file_for_npu):
-        run_pip(f"install -r \"{requirements_file_for_npu}\"", "requirements_for_npu")
+        run_pip(f'install -r "{requirements_file_for_npu}"', "requirements_for_npu")
         startup_timer.record("install requirements_for_npu")
 
     if not args.skip_install:
@@ -457,13 +642,16 @@ def configure_for_tests():
     if "--disable-nan-check" not in sys.argv:
         sys.argv.append("--disable-nan-check")
 
-    os.environ['COMMANDLINE_ARGS'] = ""
+    os.environ["COMMANDLINE_ARGS"] = ""
 
 
 def start():
-    print(f"Launching {'API server' if '--nowebui' in sys.argv else 'Web UI'} with arguments: {shlex.join(sys.argv[1:])}")
+    print(
+        f"Launching {'API server' if '--nowebui' in sys.argv else 'Web UI'} with arguments: {shlex.join(sys.argv[1:])}"
+    )
     import webui
-    if '--nowebui' in sys.argv:
+
+    if "--nowebui" in sys.argv:
         webui.api_only()
     else:
         webui.webui()

@@ -3,8 +3,16 @@ import sys
 
 import gradio as gr
 
-from modules import shared_cmd_options, shared_gradio_themes, options, shared_items, sd_models_types
-from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir  # noqa: F401
+from modules import (
+    shared_cmd_options,
+    shared_gradio_themes,
+    options,
+    shared_items,
+    sd_models_types,
+)
+from modules.paths_internal import (
+    data_path,
+)  # noqa: F401
 from modules import util
 from typing import TYPE_CHECKING
 
@@ -14,9 +22,15 @@ if TYPE_CHECKING:
 cmd_opts = shared_cmd_options.cmd_opts
 parser = shared_cmd_options.parser
 
-batch_cond_uncond = True  # old field, unused now in favor of shared.opts.batch_cond_uncond
+batch_cond_uncond = (
+    True  # old field, unused now in favor of shared.opts.batch_cond_uncond
+)
 parallel_processing_allowed = True
-styles_filename = cmd_opts.styles_file = cmd_opts.styles_file if len(cmd_opts.styles_file) > 0 else [os.path.join(data_path, 'styles.csv')]
+styles_filename = cmd_opts.styles_file = (
+    cmd_opts.styles_file
+    if len(cmd_opts.styles_file) > 0
+    else [os.path.join(data_path, "styles.csv")]
+)
 config_filename = cmd_opts.ui_settings_file
 hide_dirs = {"visible": not cmd_opts.hide_ui_dir_config}
 
@@ -32,11 +46,11 @@ hypernetworks = {}
 
 loaded_hypernetworks = []
 
-state: 'shared_state.State' = None
+state: "shared_state.State" = None
 
-prompt_styles: 'styles.StyleDatabase' = None
+prompt_styles: "styles.StyleDatabase" = None
 
-interrogator: 'interrogate.InterrogateModels' = None
+interrogator: "interrogate.InterrogateModels" = None
 
 face_restorers = []
 
@@ -69,9 +83,9 @@ progress_print_out = sys.stdout
 
 gradio_theme = gr.themes.Base()
 
-total_tqdm: 'shared_total_tqdm.TotalTQDM' = None
+total_tqdm: "shared_total_tqdm.TotalTQDM" = None
 
-mem_mon: 'memmon.MemUsageMonitor' = None
+mem_mon: "memmon.MemUsageMonitor" = None
 
 options_section = options.options_section
 OptionInfo = options.OptionInfo
@@ -91,4 +105,4 @@ refresh_checkpoints = shared_items.refresh_checkpoints
 list_samplers = shared_items.list_samplers
 reload_hypernetworks = shared_items.reload_hypernetworks
 
-hf_endpoint = os.getenv('HF_ENDPOINT', 'https://huggingface.co')
+hf_endpoint = os.getenv("HF_ENDPOINT", "https://huggingface.co")

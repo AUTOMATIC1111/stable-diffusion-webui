@@ -34,6 +34,7 @@ def api_only():
     api = create_api(app)
 
     from modules import script_callbacks
+
     script_callbacks.before_ui_callback()
     script_callbacks.app_started_callback(None, app)
 
@@ -41,7 +42,7 @@ def api_only():
     api.launch(
         server_name=initialize_util.gradio_server_name(),
         port=cmd_opts.port if cmd_opts.port else 7861,
-        root_path=f"/{cmd_opts.subpath}" if cmd_opts.subpath else ""
+        root_path=f"/{cmd_opts.subpath}" if cmd_opts.subpath else "",
     )
 
 
@@ -51,7 +52,14 @@ def webui():
     launch_api = cmd_opts.api
     initialize.initialize()
 
-    from modules import shared, ui_tempdir, script_callbacks, ui, progress, ui_extra_networks
+    from modules import (
+        shared,
+        ui_tempdir,
+        script_callbacks,
+        ui,
+        progress,
+        ui_extra_networks,
+    )
 
     while 1:
         if shared.opts.clean_temp_dir_at_start:
@@ -70,7 +78,7 @@ def webui():
         gradio_auth_creds = list(initialize_util.get_gradio_auth_creds()) or None
 
         auto_launch_browser = False
-        if os.getenv('SD_WEBUI_RESTARTING') != '1':
+        if os.getenv("SD_WEBUI_RESTARTING") != "1":
             if shared.opts.auto_launch_browser == "Remote" or cmd_opts.autolaunch:
                 auto_launch_browser = True
             elif shared.opts.auto_launch_browser == "Local":
@@ -101,7 +109,9 @@ def webui():
         # an attacker to trick the user into opening a malicious HTML page, which makes a request to the
         # running web ui and do whatever the attacker wants, including installing an extension and
         # running its code. We disable this here. Suggested by RyotaK.
-        app.user_middleware = [x for x in app.user_middleware if x.cls.__name__ != 'CORSMiddleware']
+        app.user_middleware = [
+            x for x in app.user_middleware if x.cls.__name__ != "CORSMiddleware"
+        ]
 
         initialize_util.setup_middleware(app)
 
@@ -130,7 +140,7 @@ def webui():
                     else:
                         print(f"Unknown server command: {server_command}")
         except KeyboardInterrupt:
-            print('Caught KeyboardInterrupt, stopping...')
+            print("Caught KeyboardInterrupt, stopping...")
             server_command = "stop"
 
         if server_command == "stop":
@@ -140,9 +150,9 @@ def webui():
             break
 
         # disable auto launch webui in browser for subsequent UI Reload
-        os.environ.setdefault('SD_WEBUI_RESTARTING', '1')
+        os.environ.setdefault("SD_WEBUI_RESTARTING", "1")
 
-        print('Restarting UI...')
+        print("Restarting UI...")
         shared.demo.close()
         time.sleep(0.5)
         startup_timer.reset()

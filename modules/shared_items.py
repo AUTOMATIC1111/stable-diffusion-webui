@@ -8,11 +8,13 @@ from modules.shared_cmd_options import cmd_opts
 
 def realesrgan_models_names():
     import modules.realesrgan_model
+
     return [x.name for x in modules.realesrgan_model.get_realesrgan_models(None)]
 
 
 def dat_models_names():
     import modules.dat_model
+
     return [x.name for x in modules.dat_model.get_dat_models(None)]
 
 
@@ -54,16 +56,19 @@ def refresh_unet_list():
 
 def list_checkpoint_tiles(use_short=False):
     import modules.sd_models
+
     return modules.sd_models.checkpoint_tiles(use_short)
 
 
 def refresh_checkpoints():
     import modules.sd_models
+
     return modules.sd_models.list_models()
 
 
 def list_samplers():
     import modules.sd_samplers
+
     return modules.sd_samplers.all_samplers
 
 
@@ -76,6 +81,7 @@ def reload_hypernetworks():
 
 def get_infotext_names():
     from modules import infotext_utils, shared
+
     res = {}
 
     for info in shared.opts.data_labels.values():
@@ -113,7 +119,10 @@ def ui_reorder_categories():
 
     sections = {}
     for script in scripts.scripts_txt2img.scripts + scripts.scripts_img2img.scripts:
-        if isinstance(script.section, str) and script.section not in ui_reorder_categories_builtin_items:
+        if (
+            isinstance(script.section, str)
+            and script.section not in ui_reorder_categories_builtin_items
+        ):
             sections[script.section] = 1
 
     yield from sections
@@ -126,21 +135,28 @@ def callbacks_order_settings():
         "sd_vae_explanation": OptionHTML("""
     For categories below, callbacks added to dropdowns happen before others, in order listed.
     """),
-
     }
 
     callback_options = {}
 
     for category, _ in script_callbacks.enumerate_callbacks():
-        callback_options[category] = script_callbacks.ordered_callbacks(category, enable_user_sort=False)
+        callback_options[category] = script_callbacks.ordered_callbacks(
+            category, enable_user_sort=False
+        )
 
     for method_name in scripts.scripts_txt2img.callback_names:
-        callback_options["script_" + method_name] = scripts.scripts_txt2img.create_ordered_callbacks_list(method_name, enable_user_sort=False)
+        callback_options["script_" + method_name] = (
+            scripts.scripts_txt2img.create_ordered_callbacks_list(
+                method_name, enable_user_sort=False
+            )
+        )
 
     for method_name in scripts.scripts_img2img.callback_names:
         callbacks = callback_options.get("script_" + method_name, [])
 
-        for addition in scripts.scripts_img2img.create_ordered_callbacks_list(method_name, enable_user_sort=False):
+        for addition in scripts.scripts_img2img.create_ordered_callbacks_list(
+            method_name, enable_user_sort=False
+        ):
             if any(x.name == addition.name for x in callbacks):
                 continue
 
@@ -152,10 +168,19 @@ def callbacks_order_settings():
         if not callbacks:
             continue
 
-        option_info = OptionInfo([], f"{category} callback priority", ui_components.DropdownMulti, {"choices": [x.name for x in callbacks]})
+        option_info = OptionInfo(
+            [],
+            f"{category} callback priority",
+            ui_components.DropdownMulti,
+            {"choices": [x.name for x in callbacks]},
+        )
         option_info.needs_restart()
-        option_info.html("<div class='info'>Default order: <ol>" + "".join(f"<li>{html.escape(x.name)}</li>\n" for x in callbacks) + "</ol></div>")
-        options['prioritized_callbacks_' + category] = option_info
+        option_info.html(
+            "<div class='info'>Default order: <ol>"
+            + "".join(f"<li>{html.escape(x.name)}</li>\n" for x in callbacks)
+            + "</ol></div>"
+        )
+        options["prioritized_callbacks_" + category] = option_info
 
     return options
 
@@ -181,4 +206,4 @@ class Shared(sys.modules[__name__].__class__):
         modules.sd_models.model_data.set_sd_model(value)
 
 
-sys.modules['modules.shared'].__class__ = Shared
+sys.modules["modules.shared"].__class__ = Shared

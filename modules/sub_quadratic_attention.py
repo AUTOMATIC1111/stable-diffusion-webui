@@ -18,13 +18,13 @@ import math
 from typing import Optional, NamedTuple
 
 
-def narrow_trunc(
-    input: Tensor,
-    dim: int,
-    start: int,
-    length: int
-) -> Tensor:
-    return torch.narrow(input, dim, start, length if input.shape[dim] >= start + length else input.shape[dim] - start)
+def narrow_trunc(input: Tensor, dim: int, start: int, length: int) -> Tensor:
+    return torch.narrow(
+        input,
+        dim,
+        start,
+        length if input.shape[dim] >= start + length else input.shape[dim] - start,
+    )
 
 
 class AttnChunk(NamedTuple):
@@ -60,14 +60,18 @@ def _summarize_chunk(
     attn_weights = torch.baddbmm(
         torch.zeros(1, 1, 1, device=query.device, dtype=query.dtype),
         query,
-        key.transpose(1,2),
+        key.transpose(1, 2),
         alpha=scale,
         beta=0,
     )
     max_score, _ = torch.max(attn_weights, -1, keepdim=True)
     max_score = max_score.detach()
     exp_weights = torch.exp(attn_weights - max_score)
-    exp_values = torch.bmm(exp_weights, value) if query.device.type == 'mps' else torch.bmm(exp_weights, value.to(exp_weights.dtype)).to(value.dtype)
+    exp_values = (
+        torch.bmm(exp_weights, value)
+        if query.device.type == "mps"
+        else torch.bmm(exp_weights, value.to(exp_weights.dtype)).to(value.dtype)
+    )
     max_score = max_score.squeeze(-1)
     return AttnChunk(exp_values, exp_weights.sum(dim=-1), max_score)
 
@@ -83,18 +87,8 @@ def _query_chunk_attention(
     _, _, v_channels_per_head = value.shape
 
     def chunk_scanner(chunk_idx: int) -> AttnChunk:
-        key_chunk = narrow_trunc(
-            key,
-            1,
-            chunk_idx,
-            kv_chunk_size
-        )
-        value_chunk = narrow_trunc(
-            value,
-            1,
-            chunk_idx,
-            kv_chunk_size
-        )
+        key_chunk = narrow_trunc(key, 1, chunk_idx, kv_chunk_size)
+        value_chunk = narrow_trunc(value, 1, chunk_idx, kv_chunk_size)
         return summarize_chunk(query, key_chunk, value_chunk)
 
     chunks: list[AttnChunk] = [
@@ -123,13 +117,17 @@ def _get_attention_scores_no_kv_chunking(
     attn_scores = torch.baddbmm(
         torch.zeros(1, 1, 1, device=query.device, dtype=query.dtype),
         query,
-        key.transpose(1,2),
+        key.transpose(1, 2),
         alpha=scale,
         beta=0,
     )
     attn_probs = attn_scores.softmax(dim=-1)
     del attn_scores
-    hidden_states_slice = torch.bmm(attn_probs, value) if query.device.type == 'mps' else torch.bmm(attn_probs, value.to(attn_probs.dtype)).to(value.dtype)
+    hidden_states_slice = (
+        torch.bmm(attn_probs, value)
+        if query.device.type == "mps"
+        else torch.bmm(attn_probs, value.to(attn_probs.dtype)).to(value.dtype)
+    )
     return hidden_states_slice
 
 
@@ -148,49 +146,47 @@ def efficient_dot_product_attention(
     use_checkpoint=True,
 ):
     """Computes efficient dot-product attention given query, key, and value.
-      This is efficient version of attention presented in
-      https://arxiv.org/abs/2112.05682v2 which comes with O(sqrt(n)) memory requirements.
-      Args:
-        query: queries for calculating attention with shape of
-          `[batch * num_heads, tokens, channels_per_head]`.
-        key: keys for calculating attention with shape of
-          `[batch * num_heads, tokens, channels_per_head]`.
-        value: values to be used in attention with shape of
-          `[batch * num_heads, tokens, channels_per_head]`.
-        query_chunk_size: int: query chunks size
-        kv_chunk_size: Optional[int]: key/value chunks size. if None: defaults to sqrt(key_tokens)
-        kv_chunk_size_min: Optional[int]: key/value minimum chunk size. only considered when kv_chunk_size is None. changes `sqrt(key_tokens)` into `max(sqrt(key_tokens), kv_chunk_size_min)`, to ensure our chunk sizes don't get too small (smaller chunks = more chunks = less concurrent work done).
-        use_checkpoint: bool: whether to use checkpointing (recommended True for training, False for inference)
-      Returns:
-        Output of shape `[batch * num_heads, query_tokens, channels_per_head]`.
-      """
+    This is efficient version of attention presented in
+    https://arxiv.org/abs/2112.05682v2 which comes with O(sqrt(n)) memory requirements.
+    Args:
+      query: queries for calculating attention with shape of
+        `[batch * num_heads, tokens, channels_per_head]`.
+      key: keys for calculating attention with shape of
+        `[batch * num_heads, tokens, channels_per_head]`.
+      value: values to be used in attention with shape of
+        `[batch * num_heads, tokens, channels_per_head]`.
+      query_chunk_size: int: query chunks size
+      kv_chunk_size: Optional[int]: key/value chunks size. if None: defaults to sqrt(key_tokens)
+      kv_chunk_size_min: Optional[int]: key/value minimum chunk size. only considered when kv_chunk_size is None. changes `sqrt(key_tokens)` into `max(sqrt(key_tokens), kv_chunk_size_min)`, to ensure our chunk sizes don't get too small (smaller chunks = more chunks = less concurrent work done).
+      use_checkpoint: bool: whether to use checkpointing (recommended True for training, False for inference)
+    Returns:
+      Output of shape `[batch * num_heads, query_tokens, channels_per_head]`.
+    """
     batch_x_heads, q_tokens, q_channels_per_head = query.shape
     _, k_tokens, _ = key.shape
-    scale = q_channels_per_head ** -0.5
+    scale = q_channels_per_head**-0.5
 
     kv_chunk_size = min(kv_chunk_size or int(math.sqrt(k_tokens)), k_tokens)
     if kv_chunk_size_min is not None:
         kv_chunk_size = max(kv_chunk_size, kv_chunk_size_min)
 
     def get_query_chunk(chunk_idx: int) -> Tensor:
-        return narrow_trunc(
-            query,
-            1,
-            chunk_idx,
-            min(query_chunk_size, q_tokens)
-        )
+        return narrow_trunc(query, 1, chunk_idx, min(query_chunk_size, q_tokens))
 
     summarize_chunk: SummarizeChunk = partial(_summarize_chunk, scale=scale)
-    summarize_chunk: SummarizeChunk = partial(checkpoint, summarize_chunk) if use_checkpoint else summarize_chunk
-    compute_query_chunk_attn: ComputeQueryChunkAttn = partial(
-        _get_attention_scores_no_kv_chunking,
-        scale=scale
-    ) if k_tokens <= kv_chunk_size else (
+    summarize_chunk: SummarizeChunk = (
+        partial(checkpoint, summarize_chunk) if use_checkpoint else summarize_chunk
+    )
+    compute_query_chunk_attn: ComputeQueryChunkAttn = (
+        partial(_get_attention_scores_no_kv_chunking, scale=scale)
+        if k_tokens <= kv_chunk_size
         # fast-path for when there's just 1 key-value chunk per query chunk (this is just sliced attention btw)
-        partial(
-            _query_chunk_attention,
-            kv_chunk_size=kv_chunk_size,
-            summarize_chunk=summarize_chunk,
+        else (
+            partial(
+                _query_chunk_attention,
+                kv_chunk_size=kv_chunk_size,
+                summarize_chunk=summarize_chunk,
+            )
         )
     )
 
@@ -210,6 +206,8 @@ def efficient_dot_product_attention(
             value=value,
         )
 
-        res[:, i * query_chunk_size:i * query_chunk_size + attn_scores.shape[1], :] = attn_scores
+        res[
+            :, i * query_chunk_size : i * query_chunk_size + attn_scores.shape[1], :
+        ] = attn_scores
 
     return res

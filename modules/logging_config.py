@@ -4,7 +4,6 @@ import os
 try:
     from tqdm import tqdm
 
-
     class TqdmLoggingHandler(logging.Handler):
         def __init__(self, fallback_handler: logging.Handler):
             super().__init__()
@@ -37,12 +36,13 @@ def setup_logging(loglevel):
         return
 
     formatter = logging.Formatter(
-        '%(asctime)s %(levelname)s [%(name)s] %(message)s',
-        '%Y-%m-%d %H:%M:%S',
+        "%(asctime)s %(levelname)s [%(name)s] %(message)s",
+        "%Y-%m-%d %H:%M:%S",
     )
 
     if os.environ.get("SD_WEBUI_RICH_LOG"):
         from rich.logging import RichHandler
+
         handler = RichHandler()
     else:
         handler = logging.StreamHandler()

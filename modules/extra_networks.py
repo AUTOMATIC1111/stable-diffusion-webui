@@ -25,6 +25,7 @@ def register_extra_network_alias(extra_network, alias):
 
 def register_default_extra_networks():
     from modules.extra_networks_hypernet import ExtraNetworkHypernet
+
     register_extra_network(ExtraNetworkHypernet())
 
 
@@ -35,7 +36,7 @@ class ExtraNetworkParams:
         self.named = {}
 
         for item in self.items:
-            parts = item.split('=', 2) if isinstance(item, str) else [item]
+            parts = item.split("=", 2) if isinstance(item, str) else [item]
             if len(parts) == 2:
                 self.named[parts[0]] = parts[1]
             else:
@@ -129,13 +130,17 @@ def activate(p, extra_network_data):
 
     activated = []
 
-    for extra_network, extra_network_args in lookup_extra_networks(extra_network_data).items():
-
+    for extra_network, extra_network_args in lookup_extra_networks(
+        extra_network_data
+    ).items():
         try:
             extra_network.activate(p, extra_network_args)
             activated.append(extra_network)
         except Exception as e:
-            errors.display(e, f"activating extra network {extra_network.name} with arguments {extra_network_args}")
+            errors.display(
+                e,
+                f"activating extra network {extra_network.name} with arguments {extra_network_args}",
+            )
 
     for extra_network_name, extra_network in extra_network_registry.items():
         if extra_network in activated:
@@ -147,7 +152,14 @@ def activate(p, extra_network_data):
             errors.display(e, f"activating extra network {extra_network_name}")
 
     if p.scripts is not None:
-        p.scripts.after_extra_networks_activate(p, batch_number=p.iteration, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds, extra_network_data=extra_network_data)
+        p.scripts.after_extra_networks_activate(
+            p,
+            batch_number=p.iteration,
+            prompts=p.prompts,
+            seeds=p.seeds,
+            subseeds=p.subseeds,
+            extra_network_data=extra_network_data,
+        )
 
 
 def deactivate(p, extra_network_data):
@@ -169,7 +181,9 @@ def deactivate(p, extra_network_data):
         try:
             extra_network.deactivate(p)
         except Exception as e:
-            errors.display(e, f"deactivating unmentioned extra network {extra_network_name}")
+            errors.display(
+                e, f"deactivating unmentioned extra network {extra_network_name}"
+            )
 
 
 re_extra_net = re.compile(r"<(\w+):([^>]+)>")
@@ -211,15 +225,21 @@ def get_user_metadata(filename, lister=None):
         return {}
 
     basename, ext = os.path.splitext(filename)
-    metadata_filename = basename + '.json'
+    metadata_filename = basename + ".json"
 
     metadata = {}
     try:
-        exists = lister.exists(metadata_filename) if lister else os.path.exists(metadata_filename)
+        exists = (
+            lister.exists(metadata_filename)
+            if lister
+            else os.path.exists(metadata_filename)
+        )
         if exists:
             with open(metadata_filename, "r", encoding="utf8") as file:
                 metadata = json.load(file)
     except Exception as e:
-        errors.display(e, f"reading extra network user metadata from {metadata_filename}")
+        errors.display(
+            e, f"reading extra network user metadata from {metadata_filename}"
+        )
 
     return metadata

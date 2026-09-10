@@ -12,18 +12,24 @@ class TotalTQDM:
             desc="Total progress",
             total=shared.state.job_count * shared.state.sampling_steps,
             position=1,
-            file=shared.progress_print_out
+            file=shared.progress_print_out,
         )
 
     def update(self):
-        if not shared.opts.multiple_tqdm or shared.cmd_opts.disable_console_progressbars:
+        if (
+            not shared.opts.multiple_tqdm
+            or shared.cmd_opts.disable_console_progressbars
+        ):
             return
         if self._tqdm is None:
             self.reset()
         self._tqdm.update()
 
     def updateTotal(self, new_total):
-        if not shared.opts.multiple_tqdm or shared.cmd_opts.disable_console_progressbars:
+        if (
+            not shared.opts.multiple_tqdm
+            or shared.cmd_opts.disable_console_progressbars
+        ):
             return
         if self._tqdm is None:
             self.reset()
@@ -34,4 +40,3 @@ class TotalTQDM:
             self._tqdm.refresh()
             self._tqdm.close()
             self._tqdm = None
-

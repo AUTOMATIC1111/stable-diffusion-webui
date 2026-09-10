@@ -7,7 +7,9 @@ from modules.upscaler_utils import upscale_with_model
 class UpscalerESRGAN(Upscaler):
     def __init__(self, dirname):
         self.name = "ESRGAN"
-        self.model_url = "https://github.com/cszn/KAIR/releases/download/v1.0/ESRGAN.pth"
+        self.model_url = (
+            "https://github.com/cszn/KAIR/releases/download/v1.0/ESRGAN.pth"
+        )
         self.model_name = "ESRGAN_4x"
         self.scalers = []
         self.user_path = dirname
@@ -30,7 +32,9 @@ class UpscalerESRGAN(Upscaler):
         try:
             model = self.load_model(selected_model)
         except Exception:
-            errors.report(f"Unable to load ESRGAN model {selected_model}", exc_info=True)
+            errors.report(
+                f"Unable to load ESRGAN model {selected_model}", exc_info=True
+            )
             return img
         model.to(devices.device_esrgan)
         return esrgan_upscale(model, img)
@@ -48,8 +52,8 @@ class UpscalerESRGAN(Upscaler):
 
         return modelloader.load_spandrel_model(
             filename,
-            device=('cpu' if devices.device_esrgan.type == 'mps' else None),
-            expected_architecture='ESRGAN',
+            device=("cpu" if devices.device_esrgan.type == "mps" else None),
+            expected_architecture="ESRGAN",
         )
 
 

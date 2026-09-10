@@ -13,7 +13,12 @@ import re
 # PyTorch 1.13 and later have _TypedStorage renamed to TypedStorage
 from modules import errors
 
-TypedStorage = torch.storage.TypedStorage if hasattr(torch.storage, 'TypedStorage') else torch.storage._TypedStorage
+TypedStorage = (
+    torch.storage.TypedStorage
+    if hasattr(torch.storage, "TypedStorage")
+    else torch.storage._TypedStorage
+)
+
 
 def encode(*args):
     out = _codecs.encode(*args)
@@ -24,12 +29,14 @@ class RestrictedUnpickler(pickle.Unpickler):
     extra_handler = None
 
     def persistent_load(self, saved_id):
-        assert saved_id[0] == 'storage'
+        assert saved_id[0] == "storage"
 
         try:
             return TypedStorage(_internal=True)
         except TypeError:
-            return TypedStorage()  # PyTorch before 2.0 does not have the _internal argument
+            return (
+                TypedStorage()
+            )  # PyTorch before 2.0 does not have the _internal argument
 
     def find_class(self, module, name):
         if self.extra_handler is not None:
@@ -37,27 +44,45 @@ class RestrictedUnpickler(pickle.Unpickler):
             if res is not None:
                 return res
 
-        if module == 'collections' and name == 'OrderedDict':
+        if module == "collections" and name == "OrderedDict":
             return getattr(collections, name)
-        if module == 'torch._utils' and name in ['_rebuild_tensor_v2', '_rebuild_parameter', '_rebuild_device_tensor_from_numpy']:
+        if module == "torch._utils" and name in [
+            "_rebuild_tensor_v2",
+            "_rebuild_parameter",
+            "_rebuild_device_tensor_from_numpy",
+        ]:
             return getattr(torch._utils, name)
-        if module == 'torch' and name in ['FloatStorage', 'HalfStorage', 'IntStorage', 'LongStorage', 'DoubleStorage', 'ByteStorage', 'float32', 'BFloat16Storage']:
+        if module == "torch" and name in [
+            "FloatStorage",
+            "HalfStorage",
+            "IntStorage",
+            "LongStorage",
+            "DoubleStorage",
+            "ByteStorage",
+            "float32",
+            "BFloat16Storage",
+        ]:
             return getattr(torch, name)
-        if module == 'torch.nn.modules.container' and name in ['ParameterDict']:
+        if module == "torch.nn.modules.container" and name in ["ParameterDict"]:
             return getattr(torch.nn.modules.container, name)
-        if module == 'numpy.core.multiarray' and name in ['scalar', '_reconstruct']:
+        if module == "numpy.core.multiarray" and name in ["scalar", "_reconstruct"]:
             return getattr(numpy.core.multiarray, name)
-        if module == 'numpy' and name in ['dtype', 'ndarray']:
+        if module == "numpy" and name in ["dtype", "ndarray"]:
             return getattr(numpy, name)
-        if module == '_codecs' and name == 'encode':
+        if module == "_codecs" and name == "encode":
             return encode
-        if module == "pytorch_lightning.callbacks" and name == 'model_checkpoint':
+        if module == "pytorch_lightning.callbacks" and name == "model_checkpoint":
             import pytorch_lightning.callbacks
+
             return pytorch_lightning.callbacks.model_checkpoint
-        if module == "pytorch_lightning.callbacks.model_checkpoint" and name == 'ModelCheckpoint':
+        if (
+            module == "pytorch_lightning.callbacks.model_checkpoint"
+            and name == "ModelCheckpoint"
+        ):
             import pytorch_lightning.callbacks.model_checkpoint
+
             return pytorch_lightning.callbacks.model_checkpoint.ModelCheckpoint
-        if module == "__builtin__" and name == 'set':
+        if module == "__builtin__" and name == "set":
             return set
 
         # Forbid everything else.
@@ -65,8 +90,11 @@ class RestrictedUnpickler(pickle.Unpickler):
 
 
 # Regular expression that accepts 'dirname/version', 'dirname/byteorder', 'dirname/data.pkl', '.data/serialization_id', and 'dirname/data/<number>'
-allowed_zip_names_re = re.compile(r"^([^/]+)/((data/\d+)|version|byteorder|.data/serialization_id|(data\.pkl))$")
+allowed_zip_names_re = re.compile(
+    r"^([^/]+)/((data/\d+)|version|byteorder|.data/serialization_id|(data\.pkl))$"
+)
 data_pkl_re = re.compile(r"^([^/]+)/data\.pkl$")
+
 
 def check_zip_filenames(filename, names):
     for name in names:
@@ -78,7 +106,6 @@ def check_zip_filenames(filename, names):
 
 def check_pt(filename, extra_handler):
     try:
-
         # new pytorch format is a zip file
         with zipfile.ZipFile(filename) as z:
             check_zip_filenames(filename, z.namelist())
@@ -95,7 +122,6 @@ def check_pt(filename, extra_handler):
                 unpickler.load()
 
     except zipfile.BadZipfile:
-
         # if it's not a zip file, it's an old pytorch format, with five objects written to pickle
         with open(filename, "rb") as file:
             unpickler = RestrictedUnpickler(file)
@@ -105,7 +131,9 @@ def check_pt(filename, extra_handler):
 
 
 def load(filename, *args, **kwargs):
-    return load_with_extra(filename, *args, extra_handler=global_extra_handler, **kwargs)
+    return load_with_extra(
+        filename, *args, extra_handler=global_extra_handler, **kwargs
+    )
 
 
 def load_with_extra(filename, extra_handler=None, *args, **kwargs):
@@ -158,22 +186,22 @@ def load_with_extra(filename, extra_handler=None, *args, **kwargs):
 
 class Extra:
     """
-    A class for temporarily setting the global handler for when you can't explicitly call load_with_extra
-    (because it's not your code making the torch.load call). The intended use is like this:
+        A class for temporarily setting the global handler for when you can't explicitly call load_with_extra
+        (because it's not your code making the torch.load call). The intended use is like this:
 
-```
-import torch
-from modules import safe
+    ```
+    import torch
+    from modules import safe
 
-def handler(module, name):
-    if module == 'torch' and name in ['float64', 'float16']:
-        return getattr(torch, name)
+    def handler(module, name):
+        if module == 'torch' and name in ['float64', 'float16']:
+            return getattr(torch, name)
 
-    return None
+        return None
 
-with safe.Extra(handler):
-    x = torch.load('model.pt')
-```
+    with safe.Extra(handler):
+        x = torch.load('model.pt')
+    ```
     """
 
     def __init__(self, handler):
@@ -182,7 +210,7 @@ with safe.Extra(handler):
     def __enter__(self):
         global global_extra_handler
 
-        assert global_extra_handler is None, 'already inside an Extra() block'
+        assert global_extra_handler is None, "already inside an Extra() block"
         global_extra_handler = self.handler
 
     def __exit__(self, exc_type, exc_val, exc_tb):

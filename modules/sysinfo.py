@@ -37,7 +37,7 @@ environment_whitelist = {
 
 def pretty_bytes(num, suffix="B"):
     for unit in ["", "K", "M", "G", "T", "P", "E", "Z", "Y"]:
-        if abs(num) < 1024 or unit == 'Y':
+        if abs(num) < 1024 or unit == "Y":
             return f"{num:.0f}{unit}{suffix}"
         num /= 1024
 
@@ -71,6 +71,7 @@ def get_cpu_info():
     cpu_info = {"model": platform.processor()}
     try:
         import psutil
+
         cpu_info["count logical"] = psutil.cpu_count(logical=True)
         cpu_info["count physical"] = psutil.cpu_count(logical=False)
     except Exception as e:
@@ -81,22 +82,46 @@ def get_cpu_info():
 def get_ram_info():
     try:
         import psutil
+
         ram = psutil.virtual_memory()
-        return {x: pretty_bytes(getattr(ram, x, 0)) for x in ["total", "used", "free", "active", "inactive", "buffers", "cached", "shared"] if getattr(ram, x, 0) != 0}
+        return {
+            x: pretty_bytes(getattr(ram, x, 0))
+            for x in [
+                "total",
+                "used",
+                "free",
+                "active",
+                "inactive",
+                "buffers",
+                "cached",
+                "shared",
+            ]
+            if getattr(ram, x, 0) != 0
+        }
     except Exception as e:
         return str(e)
 
 
 def get_packages():
     try:
-        return subprocess.check_output([sys.executable, '-m', 'pip', 'freeze', '--all']).decode("utf8").splitlines()
+        return (
+            subprocess.check_output([sys.executable, "-m", "pip", "freeze", "--all"])
+            .decode("utf8")
+            .splitlines()
+        )
     except Exception as pip_error:
         try:
             import importlib.metadata
+
             packages = importlib.metadata.distributions()
-            return sorted([f"{package.metadata['Name']}=={package.version}" for package in packages])
+            return sorted(
+                [
+                    f"{package.metadata['Name']}=={package.version}"
+                    for package in packages
+                ]
+            )
         except Exception as e2:
-            return {'error pip': pip_error, 'error importlib': str(e2)}
+            return {"error pip": pip_error, "error importlib": str(e2)}
 
 
 def get_dict():
@@ -116,8 +141,14 @@ def get_dict():
         "Exceptions": errors.get_exceptions(),
         "CPU": get_cpu_info(),
         "RAM": get_ram_info(),
-        "Extensions": get_extensions(enabled=True, fallback_disabled_extensions=config.get('disabled_extensions', [])),
-        "Inactive extensions": get_extensions(enabled=False, fallback_disabled_extensions=config.get('disabled_extensions', [])),
+        "Extensions": get_extensions(
+            enabled=True,
+            fallback_disabled_extensions=config.get("disabled_extensions", []),
+        ),
+        "Inactive extensions": get_extensions(
+            enabled=False,
+            fallback_disabled_extensions=config.get("disabled_extensions", []),
+        ),
         "Environment": get_environment(),
         "Config": config,
         "Startup": timer.startup_record,
@@ -135,11 +166,17 @@ def get_argv():
     res = []
 
     for v in sys.argv:
-        if shared_cmd_options.cmd_opts.gradio_auth and shared_cmd_options.cmd_opts.gradio_auth == v:
+        if (
+            shared_cmd_options.cmd_opts.gradio_auth
+            and shared_cmd_options.cmd_opts.gradio_auth == v
+        ):
             res.append("<hidden>")
             continue
 
-        if shared_cmd_options.cmd_opts.api_auth and shared_cmd_options.cmd_opts.api_auth == v:
+        if (
+            shared_cmd_options.cmd_opts.api_auth
+            and shared_cmd_options.cmd_opts.api_auth == v
+        ):
             res.append("<hidden>")
             continue
 
@@ -154,40 +191,48 @@ re_newline = re.compile(r"\r*\n")
 def get_torch_sysinfo():
     try:
         import torch.utils.collect_env
+
         info = torch.utils.collect_env.get_env_info()._asdict()
 
-        return {k: re.split(re_newline, str(v)) if "\n" in str(v) else v for k, v in info.items()}
+        return {
+            k: re.split(re_newline, str(v)) if "\n" in str(v) else v
+            for k, v in info.items()
+        }
     except Exception as e:
         return str(e)
 
 
 def run_git(path, *args):
     try:
-        return subprocess.check_output([launch_utils.git, '-C', path, *args], shell=False, encoding='utf8').strip()
+        return subprocess.check_output(
+            [launch_utils.git, "-C", path, *args], shell=False, encoding="utf8"
+        ).strip()
     except Exception as e:
         return str(e)
 
 
 def git_status(path):
-    if (Path(path) / '.git').is_dir():
-        return run_git(paths_internal.script_path, 'status')
+    if (Path(path) / ".git").is_dir():
+        return run_git(paths_internal.script_path, "status")
 
 
 def get_info_from_repo_path(path: Path):
-    is_repo = (path / '.git').is_dir()
+    is_repo = (path / ".git").is_dir()
     return {
-        'name': path.name,
-        'path': str(path),
-        'commit': run_git(path, 'rev-parse', 'HEAD') if is_repo else None,
-        'branch': run_git(path, 'branch', '--show-current') if is_repo else None,
-        'remote': run_git(path, 'remote', 'get-url', 'origin') if is_repo else None,
+        "name": path.name,
+        "path": str(path),
+        "commit": run_git(path, "rev-parse", "HEAD") if is_repo else None,
+        "branch": run_git(path, "branch", "--show-current") if is_repo else None,
+        "remote": run_git(path, "remote", "get-url", "origin") if is_repo else None,
     }
 
 
 def get_extensions(*, enabled, fallback_disabled_extensions=None):
     try:
         from modules import extensions
+
         if extensions.extensions:
+
             def to_json(x: extensions.Extension):
                 return {
                     "name": x.name,
@@ -196,9 +241,19 @@ def get_extensions(*, enabled, fallback_disabled_extensions=None):
                     "branch": x.branch,
                     "remote": x.remote,
                 }
-            return [to_json(x) for x in extensions.extensions if not x.is_builtin and x.enabled == enabled]
+
+            return [
+                to_json(x)
+                for x in extensions.extensions
+                if not x.is_builtin and x.enabled == enabled
+            ]
         else:
-            return [get_info_from_repo_path(d) for d in Path(paths_internal.extensions_dir).iterdir() if d.is_dir() and enabled != (str(d.name) in fallback_disabled_extensions)]
+            return [
+                get_info_from_repo_path(d)
+                for d in Path(paths_internal.extensions_dir).iterdir()
+                if d.is_dir()
+                and enabled != (str(d.name) in fallback_disabled_extensions)
+            ]
     except Exception as e:
         return str(e)
 
@@ -206,10 +261,11 @@ def get_extensions(*, enabled, fallback_disabled_extensions=None):
 def get_config():
     try:
         from modules import shared
+
         return shared.opts.data
     except Exception as _:
         try:
-            with open(shared_cmd_options.cmd_opts.ui_settings_file, 'r') as f:
+            with open(shared_cmd_options.cmd_opts.ui_settings_file, "r") as f:
                 return json.load(f)
         except Exception as e:
             return str(e)

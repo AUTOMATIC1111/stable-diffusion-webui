@@ -2,12 +2,14 @@ import html
 import os
 
 from modules import shared, ui_extra_networks, sd_models
-from modules.ui_extra_networks_checkpoints_user_metadata import CheckpointUserMetadataEditor
+from modules.ui_extra_networks_checkpoints_user_metadata import (
+    CheckpointUserMetadataEditor,
+)
 
 
 class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
     def __init__(self):
-        super().__init__('Checkpoints')
+        super().__init__("Checkpoints")
 
         self.allow_prompt = False
 
@@ -30,10 +32,12 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
             "preview": self.find_preview(path),
             "description": self.find_description(path),
             "search_terms": search_terms,
-            "onclick": html.escape(f"return selectCheckpoint({ui_extra_networks.quote_js(name)})"),
+            "onclick": html.escape(
+                f"return selectCheckpoint({ui_extra_networks.quote_js(name)})"
+            ),
             "local_preview": f"{path}.{shared.opts.samples_format}",
             "metadata": checkpoint.metadata,
-            "sort_keys": {'default': index, **self.get_sort_keys(checkpoint.filename)},
+            "sort_keys": {"default": index, **self.get_sort_keys(checkpoint.filename)},
         }
 
     def list_items(self):
@@ -45,7 +49,9 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
                 yield item
 
     def allowed_directories_for_previews(self):
-        return [v for v in [shared.cmd_opts.ckpt_dir, sd_models.model_path] if v is not None]
+        return [
+            v for v in [shared.cmd_opts.ckpt_dir, sd_models.model_path] if v is not None
+        ]
 
     def create_user_metadata_editor(self, ui, tabname):
         return CheckpointUserMetadataEditor(ui, tabname, self)

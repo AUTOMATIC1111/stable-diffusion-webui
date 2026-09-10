@@ -22,24 +22,31 @@ def fix_torch_version():
     # Truncate version number of nightly/local build of PyTorch to not cause exceptions with CodeFormer or Safetensors
     if ".dev" in torch.__version__ or "+git" in torch.__version__:
         torch.__long_version__ = torch.__version__
-        torch.__version__ = re.search(r'[\d.]+[\d]', torch.__version__).group(0)
+        torch.__version__ = re.search(r"[\d.]+[\d]", torch.__version__).group(0)
+
 
 def fix_pytorch_lightning():
     # Checks if pytorch_lightning.utilities.distributed already exists in the sys.modules cache
-    if 'pytorch_lightning.utilities.distributed' not in sys.modules:
+    if "pytorch_lightning.utilities.distributed" not in sys.modules:
         import pytorch_lightning
+
         # Lets the user know that the library was not found and then will set it to pytorch_lightning.utilities.rank_zero
-        print("Pytorch_lightning.distributed not found, attempting pytorch_lightning.rank_zero")
-        sys.modules["pytorch_lightning.utilities.distributed"] = pytorch_lightning.utilities.rank_zero
+        print(
+            "Pytorch_lightning.distributed not found, attempting pytorch_lightning.rank_zero"
+        )
+        sys.modules["pytorch_lightning.utilities.distributed"] = (
+            pytorch_lightning.utilities.rank_zero
+        )
+
 
 def fix_asyncio_event_loop_policy():
     """
-        The default `asyncio` event loop policy only automatically creates
-        event loops in the main threads. Other threads must create event
-        loops explicitly or `asyncio.get_event_loop` (and therefore
-        `.IOLoop.current`) will fail. Installing this policy allows event
-        loops to be created automatically on any thread, matching the
-        behavior of Tornado versions prior to 5.0 (or 5.0 on Python 2).
+    The default `asyncio` event loop policy only automatically creates
+    event loops in the main threads. Other threads must create event
+    loops explicitly or `asyncio.get_event_loop` (and therefore
+    `.IOLoop.current`) will fail. Installing this policy allows event
+    loops to be created automatically on any thread, matching the
+    behavior of Tornado versions prior to 5.0 (or 5.0 on Python 2).
     """
 
     import asyncio
@@ -122,18 +129,18 @@ def get_gradio_auth_creds():
         s = s.strip()
         if not s:
             return None
-        return tuple(s.split(':', 1))
+        return tuple(s.split(":", 1))
 
     if cmd_opts.gradio_auth:
-        for cred in cmd_opts.gradio_auth.split(','):
+        for cred in cmd_opts.gradio_auth.split(","):
             cred = process_credential_line(cred)
             if cred:
                 yield cred
 
     if cmd_opts.gradio_auth_path:
-        with open(cmd_opts.gradio_auth_path, 'r', encoding="utf8") as file:
+        with open(cmd_opts.gradio_auth_path, "r", encoding="utf8") as file:
             for line in file.readlines():
-                for cred in line.strip().split(','):
+                for cred in line.strip().split(","):
                     cred = process_credential_line(cred)
                     if cred:
                         yield cred
@@ -161,7 +168,7 @@ def configure_sigint_handler():
     from modules import shared
 
     def sigint_handler(sig, frame):
-        print(f'Interrupted with signal {sig} in {frame}')
+        print(f"Interrupted with signal {sig} in {frame}")
 
         if shared.opts.dump_stacks_on_signal:
             dumpstacks()
@@ -178,21 +185,45 @@ def configure_opts_onchange():
     from modules import shared, sd_models, sd_vae, ui_tempdir, sd_hijack
     from modules.call_queue import wrap_queued_call
 
-    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: sd_models.reload_model_weights()), call=False)
-    shared.opts.onchange("sd_vae", wrap_queued_call(lambda: sd_vae.reload_vae_weights()), call=False)
-    shared.opts.onchange("sd_vae_overrides_per_model_preferences", wrap_queued_call(lambda: sd_vae.reload_vae_weights()), call=False)
+    shared.opts.onchange(
+        "sd_model_checkpoint",
+        wrap_queued_call(lambda: sd_models.reload_model_weights()),
+        call=False,
+    )
+    shared.opts.onchange(
+        "sd_vae", wrap_queued_call(lambda: sd_vae.reload_vae_weights()), call=False
+    )
+    shared.opts.onchange(
+        "sd_vae_overrides_per_model_preferences",
+        wrap_queued_call(lambda: sd_vae.reload_vae_weights()),
+        call=False,
+    )
     shared.opts.onchange("temp_dir", ui_tempdir.on_tmpdir_changed)
     shared.opts.onchange("gradio_theme", shared.reload_gradio_theme)
-    shared.opts.onchange("cross_attention_optimization", wrap_queued_call(lambda: sd_hijack.model_hijack.redo_hijack(shared.sd_model)), call=False)
-    shared.opts.onchange("fp8_storage", wrap_queued_call(lambda: sd_models.reload_model_weights()), call=False)
-    shared.opts.onchange("cache_fp16_weight", wrap_queued_call(lambda: sd_models.reload_model_weights(forced_reload=True)), call=False)
+    shared.opts.onchange(
+        "cross_attention_optimization",
+        wrap_queued_call(lambda: sd_hijack.model_hijack.redo_hijack(shared.sd_model)),
+        call=False,
+    )
+    shared.opts.onchange(
+        "fp8_storage",
+        wrap_queued_call(lambda: sd_models.reload_model_weights()),
+        call=False,
+    )
+    shared.opts.onchange(
+        "cache_fp16_weight",
+        wrap_queued_call(lambda: sd_models.reload_model_weights(forced_reload=True)),
+        call=False,
+    )
     startup_timer.record("opts onchange")
 
 
 def setup_middleware(app):
     from starlette.middleware.gzip import GZipMiddleware
 
-    app.middleware_stack = None  # reset current middleware to allow modifying user provided list
+    app.middleware_stack = (
+        None  # reset current middleware to allow modifying user provided list
+    )
     app.add_middleware(GZipMiddleware, minimum_size=1000)
     configure_cors_middleware(app)
     app.build_middleware_stack()  # rebuild middleware stack on-the-fly
@@ -208,8 +239,7 @@ def configure_cors_middleware(app):
         "allow_credentials": True,
     }
     if cmd_opts.cors_allow_origins:
-        cors_options["allow_origins"] = cmd_opts.cors_allow_origins.split(',')
+        cors_options["allow_origins"] = cmd_opts.cors_allow_origins.split(",")
     if cmd_opts.cors_allow_origins_regex:
         cors_options["allow_origin_regex"] = cmd_opts.cors_allow_origins_regex
     app.add_middleware(CORSMiddleware, **cors_options)
-

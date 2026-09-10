@@ -61,22 +61,40 @@ class DisableInitialization(ReplaceHelper):
         def do_nothing(*args, **kwargs):
             pass
 
-        def create_model_and_transforms_without_pretrained(*args, pretrained=None, **kwargs):
+        def create_model_and_transforms_without_pretrained(
+            *args, pretrained=None, **kwargs
+        ):
             return self.create_model_and_transforms(*args, pretrained=None, **kwargs)
 
-        def CLIPTextModel_from_pretrained(pretrained_model_name_or_path, *model_args, **kwargs):
-            res = self.CLIPTextModel_from_pretrained(None, *model_args, config=pretrained_model_name_or_path, state_dict={}, **kwargs)
+        def CLIPTextModel_from_pretrained(
+            pretrained_model_name_or_path, *model_args, **kwargs
+        ):
+            res = self.CLIPTextModel_from_pretrained(
+                None,
+                *model_args,
+                config=pretrained_model_name_or_path,
+                state_dict={},
+                **kwargs,
+            )
             res.name_or_path = pretrained_model_name_or_path
             return res
 
         def transformers_modeling_utils_load_pretrained_model(*args, **kwargs):
-            args = args[0:3] + ('/', ) + args[4:]  # resolved_archive_file; must set it to something to prevent what seems to be a bug
-            return self.transformers_modeling_utils_load_pretrained_model(*args, **kwargs)
+            args = (
+                args[0:3] + ("/",) + args[4:]
+            )  # resolved_archive_file; must set it to something to prevent what seems to be a bug
+            return self.transformers_modeling_utils_load_pretrained_model(
+                *args, **kwargs
+            )
 
         def transformers_utils_hub_get_file_from_cache(original, url, *args, **kwargs):
-
             # this file is always 404, prevent making request
-            if url == 'https://huggingface.co/openai/clip-vit-large-patch14/resolve/main/added_tokens.json' or url == 'openai/clip-vit-large-patch14' and args[0] == 'added_tokens.json':
+            if (
+                url
+                == "https://huggingface.co/openai/clip-vit-large-patch14/resolve/main/added_tokens.json"
+                or url == "openai/clip-vit-large-patch14"
+                and args[0] == "added_tokens.json"
+            ):
                 return None
 
             try:
@@ -87,26 +105,65 @@ class DisableInitialization(ReplaceHelper):
             except Exception:
                 return original(url, *args, local_files_only=False, **kwargs)
 
-        def transformers_utils_hub_get_from_cache(url, *args, local_files_only=False, **kwargs):
-            return transformers_utils_hub_get_file_from_cache(self.transformers_utils_hub_get_from_cache, url, *args, **kwargs)
+        def transformers_utils_hub_get_from_cache(
+            url, *args, local_files_only=False, **kwargs
+        ):
+            return transformers_utils_hub_get_file_from_cache(
+                self.transformers_utils_hub_get_from_cache, url, *args, **kwargs
+            )
 
-        def transformers_tokenization_utils_base_cached_file(url, *args, local_files_only=False, **kwargs):
-            return transformers_utils_hub_get_file_from_cache(self.transformers_tokenization_utils_base_cached_file, url, *args, **kwargs)
+        def transformers_tokenization_utils_base_cached_file(
+            url, *args, local_files_only=False, **kwargs
+        ):
+            return transformers_utils_hub_get_file_from_cache(
+                self.transformers_tokenization_utils_base_cached_file,
+                url,
+                *args,
+                **kwargs,
+            )
 
-        def transformers_configuration_utils_cached_file(url, *args, local_files_only=False, **kwargs):
-            return transformers_utils_hub_get_file_from_cache(self.transformers_configuration_utils_cached_file, url, *args, **kwargs)
+        def transformers_configuration_utils_cached_file(
+            url, *args, local_files_only=False, **kwargs
+        ):
+            return transformers_utils_hub_get_file_from_cache(
+                self.transformers_configuration_utils_cached_file, url, *args, **kwargs
+            )
 
-        self.replace(torch.nn.init, 'kaiming_uniform_', do_nothing)
-        self.replace(torch.nn.init, '_no_grad_normal_', do_nothing)
-        self.replace(torch.nn.init, '_no_grad_uniform_', do_nothing)
+        self.replace(torch.nn.init, "kaiming_uniform_", do_nothing)
+        self.replace(torch.nn.init, "_no_grad_normal_", do_nothing)
+        self.replace(torch.nn.init, "_no_grad_uniform_", do_nothing)
 
         if self.disable_clip:
-            self.create_model_and_transforms = self.replace(open_clip, 'create_model_and_transforms', create_model_and_transforms_without_pretrained)
-            self.CLIPTextModel_from_pretrained = self.replace(ldm.modules.encoders.modules.CLIPTextModel, 'from_pretrained', CLIPTextModel_from_pretrained)
-            self.transformers_modeling_utils_load_pretrained_model = self.replace(transformers.modeling_utils.PreTrainedModel, '_load_pretrained_model', transformers_modeling_utils_load_pretrained_model)
-            self.transformers_tokenization_utils_base_cached_file = self.replace(transformers.tokenization_utils_base, 'cached_file', transformers_tokenization_utils_base_cached_file)
-            self.transformers_configuration_utils_cached_file = self.replace(transformers.configuration_utils, 'cached_file', transformers_configuration_utils_cached_file)
-            self.transformers_utils_hub_get_from_cache = self.replace(transformers.utils.hub, 'get_from_cache', transformers_utils_hub_get_from_cache)
+            self.create_model_and_transforms = self.replace(
+                open_clip,
+                "create_model_and_transforms",
+                create_model_and_transforms_without_pretrained,
+            )
+            self.CLIPTextModel_from_pretrained = self.replace(
+                ldm.modules.encoders.modules.CLIPTextModel,
+                "from_pretrained",
+                CLIPTextModel_from_pretrained,
+            )
+            self.transformers_modeling_utils_load_pretrained_model = self.replace(
+                transformers.modeling_utils.PreTrainedModel,
+                "_load_pretrained_model",
+                transformers_modeling_utils_load_pretrained_model,
+            )
+            self.transformers_tokenization_utils_base_cached_file = self.replace(
+                transformers.tokenization_utils_base,
+                "cached_file",
+                transformers_tokenization_utils_base_cached_file,
+            )
+            self.transformers_configuration_utils_cached_file = self.replace(
+                transformers.configuration_utils,
+                "cached_file",
+                transformers_configuration_utils_cached_file,
+            )
+            self.transformers_utils_hub_get_from_cache = self.replace(
+                transformers.utils.hub,
+                "get_from_cache",
+                transformers_utils_hub_get_from_cache,
+            )
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.restore()
@@ -133,10 +190,22 @@ class InitializeOnMeta(ReplaceHelper):
             x["device"] = "meta"
             return x
 
-        linear_init = self.replace(torch.nn.Linear, '__init__', lambda *args, **kwargs: linear_init(*args, **set_device(kwargs)))
-        conv2d_init = self.replace(torch.nn.Conv2d, '__init__', lambda *args, **kwargs: conv2d_init(*args, **set_device(kwargs)))
-        mha_init = self.replace(torch.nn.MultiheadAttention, '__init__', lambda *args, **kwargs: mha_init(*args, **set_device(kwargs)))
-        self.replace(torch.nn.Module, 'to', lambda *args, **kwargs: None)
+        linear_init = self.replace(
+            torch.nn.Linear,
+            "__init__",
+            lambda *args, **kwargs: linear_init(*args, **set_device(kwargs)),
+        )
+        conv2d_init = self.replace(
+            torch.nn.Conv2d,
+            "__init__",
+            lambda *args, **kwargs: conv2d_init(*args, **set_device(kwargs)),
+        )
+        mha_init = self.replace(
+            torch.nn.MultiheadAttention,
+            "__init__",
+            lambda *args, **kwargs: mha_init(*args, **set_device(kwargs)),
+        )
+        self.replace(torch.nn.Module, "to", lambda *args, **kwargs: None)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.restore()
@@ -160,10 +229,10 @@ class LoadStateDictOnMeta(ReplaceHelper):
         self.state_dict = state_dict
         self.device = device
         self.weight_dtype_conversion = weight_dtype_conversion or {}
-        self.default_dtype = self.weight_dtype_conversion.get('')
+        self.default_dtype = self.weight_dtype_conversion.get("")
 
     def get_weight_dtype(self, key):
-        key_first_term, _ = key.split('.', 1)
+        key_first_term, _ = key.split(".", 1)
         return self.weight_dtype_conversion.get(key_first_term, self.default_dtype)
 
     def __enter__(self):
@@ -188,7 +257,10 @@ class LoadStateDictOnMeta(ReplaceHelper):
 
                 if param.is_meta:
                     dtype = sd_param.dtype if sd_param is not None else param.dtype
-                    module._parameters[name] = torch.nn.parameter.Parameter(torch.zeros_like(param, device=device, dtype=dtype), requires_grad=param.requires_grad)
+                    module._parameters[name] = torch.nn.parameter.Parameter(
+                        torch.zeros_like(param, device=device, dtype=dtype),
+                        requires_grad=param.requires_grad,
+                    )
 
             for name in module._buffers:
                 key = prefix + name
@@ -216,17 +288,61 @@ class LoadStateDictOnMeta(ReplaceHelper):
             """
 
             if state_dict is sd:
-                state_dict = {k: v.to(device="meta", dtype=v.dtype) for k, v in state_dict.items()}
+                state_dict = {
+                    k: v.to(device="meta", dtype=v.dtype) for k, v in state_dict.items()
+                }
 
             original(module, state_dict, strict=strict)
 
-        module_load_state_dict = self.replace(torch.nn.Module, 'load_state_dict', lambda *args, **kwargs: load_state_dict(module_load_state_dict, *args, **kwargs))
-        module_load_from_state_dict = self.replace(torch.nn.Module, '_load_from_state_dict', lambda *args, **kwargs: load_from_state_dict(module_load_from_state_dict, *args, **kwargs))
-        linear_load_from_state_dict = self.replace(torch.nn.Linear, '_load_from_state_dict', lambda *args, **kwargs: load_from_state_dict(linear_load_from_state_dict, *args, **kwargs))
-        conv2d_load_from_state_dict = self.replace(torch.nn.Conv2d, '_load_from_state_dict', lambda *args, **kwargs: load_from_state_dict(conv2d_load_from_state_dict, *args, **kwargs))
-        mha_load_from_state_dict = self.replace(torch.nn.MultiheadAttention, '_load_from_state_dict', lambda *args, **kwargs: load_from_state_dict(mha_load_from_state_dict, *args, **kwargs))
-        layer_norm_load_from_state_dict = self.replace(torch.nn.LayerNorm, '_load_from_state_dict', lambda *args, **kwargs: load_from_state_dict(layer_norm_load_from_state_dict, *args, **kwargs))
-        group_norm_load_from_state_dict = self.replace(torch.nn.GroupNorm, '_load_from_state_dict', lambda *args, **kwargs: load_from_state_dict(group_norm_load_from_state_dict, *args, **kwargs))
+        module_load_state_dict = self.replace(
+            torch.nn.Module,
+            "load_state_dict",
+            lambda *args, **kwargs: load_state_dict(
+                module_load_state_dict, *args, **kwargs
+            ),
+        )
+        module_load_from_state_dict = self.replace(
+            torch.nn.Module,
+            "_load_from_state_dict",
+            lambda *args, **kwargs: load_from_state_dict(
+                module_load_from_state_dict, *args, **kwargs
+            ),
+        )
+        linear_load_from_state_dict = self.replace(
+            torch.nn.Linear,
+            "_load_from_state_dict",
+            lambda *args, **kwargs: load_from_state_dict(
+                linear_load_from_state_dict, *args, **kwargs
+            ),
+        )
+        conv2d_load_from_state_dict = self.replace(
+            torch.nn.Conv2d,
+            "_load_from_state_dict",
+            lambda *args, **kwargs: load_from_state_dict(
+                conv2d_load_from_state_dict, *args, **kwargs
+            ),
+        )
+        mha_load_from_state_dict = self.replace(
+            torch.nn.MultiheadAttention,
+            "_load_from_state_dict",
+            lambda *args, **kwargs: load_from_state_dict(
+                mha_load_from_state_dict, *args, **kwargs
+            ),
+        )
+        layer_norm_load_from_state_dict = self.replace(
+            torch.nn.LayerNorm,
+            "_load_from_state_dict",
+            lambda *args, **kwargs: load_from_state_dict(
+                layer_norm_load_from_state_dict, *args, **kwargs
+            ),
+        )
+        group_norm_load_from_state_dict = self.replace(
+            torch.nn.GroupNorm,
+            "_load_from_state_dict",
+            lambda *args, **kwargs: load_from_state_dict(
+                group_norm_load_from_state_dict, *args, **kwargs
+            ),
+        )
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.restore()

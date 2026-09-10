@@ -42,14 +42,15 @@ def rgb_tensor_to_bgr_image(tensor: torch.Tensor, *, min_max=(0.0, 1.0)) -> np.n
 def create_face_helper(device) -> FaceRestoreHelper:
     from facexlib.detection import retinaface
     from facexlib.utils.face_restoration_helper import FaceRestoreHelper
-    if hasattr(retinaface, 'device'):
+
+    if hasattr(retinaface, "device"):
         retinaface.device = device
     return FaceRestoreHelper(
         upscale_factor=1,
         face_size=512,
         crop_ratio=(1, 1),
-        det_model='retinaface_resnet50',
-        save_ext='png',
+        det_model="retinaface_resnet50",
+        save_ext="png",
         use_parse=True,
         device=device,
     )
@@ -66,6 +67,7 @@ def restore_with_face_helper(
     `restore_face` should take a cropped face image and return a restored face image.
     """
     from torchvision.transforms.functional import normalize
+
     np_image = np_image[:, :, ::-1]
     original_resolution = np_image.shape[0:2]
 
@@ -73,7 +75,9 @@ def restore_with_face_helper(
         logger.debug("Detecting faces...")
         face_helper.clean_all()
         face_helper.read_image(np_image)
-        face_helper.get_face_landmarks_5(only_center_face=False, resize=640, eye_dist_threshold=5)
+        face_helper.get_face_landmarks_5(
+            only_center_face=False, resize=640, eye_dist_threshold=5
+        )
         face_helper.align_warp_face()
         logger.debug("Found %d faces, restoring", len(face_helper.cropped_faces))
         for cropped_face in face_helper.cropped_faces:
@@ -86,10 +90,10 @@ def restore_with_face_helper(
                     cropped_face_t = restore_face(cropped_face_t)
                 devices.torch_gc()
             except Exception:
-                errors.report('Failed face-restoration inference', exc_info=True)
+                errors.report("Failed face-restoration inference", exc_info=True)
 
             restored_face = rgb_tensor_to_bgr_image(cropped_face_t, min_max=(-1, 1))
-            restored_face = (restored_face * 255.0).astype('uint8')
+            restored_face = (restored_face * 255.0).astype("uint8")
             face_helper.add_restored_face(restored_face)
 
         logger.debug("Merging restored faces into image")

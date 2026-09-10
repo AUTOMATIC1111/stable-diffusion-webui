@@ -7,8 +7,8 @@ from PIL import Image
 import modules.shared
 from modules import modelloader, shared
 
-LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
-NEAREST = (Image.Resampling.NEAREST if hasattr(Image, 'Resampling') else Image.NEAREST)
+LANCZOS = Image.Resampling.LANCZOS if hasattr(Image, "Resampling") else Image.LANCZOS
+NEAREST = Image.Resampling.NEAREST if hasattr(Image, "Resampling") else Image.NEAREST
 
 
 class Upscaler:
@@ -43,6 +43,7 @@ class Upscaler:
 
         try:
             import cv2  # noqa: F401
+
             self.can_tile = True
         except Exception:
             pass
@@ -80,7 +81,12 @@ class Upscaler:
         pass
 
     def find_models(self, ext_filter=None) -> list:
-        return modelloader.load_models(model_path=self.model_path, model_url=self.model_url, command_path=self.user_path, ext_filter=ext_filter)
+        return modelloader.load_models(
+            model_path=self.model_path,
+            model_url=self.model_url,
+            command_path=self.user_path,
+            ext_filter=ext_filter,
+        )
 
     def update_status(self, prompt):
         print(f"\nextras: {prompt}", file=shared.progress_print_out)
@@ -93,7 +99,14 @@ class UpscalerData:
     scaler: Upscaler = None
     model: None
 
-    def __init__(self, name: str, path: str, upscaler: Upscaler = None, scale: int = 4, model=None):
+    def __init__(
+        self,
+        name: str,
+        path: str,
+        upscaler: Upscaler = None,
+        scale: int = 4,
+        model=None,
+    ):
         self.name = name
         self.data_path = path
         self.local_data_path = path
@@ -102,7 +115,9 @@ class UpscalerData:
         self.model = model
 
     def __repr__(self):
-        return f"<UpscalerData name={self.name} path={self.data_path} scale={self.scale}>"
+        return (
+            f"<UpscalerData name={self.name} path={self.data_path} scale={self.scale}>"
+        )
 
 
 class UpscalerNone(Upscaler):
@@ -124,7 +139,10 @@ class UpscalerLanczos(Upscaler):
     scalers = []
 
     def do_upscale(self, img, selected_model=None):
-        return img.resize((int(img.width * self.scale), int(img.height * self.scale)), resample=LANCZOS)
+        return img.resize(
+            (int(img.width * self.scale), int(img.height * self.scale)),
+            resample=LANCZOS,
+        )
 
     def load_model(self, _):
         pass
@@ -139,7 +157,10 @@ class UpscalerNearest(Upscaler):
     scalers = []
 
     def do_upscale(self, img, selected_model=None):
-        return img.resize((int(img.width * self.scale), int(img.height * self.scale)), resample=NEAREST)
+        return img.resize(
+            (int(img.width * self.scale), int(img.height * self.scale)),
+            resample=NEAREST,
+        )
 
     def load_model(self, _):
         pass

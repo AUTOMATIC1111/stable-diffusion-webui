@@ -15,19 +15,43 @@ class Script(scripts.Script):
         return is_img2img
 
     def ui(self, is_img2img):
-        loops = gr.Slider(minimum=1, maximum=32, step=1, label='Loops', value=4, elem_id=self.elem_id("loops"))
-        final_denoising_strength = gr.Slider(minimum=0, maximum=1, step=0.01, label='Final denoising strength', value=0.5, elem_id=self.elem_id("final_denoising_strength"))
-        denoising_curve = gr.Dropdown(label="Denoising strength curve", choices=["Aggressive", "Linear", "Lazy"], value="Linear")
-        append_interrogation = gr.Dropdown(label="Append interrogated prompt at each iteration", choices=["None", "CLIP", "DeepBooru"], value="None")
+        loops = gr.Slider(
+            minimum=1,
+            maximum=32,
+            step=1,
+            label="Loops",
+            value=4,
+            elem_id=self.elem_id("loops"),
+        )
+        final_denoising_strength = gr.Slider(
+            minimum=0,
+            maximum=1,
+            step=0.01,
+            label="Final denoising strength",
+            value=0.5,
+            elem_id=self.elem_id("final_denoising_strength"),
+        )
+        denoising_curve = gr.Dropdown(
+            label="Denoising strength curve",
+            choices=["Aggressive", "Linear", "Lazy"],
+            value="Linear",
+        )
+        append_interrogation = gr.Dropdown(
+            label="Append interrogated prompt at each iteration",
+            choices=["None", "CLIP", "DeepBooru"],
+            value="None",
+        )
 
         return [loops, final_denoising_strength, denoising_curve, append_interrogation]
 
-    def run(self, p, loops, final_denoising_strength, denoising_curve, append_interrogation):
+    def run(
+        self, p, loops, final_denoising_strength, denoising_curve, append_interrogation
+    ):
         processing.fix_seed(p)
         batch_count = p.n_iter
         p.extra_generation_params = {
             "Final denoising strength": final_denoising_strength,
-            "Denoising curve": denoising_curve
+            "Denoising curve": denoising_curve,
         }
 
         p.batch_size = 1
@@ -45,7 +69,9 @@ class Script(scripts.Script):
         original_inpainting_fill = p.inpainting_fill
         state.job_count = loops * batch_count
 
-        initial_color_corrections = [processing.setup_color_correction(p.init_images[0])]
+        initial_color_corrections = [
+            processing.setup_color_correction(p.init_images[0])
+        ]
 
         def calculate_denoising_strength(loop):
             strength = initial_denoising_strength
@@ -110,7 +136,9 @@ class Script(scripts.Script):
 
                 last_image = processed.images[0]
                 p.init_images = [last_image]
-                p.inpainting_fill = 1 # Set "masked content" to "original" for next loop.
+                p.inpainting_fill = (
+                    1  # Set "masked content" to "original" for next loop.
+                )
 
                 if batch_count == 1:
                     history.append(last_image)
@@ -128,7 +156,18 @@ class Script(scripts.Script):
         if len(history) > 1:
             grid = images.image_grid(history, rows=1)
             if opts.grid_save:
-                images.save_image(grid, p.outpath_grids, "grid", initial_seed, p.prompt, opts.grid_format, info=info, short_filename=not opts.grid_extended_filename, grid=True, p=p)
+                images.save_image(
+                    grid,
+                    p.outpath_grids,
+                    "grid",
+                    initial_seed,
+                    p.prompt,
+                    opts.grid_format,
+                    info=info,
+                    short_filename=not opts.grid_extended_filename,
+                    grid=True,
+                    p=p,
+                )
 
             if opts.return_grid:
                 grids.append(grid)

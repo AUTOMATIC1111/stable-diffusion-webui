@@ -17,7 +17,7 @@ class State:
     job_no = 0
     job_count = 0
     processing_has_refined_job_count = False
-    job_timestamp = '0'
+    job_timestamp = "0"
     sampling_step = 0
     sampling_steps = 0
     current_latent = None
@@ -85,7 +85,10 @@ class State:
         log.info("Received stop generating request")
 
     def nextjob(self):
-        if shared.opts.live_previews_enable and shared.opts.show_progress_every_n_steps == -1:
+        if (
+            shared.opts.live_previews_enable
+            and shared.opts.show_progress_every_n_steps == -1
+        ):
             self.do_set_current_image()
 
         self.job_no += 1
@@ -139,7 +142,12 @@ class State:
         if not shared.parallel_processing_allowed:
             return
 
-        if self.sampling_step - self.current_image_sampling_step >= shared.opts.show_progress_every_n_steps and shared.opts.live_previews_enable and shared.opts.show_progress_every_n_steps != -1:
+        if (
+            self.sampling_step - self.current_image_sampling_step
+            >= shared.opts.show_progress_every_n_steps
+            and shared.opts.live_previews_enable
+            and shared.opts.show_progress_every_n_steps != -1
+        ):
             self.do_set_current_image()
 
     def do_set_current_image(self):
@@ -150,9 +158,13 @@ class State:
 
         try:
             if shared.opts.show_progress_grid:
-                self.assign_current_image(modules.sd_samplers.samples_to_image_grid(self.current_latent))
+                self.assign_current_image(
+                    modules.sd_samplers.samples_to_image_grid(self.current_latent)
+                )
             else:
-                self.assign_current_image(modules.sd_samplers.sample_to_image(self.current_latent))
+                self.assign_current_image(
+                    modules.sd_samplers.sample_to_image(self.current_latent)
+                )
 
             self.current_image_sampling_step = self.sampling_step
 
@@ -162,7 +174,10 @@ class State:
             errors.record_exception()
 
     def assign_current_image(self, image):
-        if shared.opts.live_previews_image_format == 'jpeg' and image.mode in ('RGBA', 'P'):
-            image = image.convert('RGB')
+        if shared.opts.live_previews_image_format == "jpeg" and image.mode in (
+            "RGBA",
+            "P",
+        ):
+            image = image.convert("RGB")
         self.current_image = image
         self.id_live_preview += 1

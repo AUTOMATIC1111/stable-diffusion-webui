@@ -26,10 +26,10 @@ def has_mps() -> bool:
 def cuda_no_autocast(device_id=None) -> bool:
     if device_id is None:
         device_id = get_cuda_device_id()
-    return (
-        torch.cuda.get_device_capability(device_id) == (7, 5)
-        and torch.cuda.get_device_name(device_id).startswith("NVIDIA GeForce GTX 16")
-    )
+    return torch.cuda.get_device_capability(device_id) == (
+        7,
+        5,
+    ) and torch.cuda.get_device_name(device_id).startswith("NVIDIA GeForce GTX 16")
 
 
 def get_cuda_device_id():
@@ -75,7 +75,6 @@ def get_device_for(task):
 
 
 def torch_gc():
-
     if torch.cuda.is_available():
         with torch.cuda.device(get_cuda_device_string()):
             torch.cuda.empty_cache()
@@ -100,7 +99,6 @@ def torch_npu_set_device():
 
 def enable_tf32():
     if torch.cuda.is_available():
-
         # enabling benchmark option seems to enable a range of cards to do fp16 when they otherwise can't
         # see https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/4407
         if cuda_no_autocast():
@@ -152,11 +150,16 @@ patch_module_list = [
 def manual_cast_forward(target_dtype):
     def forward_wrapper(self, *args, **kwargs):
         if any(
-            isinstance(arg, torch.Tensor) and arg.dtype != target_dtype
-            for arg in args
+            isinstance(arg, torch.Tensor) and arg.dtype != target_dtype for arg in args
         ):
-            args = [arg.to(target_dtype) if isinstance(arg, torch.Tensor) else arg for arg in args]
-            kwargs = {k: v.to(target_dtype) if isinstance(v, torch.Tensor) else v for k, v in kwargs.items()}
+            args = [
+                arg.to(target_dtype) if isinstance(arg, torch.Tensor) else arg
+                for arg in args
+            ]
+            kwargs = {
+                k: v.to(target_dtype) if isinstance(v, torch.Tensor) else v
+                for k, v in kwargs.items()
+            }
 
         org_dtype = target_dtype
         for param in self.parameters():
@@ -173,14 +176,13 @@ def manual_cast_forward(target_dtype):
         if target_dtype != dtype_inference:
             if isinstance(result, tuple):
                 result = tuple(
-                    i.to(dtype_inference)
-                    if isinstance(i, torch.Tensor)
-                    else i
+                    i.to(dtype_inference) if isinstance(i, torch.Tensor) else i
                     for i in result
                 )
             elif isinstance(result, torch.Tensor):
                 result = result.to(dtype_inference)
         return result
+
     return forward_wrapper
 
 
@@ -216,7 +218,7 @@ def autocast(disable=False):
         # All tensor dtype conversion happens before inference.
         return contextlib.nullcontext()
 
-    if fp8 and device==cpu:
+    if fp8 and device == cpu:
         return torch.autocast("cpu", dtype=torch.bfloat16, enabled=True)
 
     if fp8 and dtype_inference == torch.float32:
@@ -232,7 +234,11 @@ def autocast(disable=False):
 
 
 def without_autocast(disable=False):
-    return torch.autocast("cuda", enabled=False) if torch.is_autocast_enabled() and not disable else contextlib.nullcontext()
+    return (
+        torch.autocast("cuda", enabled=False)
+        if torch.is_autocast_enabled() and not disable
+        else contextlib.nullcontext()
+    )
 
 
 class NansException(Exception):
@@ -243,14 +249,14 @@ def test_for_nans(x, where):
     if shared.cmd_opts.disable_nan_check:
         return
 
-    if not torch.isnan(x[(0, ) * len(x.shape)]):
+    if not torch.isnan(x[(0,) * len(x.shape)]):
         return
 
     if where == "unet":
         message = "A tensor with NaNs was produced in Unet."
 
         if not shared.cmd_opts.no_half:
-            message += " This could be either because there's not enough precision to represent the picture, or because your video card does not support half type. Try setting the \"Upcast cross attention layer to float32\" option in Settings > Stable Diffusion or using the --no-half commandline argument to fix this."
+            message += ' This could be either because there\'s not enough precision to represent the picture, or because your video card does not support half type. Try setting the "Upcast cross attention layer to float32" option in Settings > Stable Diffusion or using the --no-half commandline argument to fix this.'
 
     elif where == "vae":
         message = "A tensor with NaNs was produced in VAE."
@@ -290,6 +296,9 @@ def force_model_fp16():
     assert force_fp16
     import sgm.modules.diffusionmodules.util as sgm_util
     import ldm.modules.diffusionmodules.util as ldm_util
+
     sgm_util.GroupNorm32 = torch.nn.GroupNorm
     ldm_util.GroupNorm32 = torch.nn.GroupNorm
-    print("ldm/sgm GroupNorm32 replaced with normal torch.nn.GroupNorm due to `--precision half`.")
+    print(
+        "ldm/sgm GroupNorm32 replaced with normal torch.nn.GroupNorm due to `--precision half`."
+    )

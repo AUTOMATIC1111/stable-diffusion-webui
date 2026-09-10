@@ -6,7 +6,7 @@ from modules.paths import script_path, data_path
 
 
 def webpath(fn):
-    return f'file={util.truncate_path(fn)}?{os.path.getmtime(fn)}'
+    return f"file={util.truncate_path(fn)}?{os.path.getmtime(fn)}"
 
 
 def javascript_html():
@@ -17,13 +17,15 @@ def javascript_html():
     head += f'<script type="text/javascript" src="{webpath(script_js)}"></script>\n'
 
     for script in scripts.list_scripts("javascript", ".js"):
-        head += f'<script type="text/javascript" src="{webpath(script.path)}"></script>\n'
+        head += (
+            f'<script type="text/javascript" src="{webpath(script.path)}"></script>\n'
+        )
 
     for script in scripts.list_scripts("javascript", ".mjs"):
         head += f'<script type="module" src="{webpath(script.path)}"></script>\n'
 
     if shared.cmd_opts.theme:
-        head += f'<script type="text/javascript">set_theme(\"{shared.cmd_opts.theme}\");</script>\n'
+        head += f'<script type="text/javascript">set_theme("{shared.cmd_opts.theme}");</script>\n'
 
     return head
 
@@ -42,9 +44,10 @@ def css_html():
         head += stylesheet(user_css)
 
     from modules.shared_gradio_themes import resolve_var
-    light = resolve_var('background_fill_primary')
-    dark = resolve_var('background_fill_primary_dark')
-    head += f'<style>html {{ background-color: {light}; }} @media (prefers-color-scheme: dark) {{ html {{background-color:  {dark}; }} }}</style>'
+
+    light = resolve_var("background_fill_primary")
+    dark = resolve_var("background_fill_primary_dark")
+    head += f"<style>html {{ background-color: {light}; }} @media (prefers-color-scheme: dark) {{ html {{background-color:  {dark}; }} }}</style>"
 
     return head
 
@@ -55,13 +58,16 @@ def reload_javascript():
 
     def template_response(*args, **kwargs):
         res = shared.GradioTemplateResponseOriginal(*args, **kwargs)
-        res.body = res.body.replace(b'</head>', f'{js}<meta name="referrer" content="no-referrer"/></head>'.encode("utf8"))
-        res.body = res.body.replace(b'</body>', f'{css}</body>'.encode("utf8"))
+        res.body = res.body.replace(
+            b"</head>",
+            f'{js}<meta name="referrer" content="no-referrer"/></head>'.encode("utf8"),
+        )
+        res.body = res.body.replace(b"</body>", f"{css}</body>".encode("utf8"))
         res.init_headers()
         return res
 
     gr.routes.templates.TemplateResponse = template_response
 
 
-if not hasattr(shared, 'GradioTemplateResponseOriginal'):
+if not hasattr(shared, "GradioTemplateResponseOriginal"):
     shared.GradioTemplateResponseOriginal = gr.routes.templates.TemplateResponse

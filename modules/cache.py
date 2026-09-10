@@ -8,8 +8,10 @@ import tqdm
 
 from modules.paths import data_path, script_path
 
-cache_filename = os.environ.get('SD_WEBUI_CACHE_FILE', os.path.join(data_path, "cache.json"))
-cache_dir = os.environ.get('SD_WEBUI_CACHE_DIR', os.path.join(data_path, "cache"))
+cache_filename = os.environ.get(
+    "SD_WEBUI_CACHE_FILE", os.path.join(data_path, "cache.json")
+)
+cache_dir = os.environ.get("SD_WEBUI_CACHE_DIR", os.path.join(data_path, "cache"))
 caches = {}
 cache_lock = threading.Lock()
 
@@ -36,7 +38,9 @@ def convert_old_cached_data():
         return
     except Exception:
         os.replace(cache_filename, os.path.join(script_path, "tmp", "cache.json"))
-        print('[ERROR] issue occurred while trying to read cache.json; old cache has been moved to tmp/cache.json')
+        print(
+            "[ERROR] issue occurred while trying to read cache.json; old cache has been moved to tmp/cache.json"
+        )
         return
 
     total_count = sum(len(keyvalues) for keyvalues in data.values())
@@ -110,14 +114,14 @@ def cached_data_for_file(subsection, title, filename, func):
         if ondisk_mtime > cached_mtime:
             entry = None
 
-    if not entry or 'value' not in entry:
+    if not entry or "value" not in entry:
         value = func()
         if value is None:
             return None
 
-        entry = {'mtime': ondisk_mtime, 'value': value}
+        entry = {"mtime": ondisk_mtime, "value": value}
         existing_cache[title] = entry
 
         dump_cache()
 
-    return entry['value']
+    return entry["value"]

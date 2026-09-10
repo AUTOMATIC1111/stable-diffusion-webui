@@ -65,7 +65,11 @@ def upscale_with_model(
     grid = images.split_grid(img, tile_size, tile_size, tile_overlap)
     newtiles = []
 
-    with tqdm.tqdm(total=grid.tile_count, desc=desc, disable=not shared.opts.enable_upscale_progressbar) as p:
+    with tqdm.tqdm(
+        total=grid.tile_count,
+        desc=desc,
+        disable=not shared.opts.enable_upscale_progressbar,
+    ) as p:
         for y, h, row in grid.tiles:
             newrow = []
             for x, w, tile in row:
@@ -123,7 +127,11 @@ def tiled_upscale_2(
     )
     weights = torch.zeros_like(result)
     logger.debug("Upscaling %s to %s with tiles", img.shape, result.shape)
-    with tqdm.tqdm(total=len(h_idx_list) * len(w_idx_list), desc=desc, disable=not shared.opts.enable_upscale_progressbar) as pbar:
+    with tqdm.tqdm(
+        total=len(h_idx_list) * len(w_idx_list),
+        desc=desc,
+        disable=not shared.opts.enable_upscale_progressbar,
+    ) as pbar:
         for h_idx in h_idx_list:
             if shared.state.interrupted or shared.state.skipped:
                 break
@@ -175,7 +183,9 @@ def upscale_2(
     Convenience wrapper around `tiled_upscale_2` that handles PIL images.
     """
     param = torch_utils.get_param(model)
-    tensor = pil_image_to_torch_bgr(img).to(dtype=param.dtype).unsqueeze(0)  # add batch dimension
+    tensor = (
+        pil_image_to_torch_bgr(img).to(dtype=param.dtype).unsqueeze(0)
+    )  # add batch dimension
 
     with torch.no_grad():
         output = tiled_upscale_2(

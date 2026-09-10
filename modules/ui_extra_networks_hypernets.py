@@ -7,7 +7,7 @@ from modules.hashes import sha256_from_cache
 
 class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
     def __init__(self):
-        super().__init__('Hypernetworks')
+        super().__init__("Hypernetworks")
 
     def refresh(self):
         shared.reload_hypernetworks()
@@ -18,7 +18,7 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
             return
 
         path, ext = os.path.splitext(full_path)
-        sha256 = sha256_from_cache(full_path, f'hypernet/{name}')
+        sha256 = sha256_from_cache(full_path, f"hypernet/{name}")
         shorthash = sha256[0:10] if sha256 else None
         search_terms = [self.search_terms_from_path(path)]
         if sha256:
@@ -30,9 +30,11 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
             "preview": self.find_preview(path),
             "description": self.find_description(path),
             "search_terms": search_terms,
-            "prompt": quote_js(f"<hypernet:{name}:") + " + opts.extra_networks_default_multiplier + " + quote_js(">"),
+            "prompt": quote_js(f"<hypernet:{name}:")
+            + " + opts.extra_networks_default_multiplier + "
+            + quote_js(">"),
             "local_preview": f"{path}.preview.{shared.opts.samples_format}",
-            "sort_keys": {'default': index, **self.get_sort_keys(path + ext)},
+            "sort_keys": {"default": index, **self.get_sort_keys(path + ext)},
         }
 
     def list_items(self):
@@ -45,4 +47,3 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
 
     def allowed_directories_for_previews(self):
         return [shared.cmd_opts.hypernetwork_dir]
-

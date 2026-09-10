@@ -23,7 +23,7 @@ class Profiler:
             activities=activities,
             record_shapes=shared.opts.profiling_record_shapes,
             profile_memory=shared.opts.profiling_profile_memory,
-            with_stack=shared.opts.profiling_with_stack
+            with_stack=shared.opts.profiling_with_stack,
         )
 
     def __enter__(self):
@@ -43,4 +43,3 @@ class Profiler:
 
 def webpath():
     return ui_gradio_extensions.webpath(shared.opts.profiling_filename)
-

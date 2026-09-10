@@ -17,14 +17,24 @@ def test_simple_upscaling_performed(base_url, img2img_basic_image_base64):
         "extras_upscaler_2_visibility": 0,
         "image": img2img_basic_image_base64,
     }
-    assert requests.post(f"{base_url}/sdapi/v1/extra-single-image", json=payload).status_code == 200
+    assert (
+        requests.post(
+            f"{base_url}/sdapi/v1/extra-single-image", json=payload
+        ).status_code
+        == 200
+    )
 
 
 def test_png_info_performed(base_url, img2img_basic_image_base64):
     payload = {
         "image": img2img_basic_image_base64,
     }
-    assert requests.post(f"{base_url}/sdapi/v1/extra-single-image", json=payload).status_code == 200
+    assert (
+        requests.post(
+            f"{base_url}/sdapi/v1/extra-single-image", json=payload
+        ).status_code
+        == 200
+    )
 
 
 def test_interrogate_performed(base_url, img2img_basic_image_base64):
@@ -32,4 +42,9 @@ def test_interrogate_performed(base_url, img2img_basic_image_base64):
         "image": img2img_basic_image_base64,
         "model": "clip",
     }
-    assert requests.post(f"{base_url}/sdapi/v1/extra-single-image", json=payload).status_code == 200
+    assert (
+        requests.post(
+            f"{base_url}/sdapi/v1/extra-single-image", json=payload
+        ).status_code
+        == 200
+    )

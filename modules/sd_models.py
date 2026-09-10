@@ -12,7 +12,26 @@ from omegaconf import OmegaConf, ListConfig
 from urllib import request
 import ldm.modules.midas as midas
 
-from modules import paths, shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config, sd_unet, sd_models_xl, cache, extra_networks, processing, lowvram, sd_hijack, patches
+from modules import (
+    paths,
+    shared,
+    modelloader,
+    devices,
+    script_callbacks,
+    sd_vae,
+    sd_disable_initialization,
+    errors,
+    hashes,
+    sd_models_config,
+    sd_unet,
+    sd_models_xl,
+    cache,
+    extra_networks,
+    processing,
+    lowvram,
+    sd_hijack,
+    patches,
+)
 from modules.timer import Timer
 from modules.shared import opts
 import tomesd
@@ -57,14 +76,18 @@ class CheckpointInfo:
     def __init__(self, filename):
         self.filename = filename
         abspath = os.path.abspath(filename)
-        abs_ckpt_dir = os.path.abspath(shared.cmd_opts.ckpt_dir) if shared.cmd_opts.ckpt_dir is not None else None
+        abs_ckpt_dir = (
+            os.path.abspath(shared.cmd_opts.ckpt_dir)
+            if shared.cmd_opts.ckpt_dir is not None
+            else None
+        )
 
         self.is_safetensors = os.path.splitext(filename)[1].lower() == ".safetensors"
 
         if abs_ckpt_dir and abspath.startswith(abs_ckpt_dir):
-            name = abspath.replace(abs_ckpt_dir, '')
+            name = abspath.replace(abs_ckpt_dir, "")
         elif abspath.startswith(model_path):
-            name = abspath.replace(model_path, '')
+            name = abspath.replace(model_path, "")
         else:
             name = os.path.basename(filename)
 
@@ -73,14 +96,19 @@ class CheckpointInfo:
 
         def read_metadata():
             metadata = read_metadata_from_safetensors(filename)
-            self.modelspec_thumbnail = metadata.pop('modelspec.thumbnail', None)
+            self.modelspec_thumbnail = metadata.pop("modelspec.thumbnail", None)
 
             return metadata
 
         self.metadata = {}
         if self.is_safetensors:
             try:
-                self.metadata = cache.cached_data_for_file('safetensors-metadata', "checkpoint/" + name, filename, read_metadata)
+                self.metadata = cache.cached_data_for_file(
+                    "safetensors-metadata",
+                    "checkpoint/" + name,
+                    filename,
+                    read_metadata,
+                )
             except Exception as e:
                 errors.display(e, f"reading metadata for {filename}")
 
@@ -92,12 +120,28 @@ class CheckpointInfo:
         self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{name}")
         self.shorthash = self.sha256[0:10] if self.sha256 else None
 
-        self.title = name if self.shorthash is None else f'{name} [{self.shorthash}]'
-        self.short_title = self.name_for_extra if self.shorthash is None else f'{self.name_for_extra} [{self.shorthash}]'
+        self.title = name if self.shorthash is None else f"{name} [{self.shorthash}]"
+        self.short_title = (
+            self.name_for_extra
+            if self.shorthash is None
+            else f"{self.name_for_extra} [{self.shorthash}]"
+        )
 
-        self.ids = [self.hash, self.model_name, self.title, name, self.name_for_extra, f'{name} [{self.hash}]']
+        self.ids = [
+            self.hash,
+            self.model_name,
+            self.title,
+            name,
+            self.name_for_extra,
+            f"{name} [{self.hash}]",
+        ]
         if self.shorthash:
-            self.ids += [self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]', f'{self.name_for_extra} [{self.shorthash}]']
+            self.ids += [
+                self.shorthash,
+                self.sha256,
+                f"{self.name} [{self.shorthash}]",
+                f"{self.name_for_extra} [{self.shorthash}]",
+            ]
 
     def register(self):
         checkpoints_list[self.title] = self
@@ -116,11 +160,16 @@ class CheckpointInfo:
         self.shorthash = shorthash
 
         if self.shorthash not in self.ids:
-            self.ids += [self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]', f'{self.name_for_extra} [{self.shorthash}]']
+            self.ids += [
+                self.shorthash,
+                self.sha256,
+                f"{self.name} [{self.shorthash}]",
+                f"{self.name_for_extra} [{self.shorthash}]",
+            ]
 
         old_title = self.title
-        self.title = f'{self.name} [{self.shorthash}]'
-        self.short_title = f'{self.name_for_extra} [{self.shorthash}]'
+        self.title = f"{self.name} [{self.shorthash}]"
+        self.short_title = f"{self.name_for_extra} [{self.shorthash}]"
 
         replace_key(checkpoints_list, old_title, self.title, self)
         self.register()
@@ -155,22 +204,39 @@ def list_models():
     checkpoint_aliases.clear()
 
     cmd_ckpt = shared.cmd_opts.ckpt
-    if shared.cmd_opts.no_download_sd_model or cmd_ckpt != shared.sd_model_file or os.path.exists(cmd_ckpt):
+    if (
+        shared.cmd_opts.no_download_sd_model
+        or cmd_ckpt != shared.sd_model_file
+        or os.path.exists(cmd_ckpt)
+    ):
         model_url = None
         expected_sha256 = None
     else:
         model_url = f"{shared.hf_endpoint}/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
-        expected_sha256 = '6ce0161689b3853acaa03779ec93eafe75a02f4ced659bee03f50797806fa2fa'
+        expected_sha256 = (
+            "6ce0161689b3853acaa03779ec93eafe75a02f4ced659bee03f50797806fa2fa"
+        )
 
-    model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.cmd_opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors"], hash_prefix=expected_sha256)
+    model_list = modelloader.load_models(
+        model_path=model_path,
+        model_url=model_url,
+        command_path=shared.cmd_opts.ckpt_dir,
+        ext_filter=[".ckpt", ".safetensors"],
+        download_name="v1-5-pruned-emaonly.safetensors",
+        ext_blacklist=[".vae.ckpt", ".vae.safetensors"],
+        hash_prefix=expected_sha256,
+    )
 
     if os.path.exists(cmd_ckpt):
         checkpoint_info = CheckpointInfo(cmd_ckpt)
         checkpoint_info.register()
 
-        shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
+        shared.opts.data["sd_model_checkpoint"] = checkpoint_info.title
     elif cmd_ckpt is not None and cmd_ckpt != shared.default_sd_model_file:
-        print(f"Checkpoint in --ckpt argument not found (Possible it was moved to {model_path}: {cmd_ckpt}", file=sys.stderr)
+        print(
+            f"Checkpoint in --ckpt argument not found (Possible it was moved to {model_path}: {cmd_ckpt}",
+            file=sys.stderr,
+        )
 
     for filename in model_list:
         checkpoint_info = CheckpointInfo(filename)
@@ -188,12 +254,22 @@ def get_closet_checkpoint_match(search_string):
     if checkpoint_info is not None:
         return checkpoint_info
 
-    found = sorted([info for info in checkpoints_list.values() if search_string in info.title], key=lambda x: len(x.title))
+    found = sorted(
+        [info for info in checkpoints_list.values() if search_string in info.title],
+        key=lambda x: len(x.title),
+    )
     if found:
         return found[0]
 
-    search_string_without_checksum = re.sub(re_strip_checksum, '', search_string)
-    found = sorted([info for info in checkpoints_list.values() if search_string_without_checksum in info.title], key=lambda x: len(x.title))
+    search_string_without_checksum = re.sub(re_strip_checksum, "", search_string)
+    found = sorted(
+        [
+            info
+            for info in checkpoints_list.values()
+            if search_string_without_checksum in info.title
+        ],
+        key=lambda x: len(x.title),
+    )
     if found:
         return found[0]
 
@@ -206,13 +282,14 @@ def model_hash(filename):
     try:
         with open(filename, "rb") as file:
             import hashlib
+
             m = hashlib.sha256()
 
             file.seek(0x100000)
             m.update(file.read(0x10000))
             return m.hexdigest()[0:8]
     except FileNotFoundError:
-        return 'NOFILE'
+        return "NOFILE"
 
 
 def select_checkpoint():
@@ -224,37 +301,44 @@ def select_checkpoint():
         return checkpoint_info
 
     if len(checkpoints_list) == 0:
-        error_message = "No checkpoints found. When searching for checkpoints, looked at:"
+        error_message = (
+            "No checkpoints found. When searching for checkpoints, looked at:"
+        )
         if shared.cmd_opts.ckpt is not None:
             error_message += f"\n - file {os.path.abspath(shared.cmd_opts.ckpt)}"
         error_message += f"\n - directory {model_path}"
         if shared.cmd_opts.ckpt_dir is not None:
-            error_message += f"\n - directory {os.path.abspath(shared.cmd_opts.ckpt_dir)}"
+            error_message += (
+                f"\n - directory {os.path.abspath(shared.cmd_opts.ckpt_dir)}"
+            )
         error_message += "Can't run without a checkpoint. Find and place a .ckpt or .safetensors file into any of those locations."
         raise FileNotFoundError(error_message)
 
     checkpoint_info = next(iter(checkpoints_list.values()))
     if model_checkpoint is not None:
-        print(f"Checkpoint {model_checkpoint} not found; loading fallback {checkpoint_info.title}", file=sys.stderr)
+        print(
+            f"Checkpoint {model_checkpoint} not found; loading fallback {checkpoint_info.title}",
+            file=sys.stderr,
+        )
 
     return checkpoint_info
 
 
 checkpoint_dict_replacements_sd1 = {
-    'cond_stage_model.transformer.embeddings.': 'cond_stage_model.transformer.text_model.embeddings.',
-    'cond_stage_model.transformer.encoder.': 'cond_stage_model.transformer.text_model.encoder.',
-    'cond_stage_model.transformer.final_layer_norm.': 'cond_stage_model.transformer.text_model.final_layer_norm.',
+    "cond_stage_model.transformer.embeddings.": "cond_stage_model.transformer.text_model.embeddings.",
+    "cond_stage_model.transformer.encoder.": "cond_stage_model.transformer.text_model.encoder.",
+    "cond_stage_model.transformer.final_layer_norm.": "cond_stage_model.transformer.text_model.final_layer_norm.",
 }
 
-checkpoint_dict_replacements_sd2_turbo = { # Converts SD 2.1 Turbo from SGM to LDM format.
-    'conditioner.embedders.0.': 'cond_stage_model.',
+checkpoint_dict_replacements_sd2_turbo = {  # Converts SD 2.1 Turbo from SGM to LDM format.
+    "conditioner.embedders.0.": "cond_stage_model.",
 }
 
 
 def transform_checkpoint_dict_key(k, replacements):
     for text, replacement in replacements.items():
         if k.startswith(text):
-            k = replacement + k[len(text):]
+            k = replacement + k[len(text) :]
 
     return k
 
@@ -263,12 +347,17 @@ def get_state_dict_from_checkpoint(pl_sd):
     pl_sd = pl_sd.pop("state_dict", pl_sd)
     pl_sd.pop("state_dict", None)
 
-    is_sd2_turbo = 'conditioner.embedders.0.model.ln_final.weight' in pl_sd and pl_sd['conditioner.embedders.0.model.ln_final.weight'].size()[0] == 1024
+    is_sd2_turbo = (
+        "conditioner.embedders.0.model.ln_final.weight" in pl_sd
+        and pl_sd["conditioner.embedders.0.model.ln_final.weight"].size()[0] == 1024
+    )
 
     sd = {}
     for k, v in pl_sd.items():
         if is_sd2_turbo:
-            new_key = transform_checkpoint_dict_key(k, checkpoint_dict_replacements_sd2_turbo)
+            new_key = transform_checkpoint_dict_key(
+                k, checkpoint_dict_replacements_sd2_turbo
+            )
         else:
             new_key = transform_checkpoint_dict_key(k, checkpoint_dict_replacements_sd1)
 
@@ -289,22 +378,27 @@ def read_metadata_from_safetensors(filename):
         metadata_len = int.from_bytes(metadata_len, "little")
         json_start = file.read(2)
 
-        assert metadata_len > 2 and json_start in (b'{"', b"{'"), f"{filename} is not a safetensors file"
+        assert metadata_len > 2 and json_start in (
+            b'{"',
+            b"{'",
+        ), f"{filename} is not a safetensors file"
 
         res = {}
 
         try:
-            json_data = json_start + file.read(metadata_len-2)
+            json_data = json_start + file.read(metadata_len - 2)
             json_obj = json.loads(json_data)
             for k, v in json_obj.get("__metadata__", {}).items():
                 res[k] = v
-                if isinstance(v, str) and v[0:1] == '{':
+                if isinstance(v, str) and v[0:1] == "{":
                     try:
                         res[k] = json.loads(v)
                     except Exception:
                         pass
         except Exception:
-             errors.report(f"Error reading metadata from file: {filename}", exc_info=True)
+            errors.report(
+                f"Error reading metadata from file: {filename}", exc_info=True
+            )
 
         return res
 
@@ -312,15 +406,21 @@ def read_metadata_from_safetensors(filename):
 def read_state_dict(checkpoint_file, print_global_state=False, map_location=None):
     _, extension = os.path.splitext(checkpoint_file)
     if extension.lower() == ".safetensors":
-        device = map_location or shared.weight_load_location or devices.get_optimal_device_name()
+        device = (
+            map_location
+            or shared.weight_load_location
+            or devices.get_optimal_device_name()
+        )
 
         if not shared.opts.disable_mmap_load_safetensors:
             pl_sd = safetensors.torch.load_file(checkpoint_file, device=device)
         else:
-            pl_sd = safetensors.torch.load(open(checkpoint_file, 'rb').read())
+            pl_sd = safetensors.torch.load(open(checkpoint_file, "rb").read())
             pl_sd = {k: v.to(device) for k, v in pl_sd.items()}
     else:
-        pl_sd = torch.load(checkpoint_file, map_location=map_location or shared.weight_load_location)
+        pl_sd = torch.load(
+            checkpoint_file, map_location=map_location or shared.weight_load_location
+        )
 
     if print_global_state and "global_step" in pl_sd:
         print(f"Global Step: {pl_sd['global_step']}")
@@ -369,7 +469,10 @@ def check_fp8(model):
         enable_fp8 = False
     elif shared.opts.fp8_storage == "Enable":
         enable_fp8 = True
-    elif getattr(model, "is_sdxl", False) and shared.opts.fp8_storage == "Enable for SDXL":
+    elif (
+        getattr(model, "is_sdxl", False)
+        and shared.opts.fp8_storage == "Enable for SDXL"
+    ):
         enable_fp8 = True
     else:
         enable_fp8 = False
@@ -386,15 +489,18 @@ def set_model_type(model, state_dict):
     if "model.diffusion_model.x_embedder.proj.weight" in state_dict:
         model.is_sd3 = True
         model.model_type = ModelType.SD3
-    elif hasattr(model, 'conditioner'):
+    elif hasattr(model, "conditioner"):
         model.is_sdxl = True
 
-        if 'model.diffusion_model.middle_block.1.transformer_blocks.0.attn1.to_q.weight' not in state_dict.keys():
+        if (
+            "model.diffusion_model.middle_block.1.transformer_blocks.0.attn1.to_q.weight"
+            not in state_dict.keys()
+        ):
             model.is_ssd = True
             model.model_type = ModelType.SSD
         else:
             model.model_type = ModelType.SDXL
-    elif hasattr(model.cond_stage_model, 'model'):
+    elif hasattr(model.cond_stage_model, "model"):
         model.is_sd2 = True
         model.model_type = ModelType.SD2
     else:
@@ -403,7 +509,7 @@ def set_model_type(model, state_dict):
 
 
 def set_model_fields(model):
-    if not hasattr(model, 'latent_channels'):
+    if not hasattr(model, "latent_channels"):
         model.latent_channels = 4
 
 
@@ -450,12 +556,12 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     # checkpoint state_dict does not contain the key
     # 'diffusion_model.input_blocks.0.0.weight'.
     diffusion_model_input = model.model.state_dict().get(
-        'diffusion_model.input_blocks.0.0.weight'
+        "diffusion_model.input_blocks.0.0.weight"
     )
     model.is_sdxl_inpaint = (
-        model.is_sdxl and
-        diffusion_model_input is not None and
-        diffusion_model_input.shape[1] == 9
+        model.is_sdxl
+        and diffusion_model_input is not None
+        and diffusion_model_input.shape[1] == 9
     )
 
     if shared.cmd_opts.opt_channelslast:
@@ -466,11 +572,13 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         model.float()
         model.alphas_cumprod_original = model.alphas_cumprod
         devices.dtype_unet = torch.float32
-        assert shared.cmd_opts.precision != "half", "Cannot use --precision half with --no-half"
+        assert (
+            shared.cmd_opts.precision != "half"
+        ), "Cannot use --precision half with --no-half"
         timer.record("apply float()")
     else:
         vae = model.first_stage_model
-        depth_model = getattr(model, 'depth_model', None)
+        depth_model = getattr(model, "depth_model", None)
 
         # with --no-half-vae, remove VAE from model when doing half() to prevent its weights from being converted to float16
         if shared.cmd_opts.no_half_vae:
@@ -494,9 +602,9 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     apply_alpha_schedule_override(model)
 
     for module in model.modules():
-        if hasattr(module, 'fp16_weight'):
+        if hasattr(module, "fp16_weight"):
             del module.fp16_weight
-        if hasattr(module, 'fp16_bias'):
+        if hasattr(module, "fp16_bias"):
             del module.fp16_bias
 
     if check_fp8(model):
@@ -515,7 +623,11 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     else:
         devices.fp8 = False
 
-    devices.unet_needs_upcast = shared.cmd_opts.upcast_sampling and devices.dtype == torch.float16 and devices.dtype_unet == torch.float16
+    devices.unet_needs_upcast = (
+        shared.cmd_opts.upcast_sampling
+        and devices.dtype == torch.float16
+        and devices.dtype_unet == torch.float16
+    )
 
     model.first_stage_model.to(devices.dtype_vae)
     timer.record("apply dtype to VAE")
@@ -529,7 +641,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     model.sd_checkpoint_info = checkpoint_info
     shared.opts.data["sd_checkpoint_hash"] = checkpoint_info.sha256
 
-    if hasattr(model, 'logvar'):
+    if hasattr(model, "logvar"):
         model.logvar = model.logvar.to(devices.device)  # fix for training
 
     sd_vae.delete_base_vae()
@@ -549,7 +661,7 @@ def enable_midas_autodownload():
     location automatically.
     """
 
-    midas_path = os.path.join(paths.models_path, 'midas')
+    midas_path = os.path.join(paths.models_path, "midas")
 
     # stable-diffusion-stability-ai hard-codes the midas model path to
     # a location that differs from where other scripts using this model look.
@@ -593,27 +705,48 @@ def patch_given_betas():
 
         original_register_schedule(*args, **kwargs)
 
-    original_register_schedule = patches.patch(__name__, ldm.models.diffusion.ddpm.DDPM, 'register_schedule', patched_register_schedule)
+    original_register_schedule = patches.patch(
+        __name__,
+        ldm.models.diffusion.ddpm.DDPM,
+        "register_schedule",
+        patched_register_schedule,
+    )
 
 
 def repair_config(sd_config, state_dict=None):
     if not hasattr(sd_config.model.params, "use_ema"):
         sd_config.model.params.use_ema = False
 
-    if hasattr(sd_config.model.params, 'unet_config'):
+    if hasattr(sd_config.model.params, "unet_config"):
         if shared.cmd_opts.no_half:
             sd_config.model.params.unet_config.params.use_fp16 = False
         elif shared.cmd_opts.upcast_sampling or shared.cmd_opts.precision == "half":
             sd_config.model.params.unet_config.params.use_fp16 = True
 
-    if hasattr(sd_config.model.params, 'first_stage_config'):
-        if getattr(sd_config.model.params.first_stage_config.params.ddconfig, "attn_type", None) == "vanilla-xformers" and not shared.xformers_available:
-            sd_config.model.params.first_stage_config.params.ddconfig.attn_type = "vanilla"
+    if hasattr(sd_config.model.params, "first_stage_config"):
+        if (
+            getattr(
+                sd_config.model.params.first_stage_config.params.ddconfig,
+                "attn_type",
+                None,
+            )
+            == "vanilla-xformers"
+            and not shared.xformers_available
+        ):
+            sd_config.model.params.first_stage_config.params.ddconfig.attn_type = (
+                "vanilla"
+            )
 
     # For UnCLIP-L, override the hardcoded karlo directory
-    if hasattr(sd_config.model.params, "noise_aug_config") and hasattr(sd_config.model.params.noise_aug_config.params, "clip_stats_path"):
-        karlo_path = os.path.join(paths.models_path, 'karlo')
-        sd_config.model.params.noise_aug_config.params.clip_stats_path = sd_config.model.params.noise_aug_config.params.clip_stats_path.replace("checkpoints/karlo_models", karlo_path)
+    if hasattr(sd_config.model.params, "noise_aug_config") and hasattr(
+        sd_config.model.params.noise_aug_config.params, "clip_stats_path"
+    ):
+        karlo_path = os.path.join(paths.models_path, "karlo")
+        sd_config.model.params.noise_aug_config.params.clip_stats_path = (
+            sd_config.model.params.noise_aug_config.params.clip_stats_path.replace(
+                "checkpoints/karlo_models", karlo_path
+            )
+        )
 
     # Do not use checkpoint for inference.
     # This helps prevent extra performance overhead on checking parameters.
@@ -624,7 +757,6 @@ def repair_config(sd_config, state_dict=None):
         sd_config.model.params.unet_config.params.use_checkpoint = False
 
 
-
 def rescale_zero_terminal_snr_abar(alphas_cumprod):
     alphas_bar_sqrt = alphas_cumprod.sqrt()
 
@@ -633,13 +765,13 @@ def rescale_zero_terminal_snr_abar(alphas_cumprod):
     alphas_bar_sqrt_T = alphas_bar_sqrt[-1].clone()
 
     # Shift so the last timestep is zero.
-    alphas_bar_sqrt -= (alphas_bar_sqrt_T)
+    alphas_bar_sqrt -= alphas_bar_sqrt_T
 
     # Scale so the first timestep is back to the old value.
     alphas_bar_sqrt *= alphas_bar_sqrt_0 / (alphas_bar_sqrt_0 - alphas_bar_sqrt_T)
 
     # Convert alphas_bar_sqrt to betas
-    alphas_bar = alphas_bar_sqrt ** 2  # Revert sqrt
+    alphas_bar = alphas_bar_sqrt**2  # Revert sqrt
     alphas_bar[-1] = 4.8973451890853435e-08
     return alphas_bar
 
@@ -651,26 +783,34 @@ def apply_alpha_schedule_override(sd_model, p=None):
     - rescales the alpha schedule to have zero terminal SNR
     """
 
-    if not hasattr(sd_model, 'alphas_cumprod') or not hasattr(sd_model, 'alphas_cumprod_original'):
+    if not hasattr(sd_model, "alphas_cumprod") or not hasattr(
+        sd_model, "alphas_cumprod_original"
+    ):
         return
 
     sd_model.alphas_cumprod = sd_model.alphas_cumprod_original.to(shared.device)
 
     if opts.use_downcasted_alpha_bar:
         if p is not None:
-            p.extra_generation_params['Downcast alphas_cumprod'] = opts.use_downcasted_alpha_bar
+            p.extra_generation_params["Downcast alphas_cumprod"] = (
+                opts.use_downcasted_alpha_bar
+            )
         sd_model.alphas_cumprod = sd_model.alphas_cumprod.half().to(shared.device)
 
     if opts.sd_noise_schedule == "Zero Terminal SNR":
         if p is not None:
-            p.extra_generation_params['Noise Schedule'] = opts.sd_noise_schedule
-        sd_model.alphas_cumprod = rescale_zero_terminal_snr_abar(sd_model.alphas_cumprod).to(shared.device)
+            p.extra_generation_params["Noise Schedule"] = opts.sd_noise_schedule
+        sd_model.alphas_cumprod = rescale_zero_terminal_snr_abar(
+            sd_model.alphas_cumprod
+        ).to(shared.device)
 
 
-sd1_clip_weight = 'cond_stage_model.transformer.text_model.embeddings.token_embedding.weight'
-sd2_clip_weight = 'cond_stage_model.model.transformer.resblocks.0.attn.in_proj_weight'
-sdxl_clip_weight = 'conditioner.embedders.1.model.ln_final.weight'
-sdxl_refiner_clip_weight = 'conditioner.embedders.0.model.ln_final.weight'
+sd1_clip_weight = (
+    "cond_stage_model.transformer.text_model.embeddings.token_embedding.weight"
+)
+sd2_clip_weight = "cond_stage_model.model.transformer.resblocks.0.attn.in_proj_weight"
+sdxl_clip_weight = "conditioner.embedders.1.model.ln_final.weight"
+sdxl_refiner_clip_weight = "conditioner.embedders.0.model.ln_final.weight"
 
 
 class SdModelData:
@@ -693,7 +833,9 @@ class SdModelData:
                     load_model()
 
                 except Exception as e:
-                    errors.display(e, "loading stable diffusion model", full_traceback=True)
+                    errors.display(
+                        e, "loading stable diffusion model", full_traceback=True
+                    )
                     print("", file=sys.stderr)
                     print("Stable diffusion model failed to load", file=sys.stderr)
                     self.sd_model = None
@@ -720,17 +862,16 @@ model_data = SdModelData()
 
 
 def get_empty_cond(sd_model):
-
     p = processing.StableDiffusionProcessingTxt2Img()
     extra_networks.activate(p, {})
 
-    if hasattr(sd_model, 'get_learned_conditioning'):
+    if hasattr(sd_model, "get_learned_conditioning"):
         d = sd_model.get_learned_conditioning([""])
     else:
         d = sd_model.cond_stage_model([""])
 
     if isinstance(d, dict):
-        d = d['crossattn']
+        d = d["crossattn"]
 
     return d
 
@@ -785,6 +926,7 @@ def get_obj_from_str(string, reload=False):
 
 def load_model(checkpoint_info=None, already_loaded_state_dict=None):
     from modules import sd_hijack
+
     checkpoint_info = checkpoint_info or select_checkpoint()
 
     timer = Timer()
@@ -801,8 +943,19 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
     else:
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
 
-    checkpoint_config = sd_models_config.find_checkpoint_config(state_dict, checkpoint_info)
-    clip_is_included_into_sd = any(x for x in [sd1_clip_weight, sd2_clip_weight, sdxl_clip_weight, sdxl_refiner_clip_weight] if x in state_dict)
+    checkpoint_config = sd_models_config.find_checkpoint_config(
+        state_dict, checkpoint_info
+    )
+    clip_is_included_into_sd = any(
+        x
+        for x in [
+            sd1_clip_weight,
+            sd2_clip_weight,
+            sdxl_clip_weight,
+            sdxl_refiner_clip_weight,
+        ]
+        if x in state_dict
+    )
 
     timer.record("find config")
 
@@ -815,7 +968,10 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
 
     sd_model = None
     try:
-        with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd or shared.cmd_opts.do_not_download_clip):
+        with sd_disable_initialization.DisableInitialization(
+            disable_clip=clip_is_included_into_sd
+            or shared.cmd_opts.do_not_download_clip
+        ):
             with sd_disable_initialization.InitializeOnMeta():
                 sd_model = instantiate_from_config(sd_config.model, state_dict)
 
@@ -823,7 +979,10 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
         errors.display(e, "creating model quickly", full_traceback=True)
 
     if sd_model is None:
-        print('Failed to create model quickly; will retry using slow method.', file=sys.stderr)
+        print(
+            "Failed to create model quickly; will retry using slow method.",
+            file=sys.stderr,
+        )
 
         with sd_disable_initialization.InitializeOnMeta():
             sd_model = instantiate_from_config(sd_config.model, state_dict)
@@ -836,12 +995,16 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
         weight_dtype_conversion = None
     else:
         weight_dtype_conversion = {
-            'first_stage_model': None,
-            'alphas_cumprod': None,
-            '': torch.float16,
+            "first_stage_model": None,
+            "alphas_cumprod": None,
+            "": torch.float16,
         }
 
-    with sd_disable_initialization.LoadStateDictOnMeta(state_dict, device=model_target_device(sd_model), weight_dtype_conversion=weight_dtype_conversion):
+    with sd_disable_initialization.LoadStateDictOnMeta(
+        state_dict,
+        device=model_target_device(sd_model),
+        weight_dtype_conversion=weight_dtype_conversion,
+    ):
         load_model_weights(sd_model, checkpoint_info, state_dict, timer)
 
     timer.record("load weights from state dict")
@@ -857,7 +1020,9 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
     model_data.set_sd_model(sd_model)
     model_data.was_loaded_at_least_once = True
 
-    sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)  # Reload embeddings after model load as they may or may not fit the model
+    sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(
+        force_reload=True
+    )  # Reload embeddings after model load as they may or may not fit the model
 
     timer.record("load textual inversion embeddings")
 
@@ -884,7 +1049,10 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
     Additionally deletes loaded models that are over the limit set in settings (sd_checkpoints_limit).
     """
 
-    if sd_model is not None and sd_model.sd_checkpoint_info.filename == checkpoint_info.filename:
+    if (
+        sd_model is not None
+        and sd_model.sd_checkpoint_info.filename == checkpoint_info.filename
+    ):
         return sd_model
 
     if shared.opts.sd_checkpoints_keep_in_cpu:
@@ -899,7 +1067,9 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
             continue
 
         if len(model_data.loaded_sd_models) > shared.opts.sd_checkpoints_limit > 0:
-            print(f"Unloading model {len(model_data.loaded_sd_models)} over the limit of {shared.opts.sd_checkpoints_limit}: {loaded_model.sd_checkpoint_info.title}")
+            print(
+                f"Unloading model {len(model_data.loaded_sd_models)} over the limit of {shared.opts.sd_checkpoints_limit}: {loaded_model.sd_checkpoint_info.title}"
+            )
             del model_data.loaded_sd_models[i]
             send_model_to_trash(loaded_model)
             timer.record("send model to trash")
@@ -911,14 +1081,25 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
         model_data.set_sd_model(already_loaded, already_loaded=True)
 
         if not SkipWritingToConfig.skip:
-            shared.opts.data["sd_model_checkpoint"] = already_loaded.sd_checkpoint_info.title
-            shared.opts.data["sd_checkpoint_hash"] = already_loaded.sd_checkpoint_info.sha256
+            shared.opts.data["sd_model_checkpoint"] = (
+                already_loaded.sd_checkpoint_info.title
+            )
+            shared.opts.data["sd_checkpoint_hash"] = (
+                already_loaded.sd_checkpoint_info.sha256
+            )
 
-        print(f"Using already loaded model {already_loaded.sd_checkpoint_info.title}: done in {timer.summary()}")
+        print(
+            f"Using already loaded model {already_loaded.sd_checkpoint_info.title}: done in {timer.summary()}"
+        )
         sd_vae.reload_vae_weights(already_loaded)
         return model_data.sd_model
-    elif shared.opts.sd_checkpoints_limit > 1 and len(model_data.loaded_sd_models) < shared.opts.sd_checkpoints_limit:
-        print(f"Loading model {checkpoint_info.title} ({len(model_data.loaded_sd_models) + 1} out of {shared.opts.sd_checkpoints_limit})")
+    elif (
+        shared.opts.sd_checkpoints_limit > 1
+        and len(model_data.loaded_sd_models) < shared.opts.sd_checkpoints_limit
+    ):
+        print(
+            f"Loading model {checkpoint_info.title} ({len(model_data.loaded_sd_models) + 1} out of {shared.opts.sd_checkpoints_limit})"
+        )
 
         model_data.sd_model = None
         load_model(checkpoint_info)
@@ -931,7 +1112,9 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
         sd_vae.loaded_vae_file = getattr(sd_model, "loaded_vae_file", None)
         sd_vae.checkpoint_info = sd_model.sd_checkpoint_info
 
-        print(f"Reusing loaded model {sd_model.sd_checkpoint_info.title} to load {checkpoint_info.title}")
+        print(
+            f"Reusing loaded model {sd_model.sd_checkpoint_info.title} to load {checkpoint_info.title}"
+        )
         return sd_model
     else:
         return None
@@ -952,11 +1135,18 @@ def reload_model_weights(sd_model=None, info=None, forced_reload=False):
         if check_fp8(sd_model) != devices.fp8:
             # load from state dict again to prevent extra numerical errors
             forced_reload = True
-        elif sd_model.sd_model_checkpoint == checkpoint_info.filename and not forced_reload:
+        elif (
+            sd_model.sd_model_checkpoint == checkpoint_info.filename
+            and not forced_reload
+        ):
             return sd_model
 
     sd_model = reuse_model_from_already_loaded(sd_model, checkpoint_info, timer)
-    if not forced_reload and sd_model is not None and sd_model.sd_checkpoint_info.filename == checkpoint_info.filename:
+    if (
+        not forced_reload
+        and sd_model is not None
+        and sd_model.sd_checkpoint_info.filename == checkpoint_info.filename
+    ):
         return sd_model
 
     if sd_model is not None:
@@ -966,7 +1156,9 @@ def reload_model_weights(sd_model=None, info=None, forced_reload=False):
 
     state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
 
-    checkpoint_config = sd_models_config.find_checkpoint_config(state_dict, checkpoint_info)
+    checkpoint_config = sd_models_config.find_checkpoint_config(
+        state_dict, checkpoint_info
+    )
 
     timer.record("find config")
 
@@ -1013,7 +1205,7 @@ def apply_token_merging(sd_model, token_merging_ratio):
     Applies speed and memory optimizations from tomesd.
     """
 
-    current_token_merging_ratio = getattr(sd_model, 'applied_token_merged_ratio', 0)
+    current_token_merging_ratio = getattr(sd_model, "applied_token_merged_ratio", 0)
 
     if current_token_merging_ratio == token_merging_ratio:
         return
@@ -1028,7 +1220,7 @@ def apply_token_merging(sd_model, token_merging_ratio):
             use_rand=False,  # can cause issues with some samplers
             merge_attn=True,
             merge_crossattn=False,
-            merge_mlp=False
+            merge_mlp=False,
         )
 
     sd_model.applied_token_merged_ratio = token_merging_ratio

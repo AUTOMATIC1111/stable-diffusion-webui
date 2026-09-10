@@ -5,12 +5,16 @@ from modules import shared
 from modules.paths_internal import script_path, cwd
 
 
-def natural_sort_key(s, regex=re.compile('([0-9]+)')):
+def natural_sort_key(s, regex=re.compile("([0-9]+)")):
     return [int(text) if text.isdigit() else text.lower() for text in regex.split(s)]
 
 
 def listfiles(dirname):
-    filenames = [os.path.join(dirname, x) for x in sorted(os.listdir(dirname), key=natural_sort_key) if not x.startswith(".")]
+    filenames = [
+        os.path.join(dirname, x)
+        for x in sorted(os.listdir(dirname), key=natural_sort_key)
+        if not x.startswith(".")
+    ]
     return [file for file in filenames if os.path.isfile(file)]
 
 
@@ -76,7 +80,9 @@ class MassFileListerCachedDir:
         self.files_cased = None
         self.dirname = dirname
 
-        stats = ((x.name, x.stat(follow_symlinks=False)) for x in os.scandir(self.dirname))
+        stats = (
+            (x.name, x.stat(follow_symlinks=False)) for x in os.scandir(self.dirname)
+        )
         files = [(n, s.st_mtime, s.st_ctime) for n, s in stats]
         self.files = {x[0].lower(): x for x in files}
         self.files_cased = {x[0]: x for x in files}
@@ -154,6 +160,7 @@ class MassFileLister:
         if cached_dir := self.cached_dirs.get(dirname):
             cached_dir.update_entry(filename)
 
+
 def topological_sort(dependencies):
     """Accepts a dictionary mapping name to its dependencies, returns a list of names ordered according to dependencies.
     Ignores errors relating to missing dependencies or circular dependencies
@@ -208,6 +215,8 @@ Requested path was: {path}
     elif platform.system() == "Darwin":
         subprocess.Popen(["open", path])
     elif "microsoft-standard-WSL2" in platform.uname().release:
-        subprocess.Popen(["explorer.exe", subprocess.check_output(["wslpath", "-w", path])])
+        subprocess.Popen(
+            ["explorer.exe", subprocess.check_output(["wslpath", "-w", path])]
+        )
     else:
         subprocess.Popen(["xdg-open", path])

@@ -11,7 +11,21 @@ from modules.paths_internal import script_path
 
 
 class OptionInfo:
-    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None, comment_before='', comment_after='', infotext=None, restrict_api=False, category_id=None):
+    def __init__(
+        self,
+        default=None,
+        label="",
+        component=None,
+        component_args=None,
+        onchange=None,
+        section=None,
+        refresh=None,
+        comment_before="",
+        comment_after="",
+        infotext=None,
+        restrict_api=False,
+        category_id=None,
+    ):
         self.default = default
         self.label = label
         self.component = component
@@ -60,7 +74,11 @@ class OptionInfo:
 
 class OptionHTML(OptionInfo):
     def __init__(self, text):
-        super().__init__(str(text).strip(), label='', component=lambda **kwargs: gr.HTML(elem_classes="settings-info", **kwargs))
+        super().__init__(
+            str(text).strip(),
+            label="",
+            component=lambda **kwargs: gr.HTML(elem_classes="settings-info", **kwargs),
+        )
 
         self.do_not_save = True
 
@@ -84,7 +102,9 @@ class Options:
 
     def __init__(self, data_labels: dict[str, OptionInfo], restricted_opts):
         self.data_labels = data_labels
-        self.data = {k: v.default for k, v in self.data_labels.items() if not v.do_not_save}
+        self.data = {
+            k: v.default for k, v in self.data_labels.items() if not v.do_not_save
+        }
         self.restricted_opts = restricted_opts
 
     def __setattr__(self, key, value):
@@ -93,7 +113,6 @@ class Options:
 
         if self.data is not None:
             if key in self.data or key in self.data_labels:
-
                 # Check that settings aren't globally frozen
                 assert not cmd_opts.freeze_settings, "changing settings is disabled"
 
@@ -104,24 +123,39 @@ class Options:
 
                 # Restrict component arguments
                 comp_args = info.component_args if info else None
-                if isinstance(comp_args, dict) and comp_args.get('visible', True) is False:
-                    raise RuntimeError(f"not possible to set '{key}' because it is restricted")
+                if (
+                    isinstance(comp_args, dict)
+                    and comp_args.get("visible", True) is False
+                ):
+                    raise RuntimeError(
+                        f"not possible to set '{key}' because it is restricted"
+                    )
 
                 # Check that this section isn't frozen
                 if cmd_opts.freeze_settings_in_sections is not None:
-                    frozen_sections = list(map(str.strip, cmd_opts.freeze_settings_in_sections.split(','))) # Trim whitespace from section names
+                    frozen_sections = list(
+                        map(str.strip, cmd_opts.freeze_settings_in_sections.split(","))
+                    )  # Trim whitespace from section names
                     section_key = info.section[0]
                     section_name = info.section[1]
-                    assert section_key not in frozen_sections, f"not possible to set '{key}' because settings in section '{section_name}' ({section_key}) are frozen with --freeze-settings-in-sections"
+                    assert (
+                        section_key not in frozen_sections
+                    ), f"not possible to set '{key}' because settings in section '{section_name}' ({section_key}) are frozen with --freeze-settings-in-sections"
 
                 # Check that this section of the settings isn't frozen
                 if cmd_opts.freeze_specific_settings is not None:
-                    frozen_keys = list(map(str.strip, cmd_opts.freeze_specific_settings.split(','))) # Trim whitespace from setting keys
-                    assert key not in frozen_keys, f"not possible to set '{key}' because this setting is frozen with --freeze-specific-settings"
+                    frozen_keys = list(
+                        map(str.strip, cmd_opts.freeze_specific_settings.split(","))
+                    )  # Trim whitespace from setting keys
+                    assert (
+                        key not in frozen_keys
+                    ), f"not possible to set '{key}' because this setting is frozen with --freeze-specific-settings"
 
                 # Check shorthand option which disables editing options in "saving-paths"
                 if cmd_opts.hide_ui_dir_config and key in self.restricted_opts:
-                    raise RuntimeError(f"not possible to set '{key}' because it is restricted with --hide_ui_dir_config")
+                    raise RuntimeError(
+                        f"not possible to set '{key}' because it is restricted with --hide_ui_dir_config"
+                    )
 
                 self.data[key] = value
                 return
@@ -201,30 +235,56 @@ class Options:
         except FileNotFoundError:
             self.data = {}
         except Exception:
-            errors.report(f'\nCould not load settings\nThe config file "{filename}" is likely corrupted\nIt has been moved to the "tmp/config.json"\nReverting config to default\n\n''', exc_info=True)
+            errors.report(
+                f'\nCould not load settings\nThe config file "{filename}" is likely corrupted\nIt has been moved to the "tmp/config.json"\nReverting config to default\n\n'
+                "",
+                exc_info=True,
+            )
             os.replace(filename, os.path.join(script_path, "tmp", "config.json"))
             self.data = {}
         # 1.6.0 VAE defaults
-        if self.data.get('sd_vae_as_default') is not None and self.data.get('sd_vae_overrides_per_model_preferences') is None:
-            self.data['sd_vae_overrides_per_model_preferences'] = not self.data.get('sd_vae_as_default')
+        if (
+            self.data.get("sd_vae_as_default") is not None
+            and self.data.get("sd_vae_overrides_per_model_preferences") is None
+        ):
+            self.data["sd_vae_overrides_per_model_preferences"] = not self.data.get(
+                "sd_vae_as_default"
+            )
 
         # 1.1.1 quicksettings list migration
-        if self.data.get('quicksettings') is not None and self.data.get('quicksettings_list') is None:
-            self.data['quicksettings_list'] = [i.strip() for i in self.data.get('quicksettings').split(',')]
+        if (
+            self.data.get("quicksettings") is not None
+            and self.data.get("quicksettings_list") is None
+        ):
+            self.data["quicksettings_list"] = [
+                i.strip() for i in self.data.get("quicksettings").split(",")
+            ]
 
         # 1.4.0 ui_reorder
-        if isinstance(self.data.get('ui_reorder'), str) and self.data.get('ui_reorder') and "ui_reorder_list" not in self.data:
-            self.data['ui_reorder_list'] = [i.strip() for i in self.data.get('ui_reorder').split(',')]
+        if (
+            isinstance(self.data.get("ui_reorder"), str)
+            and self.data.get("ui_reorder")
+            and "ui_reorder_list" not in self.data
+        ):
+            self.data["ui_reorder_list"] = [
+                i.strip() for i in self.data.get("ui_reorder").split(",")
+            ]
 
         bad_settings = 0
         for k, v in self.data.items():
             info = self.data_labels.get(k, None)
             if info is not None and not self.same_type(info.default, v):
-                print(f"Warning: bad setting value: {k}: {v} ({type(v).__name__}; expected {type(info.default).__name__})", file=sys.stderr)
+                print(
+                    f"Warning: bad setting value: {k}: {v} ({type(v).__name__}; expected {type(info.default).__name__})",
+                    file=sys.stderr,
+                )
                 bad_settings += 1
 
         if bad_settings > 0:
-            print(f"The program is likely to not work with bad settings.\nSettings file: {filename}\nEither fix the file, or delete it and restart.", file=sys.stderr)
+            print(
+                f"The program is likely to not work with bad settings.\nSettings file: {filename}\nEither fix the file, or delete it and restart.",
+                file=sys.stderr,
+            )
 
     def onchange(self, key, func, call=True):
         item = self.data_labels.get(key)
@@ -235,8 +295,16 @@ class Options:
 
     def dumpjson(self):
         d = {k: self.data.get(k, v.default) for k, v in self.data_labels.items()}
-        d["_comments_before"] = {k: v.comment_before for k, v in self.data_labels.items() if v.comment_before is not None}
-        d["_comments_after"] = {k: v.comment_after for k, v in self.data_labels.items() if v.comment_after is not None}
+        d["_comments_before"] = {
+            k: v.comment_before
+            for k, v in self.data_labels.items()
+            if v.comment_before is not None
+        }
+        d["_comments_after"] = {
+            k: v.comment_after
+            for k, v in self.data_labels.items()
+            if v.comment_after is not None
+        }
 
         item_categories = {}
         for item in self.data_labels.values():
@@ -249,7 +317,9 @@ class Options:
                 item_categories[category] = item.section[1]
 
         # _categories is a list of pairs: [section, category]. Each section (a setting page) will get a special heading above it with the category as text.
-        d["_categories"] = [[v, k] for k, v in item_categories.items()] + [["Defaults", "Other"]]
+        d["_categories"] = [[v, k] for k, v in item_categories.items()] + [
+            ["Defaults", "Other"]
+        ]
 
         return json.dumps(d)
 
@@ -321,6 +391,7 @@ class Options:
 class OptionsCategory:
     id: str
     label: str
+
 
 class OptionsCategories:
     def __init__(self):

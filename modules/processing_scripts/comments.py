@@ -3,8 +3,8 @@ import re
 
 
 def strip_comments(text):
-    text = re.sub('(^|\n)#[^\n]*(\n|$)', '\n', text)  # while line comment
-    text = re.sub('#[^\n]*(\n|$)', '\n', text)  # in the middle of the line comment
+    text = re.sub("(^|\n)#[^\n]*(\n|$)", "\n", text)  # while line comment
+    text = re.sub("#[^\n]*(\n|$)", "\n", text)  # in the middle of the line comment
 
     return text
 
@@ -26,9 +26,11 @@ class ScriptStripComments(scripts.Script):
         p.main_prompt = strip_comments(p.main_prompt)
         p.main_negative_prompt = strip_comments(p.main_negative_prompt)
 
-        if getattr(p, 'enable_hr', False):
+        if getattr(p, "enable_hr", False):
             p.all_hr_prompts = [strip_comments(x) for x in p.all_hr_prompts]
-            p.all_hr_negative_prompts = [strip_comments(x) for x in p.all_hr_negative_prompts]
+            p.all_hr_negative_prompts = [
+                strip_comments(x) for x in p.all_hr_negative_prompts
+            ]
 
             p.hr_prompt = strip_comments(p.hr_prompt)
             p.hr_negative_prompt = strip_comments(p.hr_negative_prompt)
@@ -44,6 +46,13 @@ def before_token_counter(params: script_callbacks.BeforeTokenCounterParams):
 script_callbacks.on_before_token_counter(before_token_counter)
 
 
-shared.options_templates.update(shared.options_section(('sd', "Stable Diffusion", "sd"), {
-    "enable_prompt_comments": shared.OptionInfo(True, "Enable comments").info("Use # anywhere in the prompt to hide the text between # and the end of the line from the generation."),
-}))
+shared.options_templates.update(
+    shared.options_section(
+        ("sd", "Stable Diffusion", "sd"),
+        {
+            "enable_prompt_comments": shared.OptionInfo(True, "Enable comments").info(
+                "Use # anywhere in the prompt to hide the text between # and the end of the line from the generation."
+            ),
+        },
+    )
+)

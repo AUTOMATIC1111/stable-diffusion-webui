@@ -61,19 +61,19 @@ model:
           # vector cond
           - is_trainable: False
             input_key: original_size_as_tuple
-            target: sgm.modules.encoders.modules.ConcatTimestepEmbedderND
+            target: sgm.modules.encoders.modules.ConcatTimestepEmbedderAND
             params:
               outdim: 256  # multiplied by two
           # vector cond
           - is_trainable: False
             input_key: crop_coords_top_left
-            target: sgm.modules.encoders.modules.ConcatTimestepEmbedderND
+            target: sgm.modules.encoders.modules.ConcatTimestepEmbedderAND
             params:
               outdim: 256  # multiplied by two
           # vector cond
           - is_trainable: False
             input_key: target_size_as_tuple
-            target: sgm.modules.encoders.modules.ConcatTimestepEmbedderND
+            target: sgm.modules.encoders.modules.ConcatTimestepEmbedderAND
             params:
               outdim: 256  # multiplied by two
 

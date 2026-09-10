@@ -25,7 +25,9 @@ class Emphasis:
 
 class EmphasisNone(Emphasis):
     name = "None"
-    description = "disable the mechanism entirely and treat (:.1.1) as literal characters"
+    description = (
+        "disable the mechanism entirely and treat (:.1.1) as literal characters"
+    )
 
 
 class EmphasisIgnore(Emphasis):
@@ -39,7 +41,9 @@ class EmphasisOriginal(Emphasis):
 
     def after_transformers(self):
         original_mean = self.z.mean()
-        self.z = self.z * self.multipliers.reshape(self.multipliers.shape + (1,)).expand(self.z.shape)
+        self.z = self.z * self.multipliers.reshape(
+            self.multipliers.shape + (1,)
+        ).expand(self.z.shape)
 
         # restoring original mean is likely not correct, but it seems to work well to prevent artifacts that happen otherwise
         new_mean = self.z.mean()
@@ -48,14 +52,20 @@ class EmphasisOriginal(Emphasis):
 
 class EmphasisOriginalNoNorm(EmphasisOriginal):
     name = "No norm"
-    description = "same as original, but without normalization (seems to work better for SDXL)"
+    description = (
+        "same as original, but without normalization (seems to work better for SDXL)"
+    )
 
     def after_transformers(self):
-        self.z = self.z * self.multipliers.reshape(self.multipliers.shape + (1,)).expand(self.z.shape)
+        self.z = self.z * self.multipliers.reshape(
+            self.multipliers.shape + (1,)
+        ).expand(self.z.shape)
 
 
 def get_current_option(emphasis_option_name):
-    return next(iter([x for x in options if x.name == emphasis_option_name]), EmphasisOriginal)
+    return next(
+        iter([x for x in options if x.name == emphasis_option_name]), EmphasisOriginal
+    )
 
 
 def get_options_descriptions():

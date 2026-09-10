@@ -1,0 +1,43 @@
+repos:
+  # Python linting with Ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.7.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+        exclude: |
+          (?x)^(
+            extensions/|
+            extensions-builtin/|
+            models/|
+            embeddings/|
+            localizations/
+          )
+      - id: ruff-format
+        exclude: |
+          (?x)^(
+            extensions/|
+            extensions-builtin/|
+            models/|
+            embeddings/|
+            localizations/
+          )
+
+  # JavaScript/TypeScript linting with ESLint (v8 for .eslintrc.js compatibility)
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.56.0
+    hooks:
+      - id: eslint
+        args: [--fix]
+        types: [javascript]
+        exclude: |
+          (?x)^(
+            extensions/|
+            extensions-builtin/|
+            models/|
+            embeddings/|
+            localizations/|
+            node_modules/
+          )
+
+

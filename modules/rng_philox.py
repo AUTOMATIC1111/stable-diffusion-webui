@@ -90,7 +90,9 @@ class Generator:
 
         counter = np.zeros((4, n), dtype=np.uint32)
         counter[0] = self.offset
-        counter[2] = np.arange(n, dtype=np.uint32)  # up to 2^32 numbers can be generated - if you want more you'd need to spill into counter[3]
+        counter[2] = np.arange(
+            n, dtype=np.uint32
+        )  # up to 2^32 numbers can be generated - if you want more you'd need to spill into counter[3]
         self.offset += 1
 
         key = np.empty(n, dtype=np.uint64)

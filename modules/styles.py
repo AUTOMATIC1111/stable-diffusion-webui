@@ -45,13 +45,13 @@ def extract_style_text_from_prompt(style_text, prompt):
     if "{prompt}" in stripped_style_text:
         left, _, right = stripped_style_text.partition("{prompt}")
         if stripped_prompt.startswith(left) and stripped_prompt.endswith(right):
-            prompt = stripped_prompt[len(left):len(stripped_prompt)-len(right)]
+            prompt = stripped_prompt[len(left) : len(stripped_prompt) - len(right)]
             return True, prompt
     else:
         if stripped_prompt.endswith(stripped_style_text):
-            prompt = stripped_prompt[:len(stripped_prompt)-len(stripped_style_text)]
+            prompt = stripped_prompt[: len(stripped_prompt) - len(stripped_style_text)]
 
-            if prompt.endswith(', '):
+            if prompt.endswith(", "):
                 prompt = prompt[:-2]
 
             return True, prompt
@@ -68,11 +68,15 @@ def extract_original_prompts(style: PromptStyle, prompt, negative_prompt):
     if not style.prompt and not style.negative_prompt:
         return False, prompt, negative_prompt
 
-    match_positive, extracted_positive = extract_style_text_from_prompt(style.prompt, prompt)
+    match_positive, extracted_positive = extract_style_text_from_prompt(
+        style.prompt, prompt
+    )
     if not match_positive:
         return False, prompt, negative_prompt
 
-    match_negative, extracted_negative = extract_style_text_from_prompt(style.negative_prompt, negative_prompt)
+    match_negative, extracted_negative = extract_style_text_from_prompt(
+        style.negative_prompt, negative_prompt
+    )
     if not match_negative:
         return False, prompt, negative_prompt
 
@@ -87,9 +91,11 @@ class StyleDatabase:
         self.all_styles_files: list[Path] = []
 
         folder, file = os.path.split(self.paths[0])
-        if '*' in file or '?' in file:
+        if "*" in file or "?" in file:
             # if the first path is a wildcard pattern, find the first match else use "folder/styles.csv" as the default path
-            self.default_path = next(Path(folder).glob(file), Path(os.path.join(folder, 'styles.csv')))
+            self.default_path = next(
+                Path(folder).glob(file), Path(os.path.join(folder, "styles.csv"))
+            )
             self.paths.insert(0, self.default_path)
         else:
             self.default_path = Path(self.paths[0])
@@ -109,7 +115,7 @@ class StyleDatabase:
         all_styles_files = []
         for pattern in self.paths:
             folder, file = os.path.split(pattern)
-            if '*' in file or '?' in file:
+            if "*" in file or "?" in file:
                 found_files = Path(folder).glob(file)
                 [all_styles_files.append(file) for file in found_files]
             else:
@@ -118,14 +124,18 @@ class StyleDatabase:
 
         # Remove any duplicate entries
         seen = set()
-        self.all_styles_files = [s for s in all_styles_files if not (s in seen or seen.add(s))]
+        self.all_styles_files = [
+            s for s in all_styles_files if not (s in seen or seen.add(s))
+        ]
 
         for styles_file in self.all_styles_files:
             if len(all_styles_files) > 1:
                 # add divider when more than styles file
                 # '---------------- STYLES ----------------'
-                divider = f' {styles_file.stem.upper()} '.center(40, '-')
-                self.styles[divider] = PromptStyle(f"{divider}", None, None, "do_not_save")
+                divider = f" {styles_file.stem.upper()} ".center(40, "-")
+                self.styles[divider] = PromptStyle(
+                    f"{divider}", None, None, "do_not_save"
+                )
             if styles_file.is_file():
                 self.load_from_csv(styles_file)
 
@@ -145,7 +155,7 @@ class StyleDatabase:
                         row["name"], prompt, negative_prompt, str(path)
                     )
         except Exception:
-            errors.report(f'Error loading styles from {path}: ', exc_info=True)
+            errors.report(f"Error loading styles from {path}: ", exc_info=True)
 
     def get_style_paths(self) -> set:
         """Returns a set of all distinct paths of files that styles are loaded from."""

@@ -2,7 +2,17 @@ import os
 import collections
 from dataclasses import dataclass
 
-from modules import paths, shared, devices, script_callbacks, sd_models, extra_networks, lowvram, sd_hijack, hashes
+from modules import (
+    paths,
+    shared,
+    devices,
+    script_callbacks,
+    sd_models,
+    extra_networks,
+    lowvram,
+    sd_hijack,
+    hashes,
+)
 
 import glob
 from copy import deepcopy
@@ -31,7 +41,7 @@ def get_loaded_vae_hash():
     if loaded_vae_file is None:
         return None
 
-    sha256 = hashes.sha256(loaded_vae_file, 'vae')
+    sha256 = hashes.sha256(loaded_vae_file, "vae")
 
     return sha256[0:10] if sha256 else None
 
@@ -73,26 +83,26 @@ def refresh_vae_list():
     vae_dict.clear()
 
     paths = [
-        os.path.join(sd_models.model_path, '**/*.vae.ckpt'),
-        os.path.join(sd_models.model_path, '**/*.vae.pt'),
-        os.path.join(sd_models.model_path, '**/*.vae.safetensors'),
-        os.path.join(vae_path, '**/*.ckpt'),
-        os.path.join(vae_path, '**/*.pt'),
-        os.path.join(vae_path, '**/*.safetensors'),
+        os.path.join(sd_models.model_path, "**/*.vae.ckpt"),
+        os.path.join(sd_models.model_path, "**/*.vae.pt"),
+        os.path.join(sd_models.model_path, "**/*.vae.safetensors"),
+        os.path.join(vae_path, "**/*.ckpt"),
+        os.path.join(vae_path, "**/*.pt"),
+        os.path.join(vae_path, "**/*.safetensors"),
     ]
 
     if shared.cmd_opts.ckpt_dir is not None and os.path.isdir(shared.cmd_opts.ckpt_dir):
         paths += [
-            os.path.join(shared.cmd_opts.ckpt_dir, '**/*.vae.ckpt'),
-            os.path.join(shared.cmd_opts.ckpt_dir, '**/*.vae.pt'),
-            os.path.join(shared.cmd_opts.ckpt_dir, '**/*.vae.safetensors'),
+            os.path.join(shared.cmd_opts.ckpt_dir, "**/*.vae.ckpt"),
+            os.path.join(shared.cmd_opts.ckpt_dir, "**/*.vae.pt"),
+            os.path.join(shared.cmd_opts.ckpt_dir, "**/*.vae.safetensors"),
         ]
 
     if shared.cmd_opts.vae_dir is not None and os.path.isdir(shared.cmd_opts.vae_dir):
         paths += [
-            os.path.join(shared.cmd_opts.vae_dir, '**/*.ckpt'),
-            os.path.join(shared.cmd_opts.vae_dir, '**/*.pt'),
-            os.path.join(shared.cmd_opts.vae_dir, '**/*.safetensors'),
+            os.path.join(shared.cmd_opts.vae_dir, "**/*.ckpt"),
+            os.path.join(shared.cmd_opts.vae_dir, "**/*.pt"),
+            os.path.join(shared.cmd_opts.vae_dir, "**/*.safetensors"),
         ]
 
     candidates = []
@@ -103,11 +113,15 @@ def refresh_vae_list():
         name = get_filename(filepath)
         vae_dict[name] = filepath
 
-    vae_dict.update(dict(sorted(vae_dict.items(), key=lambda item: shared.natural_sort_key(item[0]))))
+    vae_dict.update(
+        dict(
+            sorted(vae_dict.items(), key=lambda item: shared.natural_sort_key(item[0]))
+        )
+    )
 
 
 def find_vae_near_checkpoint(checkpoint_file):
-    checkpoint_path = os.path.basename(checkpoint_file).rsplit('.', 1)[0]
+    checkpoint_path = os.path.basename(checkpoint_file).rsplit(".", 1)[0]
     for vae_file in vae_dict.values():
         if os.path.basename(vae_file).startswith(checkpoint_path):
             return vae_file
@@ -126,7 +140,10 @@ class VaeResolution:
 
 
 def is_automatic():
-    return shared.opts.sd_vae in {"Automatic", "auto"}  # "auto" for people with old config
+    return shared.opts.sd_vae in {
+        "Automatic",
+        "auto",
+    }  # "auto" for people with old config
 
 
 def resolve_vae_from_setting() -> VaeResolution:
@@ -135,7 +152,7 @@ def resolve_vae_from_setting() -> VaeResolution:
 
     vae_from_options = vae_dict.get(shared.opts.sd_vae, None)
     if vae_from_options is not None:
-        return VaeResolution(vae_from_options, 'specified in settings')
+        return VaeResolution(vae_from_options, "specified in settings")
 
     if not is_automatic():
         print(f"Couldn't find VAE named {shared.opts.sd_vae}; using None instead")
@@ -159,15 +176,17 @@ def resolve_vae_from_user_metadata(checkpoint_file) -> VaeResolution:
 
 def resolve_vae_near_checkpoint(checkpoint_file) -> VaeResolution:
     vae_near_checkpoint = find_vae_near_checkpoint(checkpoint_file)
-    if vae_near_checkpoint is not None and (not shared.opts.sd_vae_overrides_per_model_preferences or is_automatic()):
-        return VaeResolution(vae_near_checkpoint, 'found near the checkpoint')
+    if vae_near_checkpoint is not None and (
+        not shared.opts.sd_vae_overrides_per_model_preferences or is_automatic()
+    ):
+        return VaeResolution(vae_near_checkpoint, "found near the checkpoint")
 
     return VaeResolution(resolved=False)
 
 
 def resolve_vae(checkpoint_file) -> VaeResolution:
     if shared.cmd_opts.vae_path is not None:
-        return VaeResolution(shared.cmd_opts.vae_path, 'from commandline argument')
+        return VaeResolution(shared.cmd_opts.vae_path, "from commandline argument")
 
     if shared.opts.sd_vae_overrides_per_model_preferences and not is_automatic():
         return resolve_vae_from_setting()
@@ -187,7 +206,11 @@ def resolve_vae(checkpoint_file) -> VaeResolution:
 
 def load_vae_dict(filename, map_location):
     vae_ckpt = sd_models.read_state_dict(filename, map_location=map_location)
-    vae_dict_1 = {k: v for k, v in vae_ckpt.items() if k[0:4] != "loss" and k not in vae_ignore_keys}
+    vae_dict_1 = {
+        k: v
+        for k, v in vae_ckpt.items()
+        if k[0:4] != "loss" and k not in vae_ignore_keys
+    }
     return vae_dict_1
 
 
@@ -204,11 +227,15 @@ def load_vae(model, vae_file=None, vae_source="from unknown source"):
             store_base_vae(model)
             _load_vae_dict(model, checkpoints_loaded[vae_file])
         else:
-            assert os.path.isfile(vae_file), f"VAE {vae_source} doesn't exist: {vae_file}"
+            assert os.path.isfile(
+                vae_file
+            ), f"VAE {vae_source} doesn't exist: {vae_file}"
             print(f"Loading VAE weights {vae_source}: {vae_file}")
             store_base_vae(model)
 
-            vae_dict_1 = load_vae_dict(vae_file, map_location=shared.weight_load_location)
+            vae_dict_1 = load_vae_dict(
+                vae_file, map_location=shared.weight_load_location
+            )
             _load_vae_dict(model, vae_dict_1)
 
             if cache_enabled:
@@ -217,7 +244,9 @@ def load_vae(model, vae_file=None, vae_source="from unknown source"):
 
         # clean up cache if limit is reached
         if cache_enabled:
-            while len(checkpoints_loaded) > shared.opts.sd_vae_checkpoint_cache + 1: # we need to count the current model
+            while (
+                len(checkpoints_loaded) > shared.opts.sd_vae_checkpoint_cache + 1
+            ):  # we need to count the current model
                 checkpoints_loaded.popitem(last=False)  # LRU
 
         # If vae used is not in dict, update it

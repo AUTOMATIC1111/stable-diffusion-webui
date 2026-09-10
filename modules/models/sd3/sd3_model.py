@@ -25,14 +25,20 @@ class SD3Inferencer(torch.nn.Module):
         self.shift = shift
 
         with torch.no_grad():
-            self.model = BaseModel(shift=shift, state_dict=state_dict, prefix="model.diffusion_model.", device="cpu", dtype=devices.dtype)
+            self.model = BaseModel(
+                shift=shift,
+                state_dict=state_dict,
+                prefix="model.diffusion_model.",
+                device="cpu",
+                dtype=devices.dtype,
+            )
             self.first_stage_model = SDVAE(device="cpu", dtype=devices.dtype_vae)
             self.first_stage_model.dtype = self.model.diffusion_model.dtype
 
-        self.alphas_cumprod = 1 / (self.model.model_sampling.sigmas ** 2 + 1)
+        self.alphas_cumprod = 1 / (self.model.model_sampling.sigmas**2 + 1)
 
         self.text_encoders = SD3Cond()
-        self.cond_stage_key = 'txt'
+        self.cond_stage_key = "txt"
 
         self.parameterization = "eps"
         self.model.conditioning_key = "crossattn"
@@ -54,7 +60,7 @@ class SD3Inferencer(torch.nn.Module):
         return self.cond_stage_model(batch)
 
     def apply_model(self, x, t, cond):
-        return self.model(x, t, c_crossattn=cond['crossattn'], y=cond['vector'])
+        return self.model(x, t, c_crossattn=cond["crossattn"], y=cond["vector"])
 
     def decode_first_stage(self, latent):
         latent = self.latent_format.process_out(latent)
@@ -72,9 +78,9 @@ class SD3Inferencer(torch.nn.Module):
 
     def medvram_fields(self):
         return [
-            (self, 'first_stage_model'),
-            (self, 'text_encoders'),
-            (self, 'model'),
+            (self, "first_stage_model"),
+            (self, "text_encoders"),
+            (self, "model"),
         ]
 
     def add_noise_to_latent(self, x, noise, amount):
@@ -85,12 +91,36 @@ class SD3Inferencer(torch.nn.Module):
 
     def diffusers_weight_mapping(self):
         for i in range(self.model.depth):
-            yield f"transformer.transformer_blocks.{i}.attn.to_q", f"diffusion_model_joint_blocks_{i}_x_block_attn_qkv_q_proj"
-            yield f"transformer.transformer_blocks.{i}.attn.to_k", f"diffusion_model_joint_blocks_{i}_x_block_attn_qkv_k_proj"
-            yield f"transformer.transformer_blocks.{i}.attn.to_v", f"diffusion_model_joint_blocks_{i}_x_block_attn_qkv_v_proj"
-            yield f"transformer.transformer_blocks.{i}.attn.to_out.0", f"diffusion_model_joint_blocks_{i}_x_block_attn_proj"
+            yield (
+                f"transformer.transformer_blocks.{i}.attn.to_q",
+                f"diffusion_model_joint_blocks_{i}_x_block_attn_qkv_q_proj",
+            )
+            yield (
+                f"transformer.transformer_blocks.{i}.attn.to_k",
+                f"diffusion_model_joint_blocks_{i}_x_block_attn_qkv_k_proj",
+            )
+            yield (
+                f"transformer.transformer_blocks.{i}.attn.to_v",
+                f"diffusion_model_joint_blocks_{i}_x_block_attn_qkv_v_proj",
+            )
+            yield (
+                f"transformer.transformer_blocks.{i}.attn.to_out.0",
+                f"diffusion_model_joint_blocks_{i}_x_block_attn_proj",
+            )
 
-            yield f"transformer.transformer_blocks.{i}.attn.add_q_proj", f"diffusion_model_joint_blocks_{i}_context_block.attn_qkv_q_proj"
-            yield f"transformer.transformer_blocks.{i}.attn.add_k_proj", f"diffusion_model_joint_blocks_{i}_context_block.attn_qkv_k_proj"
-            yield f"transformer.transformer_blocks.{i}.attn.add_v_proj", f"diffusion_model_joint_blocks_{i}_context_block.attn_qkv_v_proj"
-            yield f"transformer.transformer_blocks.{i}.attn.add_out_proj.0", f"diffusion_model_joint_blocks_{i}_context_block_attn_proj"
+            yield (
+                f"transformer.transformer_blocks.{i}.attn.add_q_proj",
+                f"diffusion_model_joint_blocks_{i}_context_block.attn_qkv_q_proj",
+            )
+            yield (
+                f"transformer.transformer_blocks.{i}.attn.add_k_proj",
+                f"diffusion_model_joint_blocks_{i}_context_block.attn_qkv_k_proj",
+            )
+            yield (
+                f"transformer.transformer_blocks.{i}.attn.add_v_proj",
+                f"diffusion_model_joint_blocks_{i}_context_block.attn_qkv_v_proj",
+            )
+            yield (
+                f"transformer.transformer_blocks.{i}.attn.add_out_proj.0",
+                f"diffusion_model_joint_blocks_{i}_context_block_attn_proj",
+            )

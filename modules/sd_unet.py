@@ -7,6 +7,7 @@ current_unet_option = None
 current_unet = None
 original_forward = None  # not used, only left temporarily for compatibility
 
+
 def list_unets():
     new_unets = script_callbacks.list_unets_callback()
 
@@ -91,4 +92,3 @@ def create_unet_forward(original_forward):
         return original_forward(self, x, timesteps, context, *args, **kwargs)
 
     return UNetModel_forward
-

@@ -8,7 +8,7 @@ def is_restartable() -> bool:
     """
     Return True if the webui is restartable (i.e. there is something watching to restart it with)
     """
-    return bool(os.environ.get('SD_WEBUI_RESTART'))
+    return bool(os.environ.get("SD_WEBUI_RESTART"))
 
 
 def restart_program() -> None:

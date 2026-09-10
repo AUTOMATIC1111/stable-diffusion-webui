@@ -7,8 +7,10 @@ from modules import errors
 from modules.ui_components import ToolButton, InputAccordion
 
 
-def radio_choices(comp):  # gradio 3.41 changes choices from list of values to list of pairs
-    return [x[0] if isinstance(x, tuple) else x for x in getattr(comp, 'choices', [])]
+def radio_choices(
+    comp,
+):  # gradio 3.41 changes choices from list of values to list of pairs
+    return [x[0] if isinstance(x, tuple) else x for x in getattr(comp, "choices", [])]
 
 
 class UiLoadsave:
@@ -41,25 +43,31 @@ class UiLoadsave:
         def apply_field(obj, field, condition=None, init_field=None):
             key = f"{path}/{field}"
 
-            if getattr(obj, 'custom_script_source', None) is not None:
+            if getattr(obj, "custom_script_source", None) is not None:
                 key = f"customscript/{obj.custom_script_source}/{key}"
 
-            if getattr(obj, 'do_not_save_to_config', False):
+            if getattr(obj, "do_not_save_to_config", False):
                 return
 
             saved_value = self.ui_settings.get(key, None)
 
-            if isinstance(obj, gr.Accordion) and isinstance(x, InputAccordion) and field == 'value':
-                field = 'open'
+            if (
+                isinstance(obj, gr.Accordion)
+                and isinstance(x, InputAccordion)
+                and field == "value"
+            ):
+                field = "open"
 
             if saved_value is None:
                 self.ui_settings[key] = getattr(obj, field)
             elif condition and not condition(saved_value):
                 pass
             else:
-                if isinstance(obj, gr.Textbox) and field == 'value':  # due to an undesirable behavior of gr.Textbox, if you give it an int value instead of str, everything dies
+                if (
+                    isinstance(obj, gr.Textbox) and field == "value"
+                ):  # due to an undesirable behavior of gr.Textbox, if you give it an int value instead of str, everything dies
                     saved_value = str(saved_value)
-                elif isinstance(obj, gr.Number) and field == 'value':
+                elif isinstance(obj, gr.Number) and field == "value":
                     try:
                         saved_value = float(saved_value)
                     except ValueError:
@@ -69,47 +77,61 @@ class UiLoadsave:
                 if init_field is not None:
                     init_field(saved_value)
 
-            if field == 'value' and key not in self.component_mapping:
+            if field == "value" and key not in self.component_mapping:
                 self.component_mapping[key] = obj
 
-        if type(x) in [gr.Slider, gr.Radio, gr.Checkbox, gr.Textbox, gr.Number, gr.Dropdown, ToolButton, gr.Button] and x.visible:
-            apply_field(x, 'visible')
+        if (
+            type(x)
+            in [
+                gr.Slider,
+                gr.Radio,
+                gr.Checkbox,
+                gr.Textbox,
+                gr.Number,
+                gr.Dropdown,
+                ToolButton,
+                gr.Button,
+            ]
+            and x.visible
+        ):
+            apply_field(x, "visible")
 
         if type(x) == gr.Slider:
-            apply_field(x, 'value')
-            apply_field(x, 'minimum')
-            apply_field(x, 'maximum')
-            apply_field(x, 'step')
+            apply_field(x, "value")
+            apply_field(x, "minimum")
+            apply_field(x, "maximum")
+            apply_field(x, "step")
 
         if type(x) == gr.Radio:
-            apply_field(x, 'value', lambda val: val in radio_choices(x))
+            apply_field(x, "value", lambda val: val in radio_choices(x))
 
         if type(x) == gr.Checkbox:
-            apply_field(x, 'value')
+            apply_field(x, "value")
 
         if type(x) == gr.Textbox:
-            apply_field(x, 'value')
+            apply_field(x, "value")
 
         if type(x) == gr.Number:
-            apply_field(x, 'value')
+            apply_field(x, "value")
 
         if type(x) == gr.Dropdown:
+
             def check_dropdown(val):
                 choices = radio_choices(x)
-                if getattr(x, 'multiselect', False):
+                if getattr(x, "multiselect", False):
                     return all(value in choices for value in val)
                 else:
                     return val in choices
 
-            apply_field(x, 'value', check_dropdown, getattr(x, 'init_field', None))
+            apply_field(x, "value", check_dropdown, getattr(x, "init_field", None))
 
         if type(x) == InputAccordion:
-            if hasattr(x, 'custom_script_source'):
+            if hasattr(x, "custom_script_source"):
                 x.accordion.custom_script_source = x.custom_script_source
             if x.accordion.visible:
-                apply_field(x.accordion, 'visible')
-            apply_field(x, 'value')
-            apply_field(x.accordion, 'value')
+                apply_field(x.accordion, "visible")
+            apply_field(x, "value")
+            apply_field(x.accordion, "value")
 
         def check_tab_id(tab_id):
             tab_items = list(filter(lambda e: isinstance(e, gr.TabItem), x.children))
@@ -122,12 +144,12 @@ class UiLoadsave:
                 return False
 
         if type(x) == gr.Tabs:
-            apply_field(x, 'selected', check_tab_id)
+            apply_field(x, "selected", check_tab_id)
 
     def add_block(self, x, path=""):
         """adds all components inside a gradio block x to the registry of tracked components"""
 
-        if hasattr(x, 'children'):
+        if hasattr(x, "children"):
             if isinstance(x, gr.Tabs) and x.elem_id is not None:
                 # Tabs element can't have a label, have to use elem_id instead
                 self.add_component(f"{path}/Tabs@{x.elem_id}", x)
@@ -176,19 +198,25 @@ class UiLoadsave:
             if new_value == old_value:
                 continue
 
-            if old_value is None and new_value == '' or new_value == []:
+            if old_value is None and new_value == "" or new_value == []:
                 continue
 
             yield path, old_value, new_value
 
     def ui_view(self, *values):
-        text = ["<table><thead><tr><th>Path</th><th>Old value</th><th>New value</th></thead><tbody>"]
+        text = [
+            "<table><thead><tr><th>Path</th><th>Old value</th><th>New value</th></thead><tbody>"
+        ]
 
-        for path, old_value, new_value in self.iter_changes(self.read_from_file(), values):
+        for path, old_value, new_value in self.iter_changes(
+            self.read_from_file(), values
+        ):
             if old_value is None:
                 old_value = "<span class='ui-defaults-none'>None</span>"
 
-            text.append(f"<tr><td>{path}</td><td>{old_value}</td><td>{new_value}</td></tr>")
+            text.append(
+                f"<tr><td>{path}</td><td>{old_value}</td><td>{new_value}</td></tr>"
+            )
 
         if len(text) == 1:
             text.append("<tr><td colspan=3>No changes</td></tr>")
@@ -223,8 +251,12 @@ class UiLoadsave:
         )
 
         with gr.Row():
-            self.ui_defaults_view = gr.Button(value='View changes', elem_id="ui_defaults_view", variant="secondary")
-            self.ui_defaults_apply = gr.Button(value='Apply', elem_id="ui_defaults_apply", variant="primary")
+            self.ui_defaults_view = gr.Button(
+                value="View changes", elem_id="ui_defaults_view", variant="secondary"
+            )
+            self.ui_defaults_apply = gr.Button(
+                value="Apply", elem_id="ui_defaults_apply", variant="primary"
+            )
 
         self.ui_defaults_review = gr.HTML("")
 
@@ -234,5 +266,13 @@ class UiLoadsave:
         assert not self.finalized_ui
         self.finalized_ui = True
 
-        self.ui_defaults_view.click(fn=self.ui_view, inputs=list(self.component_mapping.values()), outputs=[self.ui_defaults_review])
-        self.ui_defaults_apply.click(fn=self.ui_apply, inputs=list(self.component_mapping.values()), outputs=[self.ui_defaults_review])
+        self.ui_defaults_view.click(
+            fn=self.ui_view,
+            inputs=list(self.component_mapping.values()),
+            outputs=[self.ui_defaults_review],
+        )
+        self.ui_defaults_apply.click(
+            fn=self.ui_apply,
+            inputs=list(self.component_mapping.values()),
+            outputs=[self.ui_defaults_review],
+        )

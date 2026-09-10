@@ -69,6 +69,7 @@ class FormColorPicker(FormComponent, gr.ColorPicker):
 
 class DropdownMulti(FormComponent, gr.Dropdown):
     """Same as gr.Dropdown but always multiselect"""
+
     def __init__(self, **kwargs):
         super().__init__(multiselect=True, **kwargs)
 
@@ -78,6 +79,7 @@ class DropdownMulti(FormComponent, gr.Dropdown):
 
 class DropdownEditable(FormComponent, gr.Dropdown):
     """Same as gr.Dropdown but allows editing value"""
+
     def __init__(self, **kwargs):
         super().__init__(allow_custom_value=True, **kwargs)
 
@@ -94,7 +96,7 @@ class InputAccordion(gr.Checkbox):
     global_index = 0
 
     def __init__(self, value, **kwargs):
-        self.accordion_id = kwargs.get('elem_id')
+        self.accordion_id = kwargs.get("elem_id")
         if self.accordion_id is None:
             self.accordion_id = f"input-accordion-{InputAccordion.global_index}"
             InputAccordion.global_index += 1
@@ -106,13 +108,19 @@ class InputAccordion(gr.Checkbox):
         }
         super().__init__(value, **kwargs_checkbox)
 
-        self.change(fn=None, _js='function(checked){ inputAccordionChecked("' + self.accordion_id + '", checked); }', inputs=[self])
+        self.change(
+            fn=None,
+            _js='function(checked){ inputAccordionChecked("'
+            + self.accordion_id
+            + '", checked); }',
+            inputs=[self],
+        )
 
         kwargs_accordion = {
             **kwargs,
             "elem_id": self.accordion_id,
-            "label": kwargs.get('label', 'Accordion'),
-            "elem_classes": ['input-accordion'],
+            "label": kwargs.get("label", "Accordion"),
+            "elem_classes": ["input-accordion"],
             "open": value,
         }
         self.accordion = gr.Accordion(**kwargs_accordion)
@@ -131,7 +139,11 @@ class InputAccordion(gr.Checkbox):
         ```
         """
 
-        return gr.Column(elem_id=self.accordion_id + '-extra', elem_classes='input-accordion-extra', min_width=0)
+        return gr.Column(
+            elem_id=self.accordion_id + "-extra",
+            elem_classes="input-accordion-extra",
+            min_width=0,
+        )
 
     def __enter__(self):
         self.accordion.__enter__()
@@ -142,4 +154,3 @@ class InputAccordion(gr.Checkbox):
 
     def get_block_name(self):
         return "checkbox"
-

@@ -20,7 +20,9 @@ class TimerSubcategory:
     def __exit__(self, exc_type, exc_val, exc_tb):
         elapsed_for_subcategroy = time.time() - self.start
         self.timer.base_category = self.original_base_category
-        self.timer.add_time_to_record(self.original_base_category + self.category, elapsed_for_subcategroy)
+        self.timer.add_time_to_record(
+            self.original_base_category + self.category, elapsed_for_subcategroy
+        )
         self.timer.subcategory_level -= 1
         self.timer.record(self.category, disable_log=True)
 
@@ -30,7 +32,7 @@ class Timer:
         self.start = time.time()
         self.records = {}
         self.total = 0
-        self.base_category = ''
+        self.base_category = ""
         self.print_log = print_log
         self.subcategory_level = 0
 
@@ -54,7 +56,9 @@ class Timer:
         self.total += e + extra_time
 
         if self.print_log and not disable_log:
-            print(f"{'  ' * self.subcategory_level}{category}: done in {e + extra_time:.3f}s")
+            print(
+                f"{'  ' * self.subcategory_level}{category}: done in {e + extra_time:.3f}s"
+            )
 
     def subcategory(self, name):
         self.elapsed()
@@ -65,25 +69,35 @@ class Timer:
     def summary(self):
         res = f"{self.total:.1f}s"
 
-        additions = [(category, time_taken) for category, time_taken in self.records.items() if time_taken >= 0.1 and '/' not in category]
+        additions = [
+            (category, time_taken)
+            for category, time_taken in self.records.items()
+            if time_taken >= 0.1 and "/" not in category
+        ]
         if not additions:
             return res
 
         res += " ("
-        res += ", ".join([f"{category}: {time_taken:.1f}s" for category, time_taken in additions])
+        res += ", ".join(
+            [f"{category}: {time_taken:.1f}s" for category, time_taken in additions]
+        )
         res += ")"
 
         return res
 
     def dump(self):
-        return {'total': self.total, 'records': self.records}
+        return {"total": self.total, "records": self.records}
 
     def reset(self):
         self.__init__()
 
 
 parser = argparse.ArgumentParser(add_help=False)
-parser.add_argument("--log-startup", action='store_true', help="print a detailed log of what's happening at startup")
+parser.add_argument(
+    "--log-startup",
+    action="store_true",
+    help="print a detailed log of what's happening at startup",
+)
 args = parser.parse_known_args()[0]
 
 startup_timer = Timer(print_log=args.log_startup)
