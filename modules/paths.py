@@ -1,6 +1,11 @@
 import os
 import sys
 from modules.paths_internal import (
+    cwd,
+    data_path,
+    extensions_builtin_dir,
+    extensions_dir,
+    models_path,
     script_path,
 )  # noqa: F401
 
