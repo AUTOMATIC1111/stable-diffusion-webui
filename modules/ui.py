@@ -57,6 +57,8 @@ from modules.shared import opts, cmd_opts
 
 import modules.infotext_utils as parameters_copypaste
 import modules.hypernetworks.ui as hypernetworks_ui
+
+__all__ = ["wrap_gradio_call"]
 import modules.textual_inversion.ui as textual_inversion_ui
 import modules.textual_inversion.textual_inversion as textual_inversion
 import modules.shared as shared

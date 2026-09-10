@@ -11,6 +11,15 @@ from modules.paths_internal import (
 
 import modules.safe  # noqa: F401
 
+__all__ = [
+    "cwd",
+    "data_path",
+    "extensions_builtin_dir",
+    "extensions_dir",
+    "models_path",
+    "script_path",
+]
+
 
 def mute_sdxl_imports():
     """create fake modules that SDXL wants to import but doesn't actually use for our purposes"""

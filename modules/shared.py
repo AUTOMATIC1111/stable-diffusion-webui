@@ -27,6 +27,18 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from modules import shared_state, styles, interrogate, shared_total_tqdm, memmon
 
+__all__ = [
+    "default_sd_model_file",
+    "data_path",
+    "extensions_builtin_dir",
+    "extensions_dir",
+    "models_path",
+    "script_path",
+    "sd_configs_path",
+    "sd_default_config",
+    "sd_model_file",
+]
+
 cmd_opts = shared_cmd_options.cmd_opts
 parser = shared_cmd_options.parser
 
