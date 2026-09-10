@@ -285,7 +285,6 @@ def img2img(
     assert 0.0 <= denoising_strength <= 1.0, "can only work with strength in [0.0, 1.0]"
 
     p = StableDiffusionProcessingImg2Img(
-        sd_model=shared.sd_model,
         outpath_samples=opts.outdir_samples or opts.outdir_img2img_samples,
         outpath_grids=opts.outdir_grids or opts.outdir_img2img_grids,
         prompt=prompt,
@@ -298,7 +297,8 @@ def img2img(
         height=height,
         init_images=[image],
         mask=mask,
-        mask_blur=mask_blur,
+        mask_blur_x=mask_blur,
+        mask_blur_y=mask_blur,
         inpainting_fill=inpainting_fill,
         resize_mode=resize_mode,
         denoising_strength=denoising_strength,

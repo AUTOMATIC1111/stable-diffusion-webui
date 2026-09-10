@@ -47,7 +47,6 @@ def txt2img_create_processing(
         enable_hr = True
 
     p = processing.StableDiffusionProcessingTxt2Img(
-        sd_model=shared.sd_model,
         outpath_samples=opts.outdir_samples or opts.outdir_txt2img_samples,
         outpath_grids=opts.outdir_grids or opts.outdir_txt2img_grids,
         prompt=prompt,

@@ -766,9 +766,7 @@ class Api:
         add_task_to_queue(task_id)
 
         with self.queue_lock:
-            with closing(
-                StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)
-            ) as p:
+            with closing(StableDiffusionProcessingTxt2Img(**args)) as p:
                 p.is_api = True
                 p.scripts = script_runner
                 p.outpath_grids = opts.outdir_txt2img_grids
@@ -864,13 +862,15 @@ class Api:
 
         send_images = args.pop("send_images", True)
         args.pop("save_images", None)
+        mask_blur = args.pop("mask_blur", None)
+        if mask_blur is not None:
+            args["mask_blur_x"] = mask_blur
+            args["mask_blur_y"] = mask_blur
 
         add_task_to_queue(task_id)
 
         with self.queue_lock:
-            with closing(
-                StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)
-            ) as p:
+            with closing(StableDiffusionProcessingImg2Img(**args)) as p:
                 p.init_images = [decode_base64_to_image(x) for x in init_images]
                 p.is_api = True
                 p.scripts = script_runner
