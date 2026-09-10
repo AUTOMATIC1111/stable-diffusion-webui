@@ -37,20 +37,27 @@ class ModelType(enum.Enum):
 
 
 def replace_key(d, key, new_key, value):
-    keys = list(d.keys())
-
-    d[new_key] = value
-
-    if key not in keys:
+    """Replace a dictionary key while preserving insertion order."""
+    if key == new_key:
+        d[key] = value
         return d
 
-    index = keys.index(key)
-    keys[index] = new_key
+    items = [(k, v) for k, v in d.items() if k != new_key]
+    new_items = []
+    replaced = False
 
-    new_d = {k: d[k] for k in keys}
+    for k, v in items:
+        if k == key:
+            new_items.append((new_key, value))
+            replaced = True
+        else:
+            new_items.append((k, v))
+
+    if not replaced:
+        new_items.append((new_key, value))
 
     d.clear()
-    d.update(new_d)
+    d.update(new_items)
     return d
 
 
