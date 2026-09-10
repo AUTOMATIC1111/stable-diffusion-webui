@@ -79,11 +79,12 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
     var wakeLock = null;
 
     var requestWakeLock = async function() {
-        if (!opts.prevent_screen_sleep_during_generation || wakeLock) return;
+        if (!opts.prevent_screen_sleep_during_generation || wakeLock !== null) return;
         try {
             wakeLock = await navigator.wakeLock.request('screen');
         } catch (err) {
             console.error('Wake Lock is not supported.');
+            wakeLock = false;
         }
     };
 
@@ -189,7 +190,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
                         livePreview.className = 'livePreview';
                         gallery.insertBefore(livePreview, gallery.firstElementChild);
                     }
-
+                    updateModalImageIfVisible();
                     livePreview.appendChild(img);
                     if (livePreview.childElementCount > 2) {
                         livePreview.removeChild(livePreview.firstElementChild);

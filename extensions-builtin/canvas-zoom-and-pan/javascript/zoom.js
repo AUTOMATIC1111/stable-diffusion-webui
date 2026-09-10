@@ -816,7 +816,7 @@ onUiLoaded(async() => {
                 // Increase or decrease brush size based on scroll direction
                 adjustBrushSize(elemId, e.deltaY);
             }
-        });
+        }, {passive: false});
 
         // Handle the move event for pan functionality. Updates the panX and panY variables and applies the new transform to the target element.
         function handleMoveKeyDown(e) {

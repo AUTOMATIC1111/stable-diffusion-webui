@@ -122,7 +122,7 @@ def encode_pil_to_base64(image):
             if opts.samples_format.lower() in ("jpg", "jpeg"):
                 image.save(output_bytes, format="JPEG", exif = exif_bytes, quality=opts.jpeg_quality)
             else:
-                image.save(output_bytes, format="WEBP", exif = exif_bytes, quality=opts.jpeg_quality)
+                image.save(output_bytes, format="WEBP", exif = exif_bytes, quality=opts.jpeg_quality, lossless=opts.webp_lossless)
 
         else:
             raise HTTPException(status_code=500, detail="Invalid image format")

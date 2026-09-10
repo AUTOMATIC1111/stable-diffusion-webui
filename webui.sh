@@ -127,7 +127,7 @@ then
 fi
 
 # Check prerequisites
-gpu_info=$(lspci 2>/dev/null | grep -E "VGA|Display")
+gpu_info=$(lspci 2>/dev/null | grep -E "VGA|Display|CMP")
 case "$gpu_info" in
     *"Navi 1"*)
         export HSA_OVERRIDE_GFX_VERSION=10.3.0

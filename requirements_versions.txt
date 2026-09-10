@@ -22,7 +22,7 @@ protobuf==3.20.0
 psutil==5.9.5
 pytorch_lightning==1.9.4
 resize-right==0.0.2
-safetensors==0.4.2
+safetensors==0.4.5
 scikit-image==0.21.0
 spandrel==0.3.4
 spandrel-extra-arches==0.1.1

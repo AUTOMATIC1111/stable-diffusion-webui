@@ -30,31 +30,31 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
     def ui(self):
         selected_tab = gr.Number(value=0, visible=False)
 
-        with InputAccordion(True, label="Upscale", elem_id="extras_upscale") as upscale_enabled:
+        with InputAccordion(True, label="Upscale", elem_id=self.elem_id_suffix("extras_upscale")) as upscale_enabled:
             with FormRow():
-                extras_upscaler_1 = gr.Dropdown(label='Upscaler 1', elem_id="extras_upscaler_1", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name)
+                extras_upscaler_1 = gr.Dropdown(label='Upscaler 1', elem_id=self.elem_id_suffix("extras_upscaler_1"), choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name)
 
             with FormRow():
-                extras_upscaler_2 = gr.Dropdown(label='Upscaler 2', elem_id="extras_upscaler_2", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name)
-                extras_upscaler_2_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Upscaler 2 visibility", value=0.0, elem_id="extras_upscaler_2_visibility")
+                extras_upscaler_2 = gr.Dropdown(label='Upscaler 2', elem_id=self.elem_id_suffix("extras_upscaler_2"), choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name)
+                extras_upscaler_2_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Upscaler 2 visibility", value=0.0, elem_id=self.elem_id_suffix("extras_upscaler_2_visibility"))
 
             with FormRow():
-                with gr.Tabs(elem_id="extras_resize_mode"):
-                    with gr.TabItem('Scale by', elem_id="extras_scale_by_tab") as tab_scale_by:
+                with gr.Tabs(elem_id=self.elem_id_suffix("extras_resize_mode")):
+                    with gr.TabItem('Scale by', elem_id=self.elem_id_suffix("extras_scale_by_tab")) as tab_scale_by:
                         with gr.Row():
                             with gr.Column(scale=4):
-                                upscaling_resize = gr.Slider(minimum=1.0, maximum=8.0, step=0.05, label="Resize", value=4, elem_id="extras_upscaling_resize")
+                                upscaling_resize = gr.Slider(minimum=1.0, maximum=8.0, step=0.05, label="Resize", value=4, elem_id=self.elem_id_suffix("extras_upscaling_resize"))
                             with gr.Column(scale=1, min_width=160):
-                                max_side_length = gr.Number(label="Max side length", value=0, elem_id="extras_upscale_max_side_length", tooltip="If any of two sides of the image ends up larger than specified, will downscale it to fit. 0 = no limit.", min_width=160, step=8, minimum=0)
+                                max_side_length = gr.Number(label="Max side length", value=0, elem_id=self.elem_id_suffix("extras_upscale_max_side_length"), tooltip="If any of two sides of the image ends up larger than specified, will downscale it to fit. 0 = no limit.", min_width=160, step=8, minimum=0)
 
-                    with gr.TabItem('Scale to', elem_id="extras_scale_to_tab") as tab_scale_to:
+                    with gr.TabItem('Scale to', elem_id=self.elem_id_suffix("extras_scale_to_tab")) as tab_scale_to:
                         with FormRow():
-                            with gr.Column(elem_id="upscaling_column_size", scale=4):
-                                upscaling_resize_w = gr.Slider(minimum=64, maximum=8192, step=8, label="Width", value=512, elem_id="extras_upscaling_resize_w")
-                                upscaling_resize_h = gr.Slider(minimum=64, maximum=8192, step=8, label="Height", value=512, elem_id="extras_upscaling_resize_h")
-                            with gr.Column(elem_id="upscaling_dimensions_row", scale=1, elem_classes="dimensions-tools"):
-                                upscaling_res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="upscaling_res_switch_btn", tooltip="Switch width/height")
-                                upscaling_crop = gr.Checkbox(label='Crop to fit', value=True, elem_id="extras_upscaling_crop")
+                            with gr.Column(elem_id=self.elem_id_suffix("upscaling_column_size"), scale=4):
+                                upscaling_resize_w = gr.Slider(minimum=64, maximum=8192, step=8, label="Width", value=512, elem_id=self.elem_id_suffix("extras_upscaling_resize_w"))
+                                upscaling_resize_h = gr.Slider(minimum=64, maximum=8192, step=8, label="Height", value=512, elem_id=self.elem_id_suffix("extras_upscaling_resize_h"))
+                            with gr.Column(elem_id=self.elem_id_suffix("upscaling_dimensions_row"), scale=1, elem_classes="dimensions-tools"):
+                                upscaling_res_switch_btn = ToolButton(value=switch_values_symbol, elem_id=self.elem_id_suffix("upscaling_res_switch_btn"), tooltip="Switch width/height")
+                                upscaling_crop = gr.Checkbox(label='Crop to fit', value=True, elem_id=self.elem_id_suffix("extras_upscaling_crop"))
 
         def on_selected_upscale_method(upscale_method):
             if not shared.opts.set_scale_by_when_changing_upscaler:
@@ -169,6 +169,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
 class ScriptPostprocessingUpscaleSimple(ScriptPostprocessingUpscale):
     name = "Simple Upscale"
     order = 900
+    main_ui_only = True
 
     def ui(self):
         with FormRow():
