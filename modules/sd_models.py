@@ -37,7 +37,7 @@ class ModelType(enum.Enum):
 
 def replace_key(d, key, new_key, value):
     """Replace a key in the dictionary while maintaining insertion order.
-    
+
     Uses Python 3.7+ dict insertion order guarantee instead of rebuilding
     the entire dictionary. Time complexity: O(1) instead of O(n).
     """
