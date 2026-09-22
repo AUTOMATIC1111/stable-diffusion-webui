@@ -268,6 +268,9 @@ onUiLoaded(function() {
     showRestoreProgressButton('img2img', localGet("img2img_task_id"));
     setupResolutionPasting('txt2img');
     setupResolutionPasting('img2img');
+    setupResLink('txt2img');
+    setupResLink('img2img');
+    setupResLinkFor('upscaling_res_link_btn', 'extras_upscaling_resize_w', 'extras_upscaling_resize_h', 64, 8192, 8);
 });
 
 
@@ -416,6 +419,79 @@ function switchWidthHeight(tabname) {
     updateInput(width);
     updateInput(height);
     return [];
+}
+
+
+// Keeps width/height linked to the same aspect ratio while enabled via the link ToolButton.
+var resLinkState = {};
+
+function toggleResLinkFor(linkBtnId, widthElemId, heightElemId) {
+    var linkBtn = gradioApp().querySelector("#" + linkBtnId);
+    var width = gradioApp().querySelector("#" + widthElemId + " input[type=number]");
+    var height = gradioApp().querySelector("#" + heightElemId + " input[type=number]");
+    if (!linkBtn || !width || !height) return [];
+
+    var state = resLinkState[linkBtnId] = resLinkState[linkBtnId] || {linked: false, ratio: 1};
+    state.linked = !state.linked;
+    linkBtn.classList.toggle("res-link-enabled", state.linked);
+
+    if (state.linked) {
+        var w = parseFloat(width.value);
+        var h = parseFloat(height.value);
+        state.ratio = (w > 0 && h > 0) ? (w / h) : 1;
+    }
+
+    return [];
+}
+
+function setupResLinkFor(linkBtnId, widthElemId, heightElemId, minVal, maxVal, step) {
+    // Sliders render two inputs (the number box and the range track); either can fire the change.
+    var widthNumber = gradioApp().querySelector("#" + widthElemId + " input[type=number]");
+    var widthRange = gradioApp().querySelector("#" + widthElemId + " input[type=range]");
+    var heightNumber = gradioApp().querySelector("#" + heightElemId + " input[type=number]");
+    var heightRange = gradioApp().querySelector("#" + heightElemId + " input[type=range]");
+    if (!widthNumber || !heightNumber) return;
+
+    var state = resLinkState[linkBtnId] = resLinkState[linkBtnId] || {linked: false, ratio: 1};
+
+    var syncPair = function(changedValue, other, otherFromChanged) {
+        if (!state.linked || state.syncing) return;
+        if (!changedValue || changedValue <= 0) return;
+
+        var newOtherValue = Math.round(otherFromChanged(changedValue) / step) * step;
+        newOtherValue = Math.max(minVal, Math.min(maxVal, newOtherValue));
+        if (String(newOtherValue) === other.value) return;
+
+        state.syncing = true;
+        other.value = newOtherValue;
+        updateInput(other);
+        state.syncing = false;
+    };
+
+    var onWidthChange = function(e) {
+        syncPair(parseFloat(e.target.value), heightNumber, function(w) {
+            return w / state.ratio;
+        });
+    };
+    var onHeightChange = function(e) {
+        syncPair(parseFloat(e.target.value), widthNumber, function(h) {
+            return h * state.ratio;
+        });
+    };
+
+    widthNumber.addEventListener("input", onWidthChange);
+    heightNumber.addEventListener("input", onHeightChange);
+    if (widthRange) widthRange.addEventListener("input", onWidthChange);
+    if (heightRange) heightRange.addEventListener("input", onHeightChange);
+}
+
+// Convenience wrappers for the common txt2img/img2img "{tabname}_width"/"{tabname}_height" convention.
+function toggleResLink(tabname) {
+    return toggleResLinkFor(tabname + "_res_link_btn", tabname + "_width", tabname + "_height");
+}
+
+function setupResLink(tabname) {
+    setupResLinkFor(tabname + "_res_link_btn", tabname + "_width", tabname + "_height", 64, 2048, 8);
 }
 
 

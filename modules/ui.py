@@ -79,6 +79,7 @@ extra_networks_symbol = '\U0001F3B4'  # 🎴
 switch_values_symbol = '\U000021C5' # ⇅
 restore_progress_symbol = '\U0001F300' # 🌀
 detect_image_size_symbol = '\U0001F4D0'  # 📐
+link_dimensions_symbol = '\U0001F517'  # 🔗
 
 
 plaintext_to_html = ui_common.plaintext_to_html
@@ -292,6 +293,7 @@ def create_ui():
 
                             with gr.Column(elem_id="txt2img_dimensions_row", scale=1, elem_classes="dimensions-tools"):
                                 res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn", tooltip="Switch width/height")
+                                res_link_btn = ToolButton(value=link_dimensions_symbol, elem_id="txt2img_res_link_btn", tooltip="Link width and height so that changing one adjusts the other to keep the aspect ratio")
 
                             if opts.dimensions_and_batch_together:
                                 with gr.Column(elem_id="txt2img_column_batch"):
@@ -430,6 +432,8 @@ def create_ui():
             )
 
             res_switch_btn.click(fn=None, _js="function(){switchWidthHeight('txt2img')}", inputs=None, outputs=None, show_progress=False)
+
+            res_link_btn.click(fn=None, _js="function(){toggleResLink('txt2img')}", inputs=None, outputs=None, show_progress=False)
 
             toprow.restore_progress_button.click(
                 fn=progress.restore_progress,
@@ -630,6 +634,7 @@ def create_ui():
                                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
                                             with gr.Column(elem_id="img2img_dimensions_row", scale=1, elem_classes="dimensions-tools"):
                                                 res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn", tooltip="Switch width/height")
+                                                res_link_btn = ToolButton(value=link_dimensions_symbol, elem_id="img2img_res_link_btn", tooltip="Link width and height so that changing one adjusts the other to keep the aspect ratio")
                                                 detect_image_size_btn = ToolButton(value=detect_image_size_symbol, elem_id="img2img_detect_image_size_btn", tooltip="Auto detect size from img2img")
 
                                     with gr.Tab(label="Resize by", id="by", elem_id="img2img_tab_resize_by") as tab_scale_by:
@@ -799,6 +804,8 @@ def create_ui():
             toprow.submit.click(**img2img_args)
 
             res_switch_btn.click(fn=None, _js="function(){switchWidthHeight('img2img')}", inputs=None, outputs=None, show_progress=False)
+
+            res_link_btn.click(fn=None, _js="function(){toggleResLink('img2img')}", inputs=None, outputs=None, show_progress=False)
 
             detect_image_size_btn.click(
                 fn=lambda w, h, _: (w or gr.update(), h or gr.update()),
