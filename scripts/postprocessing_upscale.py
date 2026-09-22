@@ -7,7 +7,7 @@ from modules import scripts_postprocessing, shared
 import gradio as gr
 
 from modules.ui_components import FormRow, ToolButton, InputAccordion
-from modules.ui import switch_values_symbol
+from modules.ui import switch_values_symbol, link_dimensions_symbol
 
 upscale_cache = {}
 
@@ -54,6 +54,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
                                 upscaling_resize_h = gr.Slider(minimum=64, maximum=8192, step=8, label="Height", value=512, elem_id="extras_upscaling_resize_h")
                             with gr.Column(elem_id="upscaling_dimensions_row", scale=1, elem_classes="dimensions-tools"):
                                 upscaling_res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="upscaling_res_switch_btn", tooltip="Switch width/height")
+                                upscaling_res_link_btn = ToolButton(value=link_dimensions_symbol, elem_id="upscaling_res_link_btn", tooltip="Link width and height so that changing one adjusts the other to keep the aspect ratio")
                                 upscaling_crop = gr.Checkbox(label='Crop to fit', value=True, elem_id="extras_upscaling_crop")
 
         def on_selected_upscale_method(upscale_method):
@@ -67,6 +68,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
             return gr.update(value=int(match.group(1) or match.group(2)))
 
         upscaling_res_switch_btn.click(lambda w, h: (h, w), inputs=[upscaling_resize_w, upscaling_resize_h], outputs=[upscaling_resize_w, upscaling_resize_h], show_progress=False)
+        upscaling_res_link_btn.click(fn=None, _js="function(){toggleResLinkFor('upscaling_res_link_btn', 'extras_upscaling_resize_w', 'extras_upscaling_resize_h')}", inputs=None, outputs=None, show_progress=False)
         tab_scale_by.select(fn=lambda: 0, inputs=[], outputs=[selected_tab])
         tab_scale_to.select(fn=lambda: 1, inputs=[], outputs=[selected_tab])
 

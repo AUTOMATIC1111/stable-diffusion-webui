@@ -169,6 +169,11 @@ div.gradio-container, .block.gradio-textbox, div.gradio-group, div.gradio-dropdo
     border-radius: 0.5em;
 }
 
+.gradio-button.tool.res-link-enabled{
+    background: var(--primary-600);
+    border-color: var(--primary-600);
+}
+
 .gradio-button.secondary-down{
     background: var(--button-secondary-background-fill);
     color: var(--button-secondary-text-color);
