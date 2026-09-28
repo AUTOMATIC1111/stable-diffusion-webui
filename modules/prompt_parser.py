@@ -401,6 +401,10 @@ def parse_prompt_attention(text):
      [', sun, ', 1.1],
      ['sky', 1.4641000000000006],
      ['.', 1.1]]
+    >>> parse_prompt_attention('[cat BREAK dog]')
+    [['cat', 0.9090909090909091], ['BREAK', -1], ['dog', 0.9090909090909091]]
+    >>> parse_prompt_attention('cat BREAK dog')
+    [['cat', 1.0], ['BREAK', -1], ['dog', 1.0]]
     """
 
     res = []
@@ -412,6 +416,8 @@ def parse_prompt_attention(text):
 
     def multiply_range(start_position, multiplier):
         for p in range(start_position, len(res)):
+            if res[p][0] == 'BREAK' and res[p][1] == -1:
+                continue
             res[p][1] *= multiplier
 
     for m in re_attention.finditer(text):
