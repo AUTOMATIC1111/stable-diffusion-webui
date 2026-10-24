@@ -15,6 +15,7 @@ import ldm.modules.midas as midas
 from modules import paths, shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config, sd_unet, sd_models_xl, cache, extra_networks, processing, lowvram, sd_hijack, patches
 from modules.hashes import partial_hash_from_cache as model_hash  # noqa: F401 for backwards compatibility
 from modules.timer import Timer
+from modules.safetensors_utils import read_metadata_from_safetensors
 from modules.shared import opts
 import tomesd
 import numpy as np
@@ -265,34 +266,6 @@ def get_state_dict_from_checkpoint(pl_sd):
     pl_sd.update(sd)
 
     return pl_sd
-
-
-def read_metadata_from_safetensors(filename):
-    import json
-
-    with open(filename, mode="rb") as file:
-        metadata_len = file.read(8)
-        metadata_len = int.from_bytes(metadata_len, "little")
-        json_start = file.read(2)
-
-        assert metadata_len > 2 and json_start in (b'{"', b"{'"), f"{filename} is not a safetensors file"
-
-        res = {}
-
-        try:
-            json_data = json_start + file.read(metadata_len-2)
-            json_obj = json.loads(json_data)
-            for k, v in json_obj.get("__metadata__", {}).items():
-                res[k] = v
-                if isinstance(v, str) and v[0:1] == '{':
-                    try:
-                        res[k] = json.loads(v)
-                    except Exception:
-                        pass
-        except Exception:
-             errors.report(f"Error reading metadata from file: {filename}", exc_info=True)
-
-        return res
 
 
 def read_state_dict(checkpoint_file, print_global_state=False, map_location=None):
