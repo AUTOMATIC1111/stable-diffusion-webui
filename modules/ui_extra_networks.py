@@ -268,7 +268,7 @@ class ExtraNetworksPage:
             )
             onclick = html.escape(onclick)
 
-        btn_copy_path = self.btn_copy_path_tpl.format(**{"filename": item["filename"]})
+        btn_copy_path = self.btn_copy_path_tpl.format(**{"filename": html.escape(item["filename"])})
         btn_metadata = ""
         metadata = item.get("metadata")
         if metadata:
@@ -315,7 +315,7 @@ class ExtraNetworksPage:
             search_terms_html += search_term_template.format(
                 **{
                     "class": f"search_terms{' search_only' if search_only else ''}",
-                    "search_term": search_term,
+                    "search_term": html.escape(search_term),
                 }
             )
 
