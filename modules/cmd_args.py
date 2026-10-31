@@ -36,6 +36,7 @@ parser.add_argument("--textual-inversion-templates-dir", type=normalized_filepat
 parser.add_argument("--hypernetwork-dir", type=normalized_filepath, default=os.path.join(models_path, 'hypernetworks'), help="hypernetwork directory")
 parser.add_argument("--localizations-dir", type=normalized_filepath, default=os.path.join(script_path, 'localizations'), help="localizations directory")
 parser.add_argument("--allow-code", action='store_true', help="allow custom script execution from webui")
+parser.add_argument("--allow-custom-model-targets", action='store_true', help="allow model configs, including YAML files sitting next to checkpoints, to use model targets outside the built-in allowlist; only enable this for configs you wrote or trust, since a model target names Python code that runs when the checkpoint loads")
 parser.add_argument("--medvram", action='store_true', help="enable stable diffusion model optimizations for sacrificing a little speed for low VRM usage")
 parser.add_argument("--medvram-sdxl", action='store_true', help="enable --medvram optimization just for SDXL models")
 parser.add_argument("--lowvram", action='store_true', help="enable stable diffusion model optimizations for sacrificing a lot of speed for very low VRM usage")
