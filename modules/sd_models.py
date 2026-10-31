@@ -12,7 +12,7 @@ from omegaconf import OmegaConf, ListConfig
 from urllib import request
 import ldm.modules.midas as midas
 
-from modules import paths, shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config, sd_unet, sd_models_xl, cache, extra_networks, processing, lowvram, sd_hijack, patches
+from modules import paths, shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config, sd_model_targets, sd_unet, sd_models_xl, cache, extra_networks, processing, lowvram, sd_hijack, patches
 from modules.hashes import partial_hash_from_cache as model_hash  # noqa: F401 for backwards compatibility
 from modules.timer import Timer
 from modules.shared import opts
@@ -765,7 +765,12 @@ def instantiate_from_config(config, state_dict=None):
     return constructor(**params)
 
 
+def allow_custom_model_targets():
+    return getattr(shared.cmd_opts, "allow_custom_model_targets", False)
+
+
 def get_obj_from_str(string, reload=False):
+    sd_model_targets.assert_model_target_allowed(string, allow_custom=allow_custom_model_targets())
     module, cls = string.rsplit(".", 1)
     if reload:
         module_imp = importlib.import_module(module)
@@ -799,6 +804,22 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, checkpoint_
 
     sd_config = OmegaConf.load(checkpoint_config)
     repair_config(sd_config, state_dict)
+
+    if "model" in sd_config:
+        try:
+            sd_model_targets.validate_model_config_targets(sd_config.model, allow_custom=allow_custom_model_targets())
+        except sd_model_targets.UnsafeModelTargetError:
+            # A YAML file sitting next to a checkpoint is untrusted input: never execute its targets.
+            # Fall back to the config guessed from the checkpoint weights instead; an explicitly
+            # requested config with a disallowed target is a loud error, not a silent fallback.
+            if checkpoint_config == sd_models_config.find_checkpoint_config_near_filename(checkpoint_info):
+                print(f"WARNING: checkpoint config {checkpoint_config} names a model target outside the built-in allowlist; ignoring it and falling back to the config guessed from the checkpoint weights. If this is your own custom architecture, restart with --allow-custom-model-targets.", file=sys.stderr)
+                checkpoint_config = sd_models_config.guess_model_config_from_state_dict(state_dict, checkpoint_info.filename)
+                sd_config = OmegaConf.load(checkpoint_config)
+                repair_config(sd_config, state_dict)
+                sd_model_targets.validate_model_config_targets(sd_config.model, allow_custom=allow_custom_model_targets())
+            else:
+                raise
 
     timer.record("load config")
 
